@@ -16,35 +16,70 @@ export class ExerciseGenerator {
             // ÉTAGE 1 : Le partage équitable
             // ==========================================
             case 'floor-1': {
-                const types = ['denom', 'num', 'write'];
-                const t = types[Math.floor(Math.random() * types.length)];
-                if (t === 'denom') {
-                    const den = [4, 5, 6, 8, 10][Math.floor(Math.random() * 5)];
+                // Banque variée de questions simples. Les nombres sont générés dans
+                // les limites des notions de l’étage 1 uniquement.
+                const den = [3, 4, 5, 6, 7, 8, 9, 10, 12][Math.floor(Math.random() * 9)];
+                const num = Math.floor(Math.random() * (den - 1)) + 1;
+                const contexts = ['une orange', 'une tablette de chocolat', 'une pizza', 'une tarte', 'une barre', 'un gâteau', 'une feuille'];
+                const context = contexts[Math.floor(Math.random() * contexts.length)];
+                const mode = Math.floor(Math.random() * 7);
+
+                if (mode === 0) {
                     return {
-                        id: 'f1-1',
-                        question: `Une orange est partagée en ${den} morceaux de même taille. Combien y a-t-il de parts en tout ?`,
+                        id: 'f1-den-context',
+                        question: `On partage ${context} en ${den} parts de même taille. Combien y a-t-il de parts en tout ?`,
                         correctAnswer: den,
                         type: 'input'
                     };
-                } else if (t === 'num') {
-                    const num = Math.floor(Math.random() * 4) + 1;
-                    const den = num + Math.floor(Math.random() * 4) + 2;
+                }
+                if (mode === 1) {
                     return {
-                        id: 'f1-2',
+                        id: 'f1-num-context',
                         question: `Dans la fraction ${num}/${den}, quel nombre est le numérateur ?`,
                         correctAnswer: num,
                         type: 'input'
                     };
-                } else {
-                    const num = Math.floor(Math.random() * 3) + 1;
-                    const den = num + Math.floor(Math.random() * 3) + 2;
+                }
+                if (mode === 2) {
                     return {
-                        id: 'f1-3',
-                        question: `On prend ${num} parts parmi ${den} parts égales. Écris la fraction.`,
+                        id: 'f1-denominator',
+                        question: `Dans la fraction ${num}/${den}, quel nombre est le dénominateur ?`,
+                        correctAnswer: den,
+                        type: 'input'
+                    };
+                }
+                if (mode === 3) {
+                    return {
+                        id: 'f1-write',
+                        question: `On prend ${num} parts parmi ${den} parts égales. Écris la fraction prise.`,
                         correctAnswer: `${num}/${den}`,
                         type: 'input'
                     };
                 }
+                if (mode === 4) {
+                    return {
+                        id: 'f1-whole',
+                        question: `Une barre est partagée en ${den} parts égales. Toutes les ${den} parts sont présentes. Écris la fraction qui représente le tout.`,
+                        correctAnswer: `${den}/${den}`,
+                        type: 'input'
+                    };
+                }
+                if (mode === 5) {
+                    const taken = Math.floor(Math.random() * (den - 1)) + 1;
+                    return {
+                        id: 'f1-read-story',
+                        question: `Une tablette comporte ${den} carrés égaux. ${taken} carrés sont pris. Écris la fraction prise.`,
+                        correctAnswer: `${taken}/${den}`,
+                        type: 'input'
+                    };
+                }
+                const chosen = Math.floor(Math.random() * (den - 1)) + 1;
+                return {
+                    id: 'f1-identify',
+                    question: `Dans ${chosen}/${den}, combien de parts sont prises ?`,
+                    correctAnswer: chosen,
+                    type: 'input'
+                };
             }
 
             // ==========================================

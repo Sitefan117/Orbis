@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Support — Étage 4 : Fractions équivalentes et simplification</title>
+<style>
+  :root {
+    --green:#2E7D32; --green-bg:#F1F8E9;
+    --blue:#1976D2; --blue-bg:#E3F2FD;
+    --red:#D32F2F; --red-bg:#FFEBEE;
+    --ink:#202124; --line:#777; --paper:#fff;
+  }
+  * { box-sizing:border-box; }
+  html { font-size:11pt; }
+  body {
+    margin:0; background:#eceff1; color:var(--ink);
+    font-family:Arial,"Helvetica Neue",Helvetica,sans-serif;
+    font-size:11pt; line-height:1.5; letter-spacing:.03ch;
+  }
+  .toolbar {
+    position:sticky; top:0; z-index:10; display:flex; flex-wrap:wrap;
+    gap:.5rem; padding:.75rem; background:#fff; border-bottom:1px solid #bbb;
+  }
+  button {
+    font:inherit; letter-spacing:normal; padding:.5rem .8rem; border:1px solid #555;
+    border-radius:5px; background:#fff; color:#111; cursor:pointer;
+  }
+  button:focus, input:focus { outline:3px solid #ffbf47; outline-offset:2px; }
+  main { max-width:210mm; margin:1rem auto; background:var(--paper); padding:15mm; box-shadow:0 2px 12px #0002; }
+  h1,h2,h3 { line-height:1.2; letter-spacing:normal; }
+  h1 { font-size:25pt; margin:.2rem 0 1rem; }
+  h2 { font-size:19pt; margin:0 0 1rem; }
+  h3 { font-size:13pt; margin:.8rem 0 .4rem; }
+  p { margin:.35rem 0 .7rem; }
+  .subtitle { font-size:13pt; }
+  .theory,.example,.exercise { padding:.8rem 1rem; margin:1rem 0; border-left:5px solid; break-inside:avoid; }
+  .theory { border-color:var(--green); background:var(--green-bg); }
+  .example { border-color:var(--blue); background:var(--blue-bg); }
+  .exercise { border-color:var(--red); background:var(--red-bg); }
+  .theory h3 { color:var(--green); } .example h3 { color:var(--blue); } .exercise h3 { color:var(--red); }
+  .verbe { color:#b71c1c; font-weight:700; text-decoration:underline; text-decoration-thickness:1.5px; }
+  .key { color:#075c9e; font-weight:700; }
+  .key-green { color:#236b27; font-weight:700; }
+  .answer {
+    display:inline-block; min-width:4.5rem; height:1.8rem; vertical-align:middle;
+    border:1.5px dashed #555; background:#fff; padding:0 .25rem;
+  }
+  .answer.wide { min-width:9rem; } .answer.xwide { min-width:15rem; }
+  .answer-line { min-height:2.1rem; border-bottom:1.5px dashed #555; margin:.35rem 0 .6rem; }
+  .task { margin:.7rem 0; }
+  .fraction { display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; line-height:1.05; min-width:1.3em; margin:0 .1em; }
+  .fraction .top { border-bottom:1.5px solid currentColor; padding:0 .15em .1em; }
+  .fraction .bottom { padding:.1em .15em 0; }
+
+  .worked-visual { margin:.85rem 0 .2rem; padding:.75rem; background:#fff; border:1px solid #b8c7d3; border-radius:8px; break-inside:avoid; }
+  .worked-visual h4 { margin:0 0 .45rem; font-size:11.5pt; color:#164f7a; }
+  .worked-visual svg { display:block; width:100%; max-width:620px; height:auto; margin:.35rem auto; }
+  .worked-steps { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.4rem .8rem; margin:.5rem 0 0; padding:0; list-style:none; counter-reset:step; }
+  .worked-steps li { counter-increment:step; position:relative; padding:.35rem .45rem .35rem 2rem; background:#f5f9fc; border-radius:4px; }
+  .worked-steps li::before { content:counter(step); position:absolute; left:.45rem; top:.35rem; width:1.2rem; height:1.2rem; line-height:1.2rem; text-align:center; border-radius:50%; color:#fff; background:#1976D2; font-weight:bold; }
+  .svg-label { font: 15px Arial, sans-serif; fill:#202124; }
+  .svg-small { font: 12px Arial, sans-serif; fill:#202124; }
+  .svg-arrow { stroke:#1976D2; stroke-width:2.5; fill:none; marker-end:url(#arrowhead); }
+  @media(max-width:650px) { .worked-steps { grid-template-columns:1fr; } }
+  @media print { .worked-visual { background:#fff; border-color:#777; } .worked-steps li { background:#fff; border:1px solid #ddd; } .worked-steps li::before { background:#555; } }
+
+  .visual-row { display:flex; flex-wrap:wrap; gap:1rem; align-items:center; margin:.5rem 0; }
+  .shape { display:inline-flex; border:2px solid #333; min-height:2rem; background:#fff; overflow:hidden; vertical-align:middle; }
+  .shape span { flex:1; min-width:1.1rem; border-right:1px solid #555; }
+  .shape span:last-child { border-right:0; }
+  .shade { background:#b7d9f7; }
+  .circle { width:5rem; height:5rem; border:2px solid #333; border-radius:50%; display:inline-block; background:conic-gradient(#b7d9f7 0 25%, #fff 25% 100%); }
+  .numberline { position:relative; height:3rem; margin:1rem .5rem 1.5rem; border-top:2px solid #222; }
+  .numberline .tick { position:absolute; top:-.45rem; height:.9rem; border-left:2px solid #222; }
+  .numberline .label { position:absolute; top:.55rem; transform:translateX(-50%); white-space:nowrap; }
+  .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.6rem; }
+  .small { font-size:9.5pt; }
+  .solution { display:none; margin:.5rem 0; padding:.7rem; background:#fffde7; border:1px solid #c0a500; }
+  .solution.visible { display:block; }
+  .canvas-panel { display:none; position:fixed; inset:5vh 5vw; z-index:20; background:#fff; border:2px solid #333; box-shadow:0 0 0 100vmax #0008; padding:1rem; }
+  .canvas-panel.visible { display:flex; flex-direction:column; gap:.5rem; }
+  canvas { border:1px dashed #666; width:100%; flex:1; touch-action:none; }
+  .ru { display:none; color:#333; }
+  body.russian .fr { display:none; } body.russian .ru { display:block; }
+  .floor { page-break-before:always; break-before:page; padding-top:.5rem; }
+  .floor:first-of-type { page-break-before:auto; break-before:auto; }
+  .floor-label { color:#555; font-size:10pt; text-transform:uppercase; letter-spacing:.1em; }
+  .checkrow { display:flex; align-items:center; gap:.5rem; margin:.35rem 0; }
+  input[type="text"] { font:inherit; width:5rem; border:1px dashed #555; background:#fff; padding:.15rem; }
+  @page { size:A4; margin:15mm; }
+  @media print {
+    body { background:#fff; font-size:11pt; }
+    .toolbar,.canvas-panel,.no-print { display:none !important; }
+    main { max-width:none; margin:0; padding:0; box-shadow:none; }
+    .floor { page-break-before:always; break-before:page; }
+    .floor:first-of-type { page-break-before:auto; break-before:auto; }
+    .solution { display:none !important; }
+    .theory,.example,.exercise { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+    a { color:inherit; text-decoration:none; }
+  }
+  @media (max-width:650px) {
+    main { margin:0; padding:1rem; }
+    .grid { grid-template-columns:1fr; }
+  }
+
+  body.russian .ru { display:block; }
+  body:not(.russian) .ru { display:none; }
+
+  .standalone-header { margin-bottom: 1rem; }
+  .standalone-instructions { margin-bottom: 1.2rem; }
+  @media print { main > .floor:first-of-type { page-break-before: auto !important; break-before: auto !important; } }
+</style>
+</head>
+<body>
+<nav aria-label="Outils du cahier" class="toolbar no-print">
+<button onclick="window.print()">Imprimer / enregistrer en PDF</button>
+<button onclick="toggleRussian()">Afficher / masquer les aides en russe</button>
+<button onclick="speakPage()">🔊 Lire la page</button>
+<button onclick="openCanvas()">Ouvrir le brouillon</button>
+<button onclick="toggleAllSolutions()">Afficher / masquer les corrections</button>
+</nav>
+<div aria-label="Brouillon interactif" class="canvas-panel no-print" id="canvasPanel" role="dialog">
+<div><strong>Brouillon libre</strong> — dessine avec la souris, le doigt ou un stylet.
+    <button onclick="clearCanvas()">Effacer</button>
+<button onclick="closeCanvas()">Fermer</button></div>
+<canvas aria-label="Zone de dessin" id="scratch"></canvas>
+</div>
+<main>
+<header class="standalone-header">
+<p class="floor-label">Support d’entraînement • Mathématiques • 7H</p>
+<h1>Fractions équivalentes et simplification</h1>
+<p class="subtitle">Étage 4 — théorie, exemples, exercices et évaluation</p>
+<p>Prénom : <span class="answer xwide"></span> &nbsp; Date : <span class="answer wide"></span></p>
+<div class="theory standalone-instructions">
+<h3>Comment utiliser ce support ?</h3>
+<p>Observe le rappel et l’exemple résolu. Fais ensuite les trois exercices dans l’ordre, puis passe à l’évaluation. Aux étages 5 et 8, une épreuve récapitulative est également proposée.</p>
+<p class="small">Pour les coloriages : clique sur les parts à l’écran, puis vérifie ta réponse, ou imprime le support et colorie au crayon. Les corrections sont à ouvrir après une première tentative.</p>
+<p class="ru">Прочитай правило и пример. Выполни три упражнения по порядку, затем пройди проверочную работу. На этажах 5 и 8 есть также итоговое задание.</p>
+</div>
+</header>
+<section class="floor" id="etage4">
+<p class="floor-label">Étage 4</p><h2>Fractions équivalentes et simplification</h2>
+<div class="theory"><h3>Rappel</h3>
+<p>Des fractions sont <span class="key-green">équivalentes</span> si elles représentent la même quantité. On peut multiplier ou diviser le numérateur et le dénominateur par le même nombre non nul. Pour <span class="key-green">simplifier</span>, on divise les deux par un même facteur.</p>
+<p class="ru">Дроби равны, если показывают одно и то же количество. Можно умножить или разделить числитель и знаменатель на одно и то же ненулевое число. Упрощение — деление обоих чисел на общий делитель.</p>
+</div>
+<div class="example"><h3>Exemple</h3><p><span class="fraction"><span class="top">2</span><span class="bottom">4</span></span> = <span class="fraction"><span class="top">1</span><span class="bottom">2</span></span>, car on divise 2 et 4 par 2.</p>
+<p class="ru">2/4 = 1/2, car on divise le numérateur et le dénominateur par 2. / 2/4 = 1/2, потому что числитель и знаменатель делятся на 2.</p>
+<div class="worked-visual"><h4>Pourquoi 1/2 et 2/4 représentent-ils la même quantité ?</h4>
+<svg aria-label="Deux bandes de même longueur : la première est divisée en deux avec une moitié colorée, la seconde en quatre avec deux quarts colorés." role="img" viewbox="0 0 560 150">
+<text class="svg-label" x="24" y="27">1/2</text><rect fill="#8fc4ee" height="32" stroke="#333" stroke-width="1.5" width="180" x="90" y="8"></rect><rect fill="#fff" height="32" stroke="#333" stroke-width="1.5" width="90" x="180" y="8"></rect><line stroke="#333" stroke-width="2" x1="180" x2="180" y1="8" y2="40"></line>
+<text class="svg-label" x="24" y="85">2/4</text><rect fill="#8fc4ee" height="32" stroke="#333" stroke-width="1.5" width="45" x="90" y="64"></rect><rect fill="#8fc4ee" height="32" stroke="#333" stroke-width="1.5" width="45" x="135" y="64"></rect><rect fill="#fff" height="32" stroke="#333" stroke-width="1.5" width="45" x="180" y="64"></rect><rect fill="#fff" height="32" stroke="#333" stroke-width="1.5" width="45" x="225" y="64"></rect><path d="M292 53 H340" stroke="#1976D2" stroke-width="3"></path><path d="M332 45 L342 53 L332 61" fill="none" stroke="#1976D2" stroke-width="3"></path><text class="svg-label" x="360" y="49">Même longueur</text><text class="svg-label" x="360" y="75">colorée</text><text fill="#164f7a" font-size="22" font-weight="bold" x="360" y="110">1/2 = 2/4</text><text class="svg-small" text-anchor="middle" x="280" y="137">On partage chaque moitié en deux : le tout ne change pas.</text></svg>
+<ol class="worked-steps"><li>Je regarde la longueur colorée : elle est identique.</li><li>Je partage chaque moitié en deux parts égales.</li><li>1 part sur 2 devient 2 parts sur 4.</li><li>Je multiplie le haut et le bas par 2 : 1/2 = 2/4.</li></ol></div>
+</div>
+<section aria-labelledby="head-sol-4-a" class="exercise exercise-card">
+<h3 id="head-sol-4-a">A — Je reconnais des fractions équivalentes</h3><p class="small exercise-lead">Des écritures différentes peuvent représenter la même quantité.</p>
+<div class="task"><div class="task-prompt"><strong>1.</strong> <span class="verbe">Complète</span> : <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span> = <span aria-label="? sur 4" class="fraction"><span class="top">?</span><span class="bottom">4</span></span>. Quel nombre manque ? <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>2.</strong> <span class="verbe">Colorie</span> 2 cases sur 6, puis écris la fraction et sa forme simplifiée. <div class="color-task" data-color-id="col-140424124669504" data-expected="2"><div aria-label="Barre de 6 parts égales" class="color-grid bar-grid" data-count="6" role="group" style="--cols:6"><button aria-label="Part 1" aria-pressed="false" class="color-cell" type="button"></button><button aria-label="Part 2" aria-pressed="false" class="color-cell" type="button"></button><button aria-label="Part 3" aria-pressed="false" class="color-cell" type="button"></button><button aria-label="Part 4" aria-pressed="false" class="color-cell" type="button"></button><button aria-label="Part 5" aria-pressed="false" class="color-cell" type="button"></button><button aria-label="Part 6" aria-pressed="false" class="color-cell" type="button"></button></div><div class="color-tools no-print"><button class="check-color" type="button">Vérifier le coloriage</button><button class="reset-color" type="button">Effacer</button><span aria-live="polite" class="color-feedback" role="status"></span></div><p class="small color-instruction">À l’écran : clique sur les parts. Sur papier : colorie les parts au crayon. La vérification compte les parts coloriées.</p></div><p class="small">Réponse : <span class="answer wide"></span></p></div></div><div class="task"><div class="task-prompt"><strong>3.</strong> <span class="verbe">Complète</span> : <span aria-label="3 sur 4" class="fraction"><span class="top">3</span><span class="bottom">4</span></span> = <span aria-label="? sur 8" class="fraction"><span class="top">?</span><span class="bottom">8</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>4.</strong> <span class="verbe">Entoure</span> toutes les <span class="key">fractions équivalentes</span> à <span aria-label="2 sur 3" class="fraction"><span class="top">2</span><span class="bottom">3</span></span> : <span aria-label="4 sur 6" class="fraction"><span class="top">4</span><span class="bottom">6</span></span>, <span aria-label="3 sur 6" class="fraction"><span class="top">3</span><span class="bottom">6</span></span>, <span aria-label="6 sur 9" class="fraction"><span class="top">6</span><span class="bottom">9</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>5.</strong> <span class="verbe">Simplifie</span> <span aria-label="5 sur 10" class="fraction"><span class="top">5</span><span class="bottom">10</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>6.</strong> <span class="verbe">Multiplie</span> le <span class="key">numérateur</span> et le <span class="key">dénominateur</span> de <span aria-label="3 sur 5" class="fraction"><span class="top">3</span><span class="bottom">5</span></span> par 2. <span aria-label="Espace de réponse" class="answer"></span></div></div>
+<button class="no-print solution-toggle" onclick="toggleSolution('sol-4-a')" type="button">Voir la correction détaillée</button>
+<div class="solution" id="sol-4-a"><strong>Correction — A — Je reconnais des fractions équivalentes :</strong><ol class="correction-list"><li>2 : <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span> = <span aria-label="2 sur 4" class="fraction"><span class="top">2</span><span class="bottom">4</span></span>.</li><li><span aria-label="2 sur 6" class="fraction"><span class="top">2</span><span class="bottom">6</span></span> = <span aria-label="1 sur 3" class="fraction"><span class="top">1</span><span class="bottom">3</span></span>.</li><li>6 : on multiplie le numérateur et le dénominateur par 2, donc <span aria-label="6 sur 8" class="fraction"><span class="top">6</span><span class="bottom">8</span></span>.</li><li><span aria-label="4 sur 6" class="fraction"><span class="top">4</span><span class="bottom">6</span></span> et <span aria-label="6 sur 9" class="fraction"><span class="top">6</span><span class="bottom">9</span></span>.</li><li><span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span> : on divise le numérateur et le dénominateur par 5.</li><li><span aria-label="6 sur 10" class="fraction"><span class="top">6</span><span class="bottom">10</span></span>.</li></ol></div>
+</section>
+<section aria-labelledby="head-sol-4-b" class="exercise exercise-card">
+<h3 id="head-sol-4-b">B — Je simplifie pas à pas</h3><p class="small exercise-lead">Diviser le haut et le bas par un même facteur non nul.</p>
+<div class="task"><div class="task-prompt"><strong>1.</strong> <span class="verbe">Simplifie</span> <span aria-label="4 sur 8" class="fraction"><span class="top">4</span><span class="bottom">8</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>2.</strong> <span class="verbe">Simplifie</span> <span aria-label="6 sur 9" class="fraction"><span class="top">6</span><span class="bottom">9</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>3.</strong> <span class="verbe">Simplifie</span> <span aria-label="12 sur 16" class="fraction"><span class="top">12</span><span class="bottom">16</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>4.</strong> <span class="verbe">Simplifie</span> <span aria-label="10 sur 25" class="fraction"><span class="top">10</span><span class="bottom">25</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>5.</strong> <span class="verbe">Complète</span> : <span aria-label="3 sur 6" class="fraction"><span class="top">3</span><span class="bottom">6</span></span> = <span aria-label="1 sur ?" class="fraction"><span class="top">1</span><span class="bottom">?</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>6.</strong> <span class="verbe">Simplifie</span> <span aria-label="15 sur 20" class="fraction"><span class="top">15</span><span class="bottom">20</span></span> et écris le diviseur utilisé. <span aria-label="Espace de réponse" class="answer"></span></div></div>
+<button class="no-print solution-toggle" onclick="toggleSolution('sol-4-b')" type="button">Voir la correction détaillée</button>
+<div class="solution" id="sol-4-b"><strong>Correction — B — Je simplifie pas à pas :</strong><ol class="correction-list"><li><span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span> (division par 4).</li><li><span aria-label="2 sur 3" class="fraction"><span class="top">2</span><span class="bottom">3</span></span> (division par 3).</li><li><span aria-label="3 sur 4" class="fraction"><span class="top">3</span><span class="bottom">4</span></span> (division par 4).</li><li><span aria-label="2 sur 5" class="fraction"><span class="top">2</span><span class="bottom">5</span></span> (division par 5).</li><li>2, car <span aria-label="3 sur 6" class="fraction"><span class="top">3</span><span class="bottom">6</span></span> = <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span>.</li><li><span aria-label="3 sur 4" class="fraction"><span class="top">3</span><span class="bottom">4</span></span> ; on divise le numérateur et le dénominateur par 5.</li></ol></div>
+</section>
+<section aria-labelledby="head-sol-4-c" class="exercise exercise-card">
+<h3 id="head-sol-4-c">C — Les fractions équivalentes dans des situations</h3><p class="small exercise-lead">Utiliser des portions et des mesures pour vérifier une équivalence.</p>
+<div class="task"><div class="task-prompt"><strong>1.</strong> <span class="verbe">Réponds :</span> Deux cuillères sont utilisées sur 4 cuillères identiques. Quelle fraction est utilisée ? Simplifie. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>2.</strong> <span class="verbe">Réponds :</span> Trois morceaux sur 6 sont mangés. Quelle fraction du chocolat est mangée sous forme simplifiée ? <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>3.</strong> <span class="verbe">Réponds :</span> Une bouteille contient <span aria-label="4 sur 8" class="fraction"><span class="top">4</span><span class="bottom">8</span></span> litre. Écris la même quantité sous forme simplifiée. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>4.</strong> <span class="verbe">Réponds :</span> Une recette demande <span aria-label="2 sur 5" class="fraction"><span class="top">2</span><span class="bottom">5</span></span> de tasse. Quelle fraction équivalente a pour <span class="key">dénominateur</span> 10 ? <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>5.</strong> <span class="verbe">Réponds :</span> Une demi-recette nécessite <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span> tasse de lait. Quelle quantité faut-il pour préparer deux fois cette demi-recette ? <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>6.</strong> <span class="verbe">Réponds :</span> Un ruban mesure <span aria-label="6 sur 8" class="fraction"><span class="top">6</span><span class="bottom">8</span></span> mètre. Simplifie la fraction de mètre. <span aria-label="Espace de réponse" class="answer"></span></div></div>
+<button class="no-print solution-toggle" onclick="toggleSolution('sol-4-c')" type="button">Voir la correction détaillée</button>
+<div class="solution" id="sol-4-c"><strong>Correction — C — Les fractions équivalentes dans des situations :</strong><ol class="correction-list"><li><span aria-label="2 sur 4" class="fraction"><span class="top">2</span><span class="bottom">4</span></span> = <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span>.</li><li><span aria-label="3 sur 6" class="fraction"><span class="top">3</span><span class="bottom">6</span></span> = <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span>.</li><li><span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span> litre.</li><li><span aria-label="4 sur 10" class="fraction"><span class="top">4</span><span class="bottom">10</span></span>.</li><li>1 tasse : deux fois <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span> tasse.</li><li><span aria-label="3 sur 4" class="fraction"><span class="top">3</span><span class="bottom">4</span></span> mètre.</li></ol></div>
+</section>
+<section aria-labelledby="head-assessment-4" class="assessment floor-assessment">
+<div class="assessment-heading"><p class="floor-label">Évaluation de fin d’étage</p><h3 id="head-assessment-4">Évaluation de l’étage 4 — Équivalences et simplification</h3></div>
+<p>Fais cette évaluation sans regarder les corrections. Montre tes démarches lorsque c’est demandé.</p><p class="scoreline">Prénom : <span class="answer wide"></span>   Date : <span class="answer wide"></span>   Résultat : <span class="answer"></span> / 6</p>
+<div class="task"><div class="task-prompt"><strong>1.</strong> <span class="verbe">Complète</span> : <span aria-label="2 sur 3" class="fraction"><span class="top">2</span><span class="bottom">3</span></span> = <span aria-label="? sur 9" class="fraction"><span class="top">?</span><span class="bottom">9</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>2.</strong> <span class="verbe">Entoure</span> une fraction équivalente à <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span> : <span aria-label="3 sur 8" class="fraction"><span class="top">3</span><span class="bottom">8</span></span>, <span aria-label="4 sur 8" class="fraction"><span class="top">4</span><span class="bottom">8</span></span> ou <span aria-label="4 sur 6" class="fraction"><span class="top">4</span><span class="bottom">6</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>3.</strong> <span class="verbe">Simplifie</span> <span aria-label="8 sur 12" class="fraction"><span class="top">8</span><span class="bottom">12</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>4.</strong> <span class="verbe">Simplifie</span> <span aria-label="14 sur 21" class="fraction"><span class="top">14</span><span class="bottom">21</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>5.</strong> <span class="verbe">Écris</span> une fraction équivalente à <span aria-label="3 sur 5" class="fraction"><span class="top">3</span><span class="bottom">5</span></span> avec 20 au <span class="key">dénominateur</span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>6.</strong> <span class="verbe">Explique</span> pourquoi <span aria-label="2 sur 4" class="fraction"><span class="top">2</span><span class="bottom">4</span></span> et <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span> sont égales. <div class="answer-lines"><div class="answer-line"></div><div class="answer-line"></div></div></div></div>
+<p class="small">Après l’épreuve, consulte la correction et repère les notions à retravailler.</p>
+<button class="no-print solution-toggle" onclick="toggleSolution('assessment-4')" type="button">Voir le corrigé de l’évaluation</button>
+<div class="solution" id="assessment-4"><strong>Corrigé — Évaluation de l’étage 4 — Équivalences et simplification :</strong><ol class="correction-list"><li>6.</li><li><span aria-label="4 sur 8" class="fraction"><span class="top">4</span><span class="bottom">8</span></span>.</li><li><span aria-label="2 sur 3" class="fraction"><span class="top">2</span><span class="bottom">3</span></span> (division par 4).</li><li><span aria-label="2 sur 3" class="fraction"><span class="top">2</span><span class="bottom">3</span></span> (division par 7).</li><li><span aria-label="12 sur 20" class="fraction"><span class="top">12</span><span class="bottom">20</span></span>.</li><li>Les deux représentent la même quantité ; on peut partager chaque moitié en deux quarts, donc <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span> = <span aria-label="2 sur 4" class="fraction"><span class="top">2</span><span class="bottom">4</span></span>.</li></ol></div>
+</section>
+</section>
+</main>
+<script>
+  function toggleSolution(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('visible');
+  }
+  function toggleAllSolutions() {
+    const solutions = [...document.querySelectorAll('.solution')];
+    const shouldShow = solutions.some(s => !s.classList.contains('visible'));
+    solutions.forEach(s => s.classList.toggle('visible', shouldShow));
+  }
+  function speakPage() {
+    if (!('speechSynthesis' in window)) {
+      alert("La lecture vocale n'est pas prise en charge par ce navigateur."); return;
+    }
+    window.speechSynthesis.cancel();
+    const source = document.body.classList.contains('russian')
+      ? document.querySelector('main').innerText
+      : [...document.querySelectorAll('.fr')].map(e => e.innerText).join('. ') || document.querySelector('main').innerText;
+    const textToRead = source.replace(/Voir la correction détaillée/g, '').slice(0, 12000);
+    const utterance = new SpeechSynthesisUtterance(textToRead);
+    utterance.lang = document.body.classList.contains('russian') ? 'ru-RU' : 'fr-CH';
+    utterance.rate = 0.88;
+    window.speechSynthesis.speak(utterance);
+  }
+  const panel = document.getElementById('canvasPanel');
+  const canvas = document.getElementById('scratch');
+  const ctx = canvas.getContext('2d');
+  let drawing = false;
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, rect.width * ratio);
+    canvas.height = Math.max(1, rect.height * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#222';
+  }
+  function openCanvas() { panel.classList.add('visible'); resizeCanvas(); }
+  function closeCanvas() { panel.classList.remove('visible'); }
+  function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  function point(e) {
+    const r = canvas.getBoundingClientRect();
+    return {x:e.clientX-r.left, y:e.clientY-r.top};
+  }
+  canvas.addEventListener('pointerdown', e => {
+    drawing = true; canvas.setPointerCapture(e.pointerId);
+    const p = point(e); ctx.beginPath(); ctx.moveTo(p.x,p.y);
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!drawing) return; const p = point(e); ctx.lineTo(p.x,p.y); ctx.stroke();
+  });
+  canvas.addEventListener('pointerup', () => drawing = false);
+  canvas.addEventListener('pointercancel', () => drawing = false);
+  window.addEventListener('resize', () => { if (panel.classList.contains('visible')) resizeCanvas(); });
+
+
+  // Interactive coloring: the same cells remain printable for pencil coloring.
+  function toggleColorCell(cell) {
+    const active = !cell.classList.contains('colored');
+    cell.classList.toggle('colored', active);
+    cell.setAttribute('aria-pressed', active ? 'true' : 'false');
+    const task = cell.closest('.color-task');
+    if (task) {
+      const feedback = task.querySelector('.color-feedback');
+      if (feedback) feedback.textContent = '';
+    }
+  }
+  document.addEventListener('click', function(event) {
+    const cell = event.target.closest('.color-cell');
+    if (cell) {
+      event.preventDefault();
+      toggleColorCell(cell);
+      return;
+    }
+    const check = event.target.closest('.check-color');
+    if (check) {
+      const task = check.closest('.color-task');
+      const selected = task ? task.querySelectorAll('.color-cell.colored').length : 0;
+      const expected = task ? Number(task.dataset.expected) : 0;
+      const feedback = task && task.querySelector('.color-feedback');
+      if (feedback) {
+        feedback.textContent = selected === expected
+          ? 'Correct : ' + selected + ' part' + (selected > 1 ? 's' : '') + ' coloriée' + (selected > 1 ? 's' : '') + '.'
+          : 'Tu as colorié ' + selected + ' part' + (selected > 1 ? 's' : '') + ' ; il en faut ' + expected + '. Ajuste puis vérifie à nouveau.';
+      }
+      return;
+    }
+    const reset = event.target.closest('.reset-color');
+    if (reset) {
+      const task = reset.closest('.color-task');
+      if (task) {
+        task.querySelectorAll('.color-cell.colored').forEach(cell => {
+          cell.classList.remove('colored'); cell.setAttribute('aria-pressed','false');
+        });
+        const feedback = task.querySelector('.color-feedback');
+        if (feedback) feedback.textContent = '';
+      }
+    }
+  });
+  document.addEventListener('keydown', function(event) {
+    if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.pizza-color .color-cell')) {
+      event.preventDefault(); toggleColorCell(event.target);
+    }
+  });
+  // Update the help button label so the action is clear.
+  function toggleRussian() {
+    document.body.classList.toggle('russian');
+    const button = [...document.querySelectorAll('.toolbar button')].find(b => b.textContent.includes('aides en russe') || b.textContent.includes('aide en russe'));
+    if (button) button.textContent = document.body.classList.contains('russian') ? 'Masquer les aides en russe' : 'Afficher / masquer les aides en russe';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr">
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Support — Étage 7 : Addition et soustraction : même dénominateur</title>
+<style>
+  :root {
+    --green:#2E7D32; --green-bg:#F1F8E9;
+    --blue:#1976D2; --blue-bg:#E3F2FD;
+    --red:#D32F2F; --red-bg:#FFEBEE;
+    --ink:#202124; --line:#777; --paper:#fff;
+  }
+  * { box-sizing:border-box; }
+  html { font-size:11pt; }
+  body {
+    margin:0; background:#eceff1; color:var(--ink);
+    font-family:Arial,"Helvetica Neue",Helvetica,sans-serif;
+    font-size:11pt; line-height:1.5; letter-spacing:.03ch;
+  }
+  .toolbar {
+    position:sticky; top:0; z-index:10; display:flex; flex-wrap:wrap;
+    gap:.5rem; padding:.75rem; background:#fff; border-bottom:1px solid #bbb;
+  }
+  button {
+    font:inherit; letter-spacing:normal; padding:.5rem .8rem; border:1px solid #555;
+    border-radius:5px; background:#fff; color:#111; cursor:pointer;
+  }
+  button:focus, input:focus { outline:3px solid #ffbf47; outline-offset:2px; }
+  main { max-width:210mm; margin:1rem auto; background:var(--paper); padding:15mm; box-shadow:0 2px 12px #0002; }
+  h1,h2,h3 { line-height:1.2; letter-spacing:normal; }
+  h1 { font-size:25pt; margin:.2rem 0 1rem; }
+  h2 { font-size:19pt; margin:0 0 1rem; }
+  h3 { font-size:13pt; margin:.8rem 0 .4rem; }
+  p { margin:.35rem 0 .7rem; }
+  .subtitle { font-size:13pt; }
+  .theory,.example,.exercise { padding:.8rem 1rem; margin:1rem 0; border-left:5px solid; break-inside:avoid; }
+  .theory { border-color:var(--green); background:var(--green-bg); }
+  .example { border-color:var(--blue); background:var(--blue-bg); }
+  .exercise { border-color:var(--red); background:var(--red-bg); }
+  .theory h3 { color:var(--green); } .example h3 { color:var(--blue); } .exercise h3 { color:var(--red); }
+  .verbe { color:#b71c1c; font-weight:700; text-decoration:underline; text-decoration-thickness:1.5px; }
+  .key { color:#075c9e; font-weight:700; }
+  .key-green { color:#236b27; font-weight:700; }
+  .answer {
+    display:inline-block; min-width:4.5rem; height:1.8rem; vertical-align:middle;
+    border:1.5px dashed #555; background:#fff; padding:0 .25rem;
+  }
+  .answer.wide { min-width:9rem; } .answer.xwide { min-width:15rem; }
+  .answer-line { min-height:2.1rem; border-bottom:1.5px dashed #555; margin:.35rem 0 .6rem; }
+  .task { margin:.7rem 0; }
+  .fraction { display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; line-height:1.05; min-width:1.3em; margin:0 .1em; }
+  .fraction .top { border-bottom:1.5px solid currentColor; padding:0 .15em .1em; }
+  .fraction .bottom { padding:.1em .15em 0; }
+
+  .worked-visual { margin:.85rem 0 .2rem; padding:.75rem; background:#fff; border:1px solid #b8c7d3; border-radius:8px; break-inside:avoid; }
+  .worked-visual h4 { margin:0 0 .45rem; font-size:11.5pt; color:#164f7a; }
+  .worked-visual svg { display:block; width:100%; max-width:620px; height:auto; margin:.35rem auto; }
+  .worked-steps { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.4rem .8rem; margin:.5rem 0 0; padding:0; list-style:none; counter-reset:step; }
+  .worked-steps li { counter-increment:step; position:relative; padding:.35rem .45rem .35rem 2rem; background:#f5f9fc; border-radius:4px; }
+  .worked-steps li::before { content:counter(step); position:absolute; left:.45rem; top:.35rem; width:1.2rem; height:1.2rem; line-height:1.2rem; text-align:center; border-radius:50%; color:#fff; background:#1976D2; font-weight:bold; }
+  .svg-label { font: 15px Arial, sans-serif; fill:#202124; }
+  .svg-small { font: 12px Arial, sans-serif; fill:#202124; }
+  .svg-arrow { stroke:#1976D2; stroke-width:2.5; fill:none; marker-end:url(#arrowhead); }
+  @media(max-width:650px) { .worked-steps { grid-template-columns:1fr; } }
+  @media print { .worked-visual { background:#fff; border-color:#777; } .worked-steps li { background:#fff; border:1px solid #ddd; } .worked-steps li::before { background:#555; } }
+
+  .visual-row { display:flex; flex-wrap:wrap; gap:1rem; align-items:center; margin:.5rem 0; }
+  .shape { display:inline-flex; border:2px solid #333; min-height:2rem; background:#fff; overflow:hidden; vertical-align:middle; }
+  .shape span { flex:1; min-width:1.1rem; border-right:1px solid #555; }
+  .shape span:last-child { border-right:0; }
+  .shade { background:#b7d9f7; }
+  .circle { width:5rem; height:5rem; border:2px solid #333; border-radius:50%; display:inline-block; background:conic-gradient(#b7d9f7 0 25%, #fff 25% 100%); }
+  .numberline { position:relative; height:3rem; margin:1rem .5rem 1.5rem; border-top:2px solid #222; }
+  .numberline .tick { position:absolute; top:-.45rem; height:.9rem; border-left:2px solid #222; }
+  .numberline .label { position:absolute; top:.55rem; transform:translateX(-50%); white-space:nowrap; }
+  .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.6rem; }
+  .small { font-size:9.5pt; }
+  .solution { display:none; margin:.5rem 0; padding:.7rem; background:#fffde7; border:1px solid #c0a500; }
+  .solution.visible { display:block; }
+  .canvas-panel { display:none; position:fixed; inset:5vh 5vw; z-index:20; background:#fff; border:2px solid #333; box-shadow:0 0 0 100vmax #0008; padding:1rem; }
+  .canvas-panel.visible { display:flex; flex-direction:column; gap:.5rem; }
+  canvas { border:1px dashed #666; width:100%; flex:1; touch-action:none; }
+  .ru { display:none; color:#333; }
+  body.russian .fr { display:none; } body.russian .ru { display:block; }
+  .floor { page-break-before:always; break-before:page; padding-top:.5rem; }
+  .floor:first-of-type { page-break-before:auto; break-before:auto; }
+  .floor-label { color:#555; font-size:10pt; text-transform:uppercase; letter-spacing:.1em; }
+  .checkrow { display:flex; align-items:center; gap:.5rem; margin:.35rem 0; }
+  input[type="text"] { font:inherit; width:5rem; border:1px dashed #555; background:#fff; padding:.15rem; }
+  @page { size:A4; margin:15mm; }
+  @media print {
+    body { background:#fff; font-size:11pt; }
+    .toolbar,.canvas-panel,.no-print { display:none !important; }
+    main { max-width:none; margin:0; padding:0; box-shadow:none; }
+    .floor { page-break-before:always; break-before:page; }
+    .floor:first-of-type { page-break-before:auto; break-before:auto; }
+    .solution { display:none !important; }
+    .theory,.example,.exercise { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+    a { color:inherit; text-decoration:none; }
+  }
+  @media (max-width:650px) {
+    main { margin:0; padding:1rem; }
+    .grid { grid-template-columns:1fr; }
+  }
+
+  body.russian .ru { display:block; }
+  body:not(.russian) .ru { display:none; }
+
+  .standalone-header { margin-bottom: 1rem; }
+  .standalone-instructions { margin-bottom: 1.2rem; }
+  @media print { main > .floor:first-of-type { page-break-before: auto !important; break-before: auto !important; } }
+</style>
+</head>
+<body>
+<nav aria-label="Outils du cahier" class="toolbar no-print">
+<button onclick="window.print()">Imprimer / enregistrer en PDF</button>
+<button onclick="toggleRussian()">Afficher / masquer les aides en russe</button>
+<button onclick="speakPage()">🔊 Lire la page</button>
+<button onclick="openCanvas()">Ouvrir le brouillon</button>
+<button onclick="toggleAllSolutions()">Afficher / masquer les corrections</button>
+</nav>
+<div aria-label="Brouillon interactif" class="canvas-panel no-print" id="canvasPanel" role="dialog">
+<div><strong>Brouillon libre</strong> — dessine avec la souris, le doigt ou un stylet.
+    <button onclick="clearCanvas()">Effacer</button>
+<button onclick="closeCanvas()">Fermer</button></div>
+<canvas aria-label="Zone de dessin" id="scratch"></canvas>
+</div>
+<main>
+<header class="standalone-header">
+<p class="floor-label">Support d’entraînement • Mathématiques • 7H</p>
+<h1>Addition et soustraction : même dénominateur</h1>
+<p class="subtitle">Étage 7 — théorie, exemples, exercices et évaluation</p>
+<p>Prénom : <span class="answer xwide"></span> &nbsp; Date : <span class="answer wide"></span></p>
+<div class="theory standalone-instructions">
+<h3>Comment utiliser ce support ?</h3>
+<p>Observe le rappel et l’exemple résolu. Fais ensuite les trois exercices dans l’ordre, puis passe à l’évaluation. Aux étages 5 et 8, une épreuve récapitulative est également proposée.</p>
+<p class="small">Pour les coloriages : clique sur les parts à l’écran, puis vérifie ta réponse, ou imprime le support et colorie au crayon. Les corrections sont à ouvrir après une première tentative.</p>
+<p class="ru">Прочитай правило и пример. Выполни три упражнения по порядку, затем пройди проверочную работу. На этажах 5 и 8 есть также итоговое задание.</p>
+</div>
+</header>
+<section class="floor" id="etage7">
+<p class="floor-label">Étage 7</p><h2>Addition et soustraction : même dénominateur</h2>
+<div class="theory"><h3>Rappel</h3>
+<p>Si les dénominateurs sont identiques, on additionne ou soustrait les numérateurs et on garde le dénominateur. Le résultat peut ensuite être simplifié.</p>
+<p class="ru">Если знаменатели одинаковы, складывают или вычитают числители, а знаменатель оставляют прежним. Затем результат можно сократить.</p>
+</div>
+<div class="example"><h3>Exemple</h3><p>2/7 + 3/7 = 5/7.    6/8 − 2/8 = 4/8 = 1/2.</p><p class="ru">2/7 + 3/7 = 5/7. 6/8 − 2/8 = 4/8 = 1/2.</p><div class="worked-visual"><h4>Additionner : les parts gardent la même taille</h4>
+<svg aria-label="Bande divisée en sept cases égales : deux cases bleues et trois vertes, soit cinq cases colorées sur sept." role="img" viewbox="0 0 560 150">
+<text class="svg-label" x="18" y="38">2/7</text><text class="svg-label" x="18" y="91">+ 3/7</text><g stroke="#333" stroke-width="1.5"><rect fill="#8fc4ee" height="34" width="48" x="95" y="12"></rect><rect fill="#8fc4ee" height="34" width="48" x="143" y="12"></rect><rect fill="#fff" height="34" width="48" x="191" y="12"></rect><rect fill="#fff" height="34" width="48" x="239" y="12"></rect><rect fill="#fff" height="34" width="48" x="287" y="12"></rect><rect fill="#fff" height="34" width="48" x="335" y="12"></rect><rect fill="#fff" height="34" width="48" x="383" y="12"></rect>
+<rect fill="#8fc4ee" height="34" width="48" x="95" y="64"></rect><rect fill="#8fc4ee" height="34" width="48" x="143" y="64"></rect><rect fill="#b5dfb8" height="34" width="48" x="191" y="64"></rect><rect fill="#b5dfb8" height="34" width="48" x="239" y="64"></rect><rect fill="#b5dfb8" height="34" width="48" x="287" y="64"></rect><rect fill="#fff" height="34" width="48" x="335" y="64"></rect><rect fill="#fff" height="34" width="48" x="383" y="64"></rect></g><path d="M445 55 H475" stroke="#1976D2" stroke-width="3"></path><path d="M467 47 L477 55 L467 63" fill="none" stroke="#1976D2" stroke-width="3"></path><text class="svg-label" x="485" y="61">5/7</text><text class="svg-label" text-anchor="middle" x="280" y="130">2/7 + 3/7 = (2 + 3)/7 = 5/7</text></svg>
+<ol class="worked-steps"><li>Les septièmes sont des parts de même taille.</li><li>Je réunis les 2 parts et les 3 parts.</li><li>Je compte 2 + 3 = 5 parts colorées.</li><li>Le dénominateur reste 7 : le résultat est 5/7.</li></ol></div>
+</div>
+<section aria-labelledby="head-sol-7-a" class="exercise exercise-card">
+<h3 id="head-sol-7-a">A — J’additionne et je soustrais des parts de même taille</h3><p class="small exercise-lead">Quand les dénominateurs sont identiques, on additionne ou soustrait les numérateurs.</p>
+<div class="task"><div class="task-prompt"><strong>1.</strong> <span class="verbe">Calcule</span> <span aria-label="2 sur 7" class="fraction"><span class="top">2</span><span class="bottom">7</span></span> + <span aria-label="3 sur 7" class="fraction"><span class="top">3</span><span class="bottom">7</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>2.</strong> <span class="verbe">Calcule</span> <span aria-label="6 sur 9" class="fraction"><span class="top">6</span><span class="bottom">9</span></span> − <span aria-label="2 sur 9" class="fraction"><span class="top">2</span><span class="bottom">9</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>3.</strong> <span class="verbe">Calcule</span> <span aria-label="3 sur 10" class="fraction"><span class="top">3</span><span class="bottom">10</span></span> + <span aria-label="4 sur 10" class="fraction"><span class="top">4</span><span class="bottom">10</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>4.</strong> <span class="verbe">Calcule</span> et simplifie <span aria-label="8 sur 12" class="fraction"><span class="top">8</span><span class="bottom">12</span></span> − <span aria-label="5 sur 12" class="fraction"><span class="top">5</span><span class="bottom">12</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>5.</strong> <span class="verbe">Calcule</span> <span aria-label="1 sur 5" class="fraction"><span class="top">1</span><span class="bottom">5</span></span> + <span aria-label="2 sur 5" class="fraction"><span class="top">2</span><span class="bottom">5</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>6.</strong> <span class="verbe">Calcule</span> et simplifie <span aria-label="7 sur 8" class="fraction"><span class="top">7</span><span class="bottom">8</span></span> − <span aria-label="3 sur 8" class="fraction"><span class="top">3</span><span class="bottom">8</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div>
+<button class="no-print solution-toggle" onclick="toggleSolution('sol-7-a')" type="button">Voir la correction détaillée</button>
+<div class="solution" id="sol-7-a"><strong>Correction — A — J’additionne et je soustrais des parts de même taille :</strong><ol class="correction-list"><li><span aria-label="5 sur 7" class="fraction"><span class="top">5</span><span class="bottom">7</span></span>.</li><li><span aria-label="4 sur 9" class="fraction"><span class="top">4</span><span class="bottom">9</span></span>.</li><li><span aria-label="7 sur 10" class="fraction"><span class="top">7</span><span class="bottom">10</span></span>.</li><li><span aria-label="3 sur 12" class="fraction"><span class="top">3</span><span class="bottom">12</span></span> = <span aria-label="1 sur 4" class="fraction"><span class="top">1</span><span class="bottom">4</span></span>.</li><li><span aria-label="3 sur 5" class="fraction"><span class="top">3</span><span class="bottom">5</span></span>.</li><li><span aria-label="4 sur 8" class="fraction"><span class="top">4</span><span class="bottom">8</span></span> = <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span>.</li></ol></div>
+</section>
+<section aria-labelledby="head-sol-7-b" class="exercise exercise-card">
+<h3 id="head-sol-7-b">B — Je complète et je vérifie par un dessin</h3><p class="small exercise-lead">Le dénominateur reste identique parce que les parts ont la même taille.</p>
+<div class="task"><div class="task-prompt"><strong>1.</strong> <span class="verbe">Dessine</span> une bande de 6 parts : montre <span aria-label="2 sur 6" class="fraction"><span class="top">2</span><span class="bottom">6</span></span> puis ajoute <span aria-label="3 sur 6" class="fraction"><span class="top">3</span><span class="bottom">6</span></span>. Quelle fraction obtiens-tu ? <div class="drawing-space"><p class="small">Espace de dessin : partage en parts égales, puis colorie si nécessaire.</p><div class="blank-box"></div></div><p class="small">Réponse : <span class="answer wide"></span></p></div></div><div class="task"><div class="task-prompt"><strong>2.</strong> <span class="verbe">Complète</span> : <span aria-label="? sur 8" class="fraction"><span class="top">?</span><span class="bottom">8</span></span> + <span aria-label="2 sur 8" class="fraction"><span class="top">2</span><span class="bottom">8</span></span> = <span aria-label="5 sur 8" class="fraction"><span class="top">5</span><span class="bottom">8</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>3.</strong> <span class="verbe">Complète</span> : <span aria-label="7 sur 10" class="fraction"><span class="top">7</span><span class="bottom">10</span></span> − <span aria-label="? sur 10" class="fraction"><span class="top">?</span><span class="bottom">10</span></span> = <span aria-label="4 sur 10" class="fraction"><span class="top">4</span><span class="bottom">10</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>4.</strong> <span class="verbe">Simplifie</span> le résultat <span aria-label="4 sur 6" class="fraction"><span class="top">4</span><span class="bottom">6</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>5.</strong> <span class="verbe">Réponds :</span> Deux parts sur 8 sont colorées ; on en colorie encore 3. Quelle fraction est colorée maintenant ? <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>6.</strong> <span class="verbe">Réponds :</span> Un élève écrit <span aria-label="2 sur 5" class="fraction"><span class="top">2</span><span class="bottom">5</span></span> + <span aria-label="1 sur 5" class="fraction"><span class="top">1</span><span class="bottom">5</span></span> = <span aria-label="3 sur 10" class="fraction"><span class="top">3</span><span class="bottom">10</span></span>. Corrige son calcul. <div class="answer-lines"><div class="answer-line"></div><div class="answer-line"></div></div></div></div>
+<button class="no-print solution-toggle" onclick="toggleSolution('sol-7-b')" type="button">Voir la correction détaillée</button>
+<div class="solution" id="sol-7-b"><strong>Correction — B — Je complète et je vérifie par un dessin :</strong><ol class="correction-list"><li><span aria-label="2 sur 6" class="fraction"><span class="top">2</span><span class="bottom">6</span></span> + <span aria-label="3 sur 6" class="fraction"><span class="top">3</span><span class="bottom">6</span></span> = <span aria-label="5 sur 6" class="fraction"><span class="top">5</span><span class="bottom">6</span></span>.</li><li>3 : <span aria-label="3 sur 8" class="fraction"><span class="top">3</span><span class="bottom">8</span></span> + <span aria-label="2 sur 8" class="fraction"><span class="top">2</span><span class="bottom">8</span></span> = <span aria-label="5 sur 8" class="fraction"><span class="top">5</span><span class="bottom">8</span></span>.</li><li>3 : <span aria-label="7 sur 10" class="fraction"><span class="top">7</span><span class="bottom">10</span></span> − <span aria-label="3 sur 10" class="fraction"><span class="top">3</span><span class="bottom">10</span></span> = <span aria-label="4 sur 10" class="fraction"><span class="top">4</span><span class="bottom">10</span></span>.</li><li><span aria-label="2 sur 3" class="fraction"><span class="top">2</span><span class="bottom">3</span></span>.</li><li><span aria-label="5 sur 8" class="fraction"><span class="top">5</span><span class="bottom">8</span></span>.</li><li><span aria-label="2 sur 5" class="fraction"><span class="top">2</span><span class="bottom">5</span></span> + <span aria-label="1 sur 5" class="fraction"><span class="top">1</span><span class="bottom">5</span></span> = <span aria-label="3 sur 5" class="fraction"><span class="top">3</span><span class="bottom">5</span></span> : le dénominateur reste 5.</li></ol></div>
+</section>
+<section aria-labelledby="head-sol-7-c" class="exercise exercise-card">
+<h3 id="head-sol-7-c">C — Les opérations dans la vie courante</h3><p class="small exercise-lead">Additionner des portions ou calculer ce qu’il reste.</p>
+<div class="task"><div class="task-prompt"><strong>1.</strong> <span class="verbe">Réponds :</span> Tu utilises <span aria-label="2 sur 8" class="fraction"><span class="top">2</span><span class="bottom">8</span></span> de tasse de farine, puis <span aria-label="3 sur 8" class="fraction"><span class="top">3</span><span class="bottom">8</span></span> de tasse. Quelle quantité as-tu utilisée ? <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>2.</strong> <span class="verbe">Réponds :</span> Une gourde est remplie aux <span aria-label="9 sur 10" class="fraction"><span class="top">9</span><span class="bottom">10</span></span>. Tu bois <span aria-label="4 sur 10" class="fraction"><span class="top">4</span><span class="bottom">10</span></span> de sa capacité. Quelle fraction reste-t-il ? <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>3.</strong> <span class="verbe">Réponds :</span> Tu manges <span aria-label="2 sur 6" class="fraction"><span class="top">2</span><span class="bottom">6</span></span> d’une pizza puis encore <span aria-label="3 sur 6" class="fraction"><span class="top">3</span><span class="bottom">6</span></span>. Quelle fraction as-tu mangée ? <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>4.</strong> <span class="verbe">Réponds :</span> Tu marches <span aria-label="3 sur 7" class="fraction"><span class="top">3</span><span class="bottom">7</span></span> km le matin et <span aria-label="2 sur 7" class="fraction"><span class="top">2</span><span class="bottom">7</span></span> km l’après-midi. Quelle distance as-tu parcourue ? <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>5.</strong> <span class="verbe">Réponds :</span> Il reste <span aria-label="7 sur 12" class="fraction"><span class="top">7</span><span class="bottom">12</span></span> d’une tablette. Tu manges <span aria-label="4 sur 12" class="fraction"><span class="top">4</span><span class="bottom">12</span></span>. Quelle fraction reste-t-il ? <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>6.</strong> <span class="verbe">Réponds :</span> Un gâteau est divisé en 8 parts. On en mange <span aria-label="5 sur 8" class="fraction"><span class="top">5</span><span class="bottom">8</span></span> puis <span aria-label="1 sur 8" class="fraction"><span class="top">1</span><span class="bottom">8</span></span> de plus. Quelle fraction a été mangée ? <span aria-label="Espace de réponse" class="answer"></span></div></div>
+<button class="no-print solution-toggle" onclick="toggleSolution('sol-7-c')" type="button">Voir la correction détaillée</button>
+<div class="solution" id="sol-7-c"><strong>Correction — C — Les opérations dans la vie courante :</strong><ol class="correction-list"><li><span aria-label="5 sur 8" class="fraction"><span class="top">5</span><span class="bottom">8</span></span> de tasse.</li><li><span aria-label="5 sur 10" class="fraction"><span class="top">5</span><span class="bottom">10</span></span> = <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span>.</li><li><span aria-label="5 sur 6" class="fraction"><span class="top">5</span><span class="bottom">6</span></span>.</li><li><span aria-label="5 sur 7" class="fraction"><span class="top">5</span><span class="bottom">7</span></span> km.</li><li><span aria-label="3 sur 12" class="fraction"><span class="top">3</span><span class="bottom">12</span></span> = <span aria-label="1 sur 4" class="fraction"><span class="top">1</span><span class="bottom">4</span></span>.</li><li><span aria-label="6 sur 8" class="fraction"><span class="top">6</span><span class="bottom">8</span></span> = <span aria-label="3 sur 4" class="fraction"><span class="top">3</span><span class="bottom">4</span></span>.</li></ol></div>
+</section>
+<section aria-labelledby="head-assessment-7" class="assessment floor-assessment">
+<div class="assessment-heading"><p class="floor-label">Évaluation de fin d’étage</p><h3 id="head-assessment-7">Évaluation de l’étage 7 — Même dénominateur</h3></div>
+<p>Fais cette évaluation sans regarder les corrections. Montre tes démarches lorsque c’est demandé.</p><p class="scoreline">Prénom : <span class="answer wide"></span>   Date : <span class="answer wide"></span>   Résultat : <span class="answer"></span> / 6</p>
+<div class="task"><div class="task-prompt"><strong>1.</strong> <span class="verbe">Calcule</span> <span aria-label="3 sur 8" class="fraction"><span class="top">3</span><span class="bottom">8</span></span> + <span aria-label="2 sur 8" class="fraction"><span class="top">2</span><span class="bottom">8</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>2.</strong> <span class="verbe">Calcule</span> <span aria-label="7 sur 10" class="fraction"><span class="top">7</span><span class="bottom">10</span></span> − <span aria-label="4 sur 10" class="fraction"><span class="top">4</span><span class="bottom">10</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>3.</strong> <span class="verbe">Calcule</span> et simplifie <span aria-label="5 sur 6" class="fraction"><span class="top">5</span><span class="bottom">6</span></span> − <span aria-label="2 sur 6" class="fraction"><span class="top">2</span><span class="bottom">6</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>4.</strong> <span class="verbe">Complète</span> : <span aria-label="? sur 9" class="fraction"><span class="top">?</span><span class="bottom">9</span></span> + <span aria-label="4 sur 9" class="fraction"><span class="top">4</span><span class="bottom">9</span></span> = <span aria-label="7 sur 9" class="fraction"><span class="top">7</span><span class="bottom">9</span></span>. <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>5.</strong> <span class="verbe">Réponds :</span> Une bouteille contient <span aria-label="8 sur 10" class="fraction"><span class="top">8</span><span class="bottom">10</span></span> L. On utilise <span aria-label="3 sur 10" class="fraction"><span class="top">3</span><span class="bottom">10</span></span> L. Quelle quantité reste-t-il ? <span aria-label="Espace de réponse" class="answer"></span></div></div><div class="task"><div class="task-prompt"><strong>6.</strong> <span class="verbe">Explique</span> pourquoi on ne change pas le <span class="key">dénominateur</span> dans <span aria-label="2 sur 7" class="fraction"><span class="top">2</span><span class="bottom">7</span></span> + <span aria-label="3 sur 7" class="fraction"><span class="top">3</span><span class="bottom">7</span></span>. <div class="answer-lines"><div class="answer-line"></div><div class="answer-line"></div></div></div></div>
+<p class="small">Après l’épreuve, consulte la correction et repère les notions à retravailler.</p>
+<button class="no-print solution-toggle" onclick="toggleSolution('assessment-7')" type="button">Voir le corrigé de l’évaluation</button>
+<div class="solution" id="assessment-7"><strong>Corrigé — Évaluation de l’étage 7 — Même dénominateur :</strong><ol class="correction-list"><li><span aria-label="5 sur 8" class="fraction"><span class="top">5</span><span class="bottom">8</span></span>.</li><li><span aria-label="3 sur 10" class="fraction"><span class="top">3</span><span class="bottom">10</span></span>.</li><li><span aria-label="3 sur 6" class="fraction"><span class="top">3</span><span class="bottom">6</span></span> = <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span>.</li><li>3.</li><li><span aria-label="5 sur 10" class="fraction"><span class="top">5</span><span class="bottom">10</span></span> = <span aria-label="1 sur 2" class="fraction"><span class="top">1</span><span class="bottom">2</span></span> L.</li><li>Les parts sont des septièmes dans les deux fractions ; on compte simplement le total de parts : <span aria-label="5 sur 7" class="fraction"><span class="top">5</span><span class="bottom">7</span></span>.</li></ol></div>
+</section>
+</section>
+</main>
+<script>
+  function toggleSolution(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('visible');
+  }
+  function toggleAllSolutions() {
+    const solutions = [...document.querySelectorAll('.solution')];
+    const shouldShow = solutions.some(s => !s.classList.contains('visible'));
+    solutions.forEach(s => s.classList.toggle('visible', shouldShow));
+  }
+  function speakPage() {
+    if (!('speechSynthesis' in window)) {
+      alert("La lecture vocale n'est pas prise en charge par ce navigateur."); return;
+    }
+    window.speechSynthesis.cancel();
+    const source = document.body.classList.contains('russian')
+      ? document.querySelector('main').innerText
+      : [...document.querySelectorAll('.fr')].map(e => e.innerText).join('. ') || document.querySelector('main').innerText;
+    const textToRead = source.replace(/Voir la correction détaillée/g, '').slice(0, 12000);
+    const utterance = new SpeechSynthesisUtterance(textToRead);
+    utterance.lang = document.body.classList.contains('russian') ? 'ru-RU' : 'fr-CH';
+    utterance.rate = 0.88;
+    window.speechSynthesis.speak(utterance);
+  }
+  const panel = document.getElementById('canvasPanel');
+  const canvas = document.getElementById('scratch');
+  const ctx = canvas.getContext('2d');
+  let drawing = false;
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, rect.width * ratio);
+    canvas.height = Math.max(1, rect.height * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#222';
+  }
+  function openCanvas() { panel.classList.add('visible'); resizeCanvas(); }
+  function closeCanvas() { panel.classList.remove('visible'); }
+  function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  function point(e) {
+    const r = canvas.getBoundingClientRect();
+    return {x:e.clientX-r.left, y:e.clientY-r.top};
+  }
+  canvas.addEventListener('pointerdown', e => {
+    drawing = true; canvas.setPointerCapture(e.pointerId);
+    const p = point(e); ctx.beginPath(); ctx.moveTo(p.x,p.y);
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!drawing) return; const p = point(e); ctx.lineTo(p.x,p.y); ctx.stroke();
+  });
+  canvas.addEventListener('pointerup', () => drawing = false);
+  canvas.addEventListener('pointercancel', () => drawing = false);
+  window.addEventListener('resize', () => { if (panel.classList.contains('visible')) resizeCanvas(); });
+
+
+  // Interactive coloring: the same cells remain printable for pencil coloring.
+  function toggleColorCell(cell) {
+    const active = !cell.classList.contains('colored');
+    cell.classList.toggle('colored', active);
+    cell.setAttribute('aria-pressed', active ? 'true' : 'false');
+    const task = cell.closest('.color-task');
+    if (task) {
+      const feedback = task.querySelector('.color-feedback');
+      if (feedback) feedback.textContent = '';
+    }
+  }
+  document.addEventListener('click', function(event) {
+    const cell = event.target.closest('.color-cell');
+    if (cell) {
+      event.preventDefault();
+      toggleColorCell(cell);
+      return;
+    }
+    const check = event.target.closest('.check-color');
+    if (check) {
+      const task = check.closest('.color-task');
+      const selected = task ? task.querySelectorAll('.color-cell.colored').length : 0;
+      const expected = task ? Number(task.dataset.expected) : 0;
+      const feedback = task && task.querySelector('.color-feedback');
+      if (feedback) {
+        feedback.textContent = selected === expected
+          ? 'Correct : ' + selected + ' part' + (selected > 1 ? 's' : '') + ' coloriée' + (selected > 1 ? 's' : '') + '.'
+          : 'Tu as colorié ' + selected + ' part' + (selected > 1 ? 's' : '') + ' ; il en faut ' + expected + '. Ajuste puis vérifie à nouveau.';
+      }
+      return;
+    }
+    const reset = event.target.closest('.reset-color');
+    if (reset) {
+      const task = reset.closest('.color-task');
+      if (task) {
+        task.querySelectorAll('.color-cell.colored').forEach(cell => {
+          cell.classList.remove('colored'); cell.setAttribute('aria-pressed','false');
+        });
+        const feedback = task.querySelector('.color-feedback');
+        if (feedback) feedback.textContent = '';
+      }
+    }
+  });
+  document.addEventListener('keydown', function(event) {
+    if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.pizza-color .color-cell')) {
+      event.preventDefault(); toggleColorCell(event.target);
+    }
+  });
+  // Update the help button label so the action is clear.
+  function toggleRussian() {
+    document.body.classList.toggle('russian');
+    const button = [...document.querySelectorAll('.toolbar button')].find(b => b.textContent.includes('aides en russe') || b.textContent.includes('aide en russe'));
+    if (button) button.textContent = document.body.classList.contains('russian') ? 'Masquer les aides en russe' : 'Afficher / masquer les aides en russe';
+  }
+</script>
+</body>
+</html>

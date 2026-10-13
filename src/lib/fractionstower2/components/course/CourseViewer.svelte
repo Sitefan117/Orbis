@@ -76,6 +76,14 @@
     }
 
     onMount(() => {
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEscape);
+
         if (canvas) {
             ctx = canvas.getContext('2d');
             if (ctx) {
@@ -84,6 +92,7 @@
                 ctx.lineCap = 'round';
             }
         }
+        return () => window.removeEventListener('keydown', handleEscape);
     });
 </script>
 

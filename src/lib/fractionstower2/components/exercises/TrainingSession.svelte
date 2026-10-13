@@ -42,15 +42,26 @@
     let score = $state(0);
     const totalExercises = 10;
     let isAdvancing = $state(false);
+    // Évite de reproposer une même formulation pendant la session de l’étage 1.
+    let seenQuestions = new Set<string>();
+
+    function generateUniqueExercise(activeFloor: string) {
+        let exercise = ExerciseGenerator.generate({ floorId: activeFloor, difficulty: 'easy', type: getExerciseType(activeFloor) });
+        if (activeFloor !== 'floor-1') return exercise;
+        let attempts = 0;
+        while (seenQuestions.has(exercise.question) && attempts < 30) {
+            exercise = ExerciseGenerator.generate({ floorId: activeFloor, difficulty: 'easy', type: getExerciseType(activeFloor) });
+            attempts += 1;
+        }
+        seenQuestions.add(exercise.question);
+        return exercise;
+    }
 
     // 2. Synchronisation propre via $effect dès que floorId change
     $effect(() => {
         const activeFloor = floorId;
-        currentExercise = ExerciseGenerator.generate({ 
-            floorId: activeFloor, 
-            difficulty: 'easy', 
-            type: getExerciseType(activeFloor)
-        });
+        seenQuestions = new Set<string>();
+        currentExercise = generateUniqueExercise(activeFloor);
         score = 0;
         userAnswer = "";
         feedback = "";
@@ -86,17 +97,33 @@
             return;
         }
 
-        const val = parseFloat(userAnswer);
-        if (isNaN(val)) {
-            feedback = "S'il te plaît, écris un nombre valide.";
-            return;
-        }
-
         let isCorrect = false;
-        if (typeof currentExercise.correctAnswer === 'string') {
-            isCorrect = val.toString() === currentExercise.correctAnswer.toString();
+
+        // Pour l’étage 1, accepter les réponses numériques et les fractions du type 3/5.
+        // La logique des autres étages reste inchangée.
+        if (floorId === 'floor-1') {
+            const cleanUser = userAnswer.replace(/\s+/g, '').replace(',', '.');
+            const expected = String(currentExercise.correctAnswer).replace(/\s+/g, '');
+            if (expected.includes('/')) {
+                const [userNum, userDen] = cleanUser.split('/');
+                const [expectedNum, expectedDen] = expected.split('/');
+                isCorrect = userDen !== undefined
+                    && Number(userNum) === Number(expectedNum)
+                    && Number(userDen) === Number(expectedDen);
+            } else {
+                isCorrect = cleanUser !== '' && Number(cleanUser) === Number(expected);
+            }
         } else {
-            isCorrect = val === currentExercise.correctAnswer.numerator;
+            const val = parseFloat(userAnswer);
+            if (isNaN(val)) {
+                feedback = "S'il te plaît, écris un nombre valide.";
+                return;
+            }
+            if (typeof currentExercise.correctAnswer === 'string') {
+                isCorrect = val.toString() === currentExercise.correctAnswer.toString();
+            } else {
+                isCorrect = val === currentExercise.correctAnswer.numerator;
+            }
         }
 
         if (isCorrect) {
@@ -118,11 +145,7 @@
         feedback = "";
         userAnswer = "";
         isAdvancing = false;
-        currentExercise = ExerciseGenerator.generate({ 
-            floorId: floorId, 
-            difficulty: 'easy',
-            type: getExerciseType(floorId)
-        });
+        currentExercise = generateUniqueExercise(floorId);
         
         setTimeout(() => {
             if (inputRef) {
@@ -156,68 +179,39 @@
 
     <div class="exercise-box">
         <div class="header-row">
-            <h3 style="margin: 0;">{currentExercise.question}</h3>
+            <h3 class="question-title" style="margin: 0; color: #111827;">{currentExercise.question}</h3>
             <button class="audio-btn" onclick={readQuestion} title="Lire la consigne">🔊</button>
         </div>
         
-        <div class="viz-box">
-            {#key currentExercise}
-                <div class="viz-wrapper">
-                    {#if currentExercise.type === 'number_line' && currentExercise.fractions}
-                        <NumberLine {...currentExercise.fractions[0]} />
-                    {:else if currentExercise.type === 'comparison' && currentExercise.fractions}
-                        <div style="display: flex; gap: 20px; align-items: center;">
-                            <FractionBar 
-                                numerator={currentExercise.fractions[0].numerator} 
-                                denominator={currentExercise.fractions[0].denominator} 
-                                showLabel={true}
-                                width={150}
-                            />
-                            <span style="font-size: 1.5rem; font-weight: bold;">?</span>
-                            <FractionBar 
-                                numerator={currentExercise.fractions[1].numerator} 
-                                denominator={currentExercise.fractions[1].denominator} 
-                                showLabel={true}
-                                width={150}
-                            />
-                        </div>
-                    {:else if currentExercise.type === 'addition' && currentExercise.fractions}
-                        <div style="display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap;">
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <span style="font-size: 0.85rem; font-weight: bold; margin-bottom: 4px;">
-                                    {currentExercise.fractions[0].numerator} / {currentExercise.fractions[0].denominator}
-                                </span>
-                                <FractionBar 
-                                    numerator={currentExercise.fractions[0].numerator} 
-                                    denominator={currentExercise.fractions[0].denominator} 
-                                    showLabel={true}
-                                    width={130}
-                                />
+        {#if currentExercise.fractions && (currentExercise.type === 'number_line' || currentExercise.type === 'comparison' || currentExercise.type === 'addition')}
+            <div class="viz-box">
+                {#key currentExercise}
+                    <div class="viz-wrapper">
+                        {#if currentExercise.type === 'number_line'}
+                            <NumberLine {...currentExercise.fractions[0]} />
+                        {:else if currentExercise.type === 'comparison'}
+                            <div style="display: flex; gap: 20px; align-items: center;">
+                                <FractionBar numerator={currentExercise.fractions[0].numerator} denominator={currentExercise.fractions[0].denominator} showLabel={true} width={150} />
+                                <span style="font-size: 1.5rem; font-weight: bold;">?</span>
+                                <FractionBar numerator={currentExercise.fractions[1].numerator} denominator={currentExercise.fractions[1].denominator} showLabel={true} width={150} />
                             </div>
-                            <span style="font-size: 1.8rem; font-weight: bold; color: #3498db;">+</span>
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <span style="font-size: 0.85rem; font-weight: bold; margin-bottom: 4px;">
-                                    {currentExercise.fractions[1].numerator} / {currentExercise.fractions[1].denominator}
-                                </span>
-                                <FractionBar 
-                                    numerator={currentExercise.fractions[1].numerator} 
-                                    denominator={currentExercise.fractions[1].denominator} 
-                                    showLabel={true}
-                                    width={130}
-                                />
+                        {:else if currentExercise.type === 'addition'}
+                            <div style="display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap;">
+                                <div style="display: flex; flex-direction: column; align-items: center;">
+                                    <span style="font-size: 0.85rem; font-weight: bold; margin-bottom: 4px;">{currentExercise.fractions[0].numerator} / {currentExercise.fractions[0].denominator}</span>
+                                    <FractionBar numerator={currentExercise.fractions[0].numerator} denominator={currentExercise.fractions[0].denominator} showLabel={true} width={130} />
+                                </div>
+                                <span style="font-size: 1.8rem; font-weight: bold; color: #3498db;">+</span>
+                                <div style="display: flex; flex-direction: column; align-items: center;">
+                                    <span style="font-size: 0.85rem; font-weight: bold; margin-bottom: 4px;">{currentExercise.fractions[1].numerator} / {currentExercise.fractions[1].denominator}</span>
+                                    <FractionBar numerator={currentExercise.fractions[1].numerator} denominator={currentExercise.fractions[1].denominator} showLabel={true} width={130} />
+                                </div>
                             </div>
-                        </div>
-                    {:else}
-                        <FractionBar 
-                            numerator={currentExercise.fractions?.[0]?.numerator ?? 1} 
-                            denominator={currentExercise.fractions?.[0]?.denominator ?? 2} 
-                            showLabel={false}
-                            width={200}
-                        />
-                    {/if}
-                </div>
-            {/key}
-        </div>
+                        {/if}
+                    </div>
+                {/key}
+            </div>
+        {/if}
 
         {#if currentExercise.type === 'comparison'}
             <div style="display: flex; gap: 10px; margin: 10px 0;">
@@ -233,10 +227,10 @@
                         inputmode="numeric"
                         bind:this={inputRef} 
                         bind:value={userAnswer} 
-                        placeholder={currentExercise.type === 'addition' ? "ex: 5/6" : "?"}
+                        placeholder={currentExercise.type === 'addition' || (floorId === 'floor-1' && String(currentExercise.correctAnswer).includes('/')) ? "ex: 2/5" : "?"}
                     />
                 </div>
-                {#if currentExercise.type !== 'decimal_conversion' && currentExercise.type !== 'addition'}
+                {#if floorId !== 'floor-1' && currentExercise.type !== 'decimal_conversion' && currentExercise.type !== 'addition'}
                     <div class="fraction-bar"></div>
                     <div class="denominator-display">
                         {currentExercise.fractions?.[0]?.denominator ?? 2}
@@ -253,8 +247,9 @@
 <style>
     .training-container { display: flex; flex-direction: column; align-items: center; gap: 20px; font-family: sans-serif; }
     .score-board { font-weight: bold; font-size: 1.2rem; color: #666; }
-    .exercise-box { display: flex; flex-direction: column; align-items: center; gap: 20px; background: #fff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; max-width: 600px; width: 100%; }
-    .header-row { display: flex; align-items: center; gap: 10px; }
+    .exercise-box { color: #1f2937; background: #ffffff !important; display: flex; flex-direction: column; align-items: center; gap: 20px; background: #fff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; max-width: 600px; width: 100%; }
+    .question-title { color: #111827 !important; }
+    .header-row { color: #111827; display: flex; align-items: center; gap: 10px; }
     .audio-btn { background: #eee; border: 1px solid #ccc; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1rem; }
     .viz-box { padding: 20px; background: #fdfdfd; border: 1px solid #eee; border-radius: 12px; min-height: 180px; display: flex; justify-content: center; align-items: center; width: 100%; }
     .viz-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; }

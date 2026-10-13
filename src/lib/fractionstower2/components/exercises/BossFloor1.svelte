@@ -1,421 +1,327 @@
 <script lang="ts">
-	// -----------------------------------------------------------------------------
-	// COMPOSANT BOSS ÉTAGE 1
-	// Examen final de l'étage composé de plusieurs phases.
-	// -----------------------------------------------------------------------------
+    /** Boss de l’étage 1 : 3 phases, 6 réussites par phase, uniquement sur le partage équitable. */
+    import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
+    import FractionBar from '$lib/fractionstower2/components/fraction/FractionBar.svelte';
 
-	import { onMount } from 'svelte';
-	import { ExerciseGenerator } from '$lib/fractionstower2/engines/ExerciseGenerator';
-	import { FractionEngine } from '$lib/fractionstower2/engines/FractionEngine';
-	import FractionBar from '$lib/fractionstower2/components/fraction/FractionBar.svelte';
-	import FractionCircle from '$lib/fractionstower2/components/fraction/FractionCircle.svelte';
-	import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
-	import { t } from '$lib/fractionstower2/persistence/LanguageManager';
-	import { MasteryEngine } from '$lib/fractionstower2/engines/MasteryEngine';
+    let { onComplete, onClose, game } = $props<{
+        onComplete: () => void;
+        onClose?: () => void;
+        game: { markBossDefeated?: (floorId: string) => void };
+    }>();
 
-	let { onComplete, game } = $props<{
-		onComplete: () => void;
-		game: any;
-	}>();
+    const QUESTIONS_PER_PHASE = 6;
+    let phase = $state(1);
+    let questionIndex = $state(0);
+    let score = $state(0);
+    const MAX_BOSS_LIVES = 18;
+    const MAX_PLAYER_LIVES = 5;
+    let bossLives = $state(MAX_BOSS_LIVES);
+    let playerLives = $state(MAX_PLAYER_LIVES);
+    let phase3Options = $state<string[]>([]);
+    let answer = $state('');
+    let feedback = $state('');
+    let locked = $state(false);
+    let exercise = $state<BossExercise>(makePhase1Question());
 
-	let phase = $state(1); // 1: Lire, 2: Représenter, 3: Comparer, 4: Victoire
-	let score = $state(0);
-	let feedback = $state("");
-	let uNum = $state("");
-	let uDen = $state("");
-	let selectedOption = $state<number | null>(null);
-	let currentExercise: any = $state(null);
-	let totalBossQuestions = 10;
+    type Fraction = { numerator: number; denominator: number };
+    type Phase1Exercise = { kind: 'read'; fraction: Fraction };
+    type Phase2Exercise = { kind: 'match'; target: Fraction; options: Fraction[] };
+    type Phase3Exercise = { kind: 'situation'; question: string; answer: string; explanation: string };
+    type BossExercise = Phase1Exercise | Phase2Exercise | Phase3Exercise;
 
-	function initPhase1() {
-		currentExercise = {
-			fraction: ExerciseGenerator.generateRandomFraction({
-				minNumerator: 1, maxNumerator: 10, denominators: Array.from({length: 10}, (_, i) => i + 1)
-			}),
-			type: Math.random() > 0.5 ? 'circle' : 'bar'
-		};
-	}
+    const situations: Phase3Exercise[] = [
+        { kind: 'situation', question: 'On prend 2 parts parmi 7 parts égales. Écris la fraction prise.', answer: '2/7', explanation: '2 parts prises sur 7 parts égales : 2/7.' },
+        { kind: 'situation', question: 'Une tablette a 8 carrés égaux. 3 carrés sont mangés. Quelle fraction a été mangée ?', answer: '3/8', explanation: '3 carrés sont pris sur 8 : 3/8.' },
+        { kind: 'situation', question: 'Une tarte est partagée en 6 parts égales. Tu en prends 1. Quelle fraction prends-tu ?', answer: '1/6', explanation: '1 part prise sur 6 : 1/6.' },
+        { kind: 'situation', question: 'Dans 5/8, quel nombre est le dénominateur ?', answer: '8', explanation: 'Le dénominateur est le nombre du bas : 8.' },
+        { kind: 'situation', question: 'Dans 3/7, quel nombre est le numérateur ?', answer: '3', explanation: 'Le numérateur est le nombre du haut : 3.' },
+        { kind: 'situation', question: 'Un gâteau est coupé en 6 morceaux de tailles différentes. Chaque morceau vaut-il un sixième ? Réponds oui ou non.', answer: 'non', explanation: 'Non : les six parts doivent être de même taille pour représenter des sixièmes.' }
+    ];
 
-	function initPhase2() {
-		const target = ExerciseGenerator.generateRandomFraction({
-			minNumerator: 1, maxNumerator: 10, denominators: Array.from({length: 10}, (_, i) => i + 1)
-		});
-		const options = [target];
-		while (options.length < 3) {
-			const rand = ExerciseGenerator.generateRandomFraction({
-				minNumerator: 1, maxNumerator: 10, denominators: Array.from({length: 10}, (_, i) => i + 1)
-			});
-			if (!FractionEngine.areEquivalent(rand, target)) {
-				options.push(rand);
-			}
-		}
-		currentExercise = {
-			target,
-			options: options.sort(() => Math.random() - 0.5),
-			type: Math.random() > 0.5 ? 'circle' : 'bar'
-		};
-	}
+    function randomInt(min: number, max: number) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
 
-	function initPhase3() {
-		const f1 = ExerciseGenerator.generateRandomFraction({
-			minNumerator: 1, maxNumerator: 10, denominators: Array.from({length: 10}, (_, i) => i + 1)
-		});
-		const f2 = ExerciseGenerator.generateRandomFraction({
-			minNumerator: 1, maxNumerator: 10, denominators: Array.from({length: 10}, (_, i) => i + 1)
-		});
-		if (FractionEngine.areEquivalent(f1, f2)) {
-			return initPhase3();
-		}
-		currentExercise = { f1, f2, type: Math.random() > 0.5 ? 'circle' : 'bar' };
-	}
+    function randomFraction(): Fraction {
+        const denominator = randomInt(2, 8);
+        return { numerator: randomInt(1, denominator - 1), denominator };
+    }
 
-	function checkPhase1() {
-		const num = parseInt(uNum);
-		const den = parseInt(uDen);
+    function sameFraction(a: Fraction, b: Fraction) {
+        return a.numerator === b.numerator && a.denominator === b.denominator;
+    }
 
-		if (isNaN(num) || isNaN(den)) {
-			feedback = "S'il te plaît, remplis les deux cases.";
-			return;
-		}
+    function sameValue(a: Fraction, b: Fraction) {
+        return a.numerator * b.denominator === b.numerator * a.denominator;
+    }
 
-		const target = currentExercise.fraction;
-		
-		if (num === target.numerator && den === target.denominator) {
-			feedback = t('feedback.correct');
-			score += 1;
-			setTimeout(() => {
-				if (score < totalBossQuestions) {
-					uNum = "";
-					uDen = "";
-					initPhase1();
-					feedback = "";
-				} else {
-					phase = 2;
-					feedback = "✅ Phase 1 validée ! Passage à la phase 2.";
-					setTimeout(() => {
-						feedback = "";
-						initPhase2();
-					}, 1500);
-				}
-			}, 1500);
-		} else {
-			if (num === target.denominator && den === target.numerator) {
-				feedback = "Attention, tu as inversé le numérateur et le dénominateur !";
-			} else if (num !== target.numerator && den === target.denominator) {
-				feedback = "Le dénominateur est juste, mais le numérateur est faux.";
-			} else if (num === target.numerator && den !== target.denominator) {
-				feedback = "Le numérateur est juste, mais le dénominateur est faux.";
-			} else {
-				feedback = t('feedback.wrong');
-			}
-		}
-	}
+    function makePhase1Question(): Phase1Exercise {
+        return { kind: 'read', fraction: randomFraction() };
+    }
 
-	function checkPhase2(idx: number) {
-		if (FractionEngine.areEquivalent(currentExercise.options[idx], currentExercise.target)) {
-			feedback = t('feedback.correct');
-			score += 1;
-			setTimeout(() => {
-				if (score < totalBossQuestions * 2) {
-					initPhase2();
-					feedback = "";
-				} else {
-					phase = 3;
-					feedback = "✅ Phase 2 validée ! Passage à la phase 3.";
-					setTimeout(() => {
-						feedback = "";
-						initPhase3();
-					}, 1500);
-				}
-			}, 1500);
-		} else {
-			feedback = t('feedback.wrong');
-		}
-	}
+    function makePhase2Question(): Phase2Exercise {
+        const target = randomFraction();
+        const options: Fraction[] = [target];
+        while (options.length < 3) {
+            const candidate = randomFraction();
+            if (!options.some((option) => sameValue(option, candidate))) options.push(candidate);
+        }
+        return { kind: 'match', target, options: options.sort(() => Math.random() - 0.5) };
+    }
 
-	function checkPhase3(choice: 'f1' | 'f2') {
-		const result = FractionEngine.compare(currentExercise.f1, currentExercise.f2);
-		const correct = (choice === 'f1' && result > 0) || (choice === 'f2' && result < 0);
-		
-		if (correct) {
-			feedback = t('feedback.correct');
-			score += 1;
-			setTimeout(() => {
-				if (score < totalBossQuestions * 3) {
-					initPhase3();
-					feedback = "";
-				} else {
-					const compId = 'lecture-fractions-1';
-					const currentState = game.competencies[compId] || {
-						successes: 0, failures: 0, lastStatus: 'RED', history: []
-					};
-					game.competencies[compId] = {
-						...MasteryEngine.updateCompetence(currentState, true),
-						lastStatus: 'GREEN'
-					};
-					phase = 4;
-				}
-			}, 1500);
-		} else {
-			feedback = t('feedback.wrong');
-		}
-	}
+    function makePhase3Question(): Phase3Exercise {
+        return situations[questionIndex % situations.length];
+    }
 
-	function readInstruction() {
-		let text = "";
-		if (phase === 1) text = t('training.question');
-		else if (phase === 2) text = "Laquelle de ces images représente la fraction ?";
-		else if (phase === 3) text = "Laquelle de ces deux fractions est la plus grande ?";
-		AudioManager.speak(text);
-	}
+    function loadQuestion() {
+        answer = '';
+        feedback = '';
+        locked = false;
+        if (phase === 1) exercise = makePhase1Question();
+        else if (phase === 2) exercise = makePhase2Question();
+        else exercise = makePhase3Question();
+        phase3Options = phase === 3 && exercise.kind === 'situation' ? makePhase3Options(exercise) : [];
+    }
 
-	onMount(() => {
-		initPhase1();
-		const handleKey = (e: KeyboardEvent) => {
-			if (e.key === 'Enter') {
-				if (phase === 1) checkPhase1();
-			}
-		};
-		window.addEventListener('keydown', handleKey);
-		return () => window.removeEventListener('keydown', handleKey);
-	});
+    function makePhase3Options(question: Phase3Exercise): string[] {
+        const expected = normalize(question.answer);
+        let options: string[];
+
+        if (expected === 'oui' || expected === 'non') {
+            options = ['oui', 'non'];
+        } else if (question.question.toLowerCase().includes('dénominateur')) {
+            // Les choix opposent le nombre du bas à des erreurs réalistes :
+            // le numérateur et un autre nombre proche.
+            const fraction = question.question.match(/(\d+)\s*\/\s*(\d+)/);
+            if (fraction) {
+                const numerator = Number(fraction[1]);
+                const denominator = Number(fraction[2]);
+                options = [String(denominator), String(Math.max(1, denominator - 2)), String(Math.max(1, numerator - 1))];
+            } else {
+                options = [expected, String(Math.max(1, Number(expected) - 1)), String(Number(expected) + 1)];
+            }
+        } else if (question.question.toLowerCase().includes('numérateur')) {
+            const fraction = question.question.match(/(\d+)\s*\/\s*(\d+)/);
+            if (fraction) {
+                const numerator = Number(fraction[1]);
+                const denominator = Number(fraction[2]);
+                options = [String(numerator), String(denominator), String(numerator === 1 ? 2 : numerator - 1)];
+            } else {
+                options = [expected, String(Number(expected) + 1), String(Math.max(0, Number(expected) - 1))];
+            }
+        } else if (expected.includes('/')) {
+            const [n, d] = expected.split('/').map(Number);
+            // Inversion de la fraction et même dénominateur avec un numérateur voisin.
+            const nearbyNumerator = n === d - 1 ? n - 1 : n + 1;
+            options = [expected, `${d}/${n}`, `${Math.max(1, nearbyNumerator)}/${d}`];
+        } else {
+            const n = Number(expected);
+            options = [expected, String(Math.max(0, n - 1)), String(n + 1)];
+        }
+
+        return [...new Set(options)].sort(() => Math.random() - 0.5);
+    }
+
+    function normalize(value: string) {
+        return value.toLowerCase().trim().replace(/\s+/g, '').replace(',', '.');
+    }
+
+    function submit(value?: string) {
+        if (locked || phase >= 4) return;
+        let correct = false;
+
+        if (phase === 1 && exercise.kind === 'read') {
+            const parts = normalize(value ?? answer).split('/');
+            correct = parts.length === 2
+                && Number(parts[0]) === exercise.fraction.numerator
+                && Number(parts[1]) === exercise.fraction.denominator;
+        } else if (phase === 2 && exercise.kind === 'match') {
+            const index = Number(value);
+            const selected = exercise.options[index];
+            correct = Number.isInteger(index) && selected !== undefined && sameFraction(selected, exercise.target);
+        } else if (phase === 3 && exercise.kind === 'situation') {
+            const submitted = normalize(value ?? answer);
+            const expected = normalize(exercise.answer);
+            if (expected.includes('/')) {
+                const [a, b] = submitted.split('/');
+                const [c, d] = expected.split('/');
+                correct = b !== undefined && Number(a) === Number(c) && Number(b) === Number(d);
+            } else {
+                correct = submitted === expected;
+            }
+        }
+
+        if (!correct) {
+            playerLives = Math.max(0, playerLives - 1);
+            feedback = playerLives === 0
+                ? 'Tu n’as plus de vies. Le boss a gagné cette fois.'
+                : `Pas tout à fait. Tu perds une vie. Il t’en reste ${playerLives}. Réessaie !`;
+            if (playerLives === 0) phase = 5;
+            return;
+        }
+
+        locked = true;
+        score += 1;
+        bossLives = Math.max(0, bossLives - 1);
+        feedback = phase === 3 && exercise.kind === 'situation'
+            ? `Bravo ! ${exercise.explanation}`
+            : 'Bravo ! C’est juste.';
+        setTimeout(() => {
+            if (questionIndex < QUESTIONS_PER_PHASE - 1) {
+                questionIndex += 1;
+                loadQuestion();
+            } else if (phase < 3) {
+                phase += 1;
+                questionIndex = 0;
+                loadQuestion();
+            } else {
+                phase = 4;
+                feedback = '';
+            }
+        }, 900);
+    }
+
+    function readInstruction() {
+        let text = '';
+        if (phase === 1 && exercise.kind === 'read') text = `Écris la fraction représentée : ${exercise.fraction.numerator} parts coloriées sur ${exercise.fraction.denominator} parts égales.`;
+        else if (phase === 2 && exercise.kind === 'match') text = `Choisis la barre qui représente ${exercise.target.numerator} sur ${exercise.target.denominator}.`;
+        else if (phase === 3 && exercise.kind === 'situation') text = exercise.question;
+        AudioManager.speak(text);
+    }
+
+    function finishBoss() {
+        game.markBossDefeated?.('floor-1');
+        onComplete();
+    }
+
+    function restartBoss() {
+        phase = 1;
+        questionIndex = 0;
+        score = 0;
+        bossLives = MAX_BOSS_LIVES;
+        playerLives = MAX_PLAYER_LIVES;
+        loadQuestion();
+    }
 </script>
 
-<div class="boss-container">
-	<div class="boss-header">
-		<h2 style="margin: 0;">BOSS ÉTAGE 1</h2>
-		<div class="phase-indicator">Phase {phase}/3 | Score : {score} / {phase === 1 ? totalBossQuestions : phase === 2 ? totalBossQuestions * 2 : totalBossQuestions * 3}</div>
-	</div>
+<div class="boss-overlay" role="presentation">
+<div class="boss-container" role="dialog" aria-modal="true" aria-label="Boss de l’étage 1">
+    <header class="boss-header">
+        <div>
+            <p class="eyebrow">Défi final · Le partage équitable</p>
+            <h2>Boss de l’étage 1</h2>
+            {#if phase < 4}
+                <p class="player-lives" aria-label={`Vies restantes : ${playerLives}`}>Tes vies : {#each Array(playerLives) as _}<span>❤️</span>{/each}{#each Array(MAX_PLAYER_LIVES - playerLives) as _}<span class="empty-heart">♡</span>{/each}</p>
+            {/if}
+        </div>
+        <div class="header-actions">
+            {#if phase < 4}
+                <div class="score">Phase {phase}/3 · Question {questionIndex + 1}/6</div>
+            {:else if phase === 4}
+                <div class="score">Boss vaincu</div>
+            {:else}
+                <div class="score">Combat terminé</div>
+            {/if}
+            <button class="close-btn" onclick={() => onClose?.()} aria-label="Fermer le combat" title="Fermer (Échap)">✕</button>
+        </div>
+    </header>
 
-	<div class="boss-body">
-		{#if !currentExercise}
-			<div class="loading">Chargement du défi...</div>
-		{:else if phase === 1}
-			<div class="phase">
-				<div class="header-row">
-					<h3>Phase 1 : Lecture</h3>
-					<button class="audio-btn" onclick={readInstruction}>🔊</button>
-				</div>
-				<p>{t('training.question')}</p>
-				<div class="viz">
-					{#if currentExercise.type === 'circle'}
-						<FractionCircle numerator={currentExercise.fraction.numerator} denominator={currentExercise.fraction.denominator} showLabel={false} />
-					{:else}
-						<FractionBar numerator={currentExercise.fraction.numerator} denominator={currentExercise.fraction.denominator} showLabel={false} width={200} />
-					{/if}
-				</div>
-				<div class="input-group">
-					<input type="text" inputmode="numeric" bind:value={uNum} />
-					<span class="sep"> / </span>
-					<input type="text" inputmode="numeric" bind:value={uDen} />
-				</div>
-				<button class="btn" onclick={checkPhase1}>Valider</button>
-			</div>
-		{:else if phase === 2}
-			<div class="phase">
-				<div class="header-row">
-					<h3>Phase 2 : Représentation</h3>
-					<button class="audio-btn" onclick={readInstruction}>🔊</button>
-				</div>
-				<p>Laquelle de ces images représente {currentExercise.target.numerator}/{currentExercise.target.denominator} ?</p>
-				<div class="options-grid">
-					{#each currentExercise.options as opt, i}
-						<button class="option-btn" onclick={() => checkPhase2(i)}>
-							{#if currentExercise.type === 'circle'}
-								<FractionCircle numerator={opt.numerator} denominator={opt.denominator} showLabel={false} size={100} />
-							{:else}
-								<FractionBar numerator={opt.numerator} denominator={opt.denominator} width={100} showLabel={false} />
-							{/if}
-						</button>
-					{/each}
-				</div>
-			</div>
-		{:else if phase === 3}
-			<div class="phase">
-				<div class="header-row">
-					<h3>Phase 3 : Comparaison</h3>
-					<button class="audio-btn" onclick={readInstruction}>🔊</button>
-				</div>
-				<p>Laquelle de ces deux fractions est la plus GRANDE ?</p>
-				<div class="compare-grid">
-					<button class="comp-btn" onclick={() => checkPhase3('f1')}>
-						{#if currentExercise.type === 'circle'}
-							<FractionCircle numerator={currentExercise.f1.numerator} denominator={currentExercise.f1.denominator} showLabel={false} size={100} />
-						{:else}
-							<FractionBar numerator={currentExercise.f1.numerator} denominator={currentExercise.f1.denominator} showLabel={false} width={150} />
-						{/if}
-					</button>
-					<span class="vs">VS</span>
-					<button class="comp-btn" onclick={() => checkPhase3('f2')}>
-						{#if currentExercise.type === 'circle'}
-							<FractionCircle numerator={currentExercise.f2.numerator} denominator={currentExercise.f2.denominator} showLabel={false} size={100} />
-						{:else}
-							<FractionBar numerator={currentExercise.f2.numerator} denominator={currentExercise.f2.denominator} showLabel={false} width={150} />
-						{/if}
-					</button>
-				</div>
-			</div>
-		{:else}
-			<div class="victory">
-				<h2 class="win-title">{t('boss.victory')}</h2>
-				<p>Tu as maîtrisé les bases des fractions.</p>
-				<button class="btn success" onclick={onComplete}>Rentrer dans la tour</button>
-			</div>
-		{/if}
-	</div>
+    {#if phase < 4}
+        <div class="boss-lives-line"><span>Vies du boss : ❤️ {bossLives}/{MAX_BOSS_LIVES}</span><span>Progression : {score}/18</span></div>
+        <div class="progress-track" aria-label={`Vies restantes du boss : ${bossLives} sur ${MAX_BOSS_LIVES}`}>
+            <div class="progress-fill" style={`width: ${(bossLives / MAX_BOSS_LIVES) * 100}%`}></div>
+        </div>
+        <div class="boss-body">
+            <div class="phase-title">
+                <h3>{phase === 1 ? 'Phase 1 — Lire une fraction' : phase === 2 ? 'Phase 2 — Reconnaître les parts' : 'Phase 3 — Utiliser les fractions'}</h3>
+                <button class="audio-btn" onclick={readInstruction} aria-label="Lire la consigne">🔊</button>
+            </div>
 
-	{#if feedback}
-		<div class="feedback">{feedback}</div>
-	{/if}
+            {#if phase === 1 && exercise.kind === 'read'}
+                <p>Observe la barre. Écris la fraction coloriée sous la forme numérateur/dénominateur.</p>
+                <div class="visual"><FractionBar numerator={exercise.fraction.numerator} denominator={exercise.fraction.denominator} width={260} showLabel={false} /></div>
+                <label for="boss-answer">Ta réponse (ex. 3/4)</label>
+                <input id="boss-answer" bind:value={answer} onkeydown={(e) => e.key === 'Enter' && submit()} placeholder="ex. 3/4" autocomplete="off" />
+                <button class="primary" onclick={() => submit()}>Valider</button>
+            {:else if phase === 2 && exercise.kind === 'match'}
+                <p>Quelle barre représente <strong>{exercise.target.numerator}/{exercise.target.denominator}</strong> ?</p>
+                <div class="options">
+                    {#each exercise.options as option, i}
+                        <button class="option" onclick={() => submit(String(i))} aria-label={`Choisir la fraction ${option.numerator}/${option.denominator}`}>
+                            <FractionBar numerator={option.numerator} denominator={option.denominator} width={145} showLabel={false} />
+                        </button>
+                    {/each}
+                </div>
+            {:else if phase === 3 && exercise.kind === 'situation'}
+                <p>{exercise.question}</p>
+                <div class="answer-options" aria-label="Choisis une réponse">
+                    {#each phase3Options as option}
+                        <button class="answer-option" onclick={() => submit(option)}>{option}</button>
+                    {/each}
+                </div>
+            {/if}
+
+            {#if feedback}<p class:success={locked} class="feedback" role="status">{feedback}</p>{/if}
+        </div>
+    {:else if phase === 4}
+        <div class="victory">
+            <div class="trophy">🏆</div>
+            <h3>Boss vaincu !</h3>
+            <p>Tu as réussi les trois phases du partage équitable.</p>
+            <p class="final-score">Score : {score}/18</p>
+            <button class="primary" onclick={finishBoss}>Retourner dans la tour</button>
+        </div>
+    {:else}
+        <div class="victory defeat">
+            <div class="trophy">💔</div>
+            <h3>Le boss a gagné cette fois</h3>
+            <p>Tu peux reprendre ton souffle et retenter le combat.</p>
+            <p class="final-score">Vies du boss restantes : {bossLives}/{MAX_BOSS_LIVES}</p>
+            <button class="primary" onclick={restartBoss}>Réessayer</button>
+            <button class="secondary" onclick={() => onClose?.()}>Retourner dans la tour</button>
+        </div>
+    {/if}
+</div>
 </div>
 
 <style>
-	.boss-container {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		font-family: sans-serif;
-		width: 100%;
-	}
-	.boss-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		width: 100%;
-		padding: 10px;
-		border-bottom: 2px solid #ddd;
-		margin-bottom: 20px;
-	}
-	.phase-indicator {
-		background: #333;
-		color: white;
-		padding: 5px 10px;
-		border-radius: 4px;
-		font-weight: bold;
-	}
-	.boss-body {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		min-height: 300px;
-		width: 100%;
-	}
-	.phase {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 20px;
-		text-align: center;
-	}
-	.header-row {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-	}
-	.audio-btn {
-		background: #eee;
-		border: 1px solid #ccc;
-		border-radius: 50%;
-		width: 30px;
-		height: 30px;
-		cursor: pointer;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		font-size: 1rem;
-	}
-	.viz {
-		padding: 20px;
-		background: #fff;
-		border-radius: 12px;
-		box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-	}
-	.input-group {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		font-size: 1.5rem;
-		font-weight: bold;
-	}
-	input {
-		width: 60px;
-		font-size: 1.5rem;
-		text-align: center;
-		padding: 5px;
-	}
-	.sep {
-		color: #888;
-	}
-	.btn {
-		padding: 10px 20px;
-		background: #3498db;
-		color: white;
-		border: none;
-		border-radius: 8px;
-		cursor: pointer;
-		font-weight: bold;
-	}
-	.options-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: 20px;
-	}
-	.option-btn {
-		background: white;
-		border: 2px solid #ddd;
-		border-radius: 8px;
-		cursor: pointer;
-		padding: 10px;
-		transition: border-color 0.2s;
-	}
-	.option-btn:hover {
-		border-color: #3498db;
-	}
-	.compare-grid {
-		display: flex;
-		align-items: center;
-		gap: 30px;
-	}
-	.comp-btn {
-		background: white;
-		border: 2px solid #ddd;
-		border-radius: 12px;
-		cursor: pointer;
-		padding: 15px;
-		transition: transform 0.2s;
-	}
-	.comp-btn:hover {
-		transform: scale(1.05);
-		border-color: #3498db;
-	}
-	.vs {
-		font-weight: bold;
-		font-size: 1.5rem;
-		color: #e74c3c;
-	}
-	.victory {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 20px;
-		text-align: center;
-	}
-	.win-title {
-		font-size: 3rem;
-		color: #2ecc71;
-		margin: 0;
-	}
-	.btn.success {
-		background: #2ecc71;
-	}
-	.feedback {
-		margin-top: 20px;
-		font-weight: bold;
-		color: #444;
-		min-height: 1.5em;
-	}
-	.loading {
-		font-family: sans-serif;
-		color: #666;
-	}
+    .boss-overlay { position: fixed; inset: 0; z-index: 4000; display: flex; justify-content: center; align-items: center; padding: 1rem; background: rgba(2, 6, 23, .86); backdrop-filter: blur(6px); overflow-y: auto; }
+    .boss-container { width: min(100%, 720px); margin: 0 auto; padding: 1.25rem; border-radius: 1.25rem; color: #f8fafc; background: #0f172a; border: 2px solid #0891b2; box-shadow: 0 18px 45px #0003; font-family: sans-serif; max-height: 94vh; overflow-y: auto; }
+    .boss-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #334155; }
+    .header-actions { display: flex; align-items: center; gap: .65rem; }
+    .close-btn { width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 1px solid #475569; background: #1e293b; color: white; cursor: pointer; font-size: 1.15rem; }
+    .player-lives { margin: .5rem 0 0; display: flex; gap: .2rem; align-items: center; }
+    .empty-heart { color: #64748b; }
+    .eyebrow { margin: 0 0 .25rem; color: #67e8f9; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; }
+    h2, h3, p { margin-top: 0; }
+    h2 { margin-bottom: 0; font-size: 1.5rem; }
+    .score { background: #1e293b; padding: .5rem .75rem; border-radius: .6rem; font-size: .9rem; white-space: nowrap; }
+    .boss-lives-line { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1rem; font-size: .9rem; color: #cbd5e1; }
+    .progress-track { height: .65rem; background: #334155; border-radius: 99px; overflow: hidden; margin: .5rem 0 1rem; }
+    .progress-fill { height: 100%; background: #fb7185; transition: width .2s ease; }
+    .boss-body { display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center; padding: 1rem .25rem; }
+    .phase-title { display: flex; align-items: center; gap: .75rem; }
+    .phase-title h3 { margin: 0; font-size: 1.2rem; }
+    .audio-btn { border: 1px solid #475569; border-radius: 50%; width: 2.5rem; height: 2.5rem; background: #1e293b; cursor: pointer; }
+    .visual { width: 100%; display: flex; justify-content: center; padding: 1rem; border-radius: .75rem; background: white; }
+    label { align-self: center; font-weight: 600; }
+    input { width: min(100%, 18rem); padding: .8rem; color: #0f172a; background: white; border: 2px solid #94a3b8; border-radius: .6rem; text-align: center; font-size: 1.1rem; }
+    button { color: inherit; }
+    .primary { padding: .8rem 1.4rem; border: 0; border-radius: .65rem; background: #0891b2; color: white; font-weight: 700; cursor: pointer; }
+    .primary:hover { background: #0e7490; }
+    .options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; width: 100%; }
+    .answer-options { display: flex; flex-wrap: wrap; justify-content: center; gap: .65rem; width: 100%; }
+    .answer-option { min-width: 6rem; padding: .8rem 1rem; border: 2px solid #475569; border-radius: .7rem; background: #1e293b; cursor: pointer; font-size: 1.05rem; font-weight: 700; }
+    .answer-option:hover { border-color: #22d3ee; background: #164e63; }
+    .secondary { padding: .8rem 1.4rem; border: 1px solid #64748b; border-radius: .65rem; background: #1e293b; color: white; font-weight: 700; cursor: pointer; }
+    .defeat h3 { color: #fda4af; }
+    .option { display: flex; align-items: center; justify-content: center; min-width: 0; padding: .5rem; border: 2px solid #334155; border-radius: .75rem; background: #1e293b; cursor: pointer; }
+    .option:hover { border-color: #22d3ee; }
+    .feedback { margin: 0; padding: .75rem 1rem; border-radius: .65rem; background: #4c1d1d; color: #fecaca; }
+    .feedback.success { background: #064e3b; color: #a7f3d0; }
+    .victory { display: flex; flex-direction: column; align-items: center; gap: .8rem; text-align: center; padding: 2rem 1rem; }
+    .trophy { font-size: 3rem; }
+    .victory h3 { margin: 0; font-size: 1.8rem; color: #67e8f9; }
+    .final-score { font-weight: 800; font-size: 1.2rem; }
+    @media (max-width: 520px) { .boss-container { padding: .8rem; } .boss-header { align-items: flex-start; flex-direction: column; } .header-actions { width: 100%; justify-content: space-between; } .options { grid-template-columns: 1fr; } }
 </style>

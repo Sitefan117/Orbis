@@ -7,6 +7,7 @@
     import { FloorManager } from '$lib/fractionstower2/game/FloorManager';
     import ActivityModal from '$lib/fractionstower2/components/exercises/ActivityModal.svelte';
     import BossBattle from '$lib/fractionstower2/components/exercises/BossBattle.svelte';
+    import BossFloor1 from '$lib/fractionstower2/components/exercises/BossFloor1.svelte';
     import CourseViewer from '$lib/fractionstower2/components/course/CourseViewer.svelte';
     import { languageState } from '$lib/fractionstower2/persistence/LanguageManager';
     import { SaveManager } from '$lib/fractionstower2/persistence/SaveManager';
@@ -98,6 +99,19 @@
 
     onMount(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                keys.clear();
+                // Ferme uniquement la fenêtre la plus prioritaire, sans marquer
+                // l’activité comme réussie ni modifier la progression.
+                if (activeCourseFloorId) activeCourseFloorId = null;
+                else if (activeBossFloorId) activeBossFloorId = null;
+                else if (activeActivityId) activeActivityId = null;
+                return;
+            }
+            // Tant qu'une fenêtre pédagogique est ouverte, les touches ne doivent
+            // pas déplacer le personnage ni déclencher une autre interaction.
+            if (activeActivityId || activeBossFloorId || activeCourseFloorId) return;
             keys.add(e.key);
             if (e.key.toLowerCase() === 'e') {
                 handleInteraction();
@@ -134,8 +148,16 @@
                 if (interaction.action === 'boss-intro') {
                     activeBossFloorId = game.player.currentFloorId;
                 } else if (interaction.action === 'classic-course-intro') {
-                    // C'est désormais le PNJ 'C' (guide_classic) en bas à droite qui ouvre le cours HTML classique
+                    // Le PNJ « C » ouvre le cours HTML classique.
                     activeCourseFloorId = game.player.currentFloorId;
+                } else if (interaction.action === 'course-intro') {
+                    activeActivityId = game.player.currentFloorId === 'floor-1'
+                        ? 'floor-1-course'
+                        : (interaction.action || interaction.id);
+                } else if (interaction.action === 'training-intro') {
+                    activeActivityId = game.player.currentFloorId === 'floor-1'
+                        ? 'floor-1-training'
+                        : (interaction.action || interaction.id);
                 } else {
                     activeActivityId = interaction.action || interaction.id;
                 }
@@ -284,8 +306,10 @@
 {#if activeActivityId}
     <ActivityModal activityId={activeActivityId} onClose={() => activeActivityId = null} />
 {/if}
-{#if activeBossFloorId}
-    <BossBattle floorId={activeBossFloorId} onComplete={() => activeBossFloorId = null} onClose={() => activeBossFloorId = null} />
+{#if activeBossFloorId === 'floor-1'}
+    <BossFloor1 game={game} onComplete={() => activeBossFloorId = null} onClose={() => activeBossFloorId = null} />
+{:else if activeBossFloorId}
+    <BossBattle floorId={activeBossFloorId} onComplete={() => activeBossFloorId = null} />
 {/if}
 {#if activeCourseFloorId}
     <CourseViewer floorId={activeCourseFloorId} onClose={() => activeCourseFloorId = null} />
