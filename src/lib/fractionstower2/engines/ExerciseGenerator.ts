@@ -1,7 +1,5 @@
 // -----------------------------------------------------------------------------
-// GÉNÉRATEUR D'EXERCICES
-// Génère dynamiquement des fractions et des défis basés sur des critères 
-// de difficulté et des objectifs pédagogiques.
+// [Moteur] ExerciseGenerator.ts (Global 9 Étages + Étage 9 & Boss)
 // -----------------------------------------------------------------------------
 
 import { type Fraction } from '$lib/fractionstower2/engines/FractionEngine';
@@ -9,28 +7,25 @@ import { type Fraction } from '$lib/fractionstower2/engines/FractionEngine';
 export interface ExerciseConfig {
     minNumerator: number;
     maxNumerator: number;
-    denominators: number[]; // Liste des dénominateurs autorisés pour l'étage
+    denominators: number[];
 }
 
 export interface ExerciseRequest {
     floorId: string;
-    difficulty: 'easy' | 'medium' | 'hard';
-    type?: 'standard' | 'comparison' | 'number_line' | 'decimal_conversion';
+    difficulty?: 'easy' | 'medium' | 'hard';
+    type?: 'standard' | 'comparison' | 'number_line' | 'decimal_conversion' | 'addition' | 'improper';
     index?: number;
 }
 
 export interface Exercise {
     question: string;
     correctAnswer: Fraction | string;
-    type: 'input' | 'comparison' | 'number_line' | 'decimal_conversion';
+    type: 'input' | 'comparison' | 'number_line' | 'decimal_conversion' | 'addition' | 'improper';
     hint?: string;
     fractions?: Fraction[];
 }
 
 export class ExerciseGenerator {
-    /**
-     * Génère une fraction aléatoire basée sur une configuration d'étage.
-     */
     static generateRandomFraction(config: ExerciseConfig): Fraction {
         const den = config.denominators[Math.floor(Math.random() * config.denominators.length)];
         const actualMax = Math.min(config.maxNumerator, den);
@@ -38,46 +33,104 @@ export class ExerciseGenerator {
         return { numerator: num, denominator: den };
     }
 
-    /**
-     * POINT D'ENTRÉE PRINCIPAL pour les activités et le Boss.
-     */
     static generate(request: ExerciseRequest): Exercise {
-        const { floorId } = request;
-        let type = request.type;
+        let { floorId, type } = request;
         
-        // Configuration des dénominateurs et plages par étage selon la progression pédagogique
+        // Si on est dans un contexte de Boss, on peut cibler un étage aléatoire parmi les autorisés
+        if (floorId === 'boss-bilan-5') {
+            const randomFloorNum = Math.floor(Math.random() * 5) + 1;
+            floorId = `floor-${randomFloorNum}`;
+        } else if (floorId === 'boss-final-9' || floorId === 'floor-8' || floorId === 'floor-9') {
+            // Pour le grand boss final, on brasse de l'étage 1 à 9
+            const randomFloorNum = Math.floor(Math.random() * 9) + 1;
+            floorId = `floor-${randomFloorNum}`;
+        }
+
+        // Configuration pour l'ensemble des 9 étages
         const configs: Record<string, ExerciseConfig> = {
-            'floor-1': { minNumerator: 1, maxNumerator: 10, denominators: [2, 3, 4, 6, 8] },     // Étage 1 : Bases (partage équitable)
-            'floor-2': { minNumerator: 1, maxNumerator: 10, denominators: [2, 3, 4, 5, 6, 8, 10] }, // Étage 2 : Lecture et représentation visuelle variée
-            'floor-3': { minNumerator: 1, maxNumerator: 10, denominators: [2, 4, 5, 10] },         // Étage 3 : Droite graduée
-            'floor-4': { minNumerator: 1, maxNumerator: 20, denominators: [2, 3, 4, 5, 6, 8, 10, 12] }, // Étage 4 : Fractions équivalentes
-            'floor-5': { minNumerator: 1, maxNumerator: 50, denominators: [2, 3, 4, 5, 6, 8, 10, 12] }, // Étage 5 : Comparaison avancée
-            'floor-6': { minNumerator: 1, maxNumerator: 100, denominators: [10, 100] },          // Étage 6 : Fractions décimales
-            'floor-7': { minNumerator: 1, maxNumerator: 100, denominators: [2, 3, 4, 5, 6, 8, 10] }, // Étage 7 : Addition même dénominateur
-            'floor-8': { minNumerator: 1, maxNumerator: 100, denominators: [2, 3, 4, 5, 6] },      // Étage 8 : Dénominateurs différents
+            'floor-1': { minNumerator: 1, maxNumerator: 10, denominators: [2, 3, 4, 6, 8] },
+            'floor-2': { minNumerator: 1, maxNumerator: 10, denominators: [2, 3, 4, 5, 6, 8, 10] },
+            'floor-3': { minNumerator: 1, maxNumerator: 10, denominators: [2, 4, 5, 10] },
+            'floor-4': { minNumerator: 1, maxNumerator: 20, denominators: [2, 3, 4, 5, 6, 8, 10, 12] },
+            'floor-5': { minNumerator: 1, maxNumerator: 50, denominators: [2, 3, 4, 5, 6, 8, 10, 12] },
+            'floor-6': { minNumerator: 1, maxNumerator: 100, denominators: [10, 100] },
+            'floor-7': { minNumerator: 1, maxNumerator: 100, denominators: [4, 6, 8, 10] },
+            'floor-8': { minNumerator: 1, maxNumerator: 100, denominators: [2, 3, 4, 6, 8] },
+            'floor-9': { minNumerator: 1, maxNumerator: 100, denominators: [2, 3, 4, 6] },
         };
 
         const config = configs[floorId] || configs['floor-1'];
 
-        // Forcer le type d'exercice selon l'étage si non spécifié
-        if (floorId === 'floor-3') type = 'number_line';
-        if (floorId === 'floor-4' || floorId === 'floor-5') type = 'comparison';
+        // Attribution automatique du type d'exercice selon l'étage
+        if (!type || type === 'standard') {
+            if (floorId === 'floor-3') type = 'number_line';
+            else if (['floor-4', 'floor-5'].includes(floorId)) type = 'comparison';
+            else if (floorId === 'floor-6') type = 'decimal_conversion';
+            else if (['floor-7', 'floor-8'].includes(floorId)) type = 'addition';
+            else if (floorId === 'floor-9') type = 'improper';
+            else type = 'standard';
+        }
 
-        // 1. CAS COMPARAISON / ÉQUIVALENCE (Étage 4 & 5)
+        // 1. ÉTAGE 9 : Fractions impropres / supérieures à 1 (ex: 5/4)
+        if (type === 'improper' || floorId === 'floor-9') {
+            const den = config.denominators[Math.floor(Math.random() * config.denominators.length)];
+            // Numérateur supérieur au dénominateur pour faire plus d'une unité (ex: entre den + 1 et den * 2)
+            const num = Math.floor(Math.random() * den) + den + 1;
+
+            return {
+                question: `Quelle fraction totale représente ces figures (plus d'une unité) ?`,
+                correctAnswer: `${num}/${den}`,
+                type: 'improper',
+                fractions: [{ numerator: num, denominator: den }]
+            };
+        }
+
+        // 2. CAS ADDITION (Étages 7 & 8)
+        if (type === 'addition') {
+            if (floorId === 'floor-7') {
+                const den = config.denominators[Math.floor(Math.random() * config.denominators.length)];
+                const num1 = Math.floor(Math.random() * (den - 2)) + 1;
+                const num2 = Math.floor(Math.random() * (den - num1 - 1)) + 1;
+                const sum = num1 + num2;
+
+                return {
+                    question: `Additionne ces fractions :`,
+                    correctAnswer: `${sum}/${den}`,
+                    type: 'addition',
+                    fractions: [
+                        { numerator: num1, denominator: den },
+                        { numerator: num2, denominator: den }
+                    ]
+                };
+            } else {
+                const pairs = [
+                    { d1: 2, d2: 4, n1: 1, n2: 1 },
+                    { d1: 4, d2: 2, n1: 1, n2: 1 },
+                    { d1: 3, d2: 6, n1: 1, n2: 1 },
+                    { d1: 4, d2: 8, n1: 1, n2: 3 }
+                ];
+                const pair = pairs[Math.floor(Math.random() * pairs.length)];
+                const commonDen = Math.max(pair.d1, pair.d2);
+                const adjustedN1 = pair.n1 * (commonDen / pair.d1);
+                const totalNum = adjustedN1 + pair.n2;
+
+                return {
+                    question: `Additionne ces fractions (convertis si besoin) :`,
+                    correctAnswer: `${totalNum}/${commonDen}`,
+                    type: 'addition',
+                    fractions: [
+                        { numerator: pair.n1, denominator: pair.d1 },
+                        { numerator: pair.n2, denominator: pair.d2 }
+                    ]
+                };
+            }
+        }
+
+        // 3. CAS COMPARISON / ÉQUIVALENCE
         if (type === 'comparison') {
             const f1 = this.generateRandomFraction(config);
             let f2 = this.generateRandomFraction(config);
 
-            if (floorId === 'floor-4') {
-                // Pour l'étage 4, on force un mélange d'équivalences et de variations maîtrisées
-                const rand = Math.random();
-                if (rand < 0.5) {
-                    const multiplier = [2, 3][Math.floor(Math.random() * 2)];
-                    f2 = { numerator: f1.numerator * multiplier, denominator: f1.denominator * multiplier };
-                }
-            }
-
-            // Évite l'identité parfaite si le hasard a généré exactement la même fraction
             if (f1.numerator === f2.numerator && f1.denominator === f2.denominator) {
                 f2 = { numerator: Math.max(1, f1.numerator - 1), denominator: f1.denominator };
             }
@@ -90,14 +143,14 @@ export class ExerciseGenerator {
             else if (val1 < val2) result = '<';
 
             return {
-                question: floorId === 'floor-5' ? `Compare ces deux fractions :` : `Trouve le lien entre ces deux fractions :`,
+                question: `Compare ces deux fractions :`,
                 correctAnswer: result,
                 type: 'comparison',
                 fractions: [f1, f2]
             };
         }
 
-        // 2. CAS DROITE GRADUÉE (Étage 3)
+        // 4. CAS DROITE GRADUÉE (Étage 3)
         if (type === 'number_line') {
             const f = this.generateRandomFraction(config);
             return {
@@ -108,7 +161,7 @@ export class ExerciseGenerator {
             };
         }
 
-        // 3. CAS CONVERSION (Nombres décimaux)
+        // 5. CAS CONVERSION (Étage 6)
         if (type === 'decimal_conversion') {
             const f = this.generateRandomFraction(config);
             const decimalVal = (f.numerator / f.denominator).toFixed(3).replace(/\.?0+$/, "");
@@ -120,7 +173,7 @@ export class ExerciseGenerator {
             };
         }
 
-        // 4. CAS STANDARD (Barres / Cercles par défaut)
+        // 6. CAS STANDARD
         const f = this.generateRandomFraction(config);
         return {
             question: `Quelle fraction de la figure est colorée ?`,
@@ -128,13 +181,5 @@ export class ExerciseGenerator {
             type: 'input',
             fractions: [f]
         };
-    }
-
-    static generateSet(count: number, config: ExerciseConfig): Fraction[] {
-        const set: Fraction[] = [];
-        for (let i = 0; i < count; i++) {
-            set.push(this.generateRandomFraction(config));
-        }
-        return set;
     }
 }

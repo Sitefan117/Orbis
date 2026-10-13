@@ -2,13 +2,11 @@
 	import { onMount } from 'svelte';
 	import { languageState } from '$lib/fractionstower2/persistence/LanguageManager';
 
-	// Propriétés reçues par le composant : l'identifiant de l'étage et la fonction de fermeture
 	let { floorId, onClose } = $props<{
 		floorId: string,
 		onClose: () => void
 	}>();
 
-	// Dictionnaire contenant les cours de chaque étage avec support bilingue (Français / Russe)
 	const courseContent: Record<string, { title: { fr: string, ru: string }, content: string }> = {
 		'floor-1': {
 			title: { fr: 'Module 1 : Introduction aux Fractions', ru: 'Модуль 1: Введение в дроби' },
@@ -31,7 +29,6 @@
 			`
 		},
 		'floor-2': {
-			// Objectif de l'étage 2 : Passer entre représentation visuelle, écriture et lecture[cite: 5]
 			title: { fr: 'Module 2 : Lire et représenter les fractions', ru: 'Модуль 2: Чтение и представление дробей' },
 			content: `
 				<div class="bloc-theorie">
@@ -71,8 +68,19 @@
 			content: `
 				<div class="bloc-theorie">
 					<h2 class="print-title">Théorie / Теория</h2>
-					<p>Deux fractions sont équivalentes lorsqu'elles représentent la même quantité, même si les nombres sont différents.</p>
-					<p><i class="consigne-ru">Две дроби эквивалентны, когда они представляют одинаковое количество.</i></p>
+					<p>Deux fractions sont <strong class="mot-cle-vert">équivalentes</strong> lorsqu'elles représentent exactement la même quantité, même si les nombres (numérateur et dénominateur) sont différents.</p>
+					<p><i class="consigne-ru">Две дроби эквивалентны, когда они представляют одинаковое количество, даже если числа разные.</i></p>
+					<div class="fraction-display">
+						<div class="num">1 / 2</div>
+						<div class="line"></div>
+						<div class="den">est égal à</div>
+						<div class="num" style="margin-top: 5px;">2 / 4</div>
+					</div>
+				</div>
+				<div class="bloc-exemple">
+					<h2 class="print-title">Exemple / Пример</h2>
+					<p>Manger la moitié d'une pizza (1/2) revient à manger deux quarts de cette même pizza (2/4).</p>
+					<p><i class="consigne-ru">Съесть половину пиццы (1/2) — это то же самое, что съесть два четвертых (2/4).</i></p>
 				</div>
 			`
 		},
@@ -118,19 +126,18 @@
 		}
 	};
 
-	// Dérivation dynamique du cours selon l'étage actif (repli sur floor-1 par sécurité)
 	const currentCourse = $derived(courseContent[floorId] || courseContent['floor-1']);
 
-	// Variables pour la zone de brouillon interactive (Canevas)
-	let canvas: HTMLCanvasElement;
+	let canvas: HTMLCanvasElement | undefined = $state();
 	let ctx: CanvasRenderingContext2D | null = null;
-	let drawing = false;
+	let drawing = $state(false);
 
 	function startDrawing(e: MouseEvent | TouchEvent) {
+		if (!ctx) return;
 		drawing = true;
 		const pos = getPos(e);
-		ctx!.beginPath();
-		ctx!.moveTo(pos.x, pos.y);
+		ctx.beginPath();
+		ctx.moveTo(pos.x, pos.y);
 	}
 
 	function stopDrawing() {
@@ -138,14 +145,14 @@
 	}
 
 	function draw(e: MouseEvent | TouchEvent) {
-		if (!drawing) return;
+		if (!drawing || !ctx) return;
 		const pos = getPos(e);
-		ctx!.lineTo(pos.x, pos.y);
-		ctx!.stroke();
+		ctx.lineTo(pos.x, pos.y);
+		ctx.stroke();
 	}
 
 	function getPos(e: MouseEvent | TouchEvent) {
-		const rect = canvas.getBoundingClientRect();
+		const rect = canvas!.getBoundingClientRect();
 		let clientX, clientY;
 		if (e instanceof MouseEvent) {
 			clientX = e.clientX;
@@ -158,7 +165,9 @@
 	}
 
 	function clearCanvas() {
-		ctx!.clearRect(0, 0, canvas.width, canvas.height);
+		if (ctx && canvas) {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+		}
 	}
 
 	onMount(() => {
@@ -176,27 +185,27 @@
 <div class="course-overlay">
 	<div class="course-window">
 		<header>
-			<h1>{languageState.current === 'fr-FR' ? 'Guide Académique' : 'Академический гид'}</h1>
+			<h1>{languageState.current.startsWith('fr') ? 'Guide Académique' : 'Академический гид'}</h1>
 			<button class="close-btn" onclick={onClose}>✕</button>
 		</header>
 
 		<div class="main-layout">
 			<div class="content-area">
 				<div class="course-header">
-					<h2>{currentCourse.title[languageState.current]}</h2>
+					<h2>{currentCourse.title[languageState.current.startsWith('fr') ? 'fr' : 'ru']}</h2>
 				</div>
 				<div class="html-content">
 					{@html currentCourse.content}
 				</div>
 				<div class="input-zone">
-					<p>{languageState.current === 'fr-FR' ? 'Notes et réflexions :' : 'Заметки и размышления:'}</p>
+					<p>{languageState.current.startsWith('fr') ? 'Notes et réflexions :' : 'Заметки и размышления:'}</p>
 					<textarea placeholder="Ecris ici..."></textarea>
 				</div>
 			</div>
 
 			<div class="scribble-area">
 				<div class="scribble-header">
-					<span>{languageState.current === 'fr-FR' ? 'Zone de brouillon' : 'Зона черновика'}</span>
+					<span>{languageState.current.startsWith('fr') ? 'Zone de brouillon' : 'Зона черновика'}</span>
 					<button class="clear-btn" onclick={clearCanvas}>🗑️</button>
 				</div>
 				<canvas 

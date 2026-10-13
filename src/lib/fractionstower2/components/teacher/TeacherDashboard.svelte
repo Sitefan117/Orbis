@@ -11,7 +11,8 @@
         onClose: () => void;
     }>();
 
-    let progress = $state<GameProgress>(ProgressManager.getDefaultProgress());
+    // Utilisation de getProgress() au lieu degetDefaultProgress() (qui est privée)
+    let progress = $state<GameProgress>(ProgressManager.getProgress());
 
     onMount(() => {
         progress = ProgressManager.getProgress();
@@ -94,7 +95,7 @@
                         </thead>
                         <tbody class="divide-y divide-slate-800/60 text-sm">
                             {#each Object.entries(progress.floors) as [floorKey, data]}
-                                <tr class="hover:bg-slate-9rip/50 transition-colors">
+                                <tr class="hover:bg-slate-900/50 transition-colors">
                                     <td class="p-3 font-semibold text-slate-200">
                                         Étage {floorKey.replace('floor-', '')}
                                     </td>
