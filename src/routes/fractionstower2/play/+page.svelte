@@ -133,7 +133,8 @@
             if (interaction.type === 'pedagogical') {
                 if (interaction.action === 'boss-intro') {
                     activeBossFloorId = game.player.currentFloorId;
-                } else if (interaction.action === 'course-intro') {
+                } else if (interaction.action === 'classic-course-intro') {
+                    // C'est désormais le PNJ 'C' (guide_classic) en bas à droite qui ouvre le cours HTML classique
                     activeCourseFloorId = game.player.currentFloorId;
                 } else {
                     activeActivityId = interaction.action || interaction.id;

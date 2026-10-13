@@ -1,185 +1,302 @@
-// -----------------------------------------------------------------------------
-// [Moteur] ExerciseGenerator.ts (Global 9 Étages + Étage 9 & Boss)
-// -----------------------------------------------------------------------------
-
-import { type Fraction } from '$lib/fractionstower2/engines/FractionEngine';
-
-export interface ExerciseConfig {
-    minNumerator: number;
-    maxNumerator: number;
-    denominators: number[];
-}
-
-export interface ExerciseRequest {
-    floorId: string;
-    difficulty?: 'easy' | 'medium' | 'hard';
-    type?: 'standard' | 'comparison' | 'number_line' | 'decimal_conversion' | 'addition' | 'improper';
-    index?: number;
-}
-
 export interface Exercise {
+    id: string;
     question: string;
-    correctAnswer: Fraction | string;
-    type: 'input' | 'comparison' | 'number_line' | 'decimal_conversion' | 'addition' | 'improper';
-    hint?: string;
-    fractions?: Fraction[];
+    correctAnswer: string | number;
+    type: 'comparison' | 'input' | 'choice';
+    choices?: string[];
+    fractions?: { numerator: number; denominator: number }[];
 }
 
 export class ExerciseGenerator {
-    static generateRandomFraction(config: ExerciseConfig): Fraction {
-        const den = config.denominators[Math.floor(Math.random() * config.denominators.length)];
-        const actualMax = Math.min(config.maxNumerator, den);
-        const num = Math.floor(Math.random() * (actualMax - config.minNumerator + 1)) + config.minNumerator;
-        return { numerator: num, denominator: den };
-    }
+    static generate(params: { floorId: string; difficulty?: string; type?: string }): Exercise {
+        const floor = params.floorId;
 
-    static generate(request: ExerciseRequest): Exercise {
-        let { floorId, type } = request;
-        
-        // Si on est dans un contexte de Boss, on peut cibler un étage aléatoire parmi les autorisés
-        if (floorId === 'boss-bilan-5') {
-            const randomFloorNum = Math.floor(Math.random() * 5) + 1;
-            floorId = `floor-${randomFloorNum}`;
-        } else if (floorId === 'boss-final-9' || floorId === 'floor-8' || floorId === 'floor-9') {
-            // Pour le grand boss final, on brasse de l'étage 1 à 9
-            const randomFloorNum = Math.floor(Math.random() * 9) + 1;
-            floorId = `floor-${randomFloorNum}`;
-        }
+        switch (floor) {
+            // ==========================================
+            // ÉTAGE 1 : Le partage équitable
+            // ==========================================
+            case 'floor-1': {
+                const types = ['denom', 'num', 'write'];
+                const t = types[Math.floor(Math.random() * types.length)];
+                if (t === 'denom') {
+                    const den = [4, 5, 6, 8, 10][Math.floor(Math.random() * 5)];
+                    return {
+                        id: 'f1-1',
+                        question: `Une orange est partagée en ${den} morceaux de même taille. Combien y a-t-il de parts en tout ?`,
+                        correctAnswer: den,
+                        type: 'input'
+                    };
+                } else if (t === 'num') {
+                    const num = Math.floor(Math.random() * 4) + 1;
+                    const den = num + Math.floor(Math.random() * 4) + 2;
+                    return {
+                        id: 'f1-2',
+                        question: `Dans la fraction ${num}/${den}, quel nombre est le numérateur ?`,
+                        correctAnswer: num,
+                        type: 'input'
+                    };
+                } else {
+                    const num = Math.floor(Math.random() * 3) + 1;
+                    const den = num + Math.floor(Math.random() * 3) + 2;
+                    return {
+                        id: 'f1-3',
+                        question: `On prend ${num} parts parmi ${den} parts égales. Écris la fraction.`,
+                        correctAnswer: `${num}/${den}`,
+                        type: 'input'
+                    };
+                }
+            }
 
-        // Configuration pour l'ensemble des 9 étages
-        const configs: Record<string, ExerciseConfig> = {
-            'floor-1': { minNumerator: 1, maxNumerator: 10, denominators: [2, 3, 4, 6, 8] },
-            'floor-2': { minNumerator: 1, maxNumerator: 10, denominators: [2, 3, 4, 5, 6, 8, 10] },
-            'floor-3': { minNumerator: 1, maxNumerator: 10, denominators: [2, 4, 5, 10] },
-            'floor-4': { minNumerator: 1, maxNumerator: 20, denominators: [2, 3, 4, 5, 6, 8, 10, 12] },
-            'floor-5': { minNumerator: 1, maxNumerator: 50, denominators: [2, 3, 4, 5, 6, 8, 10, 12] },
-            'floor-6': { minNumerator: 1, maxNumerator: 100, denominators: [10, 100] },
-            'floor-7': { minNumerator: 1, maxNumerator: 100, denominators: [4, 6, 8, 10] },
-            'floor-8': { minNumerator: 1, maxNumerator: 100, denominators: [2, 3, 4, 6, 8] },
-            'floor-9': { minNumerator: 1, maxNumerator: 100, denominators: [2, 3, 4, 6] },
-        };
+            // ==========================================
+            // ÉTAGE 2 : Lire et représenter les fractions
+            // ==========================================
+            case 'floor-2': {
+                const sub = Math.floor(Math.random() * 3);
+                if (sub === 0) {
+                    const pairs = [
+                        { words: 'quatre septièmes', frac: '4/7' },
+                        { words: 'cinq sixièmes', frac: '5/6' },
+                        { words: 'trois neuvièmes', frac: '3/9' },
+                        { words: 'deux tiers', frac: '2/3' }
+                    ];
+                    const p = pairs[Math.floor(Math.random() * pairs.length)];
+                    return {
+                        id: 'f2-1',
+                        question: `Écris en chiffres la fraction : « ${p.words} ».`,
+                        correctAnswer: p.frac,
+                        type: 'input'
+                    };
+                } else if (sub === 1) {
+                    return {
+                        id: 'f2-2',
+                        question: `Une barre de 9 cases égales en a 7 coloriées. Écris la fraction.`,
+                        correctAnswer: '7/9',
+                        type: 'input'
+                    };
+                } else {
+                    return {
+                        id: 'f2-3',
+                        question: `Une pizza a 8 parts égales. 2 parts sont prises. Écris la fraction prise.`,
+                        correctAnswer: '2/8',
+                        type: 'input'
+                    };
+                }
+            }
 
-        const config = configs[floorId] || configs['floor-1'];
-
-        // Attribution automatique du type d'exercice selon l'étage
-        if (!type || type === 'standard') {
-            if (floorId === 'floor-3') type = 'number_line';
-            else if (['floor-4', 'floor-5'].includes(floorId)) type = 'comparison';
-            else if (floorId === 'floor-6') type = 'decimal_conversion';
-            else if (['floor-7', 'floor-8'].includes(floorId)) type = 'addition';
-            else if (floorId === 'floor-9') type = 'improper';
-            else type = 'standard';
-        }
-
-        // 1. ÉTAGE 9 : Fractions impropres / supérieures à 1 (ex: 5/4)
-        if (type === 'improper' || floorId === 'floor-9') {
-            const den = config.denominators[Math.floor(Math.random() * config.denominators.length)];
-            // Numérateur supérieur au dénominateur pour faire plus d'une unité (ex: entre den + 1 et den * 2)
-            const num = Math.floor(Math.random() * den) + den + 1;
-
-            return {
-                question: `Quelle fraction totale représente ces figures (plus d'une unité) ?`,
-                correctAnswer: `${num}/${den}`,
-                type: 'improper',
-                fractions: [{ numerator: num, denominator: den }]
-            };
-        }
-
-        // 2. CAS ADDITION (Étages 7 & 8)
-        if (type === 'addition') {
-            if (floorId === 'floor-7') {
-                const den = config.denominators[Math.floor(Math.random() * config.denominators.length)];
-                const num1 = Math.floor(Math.random() * (den - 2)) + 1;
-                const num2 = Math.floor(Math.random() * (den - num1 - 1)) + 1;
-                const sum = num1 + num2;
-
+            // ==========================================
+            // ÉTAGE 3 : La droite graduée
+            // ==========================================
+            case 'floor-3': {
+                const den = [4, 5, 6, 8, 10][Math.floor(Math.random() * 5)];
+                const num = Math.floor(Math.random() * (den - 1)) + 1;
                 return {
-                    question: `Additionne ces fractions :`,
-                    correctAnswer: `${sum}/${den}`,
-                    type: 'addition',
-                    fractions: [
-                        { numerator: num1, denominator: den },
-                        { numerator: num2, denominator: den }
-                    ]
+                    id: 'f3-1',
+                    question: `Sur une droite de 0 à 1 partagée en ${den} intervalles égaux, à quelle fraction correspond le ${num}e trait après 0 ?`,
+                    correctAnswer: `${num}/${den}`,
+                    type: 'input'
                 };
-            } else {
-                const pairs = [
-                    { d1: 2, d2: 4, n1: 1, n2: 1 },
-                    { d1: 4, d2: 2, n1: 1, n2: 1 },
-                    { d1: 3, d2: 6, n1: 1, n2: 1 },
-                    { d1: 4, d2: 8, n1: 1, n2: 3 }
+            }
+
+            // ==========================================
+            // ÉTAGE 4 : Fractions équivalentes et simplification
+            // ==========================================
+            case 'floor-4': {
+                const sub = Math.floor(Math.random() * 2);
+                if (sub === 0) {
+                    const baseNum = [1, 2][Math.floor(Math.random() * 2)];
+                    const baseDen = baseNum * 2;
+                    const mult = [2, 3, 4][Math.floor(Math.random() * 3)];
+                    return {
+                        id: 'f4-1',
+                        question: `Complète l'égalité : ${baseNum}/${baseDen} = ?/${baseDen * mult}`,
+                        correctAnswer: baseNum * mult,
+                        type: 'input'
+                    };
+                } else {
+                    const fracs = [
+                        { orig: '4/8', simp: '1/2' },
+                        { orig: '6/9', simp: '2/3' },
+                        { orig: '8/12', simp: '2/3' },
+                        { orig: '5/10', simp: '1/2' },
+                        { orig: '14/21', simp: '2/3' }
+                    ];
+                    const f = fracs[Math.floor(Math.random() * fracs.length)];
+                    return {
+                        id: 'f4-2',
+                        question: `Simplifie au maximum la fraction ${f.orig}.`,
+                        correctAnswer: f.simp,
+                        type: 'input'
+                    };
+                }
+            }
+
+            // ==========================================
+            // ÉTAGE 5 & BOSS BILAN : Comparer et ordonner
+            // ==========================================
+            case 'floor-5':
+            case 'boss-bilan-5': {
+                const typeOp = Math.random();
+                if (typeOp < 0.6) {
+                    const den = [4, 5, 7, 8, 10][Math.floor(Math.random() * 5)];
+                    const n1 = Math.floor(Math.random() * (den - 2)) + 1;
+                    const n2 = n1 + Math.floor(Math.random() * 2) + 1;
+                    const [left, right] = Math.random() > 0.5 ? [n1, n2] : [n2, n1];
+                    const sym = left < right ? '<' : left > right ? '>' : '=';
+                    return {
+                        id: 'f5-comp',
+                        question: `Compare avec <, > ou = : ${left}/${den} ___ ${right}/${den}`,
+                        correctAnswer: sym,
+                        type: 'comparison',
+                        fractions: [
+                            { numerator: left, denominator: den },
+                            { numerator: right, denominator: den }
+                        ]
+                    };
+                } else {
+                    const pairs = [
+                        { f1: '3/5', f2: '3/8', ans: '>' },
+                        { f1: '1/3', f2: '1/2', ans: '<' },
+                        { f1: '2/3', f2: '3/4', ans: '<' }
+                    ];
+                    const p = pairs[Math.floor(Math.random() * pairs.length)];
+                    const [n1, d1] = p.f1.split('/').map(Number);
+                    const [n2, d2] = p.f2.split('/').map(Number);
+                    return {
+                        id: 'f5-comp2',
+                        question: `Compare avec <, > ou = : ${p.f1} ___ ${p.f2}`,
+                        correctAnswer: p.ans,
+                        type: 'comparison',
+                        fractions: [
+                            { numerator: n1, denominator: d1 },
+                            { numerator: n2, denominator: d2 }
+                        ]
+                    };
+                }
+            }
+
+            // ==========================================
+            // ÉTAGE 6 : Fractions décimales et décimaux
+            // ==========================================
+            case 'floor-6': {
+                const sub = Math.floor(Math.random() * 3);
+                if (sub === 0) {
+                    const dec = [10, 100][Math.floor(Math.random() * 2)];
+                    const num = Math.floor(Math.random() * (dec - 1)) + 1;
+                    const val = dec === 10 ? (num / 10).toFixed(1) : (num / 100).toFixed(2);
+                    return {
+                        id: 'f6-1',
+                        question: `Convertis la fraction décimale ${num}/${dec} en nombre décimal.`,
+                        correctAnswer: val.replace('.', ','),
+                        type: 'input'
+                    };
+                } else if (sub === 1) {
+                    return {
+                        id: 'f6-2',
+                        question: `Écris le nombre décimal 0,06 sous forme de fraction décimale.`,
+                        correctAnswer: '6/100',
+                        type: 'input'
+                    };
+                } else {
+                    return {
+                        id: 'f6-3',
+                        question: `75 centimes représentent quelle fraction de 1 CHF ? (ex: 75/100)`,
+                        correctAnswer: '75/100',
+                        type: 'input'
+                    };
+                }
+            }
+
+            // ==========================================
+            // ÉTAGE 7 : Addition et soustraction (même dénominateur)
+            // ==========================================
+            case 'floor-7': {
+                const den = [6, 7, 8, 10, 12][Math.floor(Math.random() * 5)];
+                const n1 = Math.floor(Math.random() * 3) + 1;
+                const n2 = Math.floor(Math.random() * 3) + 1;
+                const isAdd = Math.random() > 0.5;
+                if (isAdd) {
+                    const sum = n1 + n2;
+                    return {
+                        id: 'f7-1',
+                        question: `Calcule : ${n1}/${den} + ${n2}/${den}`,
+                        correctAnswer: `${sum}/${den}`,
+                        type: 'input'
+                    };
+                } else {
+                    const big = Math.max(n1, n2) + 2;
+                    const small = Math.min(n1, n2);
+                    const diff = big - small;
+                    return {
+                        id: 'f7-2',
+                        question: `Calcule : ${big}/${den} - ${small}/${den}`,
+                        correctAnswer: `${diff}/${den}`,
+                        type: 'input'
+                    };
+                }
+            }
+
+            // ==========================================
+            // ÉTAGE 8 : Dénominateurs différents
+            // ==========================================
+            case 'floor-8': {
+                const problems = [
+                    { q: '1/2 + 1/4', a: '3/4' },
+                    { q: '1/3 + 1/6', a: '1/2' },
+                    { q: '3/4 - 1/2', a: '1/4' },
+                    { q: '2/5 + 1/10', a: '1/2' },
+                    { q: '3/4 - 1/6', a: '7/12' }
                 ];
-                const pair = pairs[Math.floor(Math.random() * pairs.length)];
-                const commonDen = Math.max(pair.d1, pair.d2);
-                const adjustedN1 = pair.n1 * (commonDen / pair.d1);
-                const totalNum = adjustedN1 + pair.n2;
-
+                const p = problems[Math.floor(Math.random() * problems.length)];
                 return {
-                    question: `Additionne ces fractions (convertis si besoin) :`,
-                    correctAnswer: `${totalNum}/${commonDen}`,
-                    type: 'addition',
-                    fractions: [
-                        { numerator: pair.n1, denominator: pair.d1 },
-                        { numerator: pair.n2, denominator: pair.d2 }
-                    ]
+                    id: 'f8-1',
+                    question: `Calcule et simplifie si besoin : ${p.q}`,
+                    correctAnswer: p.a,
+                    type: 'input'
                 };
             }
-        }
 
-        // 3. CAS COMPARISON / ÉQUIVALENCE
-        if (type === 'comparison') {
-            const f1 = this.generateRandomFraction(config);
-            let f2 = this.generateRandomFraction(config);
-
-            if (f1.numerator === f2.numerator && f1.denominator === f2.denominator) {
-                f2 = { numerator: Math.max(1, f1.numerator - 1), denominator: f1.denominator };
+            // ==========================================
+            // ÉTAGE 9 & BOSS FINAL : Multiplication et division
+            // ==========================================
+            case 'floor-9':
+            case 'boss-final-9': {
+                const sub = Math.random();
+                if (sub < 0.5) {
+                    const mults = [
+                        { q: '2/5 × 3/4', a: '3/10' },
+                        { q: '1/3 × 3/7', a: '1/7' },
+                        { q: '3/4 × 2/3', a: '1/2' }
+                    ];
+                    const m = mults[Math.floor(Math.random() * mults.length)];
+                    return {
+                        id: 'f9-mult',
+                        question: `Calcule le produit : ${m.q}`,
+                        correctAnswer: m.a,
+                        type: 'input'
+                    };
+                } else {
+                    const divs = [
+                        { q: '1/2 ÷ 1/4', a: '2' },
+                        { q: '2/3 ÷ 1/6', a: '4' },
+                        { q: '3/5 ÷ 1/10', a: '6' }
+                    ];
+                    const d = divs[Math.floor(Math.random() * divs.length)];
+                    return {
+                        id: 'f9-div',
+                        question: `Calcule le quotient : ${d.q}`,
+                        correctAnswer: d.a,
+                        type: 'input'
+                    };
+                }
             }
 
-            const val1 = f1.numerator / f1.denominator;
-            const val2 = f2.numerator / f2.denominator;
-            
-            let result = '=';
-            if (val1 > val2) result = '>';
-            else if (val1 < val2) result = '<';
-
-            return {
-                question: `Compare ces deux fractions :`,
-                correctAnswer: result,
-                type: 'comparison',
-                fractions: [f1, f2]
-            };
+            default:
+                return {
+                    id: 'default',
+                    question: `Combien font 1/2 + 1/2 ?`,
+                    correctAnswer: '1',
+                    type: 'input'
+                };
         }
-
-        // 4. CAS DROITE GRADUÉE (Étage 3)
-        if (type === 'number_line') {
-            const f = this.generateRandomFraction(config);
-            return {
-                question: `Place ou lis la fraction correspondante sur la droite graduée :`,
-                correctAnswer: f,
-                type: 'number_line',
-                fractions: [f]
-            };
-        }
-
-        // 5. CAS CONVERSION (Étage 6)
-        if (type === 'decimal_conversion') {
-            const f = this.generateRandomFraction(config);
-            const decimalVal = (f.numerator / f.denominator).toFixed(3).replace(/\.?0+$/, "");
-            return {
-                question: `Convertis cette fraction en nombre décimal :`,
-                correctAnswer: decimalVal,
-                type: 'input',
-                fractions: [f]
-            };
-        }
-
-        // 6. CAS STANDARD
-        const f = this.generateRandomFraction(config);
-        return {
-            question: `Quelle fraction de la figure est colorée ?`,
-            correctAnswer: f,
-            type: 'input',
-            fractions: [f]
-        };
     }
 }
