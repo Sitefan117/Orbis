@@ -6,6 +6,7 @@
     import { onMount } from 'svelte';
     import { ExerciseGenerator } from '$lib/fractionstower2/engines/ExerciseGenerator';
     import FractionBar from '$lib/fractionstower2/components/fraction/FractionBar.svelte';
+    import BossFloor2 from '$lib/fractionstower2/components/exercises/BossFloor2.svelte';
 
     let { 
         floorId = 'floor-5', 
@@ -77,6 +78,9 @@
     }
 </script>
 
+{#if activeFloor === 'floor-2'}
+    <BossFloor2 onComplete={onComplete} />
+{:else}
 <div class="boss-container bg-slate-900 text-white p-8 rounded-3xl shadow-2xl max-w-xl mx-auto border-2 {activeFloor === 'floor-8' ? 'border-amber-500 shadow-amber-500/20' : 'border-cyan-500 shadow-cyan-500/20'} relative overflow-hidden">
     <!-- En-tête épique -->
     <div class="flex justify-between items-center mb-6 text-sm font-mono tracking-wider">
@@ -155,3 +159,4 @@
         </div>
     {/if}
 </div>
+{/if}

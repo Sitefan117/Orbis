@@ -47,9 +47,9 @@
 
     function generateUniqueExercise(activeFloor: string) {
         let exercise = ExerciseGenerator.generate({ floorId: activeFloor, difficulty: 'easy', type: getExerciseType(activeFloor) });
-        if (activeFloor !== 'floor-1') return exercise;
+        if (!['floor-1', 'floor-2'].includes(activeFloor)) return exercise;
         let attempts = 0;
-        while (seenQuestions.has(exercise.question) && attempts < 30) {
+        while (seenQuestions.has(exercise.question) && attempts < 80) {
             exercise = ExerciseGenerator.generate({ floorId: activeFloor, difficulty: 'easy', type: getExerciseType(activeFloor) });
             attempts += 1;
         }
@@ -99,9 +99,30 @@
 
         let isCorrect = false;
 
-        // Pour l’étage 1, accepter les réponses numériques et les fractions du type 3/5.
-        // La logique des autres étages reste inchangée.
-        if (floorId === 'floor-1') {
+        // L’étage 2 travaille le dessin, l’écriture fractionnaire, les noms et les situations.
+        // On accepte les espaces autour de la barre et les accents dans les mots.
+        if (floorId === 'floor-2') {
+            const normalize = (value: string | number) => String(value)
+                .toLocaleLowerCase('fr-CH')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/\s*\/\s*/g, '/')
+                .replace(/[-‐‑]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            const expected = normalize(currentExercise.correctAnswer);
+            const actual = normalize(userAnswer);
+            const acceptedAliases: Record<string, string[]> = {
+                'une moitie': ['un demi', 'la moitie', '1/2'],
+                'un tiers': ['1/3'],
+                'un quart': ['1/4'],
+                'trois quarts': ['3/4'],
+                'cinq quarts': ['5/4']
+            };
+            isCorrect = typeof currentExercise.correctAnswer === 'number'
+                ? actual !== '' && Number(actual) === currentExercise.correctAnswer
+                : actual === expected || (acceptedAliases[expected]?.includes(actual) ?? false);
+        } else if (floorId === 'floor-1') {
             const cleanUser = userAnswer.replace(/\s+/g, '').replace(',', '.');
             const expected = String(currentExercise.correctAnswer).replace(/\s+/g, '');
             if (expected.includes('/')) {
@@ -183,7 +204,13 @@
             <button class="audio-btn" onclick={readQuestion} title="Lire la consigne">🔊</button>
         </div>
         
-        {#if currentExercise.fractions && (currentExercise.type === 'number_line' || currentExercise.type === 'comparison' || currentExercise.type === 'addition')}
+        {#if floorId === 'floor-2' && currentExercise.fractions?.[0]}
+            <div class="viz-box">
+                <div class="viz-wrapper">
+                    <FractionBar numerator={currentExercise.fractions[0].numerator} denominator={currentExercise.fractions[0].denominator} showLabel={false} width={240} />
+                </div>
+            </div>
+        {:else if floorId !== 'floor-2' && currentExercise.fractions && (currentExercise.type === 'number_line' || currentExercise.type === 'comparison' || currentExercise.type === 'addition')}
             <div class="viz-box">
                 {#key currentExercise}
                     <div class="viz-wrapper">
@@ -220,23 +247,35 @@
                 <button class="btn-symbol" onclick={() => { userAnswer = '>'; checkAnswer(); }}>&gt;</button>
             </div>
         {:else}
-            <div class="fraction-input-container">
-                <div class="numerator-input-wrapper">
-                    <input 
-                        type="text" 
-                        inputmode="numeric"
-                        bind:this={inputRef} 
-                        bind:value={userAnswer} 
-                        placeholder={currentExercise.type === 'addition' || (floorId === 'floor-1' && String(currentExercise.correctAnswer).includes('/')) ? "ex: 2/5" : "?"}
+            {#if floorId === 'floor-2'}
+                <div class="full-answer-container">
+                    <input
+                        type="text"
+                        bind:this={inputRef}
+                        bind:value={userAnswer}
+                        placeholder={typeof currentExercise.correctAnswer === 'number' ? 'Écris un nombre' : String(currentExercise.correctAnswer).includes('/') ? 'Ex. : 3/5' : 'Écris avec des mots'}
+                        aria-label="Ta réponse"
                     />
                 </div>
-                {#if floorId !== 'floor-1' && currentExercise.type !== 'decimal_conversion' && currentExercise.type !== 'addition'}
-                    <div class="fraction-bar"></div>
-                    <div class="denominator-display">
-                        {currentExercise.fractions?.[0]?.denominator ?? 2}
+            {:else}
+                <div class="fraction-input-container">
+                    <div class="numerator-input-wrapper">
+                        <input 
+                            type="text" 
+                            inputmode="numeric"
+                            bind:this={inputRef} 
+                            bind:value={userAnswer} 
+                            placeholder={currentExercise.type === 'addition' || (floorId === 'floor-1' && String(currentExercise.correctAnswer).includes('/')) ? "ex: 2/5" : "?"}
+                        />
                     </div>
-                {/if}
-            </div>
+                    {#if floorId !== 'floor-1' && currentExercise.type !== 'decimal_conversion' && currentExercise.type !== 'addition'}
+                        <div class="fraction-bar"></div>
+                        <div class="denominator-display">
+                            {currentExercise.fractions?.[0]?.denominator ?? 2}
+                        </div>
+                    {/if}
+                </div>
+            {/if}
             <button class="btn" onclick={checkAnswer} disabled={isAdvancing}>Vérifier</button>
         {/if}
 
@@ -253,6 +292,7 @@
     .audio-btn { background: #eee; border: 1px solid #ccc; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1rem; }
     .viz-box { padding: 20px; background: #fdfdfd; border: 1px solid #eee; border-radius: 12px; min-height: 180px; display: flex; justify-content: center; align-items: center; width: 100%; }
     .viz-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; }
+    .full-answer-container input { width: min(100%, 360px); min-width: 230px; min-height: 48px; box-sizing: border-box; font-size: 1.15rem; text-align: center; padding: 10px 14px; border: 2px solid #0e7490; border-radius: 10px; background: #fff; color: #111827; }
     .fraction-input-container { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; margin: 10px 0; }
     .numerator-input-wrapper input { width: 120px; height: 50px; font-size: 1.5rem; text-align: center; padding: 5px; border: 2px solid #3498db; border-radius: 8px; background: #fcfcfc; }
     .fraction-bar { width: 80px; height: 3px; background-color: #333; border-radius: 2px; }

@@ -24,7 +24,7 @@ export const FLOOR_CURRICULUM: readonly FloorCurriculum[] = [
 		objective: 'Passer entre une représentation visuelle, une écriture fractionnaire et son nom.',
 		prerequisites: ['Parts égales', 'Numérateur et dénominateur'],
 		trainingFocus: 'Associer image, écriture et lecture des fractions.',
-		bossFocus: 'Lire des fractions avec dixièmes et centièmes.', status: 'active'
+		bossFocus: 'Associer représentation, écriture fractionnaire et nom des fractions simples.', status: 'active'
 	},
 	{
 		number: 3, id: 'floor-3', title: 'La droite graduée',

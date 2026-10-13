@@ -84,38 +84,55 @@ export class ExerciseGenerator {
 
             // ==========================================
             // ÉTAGE 2 : Lire et représenter les fractions
+            // Contenu propre à cet étage : dessin, écriture et nom.
             // ==========================================
             case 'floor-2': {
-                const sub = Math.floor(Math.random() * 3);
-                if (sub === 0) {
-                    const pairs = [
-                        { words: 'quatre septièmes', frac: '4/7' },
-                        { words: 'cinq sixièmes', frac: '5/6' },
-                        { words: 'trois neuvièmes', frac: '3/9' },
-                        { words: 'deux tiers', frac: '2/3' }
-                    ];
-                    const p = pairs[Math.floor(Math.random() * pairs.length)];
-                    return {
-                        id: 'f2-1',
-                        question: `Écris en chiffres la fraction : « ${p.words} ».`,
-                        correctAnswer: p.frac,
-                        type: 'input'
-                    };
-                } else if (sub === 1) {
-                    return {
-                        id: 'f2-2',
-                        question: `Une barre de 9 cases égales en a 7 coloriées. Écris la fraction.`,
-                        correctAnswer: '7/9',
-                        type: 'input'
-                    };
-                } else {
-                    return {
-                        id: 'f2-3',
-                        question: `Une pizza a 8 parts égales. 2 parts sont prises. Écris la fraction prise.`,
-                        correctAnswer: '2/8',
-                        type: 'input'
-                    };
+                // Banque de questions centrée sur les trois représentations :
+                // dessin, écriture fractionnaire et nom en toutes lettres.
+                // Les questions de situation reprennent aussi les objectifs du cahier.
+                const pairs = [
+                    { numerator: 1, denominator: 2, words: 'une moitié' },
+                    { numerator: 1, denominator: 3, words: 'un tiers' },
+                    { numerator: 2, denominator: 3, words: 'deux tiers' },
+                    { numerator: 1, denominator: 4, words: 'un quart' },
+                    { numerator: 3, denominator: 4, words: 'trois quarts' },
+                    { numerator: 2, denominator: 5, words: 'deux cinquièmes' },
+                    { numerator: 3, denominator: 5, words: 'trois cinquièmes' },
+                    { numerator: 4, denominator: 7, words: 'quatre septièmes' },
+                    { numerator: 5, denominator: 6, words: 'cinq sixièmes' },
+                    { numerator: 3, denominator: 9, words: 'trois neuvièmes' },
+                    { numerator: 6, denominator: 8, words: 'six huitièmes' },
+                    { numerator: 5, denominator: 4, words: 'cinq quarts' },
+                    { numerator: 7, denominator: 10, words: 'sept dixièmes' }
+                ];
+                const pick = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
+                const p = pick(pairs);
+                const mode = Math.floor(Math.random() * 7);
+
+                if (mode === 0) {
+                    return { id: 'f2-words-to-fraction', question: `Écris en chiffres : « ${p.words} ».`, correctAnswer: `${p.numerator}/${p.denominator}`, type: 'input' };
                 }
+                if (mode === 1) {
+                    return { id: 'f2-picture-to-fraction', question: `La barre est partagée en ${p.denominator} parts égales. ${p.numerator} sont coloriées. Écris la fraction représentée.`, correctAnswer: `${p.numerator}/${p.denominator}`, type: 'input', fractions: [{ numerator: p.numerator, denominator: p.denominator }] };
+                }
+                if (mode === 2) {
+                    return { id: 'f2-fraction-to-words', question: `Écris avec des mots : ${p.numerator}/${p.denominator}.`, correctAnswer: p.words, type: 'input' };
+                }
+                if (mode === 3) {
+                    const context = pick([
+                        { question: `Une distance est divisée en ${p.denominator} segments égaux. Tu en parcours ${p.numerator}. Quelle fraction as-tu parcourue ?`, answer: `${p.numerator}/${p.denominator}` },
+                        { question: `Une tablette a ${p.denominator} carrés égaux. ${p.numerator} carrés sont encore là. Quelle fraction reste-t-il ?`, answer: `${p.numerator}/${p.denominator}` },
+                        { question: `Une recette demande de compter ${p.denominator} mesures identiques. Tu en utilises ${p.numerator}. Écris la fraction utilisée.`, answer: `${p.numerator}/${p.denominator}` }
+                    ]);
+                    return { id: 'f2-situation', question: context.question, correctAnswer: context.answer, type: 'input' };
+                }
+                if (mode === 4) {
+                    return { id: 'f2-denominator', question: `Dans la fraction ${p.numerator}/${p.denominator}, combien y a-t-il de parts égales en tout ?`, correctAnswer: p.denominator, type: 'input', fractions: [{ numerator: p.numerator, denominator: p.denominator }] };
+                }
+                if (mode === 5) {
+                    return { id: 'f2-one-third-context', question: 'Une boîte contient 12 chocolats identiques. Un tiers de la boîte représente combien de chocolats ?', correctAnswer: 4, type: 'input' };
+                }
+                return { id: 'f2-whole', question: `Un tout est partagé en ${p.denominator} parts égales. Toutes les parts sont présentes. Écris la fraction qui représente le tout.`, correctAnswer: `${p.denominator}/${p.denominator}`, type: 'input' };
             }
 
             // ==========================================
