@@ -2,22 +2,34 @@ export interface Exercise {
     id: string;
     question: string;
     correctAnswer: string | number;
-    type: 'comparison' | 'input' | 'choice';
+    type: 'comparison' | 'input' | 'choice' | 'number_line' | 'addition' | 'decimal_conversion';
     choices?: string[];
     fractions?: { numerator: number; denominator: number }[];
 }
 
 export class ExerciseGenerator {
-    static generate(params: { floorId: string; difficulty?: string; type?: string }): Exercise {
-        const floor = params.floorId;
+    static generate(params: { floorId: string | number; difficulty?: string; type?: string }): Exercise {
+        let rawFloor = String(params.floorId ?? 'floor-1').trim().toLowerCase();
+        
+        // Si c'est une intro sans numéro explicite, on cible l'étage 2 par défaut
+        if (rawFloor.includes('intro')) {
+            if (rawFloor.includes('3')) rawFloor = 'floor-3';
+            else if (rawFloor.includes('4')) rawFloor = 'floor-4';
+            else if (rawFloor.includes('5')) rawFloor = 'floor-5';
+            else if (rawFloor.includes('6')) rawFloor = 'floor-6';
+            else if (rawFloor.includes('7')) rawFloor = 'floor-7';
+            else if (rawFloor.includes('8')) rawFloor = 'floor-8';
+            else if (rawFloor.includes('9')) rawFloor = 'floor-9';
+            else rawFloor = 'floor-2'; // Par défaut sur l'étage 2 pour l'intro actuelle
+        }
+
+        const floor = rawFloor.startsWith('floor-') ? rawFloor : `floor-${rawFloor}`;
 
         switch (floor) {
             // ==========================================
             // ÉTAGE 1 : Le partage équitable
             // ==========================================
             case 'floor-1': {
-                // Banque variée de questions simples. Les nombres sont générés dans
-                // les limites des notions de l’étage 1 uniquement.
                 const den = [3, 4, 5, 6, 7, 8, 9, 10, 12][Math.floor(Math.random() * 9)];
                 const num = Math.floor(Math.random() * (den - 1)) + 1;
                 const contexts = ['une orange', 'une tablette de chocolat', 'une pizza', 'une tarte', 'une barre', 'un gâteau', 'une feuille'];
@@ -84,12 +96,8 @@ export class ExerciseGenerator {
 
             // ==========================================
             // ÉTAGE 2 : Lire et représenter les fractions
-            // Contenu propre à cet étage : dessin, écriture et nom.
             // ==========================================
             case 'floor-2': {
-                // Banque de questions centrée sur les trois représentations :
-                // dessin, écriture fractionnaire et nom en toutes lettres.
-                // Les questions de situation reprennent aussi les objectifs du cahier.
                 const pairs = [
                     { numerator: 1, denominator: 2, words: 'une moitié' },
                     { numerator: 1, denominator: 3, words: 'un tiers' },
@@ -145,7 +153,8 @@ export class ExerciseGenerator {
                     id: 'f3-1',
                     question: `Sur une droite de 0 à 1 partagée en ${den} intervalles égaux, à quelle fraction correspond le ${num}e trait après 0 ?`,
                     correctAnswer: `${num}/${den}`,
-                    type: 'input'
+                    type: 'number_line',
+                    fractions: [{ numerator: num, denominator: den }]
                 };
             }
 
@@ -183,7 +192,7 @@ export class ExerciseGenerator {
             }
 
             // ==========================================
-            // ÉTAGE 5 & BOSS BILAN : Comparer et ordonner
+            // ÉTAGE 5 : Comparer et ordonner
             // ==========================================
             case 'floor-5':
             case 'boss-bilan-5': {
@@ -308,7 +317,7 @@ export class ExerciseGenerator {
             }
 
             // ==========================================
-            // ÉTAGE 9 & BOSS FINAL : Multiplication et division
+            // ÉTAGE 9 : Multiplication et division
             // ==========================================
             case 'floor-9':
             case 'boss-final-9': {
@@ -345,9 +354,10 @@ export class ExerciseGenerator {
             default:
                 return {
                     id: 'default',
-                    question: `Combien font 1/2 + 1/2 ?`,
-                    correctAnswer: '1',
-                    type: 'input'
+                    question: `Écris la fraction correspondant à 1 part sur 2.`,
+                    correctAnswer: '1/2',
+                    type: 'input',
+                    fractions: [{ numerator: 1, denominator: 2 }]
                 };
         }
     }

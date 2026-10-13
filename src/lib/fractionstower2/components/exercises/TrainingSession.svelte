@@ -14,9 +14,16 @@
         floorId = 'floor-1', 
         onComplete 
     } = $props<{
-        floorId?: string;
+        floorId?: string | number;
         onComplete: () => void;
     }>();
+
+    // Normalisation locale robuste pour gérer '2', 2, ou 'floor-2'
+    let normalizedFloorId = $derived(
+        typeof floorId === 'number' || !String(floorId).startsWith('floor-')
+            ? `floor-${floorId}`
+            : String(floorId)
+    );
 
     let inputRef: HTMLInputElement | undefined = $state();
 
@@ -28,7 +35,7 @@
         return 'standard';
     }
 
-    // 1. Initialisation neutre sans référence à la prop floorId
+    // Initialisation neutre pour éviter l'avertissement de capture d'état local
     let currentExercise = $state(
         ExerciseGenerator.generate({ 
             floorId: 'floor-1', 
@@ -42,7 +49,6 @@
     let score = $state(0);
     const totalExercises = 10;
     let isAdvancing = $state(false);
-    // Évite de reproposer une même formulation pendant la session de l’étage 1.
     let seenQuestions = new Set<string>();
 
     function generateUniqueExercise(activeFloor: string) {
@@ -57,9 +63,8 @@
         return exercise;
     }
 
-    // 2. Synchronisation propre via $effect dès que floorId change
     $effect(() => {
-        const activeFloor = floorId;
+        const activeFloor = normalizedFloorId;
         seenQuestions = new Set<string>();
         currentExercise = generateUniqueExercise(activeFloor);
         score = 0;
@@ -82,7 +87,7 @@
             return;
         }
 
-        if (currentExercise.type === 'addition') {
+        if ((currentExercise.type as string) === 'addition') {
             const cleanUser = userAnswer.replace(/\s+/g, '').trim();
             const cleanCorrect = String(currentExercise.correctAnswer).replace(/\s+/g, '').trim();
             
@@ -99,9 +104,7 @@
 
         let isCorrect = false;
 
-        // L’étage 2 travaille le dessin, l’écriture fractionnaire, les noms et les situations.
-        // On accepte les espaces autour de la barre et les accents dans les mots.
-        if (floorId === 'floor-2') {
+        if (normalizedFloorId === 'floor-2') {
             const normalize = (value: string | number) => String(value)
                 .toLocaleLowerCase('fr-CH')
                 .normalize('NFD')
@@ -122,7 +125,7 @@
             isCorrect = typeof currentExercise.correctAnswer === 'number'
                 ? actual !== '' && Number(actual) === currentExercise.correctAnswer
                 : actual === expected || (acceptedAliases[expected]?.includes(actual) ?? false);
-        } else if (floorId === 'floor-1') {
+        } else if (normalizedFloorId === 'floor-1') {
             const cleanUser = userAnswer.replace(/\s+/g, '').replace(',', '.');
             const expected = String(currentExercise.correctAnswer).replace(/\s+/g, '');
             if (expected.includes('/')) {
@@ -143,7 +146,7 @@
             if (typeof currentExercise.correctAnswer === 'string') {
                 isCorrect = val.toString() === currentExercise.correctAnswer.toString();
             } else {
-                isCorrect = val === currentExercise.correctAnswer.numerator;
+                isCorrect = val === currentExercise.correctAnswer;
             }
         }
 
@@ -166,7 +169,7 @@
         feedback = "";
         userAnswer = "";
         isAdvancing = false;
-        currentExercise = generateUniqueExercise(floorId);
+        currentExercise = generateUniqueExercise(normalizedFloorId);
         
         setTimeout(() => {
             if (inputRef) {
@@ -177,7 +180,9 @@
     }
 
     function readQuestion() {
-        if (AudioManager.speak) AudioManager.speak(currentExercise.question);
+        if ('speak' in AudioManager && typeof (AudioManager as any).speak === 'function') {
+            (AudioManager as any).speak(currentExercise.question);
+        }
     }
 
     onMount(() => {
@@ -204,13 +209,13 @@
             <button class="audio-btn" onclick={readQuestion} title="Lire la consigne">🔊</button>
         </div>
         
-        {#if floorId === 'floor-2' && currentExercise.fractions?.[0]}
+        {#if normalizedFloorId === 'floor-2' && currentExercise.fractions?.[0]}
             <div class="viz-box">
                 <div class="viz-wrapper">
                     <FractionBar numerator={currentExercise.fractions[0].numerator} denominator={currentExercise.fractions[0].denominator} showLabel={false} width={240} />
                 </div>
             </div>
-        {:else if floorId !== 'floor-2' && currentExercise.fractions && (currentExercise.type === 'number_line' || currentExercise.type === 'comparison' || currentExercise.type === 'addition')}
+        {:else if normalizedFloorId !== 'floor-2' && currentExercise.fractions && (currentExercise.type === 'number_line' || currentExercise.type === 'comparison' || (currentExercise.type as string) === 'addition')}
             <div class="viz-box">
                 {#key currentExercise}
                     <div class="viz-wrapper">
@@ -222,7 +227,7 @@
                                 <span style="font-size: 1.5rem; font-weight: bold;">?</span>
                                 <FractionBar numerator={currentExercise.fractions[1].numerator} denominator={currentExercise.fractions[1].denominator} showLabel={true} width={150} />
                             </div>
-                        {:else if currentExercise.type === 'addition'}
+                        {:else if (currentExercise.type as string) === 'addition'}
                             <div style="display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap;">
                                 <div style="display: flex; flex-direction: column; align-items: center;">
                                     <span style="font-size: 0.85rem; font-weight: bold; margin-bottom: 4px;">{currentExercise.fractions[0].numerator} / {currentExercise.fractions[0].denominator}</span>
@@ -247,7 +252,7 @@
                 <button class="btn-symbol" onclick={() => { userAnswer = '>'; checkAnswer(); }}>&gt;</button>
             </div>
         {:else}
-            {#if floorId === 'floor-2'}
+            {#if normalizedFloorId === 'floor-2'}
                 <div class="full-answer-container">
                     <input
                         type="text"
@@ -265,10 +270,10 @@
                             inputmode="numeric"
                             bind:this={inputRef} 
                             bind:value={userAnswer} 
-                            placeholder={currentExercise.type === 'addition' || (floorId === 'floor-1' && String(currentExercise.correctAnswer).includes('/')) ? "ex: 2/5" : "?"}
+                            placeholder={(currentExercise.type as string) === 'addition' || (normalizedFloorId === 'floor-1' && String(currentExercise.correctAnswer).includes('/')) ? "ex: 2/5" : "?"}
                         />
                     </div>
-                    {#if floorId !== 'floor-1' && currentExercise.type !== 'decimal_conversion' && currentExercise.type !== 'addition'}
+                    {#if normalizedFloorId !== 'floor-1' && (currentExercise.type as string) !== 'decimal_conversion' && (currentExercise.type as string) !== 'addition'}
                         <div class="fraction-bar"></div>
                         <div class="denominator-display">
                             {currentExercise.fractions?.[0]?.denominator ?? 2}
@@ -286,7 +291,7 @@
 <style>
     .training-container { display: flex; flex-direction: column; align-items: center; gap: 20px; font-family: sans-serif; }
     .score-board { font-weight: bold; font-size: 1.2rem; color: #666; }
-    .exercise-box { color: #1f2937; background: #ffffff !important; display: flex; flex-direction: column; align-items: center; gap: 20px; background: #fff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; max-width: 600px; width: 100%; }
+    .exercise-box { color: #1f2937; background: #ffffff !important; display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; max-width: 600px; width: 100%; }
     .question-title { color: #111827 !important; }
     .header-row { color: #111827; display: flex; align-items: center; gap: 10px; }
     .audio-btn { background: #eee; border: 1px solid #ccc; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1rem; }

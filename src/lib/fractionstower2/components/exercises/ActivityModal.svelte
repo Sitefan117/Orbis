@@ -16,12 +16,10 @@
     import { onMount } from 'svelte';
 
     let { activityId, onClose } = $props<{
-        activityId: string; // Ex: "floor-3-training", "floor-5-boss", "floor-1-course"
+        activityId: string; // Ex: "floor-2-training", "floor-2-course", "floor-2-boss"
         onClose: () => void;
     }>();
 
-    // Analyse de l'ID pour extraire le numéro d'étage et le type d'activité
-    // Format attendu : "floor-{num}-{type}" (type = course, training, boss)
     onMount(() => {
         const handleEscape = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
@@ -33,21 +31,32 @@
         return () => window.removeEventListener('keydown', handleEscape);
     });
 
-    let parts = $derived(activityId.split('-'));
-    let floorNumber = $derived(parts[1] ? `floor-${parts[1]}` : 'floor-1');
-    let activityType = $derived(parts[2] || 'training');
+    let normalizedId = $derived(String(activityId || '').toLowerCase());
+    
+    // Extraction sécurisée du numéro de l'étage
+    let floorNumber = $derived(
+        normalizedId.match(/(\d+)/)?.[1] 
+            ? `floor-${normalizedId.match(/(\d+)/)![1]}` 
+            : 'floor-2'
+    );
 
-    /**
-     * Appelée lorsque l'élève termine avec succès un entraînement ou un boss.
-     * @param finalScore Score obtenu par l'élève
-     */
+    // Analyse prioritaire du type d'activité :
+    // 1. Si l'ID contient 'training' ou 'train' -> Entraînement (Guerrier en armure)
+    // 2. Si l'ID contient 'boss' -> Combat de Boss (Monstre rouge)
+    // 3. Si l'ID contient 'course', 'theory' ou 'intro' -> Leçon interactive (Moustachu)
+    let activityType = $derived(
+        normalizedId.includes('training') || normalizedId.includes('train')
+            ? 'training'
+            : normalizedId.includes('boss')
+                ? 'boss'
+                : normalizedId.includes('course') || normalizedId.includes('theory') || normalizedId.includes('intro')
+                    ? 'course'
+                    : 'training'
+    );
+
     function handleComplete(finalScore: number = 10) {
         AudioManager.playSuccess();
-        
-        // Enregistrement de la réussite dans le localStorage via le gestionnaire
         ProgressManager.recordFloorCompletion(floorNumber, finalScore, activityType === 'boss' ? 20 : 10);
-        
-        // Fermeture de la modale après un court délai pour apprécier la victoire
         setTimeout(() => {
             onClose();
         }, 1500);
