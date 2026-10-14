@@ -1,162 +1,241 @@
 <script lang="ts">
     /**
      * [Activité] BossBattle.svelte
-     * Gère les combats de boss (15 questions pour l'étage 5, 20 questions pour le Grand Boss Final 8/9).
+     * Version unifiée avec l'interface soignée (style Boss 1) pour tous les étages.
      */
-    import { onMount } from 'svelte';
-    import { ExerciseGenerator } from '$lib/fractionstower2/engines/ExerciseGenerator';
+    import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
     import FractionBar from '$lib/fractionstower2/components/fraction/FractionBar.svelte';
-    import BossFloor2 from '$lib/fractionstower2/components/exercises/BossFloor2.svelte';
+    import { ExerciseGenerator } from '$lib/fractionstower2/engines/ExerciseGenerator';
 
     let { 
-        floorId = 'floor-5', 
-        onComplete 
+        floorId = 'floor-1', 
+        onComplete, 
+        onClose, 
+        game 
     } = $props<{
         floorId?: string;
-        onComplete: (score: number) => void;
+        onComplete: (score?: number) => void;
+        onClose?: () => void;
+        game?: { markBossDefeated?: (floorId: string) => void };
     }>();
 
-    let activeFloor = $derived(floorId);
-    let totalQuestions = $derived(activeFloor === 'floor-8' || activeFloor === 'floor-9' ? 20 : 15);
-    let bossType = $derived(activeFloor === 'floor-8' || activeFloor === 'floor-9' ? 'boss-final-9' : 'boss-bilan-5');
-
-    let currentIndex = $state(0);
-    let userAnswer = $state('');
+    let activeFloor = $derived(String(floorId).startsWith('floor-') ? floorId : `floor-${floorId}`);
+    let isBilan = $derived(['floor-5', 'floor-8', 'floor-9'].includes(activeFloor));
+    
+    // 3 phases de 6 questions pour les boss standards (18 total), ou format adapté pour les bilans
+    const QUESTIONS_PER_PHASE = 6;
+    const TOTAL_PHASES = 3;
+    let phase = $state(1);
+    let questionIndex = $state(0);
     let score = $state(0);
+    
+    const MAX_BOSS_LIVES = 18;
+    const MAX_PLAYER_LIVES = 5;
+    let bossLives = $state(MAX_BOSS_LIVES);
+    let playerLives = $state(MAX_PLAYER_LIVES);
+    
+    let answer = $state('');
     let feedback = $state('');
-    let isFinished = $state(false);
+    let locked = $state(false);
 
-    let currentExercise = $state(
-        ExerciseGenerator.generate({ 
-            floorId: 'floor-1', 
-            difficulty: 'medium',
-            type: 'comparison' 
-        })
-    );
-
-    $effect(() => {
-        const type = bossType;
-        currentExercise = ExerciseGenerator.generate({ 
-            floorId: type, 
-            difficulty: 'medium' 
-        });
-        currentIndex = 0;
-        score = 0;
-        userAnswer = '';
-        feedback = '';
-        isFinished = false;
-    });
-
-    function submitAnswer(val?: string) {
-        const answerToTest = val !== undefined ? val : userAnswer;
-        const cleanUser = answerToTest.trim();
-        const cleanCorrect = String(currentExercise.correctAnswer).trim();
-
-        const isCorrect = cleanUser === cleanCorrect;
-
-        if (isCorrect) {
-            score += 1;
-            feedback = "Génial ! Coup de maître 🌟";
+    // Génération dynamique basée sur l'ExerciseGenerator pour supporter tous les étages
+    function loadCurrentExercise() {
+        if (activeFloor === 'floor-1') {
+            // Logique spécifique étage 1
+            return {
+                question: 'Observe la barre. Écris la fraction coloriée sous la forme numérateur/dénominateur.',
+                type: 'standard',
+                ...ExerciseGenerator.generate({ floorId: 'floor-1', difficulty: 'medium' })
+            };
+        } else if (isBilan) {
+            // Bilan renforcé pour les étages 5 et 8
+            const randomPrevFloor = `floor-${Math.floor(Math.random() * 5) + 1}`;
+            return ExerciseGenerator.generate({ floorId: randomPrevFloor, difficulty: 'medium' });
         } else {
-            feedback = `Oups ! La réponse attendue était : ${currentExercise.correctAnswer}`;
+            return ExerciseGenerator.generate({ floorId: activeFloor, difficulty: 'medium' });
+        }
+    }
+
+    let currentExercise = $state(loadCurrentExercise());
+
+    function normalize(value: string) {
+        return value.toLowerCase().trim().replace(/\s+/g, '').replace(',', '.');
+    }
+
+    function submit(value?: string) {
+        if (locked || phase >= 4) return;
+        
+        const submitted = normalize(value ?? answer);
+        const expected = normalize(String(currentExercise.correctAnswer));
+        
+        let correct = submitted === expected;
+
+        if (!correct) {
+            playerLives = Math.max(0, playerLives - 1);
+            feedback = playerLives === 0
+                ? 'Tu n’as plus de vies. Le boss a gagné cette fois.'
+                : `Pas tout à fait. Tu perds une vie. Il t’en reste ${playerLives}. Réessaie !`;
+            AudioManager.play?.('wrong') ?? AudioManager.playClick?.();
+            if (playerLives === 0) phase = 5;
+            return;
         }
 
+        locked = true;
+        score += 1;
+        bossLives = Math.max(0, bossLives - 1);
+        feedback = 'Bravo ! C’est juste.';
+        AudioManager.play?.('success') ?? AudioManager.playClick?.();
+
         setTimeout(() => {
-            if (currentIndex < totalQuestions - 1) {
-                currentIndex += 1;
-                userAnswer = '';
+            if (questionIndex < QUESTIONS_PER_PHASE - 1) {
+                questionIndex += 1;
+                answer = '';
                 feedback = '';
-                currentExercise = ExerciseGenerator.generate({ 
-                    floorId: bossType, 
-                    difficulty: 'medium' 
-                });
+                locked = false;
+                currentExercise = loadCurrentExercise();
+            } else if (phase < TOTAL_PHASES) {
+                phase += 1;
+                questionIndex = 0;
+                answer = '';
+                feedback = '';
+                locked = false;
+                currentExercise = loadCurrentExercise();
             } else {
-                isFinished = true;
-                setTimeout(() => onComplete(score), 2000);
+                phase = 4; // Victoire
+                feedback = '';
             }
-        }, 1500);
+        }, 900);
+    }
+
+    function readInstruction() {
+        AudioManager.speak?.(currentExercise.question);
+    }
+
+    function finishBoss() {
+        game?.markBossDefeated?.(activeFloor);
+        onComplete(score);
+    }
+
+    function restartBoss() {
+        phase = 1;
+        questionIndex = 0;
+        score = 0;
+        bossLives = MAX_BOSS_LIVES;
+        playerLives = MAX_PLAYER_LIVES;
+        answer = '';
+        feedback = '';
+        locked = false;
+        currentExercise = loadCurrentExercise();
     }
 </script>
 
-{#if activeFloor === 'floor-2'}
-    <BossFloor2 onComplete={onComplete} />
-{:else}
-<div class="boss-container bg-slate-900 text-white p-8 rounded-3xl shadow-2xl max-w-xl mx-auto border-2 {activeFloor === 'floor-8' ? 'border-amber-500 shadow-amber-500/20' : 'border-cyan-500 shadow-cyan-500/20'} relative overflow-hidden">
-    <!-- En-tête épique -->
-    <div class="flex justify-between items-center mb-6 text-sm font-mono tracking-wider">
-        <span class="{activeFloor === 'floor-8' ? 'text-amber-400' : 'text-cyan-400'} font-bold">
-            {activeFloor === 'floor-8' ? '⚔️ GRAND BOSS FINAL' : '⚡ BOSS BILAN (ÉTAGE 5)'}
-        </span>
-        <span class="text-slate-400">Étape {currentIndex + 1} / {totalQuestions}</span>
-    </div>
+<div class="boss-overlay" role="presentation">
+<div class="boss-container" role="dialog" aria-modal="true" aria-label="Combat de Boss">
+    <header class="boss-header">
+        <div>
+            <p class="eyebrow">Défi final · {activeFloor.toUpperCase()}</p>
+            <h2>Boss de l’{activeFloor}</h2>
+            {#if phase < 4}
+                <p class="player-lives" aria-label={`Vies restantes : ${playerLives}`}>Tes vies : {#each Array(playerLives) as _}<span>❤️</span>{/each}{#each Array(MAX_PLAYER_LIVES - playerLives) as _}<span class="empty-heart">♡</span>{/each}</p>
+            {/if}
+        </div>
+        <div class="header-actions">
+            {#if phase < 4}
+                <div class="score">Phase {phase}/{TOTAL_PHASES} · Question {questionIndex + 1}/{QUESTIONS_PER_PHASE}</div>
+            {:else if phase === 4}
+                <div class="score">Boss vaincu</div>
+            {:else}
+                <div class="score">Combat terminé</div>
+            {/if}
+            <button class="close-btn" onclick={() => onClose?.()} aria-label="Fermer le combat" title="Fermer (Échap)">✕</button>
+        </div>
+    </header>
 
-    <!-- Barre de progression Tour -->
-    <div class="w-full bg-slate-800 h-2.5 rounded-full mb-6 overflow-hidden">
-        <div 
-            class="h-full transition-all duration-300 {activeFloor === 'floor-8' ? 'bg-amber-500' : 'bg-cyan-500'}" 
-            style="width: {((currentIndex + 1) / totalQuestions) * 100}%"
-        ></div>
-    </div>
-
-    <!-- Question -->
-    <h2 class="text-xl font-bold mb-6 text-center text-slate-100">{currentExercise.question}</h2>
-
-    <!-- Zone Visuelle -->
-    <div class="my-6 p-6 bg-slate-950 rounded-2xl border border-slate-800 flex justify-center items-center gap-4 min-h-[160px]">
-        {#if currentExercise.fractions && currentExercise.fractions.length >= 2}
-            <div class="flex flex-col items-center">
-                <span class="text-xs font-mono text-slate-400 mb-1">{currentExercise.fractions[0].numerator}/{currentExercise.fractions[0].denominator}</span>
-                <FractionBar numerator={currentExercise.fractions[0].numerator} denominator={currentExercise.fractions[0].denominator} showLabel={true} width={120} />
+    {#if phase < 4}
+        <div class="boss-lives-line"><span>Vies du boss : ❤️ {bossLives}/{MAX_BOSS_LIVES}</span><span>Progression : {score}/18</span></div>
+        <div class="progress-track" aria-label={`Vies restantes du boss : ${bossLives} sur ${MAX_BOSS_LIVES}`}>
+            <div class="progress-fill" style={`width: ${(bossLives / MAX_BOSS_LIVES) * 100}%`}></div>
+        </div>
+        <div class="boss-body">
+            <div class="phase-title">
+                <h3>Phase {phase} — Défi de la tour</h3>
+                <button class="audio-btn" onclick={readInstruction} aria-label="Lire la consigne">🔊</button>
             </div>
-            <span class="text-2xl font-bold {activeFloor === 'floor-8' ? 'text-amber-400' : 'text-cyan-400'}">?</span>
-            <div class="flex flex-col items-center">
-                <span class="text-xs font-mono text-slate-400 mb-1">{currentExercise.fractions[1].numerator}/{currentExercise.fractions[1].denominator}</span>
-                <FractionBar numerator={currentExercise.fractions[1].numerator} denominator={currentExercise.fractions[1].denominator} showLabel={true} width={120} />
-            </div>
-        {:else if currentExercise.fractions && currentExercise.fractions.length === 1}
-            <div class="flex flex-col items-center">
-                <FractionBar numerator={currentExercise.fractions[0].numerator} denominator={currentExercise.fractions[0].denominator} showLabel={true} width={180} />
-            </div>
-        {/if}
-    </div>
 
-    <!-- Contrôles de réponse -->
-    {#if currentExercise.type === 'comparison'}
-        <div class="flex gap-4 justify-center my-6">
-            <button onclick={() => submitAnswer('<')} class="px-8 py-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 font-bold rounded-xl text-2xl transition-transform active:scale-95 cursor-pointer">&lt;</button>
-            <button onclick={() => submitAnswer('=')} class="px-8 py-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 font-bold rounded-xl text-2xl transition-transform active:scale-95 cursor-pointer">=</button>
-            <button onclick={() => submitAnswer('>')} class="px-8 py-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 font-bold rounded-xl text-2xl transition-transform active:scale-95 cursor-pointer">&gt;</button>
+            <p>{currentExercise.question}</p>
+
+            {#if currentExercise.fractions && currentExercise.fractions.length > 0}
+                <div class="visual">
+                    <FractionBar numerator={currentExercise.fractions[0].numerator} denominator={currentExercise.fractions[0].denominator} width={260} showLabel={false} />
+                </div>
+            {/if}
+
+            {#if currentExercise.type === 'comparison'}
+                <div class="flex gap-4 my-4">
+                    <button class="primary" onclick={() => submit('<')}>&lt;</button>
+                    <button class="primary" onclick={() => submit('=')}>=</button>
+                    <button class="primary" onclick={() => submit('>')}>&gt;</button>
+                </div>
+            {:else}
+                <label for="boss-answer">Ta réponse (ex. 3/4)</label>
+                <input id="boss-answer" bind:value={answer} onkeydown={(e) => e.key === 'Enter' && submit()} placeholder="ex. 3/4" autocomplete="off" />
+                <button class="primary" onclick={() => submit()}>Valider</button>
+            {/if}
+
+            {#if feedback}<p class:success={locked} class="feedback" role="status">{feedback}</p>{/if}
+        </div>
+    {:else if phase === 4}
+        <div class="victory">
+            <div class="trophy">🏆</div>
+            <h3>Boss vaincu !</h3>
+            <p>Tu as réussi les épreuves de cet étage.</p>
+            <p class="final-score">Score : {score}/18</p>
+            <button class="primary" onclick={finishBoss}>Retourner dans la tour</button>
         </div>
     {:else}
-        <div class="flex flex-col items-center gap-4 my-6">
-            <input 
-                type="text" 
-                bind:value={userAnswer} 
-                placeholder="ex: 5/4"
-                class="bg-slate-800 border border-slate-700 text-center text-xl font-bold py-3 px-6 rounded-xl w-44 text-white focus:outline-none focus:border-cyan-400"
-            />
-            <button 
-                onclick={() => submitAnswer()} 
-                class="w-full sm:w-auto px-8 py-3.5 {activeFloor === 'floor-8' ? 'bg-amber-600 hover:bg-amber-500' : 'bg-cyan-600 hover:bg-cyan-500'} font-bold rounded-xl transition-colors shadow-lg cursor-pointer"
-            >
-                Valider l'attaque ➔
-            </button>
-        </div>
-    {/if}
-
-    <!-- Rétroaction -->
-    {#if feedback}
-        <div class="p-4 rounded-xl text-center font-semibold mt-4 {feedback.includes('Génial') ? 'bg-emerald-950/80 border border-emerald-800 text-emerald-300' : 'bg-rose-950/80 border border-rose-800 text-rose-300'}">
-            {feedback}
-        </div>
-    {/if}
-
-    {#if isFinished}
-        <div class="absolute inset-0 bg-slate-950/90 rounded-3xl flex flex-col items-center justify-center p-6 z-20 animate-fade-in">
-            <h3 class="text-3xl font-extrabold text-amber-400 mb-2">🏆 VICTOIRE ÉPIQUE !</h3>
-            <p class="text-slate-300 text-lg mb-4">Score final : {score} / {totalQuestions}</p>
-            <p class="text-sm text-cyan-300">Le sommet de la Tour est conquis !</p>
+        <div class="victory defeat">
+            <div class="trophy">💔</div>
+            <h3>Le boss a gagné cette fois</h3>
+            <p>Tu peux reprendre ton souffle et retenter le combat.</p>
+            <p class="final-score">Vies du boss restantes : {bossLives}/{MAX_BOSS_LIVES}</p>
+            <button class="primary" onclick={restartBoss}>Réessayer</button>
+            <button class="secondary" onclick={() => onClose?.()}>Retourner dans la tour</button>
         </div>
     {/if}
 </div>
-{/if}
+</div>
+
+<style>
+    .boss-overlay { position: fixed; inset: 0; z-index: 4000; display: flex; justify-content: center; align-items: center; padding: 1rem; background: rgba(2, 6, 23, .86); backdrop-filter: blur(6px); overflow-y: auto; }
+    .boss-container { width: min(100%, 720px); margin: 0 auto; padding: 1.25rem; border-radius: 1.25rem; color: #f8fafc; background: #0f172a; border: 2px solid #0891b2; box-shadow: 0 18px 45px #0003; font-family: sans-serif; max-height: 94vh; overflow-y: auto; }
+    .boss-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #334155; }
+    .header-actions { display: flex; align-items: center; gap: .65rem; }
+    .close-btn { width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 1px solid #475569; background: #1e293b; color: white; cursor: pointer; font-size: 1.15rem; }
+    .player-lives { margin: .5rem 0 0; display: flex; gap: .2rem; align-items: center; }
+    .empty-heart { color: #64748b; }
+    .eyebrow { margin: 0 0 .25rem; color: #67e8f9; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; }
+    h2, h3, p { margin-top: 0; }
+    h2 { margin-bottom: 0; font-size: 1.5rem; }
+    .score { background: #1e293b; padding: .5rem .75rem; border-radius: .6rem; font-size: .9rem; white-space: nowrap; }
+    .boss-lives-line { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1rem; font-size: .9rem; color: #cbd5e1; }
+    .progress-track { height: .65rem; background: #334155; border-radius: 99px; overflow: hidden; margin: .5rem 0 1rem; }
+    .progress-fill { height: 100%; background: #fb7185; transition: width .2s ease; }
+    .boss-body { display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center; padding: 1rem .25rem; }
+    .phase-title { display: flex; align-items: center; gap: .75rem; }
+    .phase-title h3 { margin: 0; font-size: 1.2rem; }
+    .audio-btn { border: 1px solid #475569; border-radius: 50%; width: 2.5rem; height: 2.5rem; background: #1e293b; cursor: pointer; }
+    .visual { width: 100%; display: flex; justify-content: center; padding: 1rem; border-radius: .75rem; background: white; }
+    label { align-self: center; font-weight: 600; }
+    input { width: min(100%, 18rem); padding: .8rem; color: #0f172a; background: white; border: 2px solid #94a3b8; border-radius: .6rem; text-align: center; font-size: 1.1rem; }
+    button { color: inherit; }
+    .primary { padding: .8rem 1.4rem; border: 0; border-radius: .65rem; background: #0891b2; color: white; font-weight: 700; cursor: pointer; }
+    .primary:hover { background: #0e7490; }
+    .secondary { padding: .8rem 1.4rem; border: 1px solid #64748b; border-radius: .65rem; background: #1e293b; color: white; font-weight: 700; cursor: pointer; }
+    .defeat h3 { color: #fda4af; }
+    .feedback { margin: 0; padding: .75rem 1rem; border-radius: .65rem; background: #4c1d1d; color: #fecaca; }
+    .feedback.success { background: #064e3b; color: #a7f3d0; }
+    .victory { display: flex; flex-direction: column; align-items: center; gap: .8rem; text-align: center; padding: 2rem 1rem; }
+    .trophy { font-size: 3rem; }
+    .victory h3 { margin: 0; font-size: 1.8rem; color: #67e8f9; }
+    .final-score { font-weight: 800; font-size: 1.2rem; }
+</style>

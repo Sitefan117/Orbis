@@ -1,7 +1,7 @@
 <script lang="ts">
     /**
      * [Activité] TrainingSession.svelte
-     * Entraînement interactif 10 exercices.
+     * Entraînement interactif de 10 exercices adapté aux 9 étages de Fraction Tower 2.
      */
     import { onMount } from 'svelte';
     import { ExerciseGenerator } from '$lib/fractionstower2/engines/ExerciseGenerator';
@@ -18,7 +18,7 @@
         onComplete: () => void;
     }>();
 
-    // Normalisation locale robuste pour gérer '2', 2, ou 'floor-2'
+    // Normalisation locale robuste (ex: '3', 3, 'floor-3')
     let normalizedFloorId = $derived(
         typeof floorId === 'number' || !String(floorId).startsWith('floor-')
             ? `floor-${floorId}`
@@ -27,15 +27,26 @@
 
     let inputRef: HTMLInputElement | undefined = $state();
 
+    // Attribution dynamique du type d'exercice selon l'étage (1 à 9)
     function getExerciseType(fid: string) {
-        if (fid === 'floor-3') return 'number_line';
-        if (['floor-4', 'floor-5', 'floor-9'].includes(fid)) return 'comparison';
-        if (fid === 'floor-6') return 'decimal_conversion';
-        if (['floor-7', 'floor-8'].includes(fid)) return 'addition';
-        return 'standard';
+        switch (fid) {
+            case 'floor-3':
+                return 'number_line';
+            case 'floor-4':
+            case 'floor-5':
+                return 'comparison';
+            case 'floor-6':
+                return 'decimal_conversion';
+            case 'floor-7':
+            case 'floor-8':
+                return 'addition';
+            case 'floor-9':
+                return 'comparison'; // Révision / Défi du sommet
+            default:
+                return 'standard';
+        }
     }
 
-    // Initialisation neutre pour éviter l'avertissement de capture d'état local
     let currentExercise = $state(
         ExerciseGenerator.generate({ 
             floorId: 'floor-1', 
@@ -52,11 +63,19 @@
     let seenQuestions = new Set<string>();
 
     function generateUniqueExercise(activeFloor: string) {
-        let exercise = ExerciseGenerator.generate({ floorId: activeFloor, difficulty: 'easy', type: getExerciseType(activeFloor) });
-        if (!['floor-1', 'floor-2'].includes(activeFloor)) return exercise;
+        let exercise = ExerciseGenerator.generate({ 
+            floorId: activeFloor, 
+            difficulty: 'easy', 
+            type: getExerciseType(activeFloor) 
+        });
+
         let attempts = 0;
         while (seenQuestions.has(exercise.question) && attempts < 80) {
-            exercise = ExerciseGenerator.generate({ floorId: activeFloor, difficulty: 'easy', type: getExerciseType(activeFloor) });
+            exercise = ExerciseGenerator.generate({ 
+                floorId: activeFloor, 
+                difficulty: 'easy', 
+                type: getExerciseType(activeFloor) 
+            });
             attempts += 1;
         }
         seenQuestions.add(exercise.question);
@@ -75,6 +94,7 @@
     function checkAnswer() {
         if (isAdvancing) return;
 
+        // 1. Validation pour les exercices de comparaison (<, =, >)
         if (currentExercise.type === 'comparison') {
             if (userAnswer.trim() === currentExercise.correctAnswer) {
                 feedback = t('feedback.correct');
@@ -87,6 +107,7 @@
             return;
         }
 
+        // 2. Validation pour les additions de fractions
         if ((currentExercise.type as string) === 'addition') {
             const cleanUser = userAnswer.replace(/\s+/g, '').trim();
             const cleanCorrect = String(currentExercise.correctAnswer).replace(/\s+/g, '').trim();
@@ -97,13 +118,14 @@
                 isAdvancing = true;
                 setTimeout(nextExercise, 1500);
             } else {
-                feedback = `${t('feedback.wrong')} (Attendu :${currentExercise.correctAnswer})`;
+                feedback = `${t('feedback.wrong')} (Attendu : ${currentExercise.correctAnswer})`;
             }
             return;
         }
 
         let isCorrect = false;
 
+        // 3. Validation par étage
         if (normalizedFloorId === 'floor-2') {
             const normalize = (value: string | number) => String(value)
                 .toLocaleLowerCase('fr-CH')
@@ -138,15 +160,14 @@
                 isCorrect = cleanUser !== '' && Number(cleanUser) === Number(expected);
             }
         } else {
-            const val = parseFloat(userAnswer);
-            if (isNaN(val)) {
-                feedback = "S'il te plaît, écris un nombre valide.";
-                return;
-            }
-            if (typeof currentExercise.correctAnswer === 'string') {
-                isCorrect = val.toString() === currentExercise.correctAnswer.toString();
+            // Pour les étages 3 à 9 (comparaison numérique ou fraction directe)
+            const cleanUser = userAnswer.replace(/\s+/g, '').replace(',', '.');
+            const expected = String(currentExercise.correctAnswer).replace(/\s+/g, '');
+            if (expected.includes('/')) {
+                isCorrect = cleanUser === expected;
             } else {
-                isCorrect = val === currentExercise.correctAnswer;
+                const val = parseFloat(cleanUser);
+                isCorrect = !isNaN(val) && (val === Number(currentExercise.correctAnswer) || val.toString() === expected);
             }
         }
 
@@ -270,10 +291,10 @@
                             inputmode="numeric"
                             bind:this={inputRef} 
                             bind:value={userAnswer} 
-                            placeholder={(currentExercise.type as string) === 'addition' || (normalizedFloorId === 'floor-1' && String(currentExercise.correctAnswer).includes('/')) ? "ex: 2/5" : "?"}
+                            placeholder={(currentExercise.type as string) === 'addition' || String(currentExercise.correctAnswer).includes('/') ? "ex: 2/5" : "?"}
                         />
                     </div>
-                    {#if normalizedFloorId !== 'floor-1' && (currentExercise.type as string) !== 'decimal_conversion' && (currentExercise.type as string) !== 'addition'}
+                    {#if normalizedFloorId !== 'floor-1' && (currentExercise.type as string) !== 'decimal_conversion' && (currentExercise.type as string) !== 'addition' && !String(currentExercise.correctAnswer).includes('/')}
                         <div class="fraction-bar"></div>
                         <div class="denominator-display">
                             {currentExercise.fractions?.[0]?.denominator ?? 2}

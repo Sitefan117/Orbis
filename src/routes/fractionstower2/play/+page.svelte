@@ -102,15 +102,11 @@
             if (e.key === 'Escape') {
                 e.preventDefault();
                 keys.clear();
-                // Ferme uniquement la fenêtre la plus prioritaire, sans marquer
-                // l’activité comme réussie ni modifier la progression.
                 if (activeCourseFloorId) activeCourseFloorId = null;
                 else if (activeBossFloorId) activeBossFloorId = null;
                 else if (activeActivityId) activeActivityId = null;
                 return;
             }
-            // Tant qu'une fenêtre pédagogique est ouverte, les touches ne doivent
-            // pas déplacer le personnage ni déclencher une autre interaction.
             if (activeActivityId || activeBossFloorId || activeCourseFloorId) return;
             keys.add(e.key);
             if (e.key.toLowerCase() === 'e') {
@@ -148,16 +144,14 @@
                 if (interaction.action === 'boss-intro') {
                     activeBossFloorId = game.player.currentFloorId;
                 } else if (interaction.action === 'classic-course-intro') {
-                    // Le PNJ « C » ouvre le cours HTML classique.
                     activeCourseFloorId = game.player.currentFloorId;
                 } else if (interaction.action === 'course-intro') {
-                    activeActivityId = game.player.currentFloorId === 'floor-1'
-                        ? 'floor-1-course'
-                        : (interaction.action || interaction.id);
+                    // CORRECTION ICI : On transmet proprement l'étage courant pour tous les niveaux
+                    activeActivityId = `${game.player.currentFloorId}-course`;
                 } else if (interaction.action === 'training-intro') {
                     activeActivityId = game.player.currentFloorId === 'floor-1'
                         ? 'floor-1-training'
-                        : (interaction.action || interaction.id);
+                        : `${game.player.currentFloorId}-training`;
                 } else {
                     activeActivityId = interaction.action || interaction.id;
                 }

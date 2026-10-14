@@ -33,32 +33,45 @@
         type: string;
     }
 
-    // Étapes réactives valides en Svelte 5 (expression directe sans fonction)
+    // Définition des étapes dynamiques pour chaque étage (1 à 9)
     let steps = $derived<StepItem[]>(
-        floorId === 'floor-7' 
-            ? [
-                { 
-                    id: 'course.f7_intro', 
-                    title: "Étage 7 : Additionner des parts identiques", 
-                    text: "Quand les parts ont la même taille (même dénominateur), on additionne simplement le nombre de morceaux colorés !", 
-                    type: 'addition_same' 
-                }
-              ]
-            : floorId === 'floor-8'
-            ? [
-                { 
-                    id: 'course.f8_intro', 
-                    title: "Étage 8 : Dénominateurs différents", 
-                    text: "Pour additionner des parts de tailles différentes, on convertit d'abord la plus grande pour qu'elles aient le même dénominateur.", 
-                    type: 'addition_diff' 
-                }
-              ]
-            : [
-                { id: 'course.unit', title: "L'unité entière", text: "Découvrons l'unité de base.", type: 'unit' },
-                { id: 'course.division', title: "La division", text: "Apprenons à couper les parts.", type: 'division' },
-                { id: 'course.filling', title: "Le remplissage", text: "Colorions les parts ensemble.", type: 'filling' },
-                { id: 'course.validation', title: "Vérification", text: "À toi de valider ton savoir.", type: 'validation' }
-              ]
+        floorId === 'floor-1' ? [
+            { id: 'f1.1', title: "Étage 1 : L'unité entière", text: "Découvrons l'unité de base.", type: 'unit' },
+            { id: 'f1.2', title: "Étage 1 : La division", text: "Apprenons à couper les parts.", type: 'division' },
+            { id: 'f1.3', title: "Étage 1 : Le remplissage", text: "Colorions les parts ensemble.", type: 'filling' },
+            { id: 'f1.4', title: "Étage 1 : Vérification", text: "À toi de valider ton savoir.", type: 'validation' }
+        ] :
+        floorId === 'floor-2' ? [
+            { id: 'f2.1', title: "Étage 2 : Lire et représenter les fractions", text: "Regarde toujours les trois façons de dire la même chose...", type: 'lorem_svg' },
+            { id: 'f2.2', title: "Étage 2 : Manipulation", text: "Entraînons-nous à lire les représentations.", type: 'lorem_svg' }
+        ] :
+        floorId === 'floor-3' ? [
+            { id: 'f3.1', title: "Étage 3 : Introduction", text: "Découvrons les bases de l'étage 3.", type: 'lorem_svg' },
+            { id: 'f3.2', title: "Étage 3 : Développement", text: "Analysons les proportions de cet étage.", type: 'lorem_svg' }
+        ] :
+        floorId === 'floor-4' ? [
+            { id: 'f4.1', title: "Étage 4 : Fractions équivalentes", text: "Qu'est-ce qu'une fraction équivalente ? Analogie de la pizza.", type: 'lorem_svg' },
+            { id: 'f4.2', title: "Étage 4 : La règle d'or", text: "Ce qu'on fait en haut, on le fait en bas par un même nombre non nul.", type: 'lorem_svg' },
+            { id: 'f4.3', title: "Étage 4 : Simplification", text: "Réduire les nombres au maximum en divisant.", type: 'lorem_svg' }
+        ] :
+        floorId === 'floor-5' ? [
+            { id: 'f5.1', title: "Étage 5 : Découverte", text: "Contenu de l'étage 5.", type: 'lorem_svg' }
+        ] :
+        floorId === 'floor-6' ? [
+            { id: 'f6.1', title: "Étage 6 : Introduction", text: "Contenu de l'étage 6.", type: 'lorem_svg' }
+        ] :
+        floorId === 'floor-7' ? [
+            { id: 'f7.1', title: "Étage 7 : Additionner des parts identiques", text: "Quand les parts ont la même taille, on additionne les numérateurs !", type: 'addition_same' }
+        ] :
+        floorId === 'floor-8' ? [
+            { id: 'f8.1', title: "Étage 8 : Dénominateurs différents", text: "Pour additionner des parts de tailles différentes, on convertit d'abord.", type: 'addition_diff' }
+        ] :
+        floorId === 'floor-9' ? [
+            { id: 'f9.1', title: "Étage 9 : Le Sommet", text: "Le défi final approche.", type: 'lorem_svg' }
+        ] :
+        [
+            { id: 'course.default', title: "Cours de l'étage", text: "Bienvenue dans ce module d'apprentissage.", type: 'unit' }
+        ]
     );
 
     let currentSlide = $derived(steps[currentStep] || steps[0]);
@@ -157,6 +170,17 @@
                         <span class="frac-symbol"> / {demoDenominator}</span>
                     </div>
                     <button class="btn-action" onclick={startAnimation}>Lancer le remplissage</button>
+                </div>
+
+            {:else if currentSlide.type === 'lorem_svg'}
+                <div class="interactive-area">
+                    <svg width="220" height="120" viewBox="0 0 220 120" style="background: #f8f9fa; border: 2px dashed #cbd5e1; border-radius: 12px;">
+                        <rect x="20" y="20" width="180" height="80" rx="8" fill="#e2e8f0" />
+                        <circle cx="60" cy="60" r="25" fill="#3b82f6" opacity="0.8" />
+                        <rect x="100" y="40" width="80" height="40" rx="4" fill="#10b981" opacity="0.8" />
+                        <text x="110" y="112" fill="#64748b" font-size="11" font-weight="bold" text-anchor="middle">Illustration Bateau (Lorem Ipsum)</text>
+                    </svg>
+                    <div class="caption">Schéma explicatif de l'étape</div>
                 </div>
 
             {:else if currentSlide.type === 'addition_same'}
