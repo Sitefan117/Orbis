@@ -1,263 +1,441 @@
 <script lang="ts">
-    /**
-     * [Cours] IntroCourse.svelte
-     * Cours interactif et visuel adapté aux 9 étages de Fraction Tower 2.
-     */
-    import { onMount } from 'svelte';
-    import FractionBar from '$lib/fractionstower2/components/fraction/FractionBar.svelte';
-    import FractionCircle from '$lib/fractionstower2/components/fraction/FractionCircle.svelte';
-    import Fraction from '$lib/fractionstower2/components/fraction/Fraction.svelte';
-    import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
-    import { t } from '$lib/fractionstower2/persistence/LanguageManager';
+  let { floorId = 'floor-1', onComplete } = $props<{
+    floorId?: string;
+    onComplete?: () => void;
+  }>();
 
-    let { 
-        floorId = 'floor-1', 
-        onComplete 
-    } = $props<{
-        floorId?: string;
-        onComplete: () => void;
-    }>();
+  // Extraction sécurisée et réactive du numéro d'étage
+  let floorNum = $derived(parseInt(floorId.match(/(\d+)/)?.[1] || '1'));
 
-    let currentStep = $state(0);
-    let showAnimation = $state(false);
-    let isCorrect = $state<boolean | null>(null);
-    let userAnswer = $state<number | undefined>(undefined);
-
-    let demoDenominator = $state(4);
-    let demoNumerator = $state(0);
-
-    interface StepItem {
-        id: string;
-        title: string;
-        text: string;
-        type: string;
+  // Définition de toutes les étapes de la théorie (Étages 1 à 9)
+  let steps = [
+    // --- ÉTAGE 1 ---
+    {
+      floor: 1,
+      floorTitle: "Étage 1 — Le partage équitable",
+      title: "1. Qu'est-ce qu'une fraction ?",
+      theory: "Une fraction représente une ou plusieurs parts d'une unité partagée en parts strictement égales. Pour parler de quarts ou de tiers, les parts doivent impérativement avoir la même taille.",
+      example: "Exemple de la pizza : si tu coupes une pizza en 4 parts égales et que tu en prends 3, tu as pris 3/4 de la pizza.",
+      question: "Dans la fraction 3/4, comment appelle-t-on le nombre du bas (4) qui indique le nombre total de parts égales ?",
+      expected: ["dénominateur", "denominateur"],
+      hint: "Indice : il 'dénomme' ou nomme la taille des parts."
+    },
+    // --- ÉTAGE 2 ---
+    {
+      floor: 2,
+      floorTitle: "Étage 2 — Lire et représenter",
+      title: "2. Les trois visages d'une fraction",
+      theory: "Une fraction se lit de trois manières complémentaires : par un dessin (coloriage), par une écriture chiffrée (numérateur / dénominateur), et par des mots (ex: trois cinquièmes).",
+      example: "Exemple : sur une bande de 5 cases dont 3 sont coloriées, on écrit 3/5 et on lit 'trois cinquièmes'.",
+      question: "Écris en chiffres la fraction 'quatre septièmes'.",
+      expected: ["4/7", "4 / 7"],
+      hint: "Écris le numérateur, un slash, puis le dénominateur."
+    },
+    // --- ÉTAGE 3 ---
+    {
+      floor: 3,
+      floorTitle: "Étage 3 — La droite graduée",
+      title: "3. Se repérer de 0 à 1",
+      theory: "Sur une droite graduée entre 0 et 1, l'unité est partagée en intervalles égaux. Le dénominateur indique le nombre d'intervalles, et le numérateur indique le nombre de pas depuis 0.",
+      example: "Exemple : si l'unité est coupée en 4 intervalles, le 3e trait après 0 correspond à 3/4.",
+      question: "Sur une droite de 0 à 1 partagée en 5 intervalles égaux, quelle fraction représente le 3e trait ?",
+      expected: ["3/5", "3 / 5"],
+      hint: "Le nombre d'intervalles est en bas, le nombre de pas en haut."
+    },
+    // --- ÉTAGE 4 ---
+    {
+      floor: 4,
+      floorTitle: "Étage 4 — Équivalences et simplification",
+      title: "4. Des écritures différentes pour une même quantité",
+      theory: "Deux fractions sont équivalentes si elles représentent exactement la même quantité. Pour simplifier, on divise le haut et le bas par le même nombre.",
+      example: "Exemple : 2/4 et 1/2 couvrent la même surface. On a divisé par 2 : 2÷2 = 1 et 4÷2 = 2.",
+      question: "Complète l'égalité : 1/2 = ? / 4. Quel nombre manque ?",
+      expected: ["2"],
+      hint: "Multiplie le haut et le bas par 2."
+    },
+    // --- ÉTAGE 5 ---
+    {
+      floor: 5,
+      floorTitle: "Étage 5 — Comparer et ordonner",
+      title: "5. Qui est le plus grand ?",
+      theory: "Si les dénominateurs sont identiques, la fraction avec le plus grand numérateur est la plus grande. Si les numérateurs sont identiques, c'est celle qui a le plus petit dénominateur (car les parts sont plus grandes).",
+      example: "Exemple : 3/8 est plus petit que 5/8 car à taille de parts égales, 3 parts c'est moins que 5 parts.",
+      question: "Quel symbole faut-il mettre entre 3/8 et 5/8 ? (<, >, ou =)",
+      expected: ["<"],
+      hint: "Utilise le signe 'plus petit que'."
+    },
+    // --- ÉTAGE 6 ---
+    {
+      floor: 6,
+      floorTitle: "Étage 6 — Fractions décimales",
+      title: "6. Lien avec les nombres décimaux",
+      theory: "Une fraction décimale a pour dénominateur 10, 100 ou 1'000. Elle se traduit directement en nombre à virgule (ex: 7/10 = 0,7 et 34/100 = 0,34).",
+      example: "Exemple monétaire : 75 centimes valent 75/100 de franc, soit 0,75 CHF.",
+      question: "Écris la fraction 7/10 sous forme de nombre décimal.",
+      expected: ["0,7", "0.7"],
+      hint: "Utilise une virgule (ou un point) : 0,..."
+    },
+    // --- ÉTAGE 7 ---
+    {
+      floor: 7,
+      floorTitle: "Étage 7 — Opérations (même dénominateur)",
+      title: "7. Additionner et soustraire des parts identiques",
+      theory: "Quand les dénominateurs sont identiques, les parts ont la même taille. On additionne ou soustrait uniquement les numérateurs, et le dénominateur ne bouge pas.",
+      example: "Exemple : 2/7 + 3/7 = 5/7 (on additionne 2 parts et 3 parts de septièmes).",
+      question: "Calcule : 3/8 + 2/8. Écris le résultat sous forme de fraction.",
+      expected: ["5/8", "5 / 8"],
+      hint: "Additionne les numérateurs (3 + 2) et garde le dénominateur."
+    },
+    // --- ÉTAGE 8 ---
+    {
+      floor: 8,
+      floorTitle: "Étage 8 — Dénominateurs différents",
+      title: "8. Harmoniser avant de calculer",
+      theory: "On ne peut pas additionner directement des parts de tailles différentes. Il faut d'abord transformer les fractions pour qu'elles aient le même dénominateur (commun).",
+      example: "Exemple : pour 1/2 + 1/4, on transforme 1/2 en 2/4. Ensuite, 2/4 + 1/4 = 3/4.",
+      question: "Pour calculer 1/2 + 1/4, en combien de parts égales (dénominateur) dois-tu transformer les demis ?",
+      expected: ["4"],
+      hint: "Regarde le plus grand dénominateur."
+    },
+    // --- ÉTAGE 9 ---
+    {
+      floor: 9,
+      floorTitle: "Étage 9 — Multiplication et division",
+      title: "9. Croiser et inverser",
+      theory: "Multiplication : on multiplie les numérateurs entre eux et les dénominateurs entre eux. Division : diviser par une fraction revient à multiplier par son inverse.",
+      example: "Exemple : 1/2 ÷ 1/4 demande de chercher combien de quarts tiennent dans une moitié (la réponse est 2).",
+      question: "Quel est l'inverse de la fraction 2/3 ?",
+      expected: ["3/2", "3 / 2"],
+      hint: "Inverse le numérateur et le dénominateur (le haut va en bas)."
     }
+  ];
 
-    // Définition des étapes dynamiques pour chaque étage (1 à 9)
-    let steps = $derived<StepItem[]>(
-        floorId === 'floor-1' ? [
-            { id: 'f1.1', title: "Étage 1 : L'unité entière", text: "Découvrons l'unité de base.", type: 'unit' },
-            { id: 'f1.2', title: "Étage 1 : La division", text: "Apprenons à couper les parts.", type: 'division' },
-            { id: 'f1.3', title: "Étage 1 : Le remplissage", text: "Colorions les parts ensemble.", type: 'filling' },
-            { id: 'f1.4', title: "Étage 1 : Vérification", text: "À toi de valider ton savoir.", type: 'validation' }
-        ] :
-        floorId === 'floor-2' ? [
-            { id: 'f2.1', title: "Étage 2 : Lire et représenter les fractions", text: "Regarde toujours les trois façons de dire la même chose...", type: 'lorem_svg' },
-            { id: 'f2.2', title: "Étage 2 : Manipulation", text: "Entraînons-nous à lire les représentations.", type: 'lorem_svg' }
-        ] :
-        floorId === 'floor-3' ? [
-            { id: 'f3.1', title: "Étage 3 : Introduction", text: "Découvrons les bases de l'étage 3.", type: 'lorem_svg' },
-            { id: 'f3.2', title: "Étage 3 : Développement", text: "Analysons les proportions de cet étage.", type: 'lorem_svg' }
-        ] :
-        floorId === 'floor-4' ? [
-            { id: 'f4.1', title: "Étage 4 : Fractions équivalentes", text: "Qu'est-ce qu'une fraction équivalente ? Analogie de la pizza.", type: 'lorem_svg' },
-            { id: 'f4.2', title: "Étage 4 : La règle d'or", text: "Ce qu'on fait en haut, on le fait en bas par un même nombre non nul.", type: 'lorem_svg' },
-            { id: 'f4.3', title: "Étage 4 : Simplification", text: "Réduire les nombres au maximum en divisant.", type: 'lorem_svg' }
-        ] :
-        floorId === 'floor-5' ? [
-            { id: 'f5.1', title: "Étage 5 : Découverte", text: "Contenu de l'étage 5.", type: 'lorem_svg' }
-        ] :
-        floorId === 'floor-6' ? [
-            { id: 'f6.1', title: "Étage 6 : Introduction", text: "Contenu de l'étage 6.", type: 'lorem_svg' }
-        ] :
-        floorId === 'floor-7' ? [
-            { id: 'f7.1', title: "Étage 7 : Additionner des parts identiques", text: "Quand les parts ont la même taille, on additionne les numérateurs !", type: 'addition_same' }
-        ] :
-        floorId === 'floor-8' ? [
-            { id: 'f8.1', title: "Étage 8 : Dénominateurs différents", text: "Pour additionner des parts de tailles différentes, on convertit d'abord.", type: 'addition_diff' }
-        ] :
-        floorId === 'floor-9' ? [
-            { id: 'f9.1', title: "Étage 9 : Le Sommet", text: "Le défi final approche.", type: 'lorem_svg' }
-        ] :
-        [
-            { id: 'course.default', title: "Cours de l'étage", text: "Bienvenue dans ce module d'apprentissage.", type: 'unit' }
-        ]
-    );
+  let currentIndex = $state(0);
+  let userAnswer = $state("");
+  let feedbackMessage = $state("");
+  let isCorrect = $state(false);
+  let initialized = $state(false);
 
-    let currentSlide = $derived(steps[currentStep] || steps[0]);
-
-    function handleNext() {
-        const totalSteps = steps.length;
-        if (currentStep < totalSteps - 1) {
-            currentStep += 1;
-            showAnimation = false;
-            isCorrect = null;
-            userAnswer = undefined;
-        } else {
-            onComplete();
-        }
+  // Synchronise l'index sur l'étage reçu une seule fois à l'initialisation (ou quand floorNum change)
+  $effect(() => {
+    if (!initialized && floorNum) {
+      currentIndex = Math.max(0, Math.min(floorNum - 1, steps.length - 1));
+      initialized = true;
     }
+  });
 
-    function startAnimation() {
-        showAnimation = true;
-        if (currentSlide.type === 'filling') {
-            let i = 0;
-            const interval = setInterval(() => {
-                i++;
-                demoNumerator = i;
-                if (i >= demoDenominator) clearInterval(interval);
-            }, 500);
-        }
+  let currentStep = $derived(steps[currentIndex]);
+
+  function checkAnswer() {
+    const cleanedUser = userAnswer.trim().toLowerCase();
+    const matches = currentStep.expected.some(exp => exp.toLowerCase() === cleanedUser);
+    
+    if (matches) {
+      isCorrect = true;
+      feedbackMessage = "🎉 Bravo ! C'est exact, tu peux passer à la suite.";
+    } else {
+      isCorrect = false;
+      feedbackMessage = `❌ Ce n'est pas tout à fait ça. ${currentStep.hint}`;
     }
+  }
 
-    function checkValidation() {
-        if (userAnswer === 3) {
-            isCorrect = true;
-        } else {
-            isCorrect = false;
-        }
+  function nextStep() {
+    if (currentIndex < steps.length - 1) {
+      currentIndex++;
+      userAnswer = "";
+      feedbackMessage = "";
+      isCorrect = false;
+    } else {
+      if (onComplete) onComplete();
     }
+  }
 
-    function readCurrentStep() {
-        const text = currentSlide.text || t(currentSlide.id + '.text');
-        if (AudioManager.speak) AudioManager.speak(text);
+  function prevStep() {
+    if (currentIndex > 0) {
+      currentIndex--;
+      userAnswer = "";
+      feedbackMessage = "";
+      isCorrect = true; 
     }
+  }
 
-    onMount(() => {
-        const handleKey = (e: KeyboardEvent) => {
-            if (e.key === 'Enter') {
-                if (currentSlide.type !== 'validation' || isCorrect) {
-                    handleNext();
-                } else {
-                    checkValidation();
-                }
-            }
-        };
-        window.addEventListener('keydown', handleKey);
-        return () => window.removeEventListener('keydown', handleKey);
-    });
+  function speakText() {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const text = `${currentStep.floorTitle}. ${currentStep.title}. ${currentStep.theory}. ${currentStep.example}`;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'fr-CH';
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  }
 </script>
 
-<div class="course-container">
-    <div class="slide">
-        <div class="header-row">
-            <h3>{currentSlide.title || t(currentSlide.id + '.title')}</h3>
-            <button class="audio-btn" onclick={readCurrentStep} title="Lire la consigne">🔊</button>
-        </div>
-        <p>{currentSlide.text || t(currentSlide.id + '.text')}</p>
-        
-        <div class="viz-box">
-            {#if currentSlide.type === 'unit'}
-                <FractionCircle numerator={1} denominator={1} color="#e74c3c" />
-                <div class="caption">L'unité entière (1/1)</div>
-            
-            {:else if currentSlide.type === 'division'}
-                <div class="interactive-area">
-                    <div class="viz-flex">
-                        <FractionCircle numerator={0} denominator={demoDenominator} color="#3498db" showLabel={false} />
-                        <div class="fraction-symbol"><Fraction numerator={undefined} denominator={demoDenominator} /></div>
-                    </div>
-                    <div class="control-panel">
-                        <span>Couper en : </span>
-                        <input type="number" bind:value={demoDenominator} min="2" max="12" />
-                    </div>
-                    {#if !showAnimation}
-                        <button class="btn-action" onclick={() => showAnimation = true}>Couper le gâteau !</button>
-                    {:else}
-                        <div class="animation-text">Regarde les lignes apparaître...</div>
-                    {/if}
-                </div>
+<div class="intro-course-container">
+  <header class="course-header">
+    <div class="badge-floor">{currentStep.floorTitle}</div>
+    <button class="speak-btn" onclick={speakText} title="Écouter la leçon">
+      🔊 Écouter
+    </button>
+  </header>
 
-            {:else if currentSlide.type === 'filling'}
-                <div class="interactive-area">
-                    <div class="viz-flex">
-                        <FractionCircle numerator={demoNumerator} denominator={demoDenominator} color="#3498db" showLabel={false} />
-                        <div class="fraction-symbol"><Fraction numerator={demoNumerator} denominator={demoDenominator} /></div>
-                    </div>
-                    <div class="control-panel">
-                        <span>Prendre : </span>
-                        <input type="number" bind:value={demoNumerator} min="0" max={demoDenominator} />
-                        <span class="frac-symbol"> / {demoDenominator}</span>
-                    </div>
-                    <button class="btn-action" onclick={startAnimation}>Lancer le remplissage</button>
-                </div>
-
-            {:else if currentSlide.type === 'lorem_svg'}
-                <div class="interactive-area">
-                    <svg width="220" height="120" viewBox="0 0 220 120" style="background: #f8f9fa; border: 2px dashed #cbd5e1; border-radius: 12px;">
-                        <rect x="20" y="20" width="180" height="80" rx="8" fill="#e2e8f0" />
-                        <circle cx="60" cy="60" r="25" fill="#3b82f6" opacity="0.8" />
-                        <rect x="100" y="40" width="80" height="40" rx="4" fill="#10b981" opacity="0.8" />
-                        <text x="110" y="112" fill="#64748b" font-size="11" font-weight="bold" text-anchor="middle">Illustration Bateau (Lorem Ipsum)</text>
-                    </svg>
-                    <div class="caption">Schéma explicatif de l'étape</div>
-                </div>
-
-            {:else if currentSlide.type === 'addition_same'}
-                <div class="interactive-area">
-                    <div class="viz-flex">
-                        <FractionBar numerator={2} denominator={6} showLabel={true} width={150} />
-                        <span style="font-size: 1.8rem; font-weight: bold; color: #3498db;">+</span>
-                        <FractionBar numerator={3} denominator={6} showLabel={true} width={150} />
-                    </div>
-                    <div class="caption">2 sixièmes + 3 sixièmes = 5 sixièmes (2 + 3 = 5)</div>
-                </div>
-
-            {:else if currentSlide.type === 'addition_diff'}
-                <div class="interactive-area">
-                    <div class="viz-flex">
-                        <FractionBar numerator={1} denominator={2} showLabel={true} width={150} />
-                        <span style="font-size: 1.8rem; font-weight: bold; color: #3498db;">+</span>
-                        <FractionBar numerator={1} denominator={4} showLabel={true} width={150} />
-                    </div>
-                    <div class="caption">1 demi (2/4) + 1 quart (1/4) = 3 quarts (3/4)</div>
-                </div>
-
-            {:else if currentSlide.type === 'validation'}
-                <div class="validation-area">
-                    <FractionCircle numerator={3} denominator={4} color="#3498db" showLabel={false} />
-                    <div class="input-group">
-                        <input type="number" bind:value={userAnswer} />
-                        <span class="sep"> / </span>
-                        <span>4</span>
-                    </div>
-                    <button class="btn-check" onclick={checkValidation}>Vérifier</button>
-                    
-                    {#if isCorrect !== null}
-                        <div class="feedback {isCorrect ? 'correct' : 'wrong'}">
-                            {isCorrect ? "✅ Bravo ! C'est exactement ça." : "❌ Pas tout à fait, regarde bien le nombre de parts colorées."}
-                        </div>
-                    {/if}
-                </div>
-            {/if}
-        </div>
-
-        <div class="nav">
-            <span>Étape {currentStep + 1} / {steps.length}</span>
-            {#if currentSlide.type === 'validation' && isCorrect}
-                <button class="btn-next" onclick={handleNext}>Continuer ➔</button>
-            {:else if currentSlide.type !== 'validation'}
-                <button class="btn-next" onclick={handleNext}>Suivant ➔</button>
-            {:else}
-                <button class="btn-next disabled" disabled>Saisis la bonne réponse pour continuer</button>
-            {/if}
-        </div>
+  <main class="course-card">
+    <h2>{currentStep.title}</h2>
+    
+    <div class="theory-block">
+      <p><strong>Règle :</strong> {currentStep.theory}</p>
     </div>
+
+    <div class="example-block">
+      <p>💡 <strong>Exemple concret :</strong> {currentStep.example}</p>
+    </div>
+
+    <div class="validation-box">
+      <p class="question-title">✨ Question de validation :</p>
+      <p class="question-text">{currentStep.question}</p>
+      
+      <div class="input-row">
+        <input 
+          type="text" 
+          bind:value={userAnswer} 
+          placeholder="Ta réponse ici..." 
+          onkeydown={(e) => e.key === 'Enter' && checkAnswer()}
+          disabled={isCorrect}
+        />
+        {#if !isCorrect}
+          <button class="btn-check" onclick={checkAnswer}>Vérifier</button>
+        {:else}
+          <span class="validated-badge">Validé ✔️</span>
+        {/if}
+      </div>
+
+      {#if feedbackMessage}
+        <p class="feedback {isCorrect ? 'success' : 'error'}">{feedbackMessage}</p>
+      {/if}
+    </div>
+  </main>
+
+  <footer class="course-footer">
+    <button class="btn-nav secondary" onclick={prevStep} disabled={currentIndex === 0}>
+      ← Précédent
+    </button>
+    
+    <span class="progress-indicator">Étape {currentIndex + 1} / {steps.length}</span>
+
+    <button 
+      class="btn-nav primary" 
+      onclick={nextStep} 
+      disabled={!isCorrect}
+      title={!isCorrect ? "Réponds correctement à la question pour débloquer la suite" : ""}
+    >
+      {currentIndex === steps.length - 1 ? 'Terminer la leçon 🎯' : 'Étape suivante →'}
+    </button>
+  </footer>
 </div>
 
 <style>
-    .course-container { display: flex; flex-direction: column; align-items: center; text-align: center; font-family: sans-serif; gap: 20px; }
-    .slide { display: flex; flex-direction: column; align-items: center; gap: 20px; max-width: 600px; width: 100%; }
-    .header-row { display: flex; align-items: center; gap: 15px; }
-    .audio-btn { background: #eee; border: 1px solid #ccc; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; transition: background 0.2s; }
-    .audio-btn:hover { background: #ddd; }
-    .viz-box { background: #fff; padding: 30px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); margin: 20px 0; min-height: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }
-    .interactive-area, .validation-area { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
-    .viz-flex { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
-    .fraction-symbol { font-size: 2rem; font-weight: bold; }
-    .control-panel { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: bold; }
-    .control-panel input { width: 60px; font-size: 1.2rem; text-align: center; padding: 5px; border: 2px solid #ddd; border-radius: 5px; }
-    .btn-action { padding: 10px 20px; background: #e67e22; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
-    .btn-action:hover { background: #d35400; }
-    .animation-text { font-style: italic; color: #666; font-size: 0.9rem; }
-    .input-group { display: flex; align-items: center; gap: 10px; font-size: 2rem; font-weight: bold; }
-    .input-group input { width: 80px; font-size: 2rem; text-align: center; padding: 5px; border: 3px solid #3498db; border-radius: 8px; }
-    .btn-check { padding: 12px 30px; background: #3498db; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: bold; }
-    .feedback { margin-top: 15px; font-weight: bold; padding: 10px; border-radius: 5px; }
-    .feedback.correct { background: #d4edda; color: #155724; }
-    .feedback.wrong { background: #f8d7da; color: #721c24; }
-    .nav { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 20px; }
-    .btn-next { padding: 10px 20px; background: #2ecc71; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; }
-    .btn-next.disabled { background: #ccc; cursor: not-allowed; }
-    .caption { margin-top: 15px; font-style: italic; color: #666; font-size: 1rem; }
+  .intro-course-container {
+    max-width: 680px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #202124;
+  }
+
+  .course-header {
+    background: #f1f8e9;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #dcedc8;
+  }
+
+  .badge-floor {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #2e7d32;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .speak-btn {
+    background: #ffffff;
+    border: 1px solid #c5e1a5;
+    color: #2e7d32;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+  }
+
+  .speak-btn:hover {
+    background: #e8f5e9;
+  }
+
+  .course-card {
+    padding: 1.5rem 2rem;
+    flex: 1;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    color: #1a237e;
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+
+  .theory-block {
+    background: #e3f2fd;
+    border-left: 5px solid #1976d2;
+    padding: 0.9rem 1.2rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .example-block {
+    background: #fff8e1;
+    border-left: 5px solid #ffb300;
+    padding: 0.9rem 1.2rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    font-size: 1.02rem;
+  }
+
+  .validation-box {
+    background: #f8f9fa;
+    border: 2px dashed #b0bec5;
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-top: 1rem;
+  }
+
+  .question-title {
+    font-weight: bold;
+    color: #d32f2f;
+    margin-bottom: 0.3rem;
+  }
+
+  .question-text {
+    font-size: 1.05rem;
+    margin-bottom: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 0.6rem 0.8rem;
+    font-size: 1.1rem;
+    border: 2px solid #90a4ae;
+    border-radius: 8px;
+    outline: none;
+    background: #fff;
+    color: #1f2937;
+  }
+
+  input[type="text"]:focus {
+    border-color: #1976d2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
+  }
+
+  .btn-check {
+    background: #1976d2;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .btn-check:hover {
+    background: #115293;
+  }
+
+  .validated-badge {
+    color: #2e7d32;
+    font-weight: bold;
+    font-size: 1.05rem;
+    background: #e8f5e9;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #c8e6c9;
+  }
+
+  .feedback {
+    margin-top: 0.6rem;
+    font-weight: bold;
+    font-size: 0.95rem;
+  }
+
+  .feedback.success {
+    color: #2e7d32;
+  }
+
+  .feedback.error {
+    color: #d32f2f;
+  }
+
+  .course-footer {
+    background: #eceff1;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #cfd8dc;
+  }
+
+  .btn-nav {
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-nav.secondary {
+    background: #ffffff;
+    color: #455a64;
+    border: 1px solid #b0bec5;
+  }
+
+  .btn-nav.secondary:hover:not(:disabled) {
+    background: #f5f5f5;
+  }
+
+  .btn-nav.primary {
+    background: #00838f;
+    color: white;
+  }
+
+  .btn-nav.primary:hover:not(:disabled) {
+    background: #006064;
+  }
+
+  .btn-nav:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .progress-indicator {
+    font-size: 0.9rem;
+    color: #546e7a;
+    font-weight: bold;
+  }
 </style>

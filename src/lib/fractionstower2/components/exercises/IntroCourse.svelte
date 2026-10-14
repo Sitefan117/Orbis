@@ -1,163 +1,638 @@
 <script lang="ts">
-    /** Introduction pédagogique de l’étage. Le contenu des autres étages reste inchangé. */
-    import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
-    import FractionBar from '$lib/fractionstower2/components/fraction/FractionBar.svelte';
+  let { floorId = 'floor-1', onComplete } = $props<{
+    floorId?: string;
+    onComplete?: () => void;
+  }>();
 
-    let { floorId = 'floor-1', onComplete } = $props<{
-        floorId?: string;
-        onComplete: () => void;
-    }>();
+  let floorNum = $derived(parseInt(floorId.match(/(\d+)/)?.[1] || '1'));
 
-    let floorNum = $derived(floorId.replace('floor-', ''));
-    let step = $state(0);
-
-    const lessonSteps = [
+  const floorCourses: Record<number, { title: string, subSteps: Array<{ subtitle: string, theory: string, example: string, visualType: 'bar' | 'circle' | 'line' | 'money' | 'grid', visualData: any, question: string, expected: string[], hint: string }> }> = {
+    1: {
+      title: "Étage 1 — Le partage équitable et les bases",
+      subSteps: [
         {
-            title: '1. Une fraction, c’est un partage',
-            text: 'Une fraction représente une ou plusieurs parts d’une unité. Pour parler de quarts, de tiers ou de cinquièmes, les parts doivent être de même taille.',
-            spoken: 'Une fraction représente une ou plusieurs parts d’une unité partagée en parts égales.'
+          subtitle: "1. Qu'est-ce qu'une fraction ?",
+          theory: "Une fraction sert à exprimer des parts d'un tout qui a été partagé. Règle d'or : pour faire des fractions, les parts doivent être **strictement égales**.",
+          example: "Si tu partages une pizza en 4 parts de tailles différentes, ce ne sont pas des quarts !",
+          visualType: "bar",
+          visualData: { total: 4, colored: 3 },
+          question: "Dans une fraction comme 3/4, comment appelle-t-on le nombre du haut qui indique combien de parts on prend ?",
+          expected: ["numérateur", "numerateur"],
+          hint: "Il 'numère' ou compte les parts."
         },
         {
-            title: '2. Numérateur et dénominateur',
-            text: 'Le dénominateur, en bas, indique le nombre total de parts égales. Le numérateur, en haut, indique le nombre de parts prises.',
-            spoken: 'Dans trois quarts, le dénominateur quatre indique le nombre total de parts égales. Le numérateur trois indique le nombre de parts prises.'
-        },
-        {
-            title: '3. Je lis la représentation',
-            text: 'La barre est partagée en 4 parts égales. 3 parts sont coloriées : la fraction représentée est 3/4.',
-            spoken: 'La barre est partagée en quatre parts égales. Trois parts sont coloriées. La fraction est trois quarts.'
+          subtitle: "2. Numérateur et Dénominateur",
+          theory: "Le **dénominateur** (en bas) donne le nom et la taille des parts (ex: des quarts). Le **numérateur** (en haut) compte combien de ces parts on possède.",
+          example: "Avec 3/4, le dénominateur est 4 (parts de 1/4) et le numérateur est 3 (on en prend 3).",
+          visualType: "bar",
+          visualData: { total: 4, colored: 3 },
+          question: "Quel nombre indique la taille totale des parts dans la fraction 5/8 ?",
+          expected: ["8"],
+          hint: "C'est le nombre du bas."
         }
-    ];
-
-    const floor2LessonSteps = [
+      ]
+    },
+    2: {
+      title: "Étage 2 — Les trois visages d'une fraction",
+      subSteps: [
         {
-            title: '1. Une même fraction, trois représentations',
-            text: 'Regarde toujours les trois façons de dire la même chose : le dessin montre les parts, l’écriture fractionnaire les note, et les mots permettent de la lire. Ici, les trois représentent exactement la même quantité.',
-            spoken: 'Une fraction peut se représenter de trois façons. Le dessin montre les parts, l’écriture fractionnaire les note et les mots permettent de la lire. Nous allons voir un exemple complet.'
-        },
-        {
-            title: '2. Comment passer du dessin à l’écriture ?',
-            text: 'Dans cette barre, il y a 5 parts égales en tout et 3 parts coloriées. Le nombre de parts coloriées s’écrit en haut : 3. Le nombre total de parts égales s’écrit en bas : 5. La fraction est donc 3/5.',
-            spoken: 'La barre contient cinq parts égales. Trois sont coloriées. J’écris trois en haut, car trois parts sont coloriées, et cinq en bas, car il y a cinq parts en tout. La fraction est trois cinquièmes.'
-        },
-        {
-            title: '3. Comment lire et écrire le nom ?',
-            text: 'La fraction 3/5 se lit « trois cinquièmes ». Le nombre du haut est le numérateur : 3. Le nombre du bas est le dénominateur : 5. Dans l’autre sens, si j’entends « quatre septièmes », j’écris 4/7.',
-            spoken: 'Trois sur cinq se lit trois cinquièmes. Trois est le numérateur et cinq est le dénominateur. Si j’entends quatre septièmes, j’écris quatre au numérateur et sept au dénominateur : quatre septièmes, quatre sur sept.'
+          subtitle: "1. Le dessin, le chiffre et les mots",
+          theory: "Une fraction peut s'exprimer de trois façons complémentaires : par un schéma visuel, par une écriture mathématique (chiffres), et par la lecture à voix haute.",
+          example: "Trois cinquièmes s'écrit en chiffres 3/5 et se représente par 5 cases dont 3 sont coloriées.",
+          visualType: "bar",
+          visualData: { total: 5, colored: 3 },
+          question: "Écris en chiffres la fraction 'deux tiers'.",
+          expected: ["2/3", "2 / 3"],
+          hint: "Le chiffre du haut est 2, celui du bas est 3."
         }
-    ];
-
-    let activeLessonSteps = $derived(floorId === 'floor-2' ? floor2LessonSteps : lessonSteps);
-    let lessonFraction = $derived(floorId === 'floor-2' ? { numerator: 3, denominator: 5 } : { numerator: 3, denominator: 4 });
-
-    function readCourse() {
-        const text = floorId === 'floor-1' || floorId === 'floor-2'
-            ? activeLessonSteps[step].spoken
-            : `Leçon de l’étage ${floorNum}. Découvrons ensemble comment manipuler les fractions selon le programme HarmoS.`;
-        AudioManager.speak(text);
+      ]
+    },
+    3: {
+      title: "Étage 3 — La droite graduée",
+      subSteps: [
+        {
+          subtitle: "1. Se repérer de 0 à 1",
+          theory: "Sur une droite graduée, l'intervalle entre 0 et 1 représente l'unité. On coupe cet intervalle en parts égales selon le dénominateur.",
+          example: "Si la ligne entre 0 et 1 est coupée en 4 parts, chaque petit saut vaut 1/4.",
+          visualType: "line",
+          visualData: { parts: 4, target: 3 },
+          question: "Sur une droite de 0 à 1 partagée en 4, à quelle fraction correspond le 3ème petit trait après 0 ?",
+          expected: ["3/4", "3 / 4"],
+          hint: "Écris le numérateur puis le dénominateur avec un slash."
+        }
+      ]
+    },
+    4: {
+      title: "Étage 4 — Fractions équivalentes",
+      subSteps: [
+        {
+          subtitle: "1. Même quantité, écritures différentes",
+          theory: "Deux fractions peuvent s'écrire différemment tout en représentant exactement la même quantité de chocolat ou de pizza !",
+          example: "1/2 de tablette équivaut exactement à 2/4 de cette même tablette.",
+          visualType: "circle",
+          visualData: { parts: 4, colored: 2 },
+          question: "Complète l'égalité : 1/2 = ? / 4. Quel nombre manque ?",
+          expected: ["2"],
+          hint: "Multiplie le haut et le bas par 2."
+        }
+      ]
+    },
+    5: {
+      title: "Étage 5 — Comparer et ordonner",
+      subSteps: [
+        {
+          subtitle: "1. Comparer avec le même dénominateur",
+          theory: "Quand les parts ont la même taille (même dénominateur), la plus grande fraction est celle qui a le plus grand numérateur.",
+          example: "Entre 3/8 et 5/8 de pizza, 5 parts c'est plus grand que 3 parts !",
+          visualType: "bar",
+          visualData: { total: 8, colored: 5 },
+          question: "Quel symbole manque entre 3/8 et 5/8 ? (<, >, ou =)",
+          expected: ["<"],
+          hint: "Utilise le signe 'plus petit que'."
+        }
+      ]
+    },
+    6: {
+      title: "Étage 6 — Fractions décimales",
+      subSteps: [
+        {
+          subtitle: "1. Le lien avec les centimes",
+          theory: "Une fraction décimale a pour dénominateur 10, 100 ou 1000. En Suisse, c'est parfait pour compter l'argent !",
+          example: "75 centimes, c'est 75/100 de franc, soit 0,75 CHF.",
+          visualType: "money",
+          visualData: { value: "0.75 CHF" },
+          question: "Écris 7/10 sous forme de nombre décimal (avec une virgule ou un point).",
+          expected: ["0,7", "0.7"],
+          hint: "Zéro virgule sept."
+        }
+      ]
+    },
+    7: {
+      title: "Étage 7 — Additionner des parts identiques",
+      subSteps: [
+        {
+          subtitle: "1. Addition simple",
+          theory: "Si les dénominateurs sont identiques, les parts ont la même taille. On additionne les numérateurs et on ne touche pas au dénominateur.",
+          example: "2/7 + 3/7 = 5/7 (on additionne 2 parts et 3 parts).",
+          visualType: "bar",
+          visualData: { total: 7, colored: 5 },
+          question: "Calcule : 3/8 + 2/8. Donne la réponse sous forme de fraction.",
+          expected: ["5/8", "5 / 8"],
+          hint: "Additionne 3 et 2 en gardant 8 en bas."
+        }
+      ]
+    },
+    8: {
+      title: "Étage 8 — Dénominateurs différents",
+      subSteps: [
+        {
+          subtitle: "1. Harmoniser avant d'additionner",
+          theory: "On ne peut pas additionner des demis et des quarts directement. Il faut d'abord transformer les demis en quarts pour avoir des parts de même taille.",
+          example: "1/2 se transforme en 2/4. Ensuite, 2/4 + 1/4 = 3/4.",
+          visualType: "circle",
+          visualData: { parts: 4, colored: 3 },
+          question: "Pour additionner 1/2 et 1/4, en combien de parts égales dois-tu convertir les demis ?",
+          expected: ["4"],
+          hint: "Regarde le dénominateur commun."
+        }
+      ]
+    },
+    9: {
+      title: "Étage 9 — Multiplication et division",
+      subSteps: [
+        {
+          subtitle: "1. Multiplier et inverser",
+          theory: "Multiplication : on multiplie les numérateurs entre eux et les dénominateurs entre eux. Division : diviser par une fraction, c'est multiplier par son inverse.",
+          example: "L'inverse de 2/3 est 3/2.",
+          visualType: "bar",
+          visualData: { total: 3, colored: 2 },
+          question: "Quel est l'inverse de la fraction 2/3 ?",
+          expected: ["3/2", "3 / 2"],
+          hint: "Inverse le haut et le bas."
+        }
+      ]
     }
+  };
+
+  let currentCourse = $derived(floorCourses[floorNum] || floorCourses[1]);
+  let currentSubStepIndex = $state(0);
+  let userAnswer = $state("");
+  let feedbackMessage = $state("");
+  let isCorrect = $state(false);
+
+  let activeStep = $derived(currentCourse.subSteps[currentSubStepIndex]);
+
+  $effect(() => {
+    floorNum;
+    currentSubStepIndex = 0;
+    userAnswer = "";
+    feedbackMessage = "";
+    isCorrect = false;
+  });
+
+  function checkAnswer() {
+    const cleaned = userAnswer.trim().toLowerCase();
+    const match = activeStep.expected.some(exp => exp.toLowerCase() === cleaned);
+    if (match) {
+      isCorrect = true;
+      feedbackMessage = "🎉 Bravo ! C'est validé.";
+    } else {
+      isCorrect = false;
+      feedbackMessage = `❌ Pas tout à fait. ${activeStep.hint}`;
+    }
+  }
+
+  function nextSubStep() {
+    if (currentSubStepIndex < currentCourse.subSteps.length - 1) {
+      currentSubStepIndex++;
+      userAnswer = "";
+      feedbackMessage = "";
+      isCorrect = false;
+    } else {
+      if (onComplete) onComplete();
+    }
+  }
+
+  function prevSubStep() {
+    if (currentSubStepIndex > 0) {
+      currentSubStepIndex--;
+      userAnswer = "";
+      feedbackMessage = "";
+      isCorrect = true;
+    }
+  }
+
+  function speakText() {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(`${activeStep.subtitle}. ${activeStep.theory}. ${activeStep.example}`);
+    utterance.lang = 'fr-CH';
+    window.speechSynthesis.speak(utterance);
+  }
 </script>
 
-<div class="lesson-card p-6 bg-white text-slate-800 rounded-3xl max-w-xl mx-auto flex flex-col gap-6 border border-slate-200 shadow-xl">
-    <div class="flex justify-between items-center border-b border-slate-800 pb-4">
-        <div>
-            <span class="text-xs font-mono text-cyan-800 uppercase tracking-wider">Personnage-guide · théorie</span>
-            <h2 class="text-2xl font-bold mt-1 text-slate-900">{floorId === 'floor-1' ? 'Le partage équitable' : floorId === 'floor-2' ? 'Lire et représenter les fractions' : `Leçon interactive · étage ${floorNum}`}</h2>
-        </div>
-        <button onclick={readCourse} class="px-4 py-2 bg-cyan-50 text-cyan-900 border border-cyan-200 rounded-xl text-sm font-semibold hover:bg-cyan-100 cursor-pointer flex items-center gap-2 shadow" title="Lire la théorie à voix haute">
-            🔊 Écouter
-        </button>
+<div class="intro-course-container">
+  <!-- On a supprimé le bandeau haut redondant, on garde uniquement le contenu propre et la croix gérée par la modale parente -->
+  <main class="course-card">
+    <div class="card-top-row">
+      <div class="floor-tag">Étage {floorNum}</div>
+      <button class="speak-btn" onclick={speakText} title="Écouter la leçon">🔊 Écouter</button>
     </div>
 
-    {#if floorId === 'floor-1' || floorId === 'floor-2'}
-        <div class="flex items-center gap-2" aria-label={`Étape ${step + 1} sur ${activeLessonSteps.length}`}>
-            {#each activeLessonSteps as _, i}
-                <div class={`h-2 flex-1 rounded-full ${i <= step ? 'bg-cyan-400' : 'bg-slate-700'}`}></div>
-            {/each}
+    <h2>{currentCourse.title}</h2>
+    <h3 class="subtitle">{activeStep.subtitle}</h3>
+
+    <!-- BLOC THÉORIE -->
+    <div class="theory-block">
+      <p><strong>Règle :</strong> {@html activeStep.theory}</p>
+    </div>
+
+    <!-- REPRÉSENTATION GRAPHIQUE VISUELLE -->
+    <div class="visual-container">
+      <p class="visual-label">🎨 Illustration visuelle :</p>
+      
+      {#if activeStep.visualType === 'bar'}
+        <div class="visual-bar-wrapper">
+          {#each Array(activeStep.visualData.total) as _, i}
+            <div class="bar-segment {i < activeStep.visualData.colored ? 'colored' : 'empty'}">
+              <span>{i + 1}</span>
+            </div>
+          {/each}
         </div>
-        <section class="p-5 bg-slate-50 rounded-2xl border border-slate-200 text-slate-800 leading-relaxed space-y-4">
-            <h3 class="text-xl font-bold text-cyan-800">{activeLessonSteps[step].title}</h3>
-            <p>{activeLessonSteps[step].text}</p>
-            {#if step === 0}
-                <div class="rounded-xl bg-white p-4 text-slate-900">
-                    <FractionBar numerator={lessonFraction.numerator} denominator={lessonFraction.denominator} color="#1976d2" width={240} showLabel={false} />
-                    <p class="text-center font-semibold">{lessonFraction.denominator} parts égales, {lessonFraction.numerator} parts coloriées.</p>
-                </div>
-            {:else if step === 1}
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="rounded-xl bg-blue-50 border border-blue-200 p-4 text-center text-blue-900">
-                        <div class="text-4xl font-bold">{lessonFraction.numerator}</div><div class="text-sm text-blue-800">Numérateur : parts prises</div>
-                    </div>
-                    <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-center text-emerald-900">
-                        <div class="text-4xl font-bold">{lessonFraction.denominator}</div><div class="text-sm text-emerald-800">Dénominateur : parts en tout</div>
-                    </div>
-                </div>
-                <div class="text-center text-3xl font-bold" aria-label="fraction représentée">{lessonFraction.numerator}/{lessonFraction.denominator}</div>
-            {:else}
-                <div class="rounded-xl bg-white p-4 text-slate-900">
-                    <FractionBar numerator={lessonFraction.numerator} denominator={lessonFraction.denominator} color="#1976d2" width={240} showLabel={true} />
-                    <p class="text-center">Je compte les parts coloriées : {lessonFraction.numerator}. Je compte toutes les parts égales : {lessonFraction.denominator}.</p>
-                </div>
-                {#if floorId === 'floor-2'}
-                    <div class="rounded-xl bg-amber-50 border border-amber-200 p-4 text-center text-amber-950">
-                        <p class="font-semibold">« quatre septièmes »</p>
-                        <p>quatre parts prises sur sept parts égales</p>
-                        <div class="text-2xl font-extrabold">4/7</div>
-                    </div>
-                {/if}
-                <p class="border-l-4 border-amber-400 bg-amber-50 text-amber-950 p-3 rounded-r-lg">Attention : {floorId === 'floor-1' ? 'si les parts n’ont pas la même taille, elles ne représentent pas des quarts égaux.' : 'pour représenter une fraction, les parts doivent être de même taille.'}</p>
-            {/if}
-        </section>
-        <div class="flex justify-between gap-3">
-            <button onclick={() => step = Math.max(0, step - 1)} disabled={step === 0} class="px-5 py-3 bg-slate-700 text-white hover:bg-slate-600 disabled:opacity-40 rounded-xl font-semibold">← Précédent</button>
-            {#if step < activeLessonSteps.length - 1}
-                <button onclick={() => step += 1} class="px-6 py-3 bg-cyan-700 text-white hover:bg-cyan-600 rounded-xl font-bold">Étape suivante →</button>
-            {:else}
-                <button onclick={onComplete} class="px-6 py-3 bg-emerald-700 text-white hover:bg-emerald-600 rounded-xl font-bold">J’ai compris →</button>
-            {/if}
+        <p class="visual-caption">{activeStep.visualData.colored} parts coloriées sur {activeStep.visualData.total} parts égales</p>
+
+      {:else if activeStep.visualType === 'line'}
+        <div class="visual-number-line">
+          <div class="line-track"></div>
+          {#each Array(activeStep.visualData.parts + 1) as _, i}
+            <div class="line-tick" style="left: {(i / activeStep.visualData.parts) * 100}%">
+              <span class="tick-mark">|</span>
+              <span class="tick-label">{i}/{activeStep.visualData.parts}</span>
+            </div>
+          {/each}
         </div>
-    {:else}
-        <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 text-slate-800 leading-relaxed space-y-3">
-            <p>Bienvenue dans cette capsule d’apprentissage ! Une fraction permet de représenter des parts égales d’une unité.</p>
-            <p class="text-cyan-800 font-medium">Observe les figures et associe chaque quantité à son écriture mathématique.</p>
+        <p class="visual-caption">Droite graduée de 0 à 1 partagée en {activeStep.visualData.parts} intervalles</p>
+
+      {:else}
+        <div class="visual-badge-box">
+          <span class="visual-main-icon">💡</span>
+          <p>{activeStep.example}</p>
         </div>
-        <div class="flex justify-end pt-2">
-            <button onclick={onComplete} class="px-6 py-3.5 bg-cyan-700 hover:bg-cyan-600 text-white font-bold rounded-xl cursor-pointer">J’ai compris, terminer ➔</button>
-        </div>
-    {/if}
+      {/if}
+    </div>
+
+    <!-- BLOC EXEMPLE CONCRET -->
+    <div class="example-block">
+      <p>🍕 <strong>Exemple du quotidien :</strong> {activeStep.example}</p>
+    </div>
+
+    <!-- QUESTION DE VALIDATION INTERACTIVE -->
+    <div class="validation-box">
+      <p class="question-title">✨ Question interactive :</p>
+      <p class="question-text">{activeStep.question}</p>
+      
+      <div class="input-row">
+        <input 
+          type="text" 
+          bind:value={userAnswer} 
+          placeholder="Ta réponse..." 
+          onkeydown={(e) => e.key === 'Enter' && checkAnswer()}
+          disabled={isCorrect}
+        />
+        {#if !isCorrect}
+          <button class="btn-check" onclick={checkAnswer}>Vérifier</button>
+        {:else}
+          <span class="validated-badge">Validé ✔️</span>
+        {/if}
+      </div>
+
+      {#if feedbackMessage}
+        <p class="feedback {isCorrect ? 'success' : 'error'}">{feedbackMessage}</p>
+      {/if}
+    </div>
+  </main>
+
+  <!-- NAVIGATION ENTRE LES SOUS-ÉTAPES -->
+  <footer class="course-footer">
+    <button class="btn-nav secondary" onclick={prevSubStep} disabled={currentSubStepIndex === 0}>
+      ← Précédent
+    </button>
+    
+    <span class="progress-indicator">Partie {currentSubStepIndex + 1} / {currentCourse.subSteps.length}</span>
+
+    <button 
+      class="btn-nav primary" 
+      onclick={nextSubStep} 
+      disabled={!isCorrect}
+    >
+      {currentSubStepIndex === currentCourse.subSteps.length - 1 ? 'Terminer la leçon 🎯' : 'Étape suivante →'}
+    </button>
+  </footer>
 </div>
 
 <style>
-    /* La théorie doit rester lisible même si les utilitaires CSS ne sont pas chargés. */
-    .lesson-card {
-        box-sizing: border-box;
-        background: #fffdf7 !important;
-        color: #202938 !important;
-        border: 1px solid #e7dcc8 !important;
-        border-radius: 1.25rem;
-        box-shadow: 0 8px 28px rgba(15, 23, 42, .16);
-    }
-    .lesson-card h2 { color: #172033 !important; }
-    .lesson-card h3 { color: #075985 !important; }
-    .lesson-card p, .lesson-card span, .lesson-card div { color: inherit; }
-    .lesson-card section { background: #f8fafc !important; color: #202938 !important; }
-    .lesson-card button {
-        color: #fff !important;
-        background: #0e7490;
-        border: 1px solid #0e7490;
-        border-radius: .75rem;
-        padding: .65rem 1rem;
-        font-weight: 650;
-        cursor: pointer;
-    }
-    .lesson-card > div:first-child button {
-        color: #155e75 !important;
-        background: #ecfeff;
-        border-color: #a5f3fc;
-    }
-    .lesson-card button[class*="bg-slate-700"] { background: #334155; border-color: #334155; }
-    .lesson-card button[class*="bg-cyan-700"] { background: #0e7490; border-color: #0e7490; }
-    .lesson-card button[class*="bg-emerald-700"] { background: #047857; border-color: #047857; }
-    .lesson-card button:hover { filter: brightness(.95); }
-    .lesson-card button:disabled { opacity: .45; }
+  .intro-course-container {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #202124;
+  }
+
+  .course-card {
+    padding: 1.5rem 2rem;
+    flex: 1;
+    overflow-y: auto;
+    max-height: 70vh;
+  }
+
+  .card-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .floor-tag {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #2563eb;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: #eff6ff;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+    color: #1e293b;
+    margin: 0 0 0.3rem 0;
+  }
+
+  .subtitle {
+    font-size: 1.15rem;
+    color: #2563eb;
+    margin: 0 0 1rem 0;
+  }
+
+  .speak-btn {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+
+  .speak-btn:hover {
+    background: #dcfce7;
+  }
+
+  .theory-block {
+    background: #eff6ff;
+    border-left: 5px solid #3b82f6;
+    padding: 1rem 1.2rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 1.2rem;
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .visual-container {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.2rem;
+    text-align: center;
+  }
+
+  .visual-label {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: #64748b;
+    margin-bottom: 0.8rem;
+    text-align: left;
+  }
+
+  .visual-bar-wrapper {
+    display: flex;
+    height: 48px;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    margin-bottom: 0.5rem;
+  }
+
+  .bar-segment {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.95rem;
+    border-right: 1px solid #cbd5e1;
+  }
+
+  .bar-segment:last-child {
+    border-right: none;
+  }
+
+  .bar-segment.colored {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .bar-segment.empty {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
+  .visual-number-line {
+    position: relative;
+    height: 50px;
+    margin: 10px 20px 25px 20px;
+  }
+
+  .line-track {
+    position: absolute;
+    top: 15px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #64748b;
+    border-radius: 2px;
+  }
+
+  .line-tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .tick-mark {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #334155;
+    background: #f8fafc;
+    padding: 0 4px;
+  }
+
+  .tick-label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #1e293b;
+    margin-top: 2px;
+  }
+
+  .visual-caption {
+    font-size: 0.9rem;
+    color: #475569;
+    margin: 0;
+    font-style: italic;
+  }
+
+  .visual-badge-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .visual-main-icon {
+    font-size: 1.5rem;
+  }
+
+  .example-block {
+    background: #fefce8;
+    border-left: 5px solid #eab308;
+    padding: 0.9rem 1.2rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+    font-size: 1.02rem;
+  }
+
+  .validation-box {
+    background: #f8fafc;
+    border: 2px dashed #94a3b8;
+    border-radius: 12px;
+    padding: 1.2rem;
+  }
+
+  .question-title {
+    font-weight: bold;
+    color: #dc2626;
+    margin-bottom: 0.3rem;
+  }
+
+  .question-text {
+    font-size: 1.05rem;
+    margin-bottom: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 0.6rem 0.8rem;
+    font-size: 1.1rem;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    outline: none;
+    background: #fff;
+    color: #1f2937;
+  }
+
+  input[type="text"]:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+
+  .btn-check {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .btn-check:hover {
+    background: #1d4ed8;
+  }
+
+  .validated-badge {
+    color: #16a34a;
+    font-weight: bold;
+    font-size: 1.05rem;
+    background: #f0fdf4;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #bbf7d0;
+  }
+
+  .feedback {
+    margin-top: 0.6rem;
+    font-weight: bold;
+    font-size: 0.95rem;
+  }
+
+  .feedback.success {
+    color: #16a34a;
+  }
+
+  .feedback.error {
+    color: #dc2626;
+  }
+
+  .course-footer {
+    background: #f1f5f9;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #cbd5e1;
+  }
+
+  .btn-nav {
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-nav.secondary {
+    background: #ffffff;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+  }
+
+  .btn-nav.secondary:hover:not(:disabled) {
+    background: #f8fafc;
+  }
+
+  .btn-nav.primary {
+    background: #0d9488;
+    color: white;
+  }
+
+  .btn-nav.primary:hover:not(:disabled) {
+    background: #0f766e;
+  }
+
+  .btn-nav:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .progress-indicator {
+    font-size: 0.9rem;
+    color: #475569;
+    font-weight: bold;
+  }
 </style>
