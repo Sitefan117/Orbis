@@ -55,7 +55,11 @@
     );
 
     function handleComplete(finalScore: number = 10) {
-        AudioManager.playSuccess();
+        if (typeof (AudioManager as any).play === 'function') {
+            (AudioManager as any).play('success');
+        } else if (typeof (AudioManager as any).playSuccess === 'function') {
+            (AudioManager as any).playSuccess();
+        }
         ProgressManager.recordFloorCompletion(floorNumber, finalScore, activityType === 'boss' ? 20 : 10);
         setTimeout(() => {
             onClose();
