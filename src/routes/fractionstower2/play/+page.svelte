@@ -24,13 +24,13 @@
     // ==========================================
     // ⚙️ TAILLES DES ÉLÉMENTS DU JEU
     // ==========================================
-    const heroSize = 96;          // Taille du héros
-    const defaultNpcSize = 96;   // Taille par défaut des PNJ
-    const topNpcSize = 64;       // Taille réduite pour les PNJ du haut
-    const floorTileSize = 96;     // Taille des motifs du sol
-    const wallTileSize = 96;      // Taille des motifs des murs
-    const stairsSize = 48;        // Taille des escaliers
-    const elevatorSize = 48;      // Taille de l'ascenseur
+    const heroSize = 100;          // Taille du héros
+    const defaultNpcSize = 75;   // Taille par défaut des PNJ
+    const topNpcSize = 75;       // Taille réduite pour les PNJ du haut
+    const floorTileSize = 100;     // Taille des motifs du sol
+    const wallTileSize = 50;      // Taille des motifs des murs
+    const stairsSize = 75;        // Taille des escaliers
+    const elevatorSize = 75;      // Taille de l'ascenseur
     // ==========================================
 
     // Gestion du Responsive / Scale sur iPad & Mobile
