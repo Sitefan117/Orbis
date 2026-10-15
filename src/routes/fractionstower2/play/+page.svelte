@@ -1,3 +1,7 @@
+<svelte:head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+</svelte:head>
+
 <script lang="ts">
     import { onMount } from 'svelte';
     import { base } from '$app/paths';
@@ -122,6 +126,9 @@
     onMount(() => {
         updateScale();
         window.addEventListener('resize', updateScale);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(updateScale, 200);
+        });
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -150,6 +157,9 @@
 
         return () => {
             window.removeEventListener('resize', updateScale);
+            window.removeEventListener('orientationchange', () => {
+                setTimeout(updateScale, 200);
+            });
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
@@ -679,6 +689,7 @@
         grid-template-columns: 1fr auto 1fr;
         align-items: center;
         padding: 8px 24px;
+        padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
         z-index: 100;
         flex-shrink: 0;
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
