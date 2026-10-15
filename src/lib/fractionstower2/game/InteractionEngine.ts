@@ -7,8 +7,8 @@ import { type Rect, type InteractionZone, type Vector2 } from '$lib/fractionstow
 
 export class InteractionEngine {
     // Taille de la zone d'interaction du joueur ajustée à la taille visuelle (100px)
-    static PLAYER_WIDTH = 100;
-    static PLAYER_HEIGHT = 100;
+    static PLAYER_WIDTH = 60;
+    static PLAYER_HEIGHT = 50;
 
     /**
      * Vérifie si le joueur se trouve dans une zone interactive.

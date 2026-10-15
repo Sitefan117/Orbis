@@ -65,6 +65,11 @@
     }
 
     function checkAnswer() {
+        // Pour les exercices interactifs de type slice, initialiser à '1' si vide
+        if (currentEx.type === 'slice_interactive' && !userAnswer) {
+            userAnswer = "1";
+        }
+
         if (!userAnswer.trim() || isAnswerChecked) return;
 
         const cleanedUser = userAnswer.trim().toLowerCase().replace(/\s+/g, '');
@@ -189,10 +194,66 @@
                 </div>
             {/if}
 
+            <!-- MODE COLORIAGE INTERACTIF (Colorie X parts sur Y) -->
+            {#if currentEx.type === 'color_interactive'}
+                <div class="interactive-box">
+                    <p class="instruction-mini">👇 Clique sur les parts pour les colorer :</p>
+                    <div class="visual-bar-wrapper clickable">
+                        {#each Array(currentEx.interactiveData?.totalParts || 4) as _, i}
+                            {@const coloredCount = userAnswer ? parseInt(userAnswer.split('/')[0]) || 0 : 0}
+                            <button 
+                                type="button"
+                                class="bar-segment-interactive {i < coloredCount ? 'colored' : 'empty'}"
+                                onclick={() => {
+                                    if (isAnswerChecked) return;
+                                    const nextCount = coloredCount === i + 1 ? i : i + 1;
+                                    const total = currentEx.interactiveData?.totalParts || 4;
+                                    userAnswer = `${nextCount}/${total}`;
+                                }}
+                                disabled={isAnswerChecked}
+                            >
+                                <span>{i + 1}</span>
+                            </button>
+                        {/each}
+                    </div>
+                    <p class="visual-caption">Parts colorées : {userAnswer ? userAnswer.split('/')[0] : '0'} / {currentEx.interactiveData?.totalParts}</p>
+                </div>
+            {/if}
+
+            <!-- MODE DÉCOUPAGE INTERACTIF (Choisis le dénominateur) -->
+            {#if currentEx.type === 'slice_interactive'}
+                <div class="interactive-box">
+                    <p class="instruction-mini">👇 Ajuste le nombre de parts :</p>
+                    <div class="slider-row">
+                        <button 
+                            type="button"
+                            class="adjust-btn" 
+                            onclick={() => {
+                                if (isAnswerChecked) return;
+                                const cur = parseInt(userAnswer || '1');
+                                if (cur > 1) userAnswer = (cur - 1).toString();
+                            }}
+                            disabled={isAnswerChecked}
+                        >-</button>
+                        <span class="slice-counter">{userAnswer || '1'} parts</span>
+                        <button 
+                            type="button"
+                            class="adjust-btn" 
+                            onclick={() => {
+                                if (isAnswerChecked) return;
+                                const cur = parseInt(userAnswer || '1');
+                                if (cur < 12) userAnswer = (cur + 1).toString();
+                            }}
+                            disabled={isAnswerChecked}
+                        >+</button>
+                    </div>
+                </div>
+            {/if}
+
             <!-- BOUTONS D'ACTION (VALIDATION OU SUIVANT POUR TOUS LES MODES) -->
             <div class="action-row">
                 {#if !isAnswerChecked}
-                    {#if currentEx.type === 'input' || currentEx.type === 'number_line'}
+                    {#if currentEx.type === 'input' || currentEx.type === 'number_line' || currentEx.type === 'color_interactive' || currentEx.type === 'slice_interactive'}
                         <button class="btn-verify" onclick={checkAnswer}>Valider ma réponse</button>
                     {/if}
                 {:else}
@@ -312,8 +373,7 @@
     }
     .help-btn:hover, .speak-btn:hover { background: #475569; }
 
-    /* PANNEAU AIDE VISUELLE */
-    .visual-help-panel {
+    .visual-help-panel, .interactive-box {
         background: #1e293b;
         border: 2px solid #38bdf8;
         border-radius: 12px;
@@ -321,7 +381,7 @@
         text-align: center;
     }
 
-    .help-title {
+    .help-title, .instruction-mini {
         font-size: 0.9rem;
         font-weight: bold;
         color: #38bdf8;
@@ -331,7 +391,7 @@
 
     .visual-bar-wrapper {
         display: flex;
-        height: 44px;
+        height: 48px;
         border: 2px solid #64748b;
         border-radius: 8px;
         overflow: hidden;
@@ -349,6 +409,23 @@
         border-right: 1px solid #64748b;
     }
 
+    .bar-segment-interactive {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.95rem;
+        border: none;
+        border-right: 1px solid #64748b;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .bar-segment-interactive:last-child { border-right: none; }
+    .bar-segment-interactive.colored { background: #0284c7; color: white; }
+    .bar-segment-interactive.empty { background: #1e293b; color: #94a3b8; }
+    .bar-segment-interactive:hover { opacity: 0.85; }
+
     .bar-segment:last-child { border-right: none; }
     .bar-segment.colored { background: #0284c7; color: white; }
     .bar-segment.empty { background: #1e293b; color: #94a3b8; }
@@ -360,7 +437,33 @@
         font-style: italic;
     }
 
-    /* QCM */
+    .slider-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        padding: 0.5rem;
+    }
+
+    .adjust-btn {
+        background: #0284c7;
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .adjust-btn:hover { background: #0284c7; }
+
+    .slice-counter {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #f8fafc;
+    }
+
     .options-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -378,16 +481,11 @@
         cursor: pointer;
         transition: all 0.2s;
     }
-    .option-btn:hover:not(:disabled) {
-        background: #334155;
-        border-color: #38bdf8;
-    }
     .option-btn.selected {
         background: #0284c7;
         border-color: #38bdf8;
     }
 
-    /* SAISIE & CLAVIER */
     .input-section {
         display: flex;
         flex-direction: column;
@@ -424,7 +522,6 @@
         cursor: pointer;
     }
     .key-btn:hover { background: #475569; }
-    .key-btn:active { background: #38bdf8; color: #0f172a; }
 
     .action-row {
         display: flex;
@@ -507,8 +604,6 @@
         border-radius: 10px;
         cursor: pointer;
     }
-    .btn-retry:hover { background: #ca8a04; }
-
     .btn-close {
         background: #22c55e;
         color: white;
@@ -518,7 +613,6 @@
         border-radius: 10px;
         cursor: pointer;
     }
-    .btn-close:hover { background: #16a34a; }
 
     .confetti-bg { animation: pulse-bg 2s infinite alternate; }
     .fireworks-bg { animation: glow-bg 1.5s infinite alternate; }
