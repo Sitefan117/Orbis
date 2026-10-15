@@ -22,15 +22,29 @@
     let isWalking = $state(false);
 
     // ==========================================
-    // ⚙️ TAILLES INDÉPENDANTES DE CHAQUE ÉLÉMENT
+    // ⚙️ TAILLES DES ÉLÉMENTS DU JEU
     // ==========================================
-    const heroSize = 96;       // Taille du héros
-    const npcSize = 96;        // Taille des PNJ
-    const floorTileSize = 96;  // Taille des motifs du sol
-    const wallTileSize = 96;   // Taille des motifs des murs
-    const stairsSize = 48;     // Taille des escaliers
-    const elevatorSize = 48;   // Taille de l'ascenseur
+    const heroSize = 96;          // Taille du héros
+    const defaultNpcSize = 96;   // Taille par défaut des PNJ
+    const topNpcSize = 64;       // Taille réduite pour les PNJ du haut
+    const floorTileSize = 96;     // Taille des motifs du sol
+    const wallTileSize = 96;      // Taille des motifs des murs
+    const stairsSize = 48;        // Taille des escaliers
+    const elevatorSize = 48;      // Taille de l'ascenseur
     // ==========================================
+
+    // Gestion du Responsive / Scale sur iPad & Mobile
+    let viewportContainer = $state<HTMLElement | null>(null);
+    let mapScale = $state(1);
+
+    function updateScale() {
+        if (!viewportContainer || !floor) return;
+        const availableWidth = viewportContainer.clientWidth - 16;
+        const availableHeight = viewportContainer.clientHeight - 16;
+        const scaleX = availableWidth / floor.width;
+        const scaleY = availableHeight / floor.height;
+        mapScale = Math.min(scaleX, scaleY, 1);
+    }
 
     let walkFrame = $state(0); 
     let animTimer = 0;
@@ -77,6 +91,10 @@
         return `${base}/guide.png`;
     }
 
+    function getNpcSize(yPosition: number): number {
+        return yPosition < 200 ? topNpcSize : defaultNpcSize;
+    }
+
     function getLabel(interaction: any): string {
         if (interaction.action && interactionLabels[interaction.action]) {
             return interactionLabels[interaction.action];
@@ -89,15 +107,22 @@
         languageState.current = languageState.current === 'fr-FR' ? 'ru-RU' : 'fr-FR';
     }
 
-    function handleTouchStart(key: string) {
-        keys.add(key);
-    }
-
-    function handleTouchEnd(key: string) {
-        keys.delete(key);
+    // Bind tactile robuste pour éviter les blocages de touches
+    function bindTouch(key: string) {
+        return {
+            onmousedown: (e: MouseEvent) => { e.preventDefault(); keys.add(key); },
+            onmouseup: (e: MouseEvent) => { e.preventDefault(); keys.delete(key); },
+            onmouseleave: (e: MouseEvent) => { keys.delete(key); },
+            ontouchstart: (e: TouchEvent) => { e.preventDefault(); keys.add(key); },
+            ontouchend: (e: TouchEvent) => { e.preventDefault(); keys.delete(key); },
+            ontouchcancel: (e: TouchEvent) => { keys.delete(key); }
+        };
     }
 
     onMount(() => {
+        updateScale();
+        window.addEventListener('resize', updateScale);
+
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 e.preventDefault();
@@ -124,6 +149,7 @@
         requestAnimationFrame(loop);
 
         return () => {
+            window.removeEventListener('resize', updateScale);
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
@@ -146,7 +172,6 @@
                 } else if (interaction.action === 'classic-course-intro') {
                     activeCourseFloorId = game.player.currentFloorId;
                 } else if (interaction.action === 'course-intro') {
-                    // CORRECTION ICI : On transmet proprement l'étage courant pour tous les niveaux
                     activeActivityId = `${game.player.currentFloorId}-course`;
                 } else if (interaction.action === 'training-intro') {
                     activeActivityId = game.player.currentFloorId === 'floor-1'
@@ -315,7 +340,7 @@
 
 <div class="game-layout">
     
-    <!-- ================= 1. BANDEAU SUPÉRIEUR (HUD ÉPURÉ) ================= -->
+    <!-- BANDEAU SUPÉRIEUR -->
     <header class="top-bar">
         <div class="hud-left">
             <span class="floor-title">{game.currentFloorName}</span>
@@ -328,14 +353,16 @@
         </div>
     </header>
 
-    <!-- ================= 2. CANEVAS / ZONE DE JEU CENTRALE ================= -->
-    <main class="game-viewport">
+    <!-- CANEVAS / ZONE DE JEU ADAPTATIVE -->
+    <main class="game-viewport" bind:this={viewportContainer}>
         {#if floor}
             <div 
                 class="world pixelated" 
                 style="
                     width: {floor.width}px; 
                     height: {floor.height}px; 
+                    transform: scale({mapScale});
+                    transform-origin: center center;
                     background-image: url('{base}/sol.png'); 
                     background-repeat: repeat;
                     background-size: {floorTileSize}px {floorTileSize}px;
@@ -396,12 +423,13 @@
                     {/if}
 
                     {#if inter.type === 'pedagogical'}
-                        <div class="npc" style="left: {inter.x}px; top: {inter.y}px; width: {npcSize}px; height: {npcSize}px; position: absolute; z-index: 8;">
+                        {@const currentNpcSize = getNpcSize(inter.y)}
+                        <div class="npc" style="left: {inter.x}px; top: {inter.y}px; width: {currentNpcSize}px; height: {currentNpcSize}px; position: absolute; z-index: 8;">
                             <div 
                                 class="pixelated"
                                 style="
-                                    width: {npcSize}px;
-                                    height: {npcSize}px;
+                                    width: {currentNpcSize}px;
+                                    height: {currentNpcSize}px;
                                     background-image: url('{getNpcImage(inter.action)}');
                                     background-size: 400% 400%;
                                     background-position: 0% 0%;
@@ -443,47 +471,31 @@
         {/if}
     </main>
 
-    <!-- ================= 3. BARRE DE CONTRÔLE INFÉRIEURE FIXE ================= -->
+    <!-- BARRE DE CONTRÔLE INFÉRIEURE FIXE ET TACTILE -->
     <footer class="bottom-controls">
         
-        <!-- GAUCHE : D-Pad Tactile Ergonomique -->
+        <!-- GAUCHE : D-Pad Tactile Géant -->
         <div class="control-section left">
-            <div class="dpad">
-                <button 
-                    class="dpad-btn up" 
-                    onmousedown={() => handleTouchStart('ArrowUp')} 
-                    onmouseup={() => handleTouchEnd('ArrowUp')} 
-                    ontouchstart={() => handleTouchStart('ArrowUp')} 
-                    ontouchend={() => handleTouchEnd('ArrowUp')}
-                >▲</button>
-                <div class="dpad-row">
-                    <button 
-                        class="dpad-btn left" 
-                        onmousedown={() => handleTouchStart('ArrowLeft')} 
-                        onmouseup={() => handleTouchEnd('ArrowLeft')} 
-                        ontouchstart={() => handleTouchStart('ArrowLeft')} 
-                        ontouchend={() => handleTouchEnd('ArrowLeft')}
-                    >◀</button>
-                    <div class="dpad-center"></div>
-                    <button 
-                        class="dpad-btn right" 
-                        onmousedown={() => handleTouchStart('ArrowRight')} 
-                        onmouseup={() => handleTouchEnd('ArrowRight')} 
-                        ontouchstart={() => handleTouchStart('ArrowRight')} 
-                        ontouchend={() => handleTouchEnd('ArrowRight')}
-                    >▶</button>
+            <div class="dpad-container">
+                <button class="dpad-btn up" {...bindTouch('ArrowUp')} aria-label="Haut">
+                    <span>▲</span>
+                </button>
+                <div class="dpad-middle-row">
+                    <button class="dpad-btn left" {...bindTouch('ArrowLeft')} aria-label="Gauche">
+                        <span>◀</span>
+                    </button>
+                    <div class="dpad-center-core"></div>
+                    <button class="dpad-btn right" {...bindTouch('ArrowRight')} aria-label="Droite">
+                        <span>▶</span>
+                    </button>
                 </div>
-                <button 
-                    class="dpad-btn down" 
-                    onmousedown={() => handleTouchStart('ArrowDown')} 
-                    onmouseup={() => handleTouchEnd('ArrowDown')} 
-                    ontouchstart={() => handleTouchStart('ArrowDown')} 
-                    ontouchend={() => handleTouchEnd('ArrowDown')}
-                >▼</button>
+                <button class="dpad-btn down" {...bindTouch('ArrowDown')} aria-label="Bas">
+                    <span>▼</span>
+                </button>
             </div>
         </div>
 
-        <!-- CENTRE : Outils (Langue, Sauvegardes, Debug) -->
+        <!-- CENTRE : Outils -->
         <div class="control-section center">
             <div class="tools-row">
                 <button class="tool-btn lang-btn" onclick={changeLanguage}>
@@ -502,11 +514,17 @@
             </label>
         </div>
 
-        <!-- DROITE : Grand bouton d'action Tactile -->
+        <!-- DROITE : Bouton d'Action Type Arcade -->
         <div class="control-section right">
-            <button class="action-btn" onclick={handleInteraction}>
-                <span class="action-hint">[ E ]</span>
-                <span class="action-text">{languageState.current === 'fr-FR' ? 'INTERAGIR' : 'ДЕЙСТВИE'}</span>
+            <button 
+                class="action-btn-arcade" 
+                onclick={handleInteraction}
+                ontouchstart={(e) => { e.preventDefault(); handleInteraction(); }}
+            >
+                <div class="action-btn-inner">
+                    <span class="action-hint">[ E ]</span>
+                    <span class="action-text">{languageState.current === 'fr-FR' ? 'INTERAGIR' : 'ДЕЙСТВИE'}</span>
+                </div>
             </button>
         </div>
 
@@ -575,6 +593,7 @@
     .world {
         position: relative;
         box-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
+        transition: transform 0.1s ease-out;
     }
 
     .pixelated {
@@ -586,7 +605,7 @@
         position: absolute;
         width: 20px;
         height: 20px;
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.85);
         color: #1e293b;
         border-radius: 50%;
         display: flex;
@@ -651,16 +670,18 @@
         to { opacity: 1; }
     }
 
+    /* BARRE DE CONTRÔLE INFÉRIEURE TACTILE */
     .bottom-controls {
-        height: 120px;
-        background-color: #0f172a;
-        border-top: 1px solid #334155;
+        height: 180px;
+        background-color: #0b1329;
+        border-top: 2px solid #1e293b;
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 1fr auto 1fr;
         align-items: center;
-        padding: 0 16px;
+        padding: 8px 24px;
         z-index: 100;
         flex-shrink: 0;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
     }
 
     .control-section {
@@ -671,106 +692,138 @@
     .control-section.center { 
         justify-content: center; 
         flex-direction: column; 
-        gap: 8px; 
+        gap: 10px; 
     }
     .control-section.right { justify-content: flex-end; }
 
-    .dpad {
+    /* D-PAD TACTILE ERGONOMIQUE ET LARGE */
+    .dpad-container {
         display: flex;
         flex-direction: column;
         align-items: center;
+        user-select: none;
+        touch-action: none;
     }
-    .dpad-row {
+    .dpad-middle-row {
         display: flex;
         align-items: center;
     }
-    .dpad-center {
-        width: 32px;
-        height: 32px;
+    .dpad-center-core {
+        width: 56px;
+        height: 56px;
         background-color: #1e293b;
+        border: 1px solid #334155;
     }
     .dpad-btn {
-        width: 34px;
-        height: 34px;
-        background-color: #334155;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
         color: #f8fafc;
-        border: 1px solid #475569;
-        font-size: 0.9rem;
+        border: 2px solid #475569;
+        font-size: 1.4rem;
         display: flex;
         justify-content: center;
         align-items: center;
         cursor: pointer;
-        touch-action: manipulation;
+        touch-action: none;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 6px rgba(0, 0, 0, 0.3);
+        transition: background 0.05s, transform 0.05s;
     }
-    .dpad-btn.up { border-radius: 6px 6px 0 0; }
-    .dpad-btn.down { border-radius: 0 0 6px 6px; }
-    .dpad-btn.left { border-radius: 6px 0 0 6px; }
-    .dpad-btn.right { border-radius: 0 6px 6px 0; }
+    .dpad-btn.up { 
+        border-radius: 12px 12px 2px 2px; 
+        border-bottom: none;
+    }
+    .dpad-btn.down { 
+        border-radius: 2px 2px 12px 12px; 
+        border-top: none;
+    }
+    .dpad-btn.left { 
+        border-radius: 12px 2px 2px 12px; 
+        border-right: none;
+    }
+    .dpad-btn.right { 
+        border-radius: 2px 12px 12px 2px; 
+        border-left: none;
+    }
     .dpad-btn:active {
-        background-color: #f59e0b;
+        background: #f59e0b;
         color: #0f172a;
+        transform: scale(0.95);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
     }
 
     .tools-row {
         display: flex;
-        gap: 6px;
+        gap: 8px;
     }
     .tool-btn {
         background-color: #1e293b;
         color: #f8fafc;
         border: 1px solid #334155;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-size: 0.75rem;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 0.85rem;
         font-weight: 600;
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
     }
     .tool-btn:hover { background-color: #334155; }
     .load-label input { display: none; }
 
     .debug-toggle {
-        font-size: 0.7rem;
+        font-size: 0.8rem;
         color: #64748b;
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
         cursor: pointer;
     }
     .debug-toggle input {
         accent-color: #f59e0b;
+        width: 16px;
+        height: 16px;
     }
 
-    .action-btn {
-        width: 90px;
-        height: 70px;
-        background: linear-gradient(135deg, #f59e0b, #d97706);
-        color: #0f172a;
-        border: 2px solid #fbbf24;
-        border-radius: 12px;
+    /* BOUTON D'ACTION TYPE ARCADE */
+    .action-btn-arcade {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #fbbf24, #d97706);
+        padding: 6px;
+        border: 3px solid #f59e0b;
+        box-shadow: 0 8px 18px rgba(245, 158, 11, 0.3), 0 6px 10px rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+    .action-btn-inner {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+        border: 2px solid #fef3c7;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-        touch-action: manipulation;
-        transition: transform 0.1s;
+        color: #ffffff;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
     }
-    .action-btn:active {
-        transform: scale(0.95);
-        background: #d97706;
+    .action-btn-arcade:active {
+        transform: translateY(4px) scale(0.95);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
     }
     .action-hint {
-        font-size: 0.65rem;
+        font-size: 0.75rem;
         font-weight: 900;
-        opacity: 0.7;
+        opacity: 0.85;
     }
     .action-text {
-        font-size: 0.75rem;
-        font-weight: 800;
+        font-size: 0.85rem;
+        font-weight: 900;
         letter-spacing: 0.5px;
     }
 </style>
