@@ -5,6 +5,7 @@
    * que TrainingSession, avec 18 questions, trois phases et les vies existantes.
    */
   import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
+  import FractionBar from '$lib/fractionstower2/components/fraction/FractionBar.svelte';
   import { ExerciseGenerator, type Exercise } from '$lib/fractionstower2/engines/ExerciseGenerator';
 
   let {
@@ -12,12 +13,14 @@
     onComplete,
     onClose,
     game
-  } = $props<{
+  }: {
     floorId?: string;
     onComplete: (score?: number) => void;
     onClose?: () => void;
-    game?: { markBossDefeated?: (floorId: string) => void };
-  }>();
+    game?: {
+      markBossDefeated?: (floorId: string) => void;
+    };
+  } = $props();
 
   let activeFloor = $derived(String(floorId).startsWith('floor-') ? floorId : `floor-${floorId}`);
   const QUESTIONS_PER_PHASE = 6;

@@ -1,9 +1,9 @@
+
 <script lang="ts">
   /**
    * Routeur de modale pour le cours, l'entraînement et le boss.
-   * Transmet les scores réels et utilise le bon nombre de questions pour calculer
-   * les étoiles. La progression du boss joué dans le monde est aussi traitée
-   * par le composant parent /play.
+   * Transmet les scores réels et utilise le bon nombre de questions
+   * pour calculer la progression.
    */
   import { onMount } from 'svelte';
   import IntroCourse from '$lib/fractionstower2/components/exercises/IntroCourse.svelte';
@@ -12,10 +12,14 @@
   import { ProgressManager } from '$lib/fractionstower2/persistence/ProgressManager';
   import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
 
-  let { activityId, onClose } = $props<{
+  // Typage des propriétés : syntaxe compatible avec l'erreur rencontrée.
+  let {
+    activityId,
+    onClose
+  }: {
     activityId: string;
     onClose: () => void;
-  }>();
+  } = $props();
 
   onMount(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -24,11 +28,18 @@
         onClose();
       }
     };
+
     window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+    };
   });
 
-  let normalizedId = $derived(String(activityId || '').toLowerCase());
+  let normalizedId = $derived(
+    String(activityId || '').toLowerCase()
+  );
+
   let floorNumber = $derived(
     normalizedId.match(/(\d+)/)?.[1]
       ? `floor-${normalizedId.match(/(\d+)/)![1]}`
@@ -40,7 +51,9 @@
       ? 'training'
       : normalizedId.includes('boss')
         ? 'boss'
-        : normalizedId.includes('course') || normalizedId.includes('theory') || normalizedId.includes('intro')
+        : normalizedId.includes('course') ||
+          normalizedId.includes('theory') ||
+          normalizedId.includes('intro')
           ? 'course'
           : 'training'
   );
@@ -53,7 +66,13 @@
     }
 
     const totalQuestions = activityType === 'boss' ? 18 : 10;
-    ProgressManager.recordFloorCompletion(floorNumber, finalScore, totalQuestions);
+
+    ProgressManager.recordFloorCompletion(
+      floorNumber,
+      finalScore,
+      totalQuestions
+    );
+
     setTimeout(() => onClose(), 1500);
   }
 </script>
@@ -63,44 +82,178 @@
     class={`modal-content ${activityType === 'course' ? 'course-theme' : 'game-theme'}`}
     role="dialog"
     aria-modal="true"
-    aria-label={activityType === 'course' ? 'Leçon interactive' : activityType === 'boss' ? 'Combat de boss' : 'Session d’entraînement'}
+    aria-label={
+      activityType === 'course'
+        ? 'Leçon interactive'
+        : activityType === 'boss'
+          ? 'Combat de boss'
+          : 'Session d’entraînement'
+    }
   >
     <header class="modal-header">
       <div class="header-label">
         <span class="status-dot"></span>
         <span>
-          {activityType === 'course' ? '📖 Leçon interactive' : activityType === 'boss' ? '⚔️ Combat de Boss' : '🎯 Session d’entraînement'}
+          {
+            activityType === 'course'
+              ? '📖 Leçon interactive'
+              : activityType === 'boss'
+                ? '⚔️ Combat de Boss'
+                : '🎯 Session d’entraînement'
+          }
           ({floorNumber.toUpperCase()})
         </span>
       </div>
-      <button type="button" onclick={onClose} class="close-btn" title="Fermer (Échap)" aria-label="Fermer la fenêtre">✕</button>
+
+      <button
+        type="button"
+        onclick={onClose}
+        class="close-btn"
+        title="Fermer (Échap)"
+        aria-label="Fermer la fenêtre"
+      >
+        ✕
+      </button>
     </header>
 
     <div class="modal-body">
       {#if activityType === 'course'}
-        <IntroCourse floorId={floorNumber} onComplete={() => onClose()} />
+        <IntroCourse
+          floorId={floorNumber}
+          onComplete={() => onClose()}
+        />
       {:else if activityType === 'boss'}
-        <BossBattle floorId={floorNumber} onComplete={(score) => handleComplete(score ?? 0)} onClose={onClose} />
+        <BossBattle
+          floorId={floorNumber}
+          onComplete={(score?: number) => handleComplete(score ?? 0)}
+          onClose={onClose}
+        />
       {:else}
-        <TrainingSession floorId={floorNumber} onComplete={(score) => handleComplete(score)} />
+        <TrainingSession
+          floorId={floorNumber}
+          onComplete={(score: number) => handleComplete(score)}
+        />
       {/if}
     </div>
   </div>
 </div>
 
 <style>
-  .modal-backdrop { position: fixed; inset: 0; width: 100vw; height: 100vh; background: rgba(2, 6, 23, .85); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); }
-  .modal-content { box-sizing: border-box; max-height: 92vh; width: min(calc(100% - 2rem), 900px); border-radius: 1.5rem; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0, 0, 0, .35); border: 1px solid; }
-  .course-theme { background: #fffdf7; color: #1f2937; border-color: #e7dcc8; }
-  .game-theme { background: #0f172a; color: #f8fafc; border-color: #334155; }
-  .modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid; display: flex; justify-content: space-between; align-items: center; gap: .75rem; background: #1e293b; border-color: #334155; }
-  .course-theme .modal-header { background: #f5f0e6; border-color: #e7dcc8; }
-  .header-label { display: flex; align-items: center; gap: .65rem; color: #67e8f9; font: 800 .85rem ui-monospace, monospace; letter-spacing: .04em; text-transform: uppercase; }
-  .course-theme .header-label { color: #155e75; }
-  .status-dot { width: .7rem; height: .7rem; border-radius: 50%; background: #06b6d4; flex-shrink: 0; }
-  .close-btn { width: 2.25rem; height: 2.25rem; border: 0; border-radius: 50%; background: #475569; color: #fff; font-size: 1.1rem; cursor: pointer; }
-  .course-theme .close-btn { background: #e2e8f0; color: #0f172a; }
-  .modal-body { overflow-y: auto; flex: 1; min-height: 0; padding: 1.25rem; background: #f8fafc; color: #1f2937; }
-  .course-theme .modal-body { background: #fffdf7; }
-  @media (max-width: 520px) { .modal-header { padding: .8rem 1rem; } .header-label { font-size: .72rem; } .modal-body { padding: .75rem; } }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(2, 6, 23, .85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+  }
+
+  .modal-content {
+    box-sizing: border-box;
+    max-height: 92vh;
+    width: min(calc(100% - 2rem), 900px);
+    border-radius: 1.5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
+    border: 1px solid;
+  }
+
+  .course-theme {
+    background: #fffdf7;
+    color: #1f2937;
+    border-color: #e7dcc8;
+  }
+
+  .game-theme {
+    background: #0f172a;
+    color: #f8fafc;
+    border-color: #334155;
+  }
+
+  .modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  .course-theme .modal-header {
+    background: #f5f0e6;
+    border-color: #e7dcc8;
+  }
+
+  .header-label {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    color: #67e8f9;
+    font: 800 .85rem ui-monospace, monospace;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .course-theme .header-label {
+    color: #155e75;
+  }
+
+  .status-dot {
+    width: .7rem;
+    height: .7rem;
+    border-radius: 50%;
+    background: #06b6d4;
+    flex-shrink: 0;
+  }
+
+  .close-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0;
+    border-radius: 50%;
+    background: #475569;
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+
+  .course-theme .close-btn {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  .modal-body {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    padding: 1.25rem;
+    background: #f8fafc;
+    color: #1f2937;
+  }
+
+  .course-theme .modal-body {
+    background: #fffdf7;
+  }
+
+  @media (max-width: 520px) {
+    .modal-header {
+      padding: .8rem 1rem;
+    }
+
+    .header-label {
+      font-size: .72rem;
+    }
+
+    .modal-body {
+      padding: .75rem;
+    }
+  }
 </style>
