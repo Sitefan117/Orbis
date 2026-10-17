@@ -1,628 +1,746 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { ExerciseGenerator, type Exercise } from '$lib/fractionstower2/engines/ExerciseGenerator';
-    import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
+  import { ExerciseGenerator, type Exercise } from '$lib/fractionstower2/engines/ExerciseGenerator';
+  import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
 
-    let { floorId = 'floor-1', onComplete } = $props<{
-        floorId?: string;
-        onComplete?: (score: number) => void;
-    }>();
+  let { floorId = 'floor-1', onComplete } = $props<{
+    floorId?: string;
+    onComplete?: (score: number) => void;
+  }>();
 
-    let floorNum = $derived(parseInt(floorId.match(/(\d+)/)?.[1] || '1'));
+  let floorNum = $derived(Number.parseInt(floorId.match(/(\d+)/)?.[1] ?? '1', 10));
 
-    let exercises = $state<Exercise[]>([]);
-    let currentIndex = $state(0);
-    let userAnswer = $state("");
-    let attemptsLeft = $state(2);
-    let feedback = $state("");
-    let isAnswerChecked = $state(false);
-    let isCorrect = $state(false);
-    
-    let score = $state(0);
-    let sessionCompleted = $state(false);
-    let showVisualHelp = $state(false); // État pour l'aide visuelle
+  let exercises = $state<Exercise[]>([]);
+  let currentIndex = $state(0);
+  let userAnswer = $state('');
+  let attemptsLeft = $state(2);
+  let feedback = $state('');
+  let feedbackKind = $state<'success' | 'error'>('error');
+  let isAnswerChecked = $state(false);
+  let isCorrect = $state(false);
+  let score = $state(0);
+  let sessionCompleted = $state(false);
+  let showVisualHelp = $state(false);
 
-    onMount(() => {
-        exercises = ExerciseGenerator.generateSession(floorId, 10);
-    });
+  // Valeur précédente utilisée uniquement pour détecter un changement d'étage.
+  // Elle n'est pas initialisée depuis la prop afin d'éviter state_referenced_locally.
+  let lastLoadedFloorId = '';
 
-    let currentEx = $derived(exercises[currentIndex] || { question: "Chargement...", correctAnswer: "", type: "input" });
+  // Génère une session au montage et chaque fois que l'étage change.
+  $effect(() => {
+    const requestedFloorId = floorId;
+    if (requestedFloorId !== lastLoadedFloorId) {
+      lastLoadedFloorId = requestedFloorId;
+      startSession(requestedFloorId);
+    }
+  });
 
-    // Extraction automatique de fractions ou chiffres dans la question pour l'aide visuelle
-    let extractedFraction = $derived(() => {
-        const match = currentEx.question.match(/(\d+)\/(\d+)/);
-        if (match) {
-            return { num: parseInt(match[1]), den: Math.min(parseInt(match[2]), 12) }; // Max 12 pour l'affichage visuel
-        }
-        const numbers = currentEx.question.match(/\d+/g);
-        if (numbers && numbers.length >= 2) {
-            return { num: parseInt(numbers[0]), den: Math.min(parseInt(numbers[1]), 12) };
-        }
-        return { num: 1, den: 4 }; // Valeur par défaut
-    });
+  let currentEx = $derived(exercises[currentIndex] ?? {
+    id: 'loading',
+    question: 'Préparation des exercices…',
+    correctAnswer: '',
+    type: 'input' as const,
+    hint: ''
+  });
 
-    function speakQuestion() {
-        if (!('speechSynthesis' in window)) return;
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(currentEx.question);
-        utterance.lang = 'fr-CH';
-        window.speechSynthesis.speak(utterance);
+  let extractedFraction = $derived.by(() => {
+    // Pour les décimaux, proposer une représentation approximative en dixièmes.
+    const decimalMatch = currentEx.question.match(/(?:^|\s)(\d+)[,.](\d+)(?!\d)/);
+    if (decimalMatch && !currentEx.question.includes('/')) {
+      const decimalValue = Number(`${decimalMatch[1]}.${decimalMatch[2]}`);
+      const denominator = 10;
+      return {
+        num: Math.max(0, Math.min(denominator, Math.round(decimalValue * denominator))),
+        den: denominator,
+        caption: 'Schéma indicatif : quantité approximée en dixièmes.'
+      };
     }
 
-    function selectQcmOption(option: string) {
-        if (isAnswerChecked) return;
-        userAnswer = option;
-        checkAnswer();
+    const match = currentEx.question.match(/(\d+)\s*\/\s*(\d+)/);
+    if (match) {
+      const originalNumerator = Number.parseInt(match[1], 10);
+      const originalDenominator = Number.parseInt(match[2], 10);
+      if (originalDenominator > 0) {
+        const den = Math.min(originalDenominator, 12);
+        const num = Math.max(0, Math.min(den, Math.round((originalNumerator / originalDenominator) * den)));
+        return {
+          num,
+          den,
+          caption: 'Schéma indicatif de la première fraction de la question.'
+        };
+      }
     }
 
-    function appendToInput(char: string) {
-        if (isAnswerChecked) return;
-        if (char === '⌫') {
-            userAnswer = userAnswer.slice(0, -1);
-        } else {
-            userAnswer += char;
-        }
+    const numbers = currentEx.question.match(/\d+/g);
+    if (numbers && numbers.length >= 2) {
+      const first = Number.parseInt(numbers[0], 10);
+      const second = Number.parseInt(numbers[1], 10);
+      if (second > 0 && first <= second) {
+        return { num: first, den: Math.min(second, 12), caption: 'Schéma indicatif de la quantité.' };
+      }
     }
 
-    function checkAnswer() {
-        // Pour les exercices interactifs de type slice, initialiser à '1' si vide
-        if (currentEx.type === 'slice_interactive' && !userAnswer) {
-            userAnswer = "1";
-        }
+    return { num: 1, den: 4, caption: 'Exemple visuel : une part sur quatre.' };
+  });
 
-        if (!userAnswer.trim() || isAnswerChecked) return;
+  let passingScore = $derived(Math.ceil(exercises.length * 0.7));
+  let excellentScore = $derived(Math.ceil(exercises.length * 0.9));
 
-        const cleanedUser = userAnswer.trim().toLowerCase().replace(/\s+/g, '');
-        const cleanedCorrect = currentEx.correctAnswer.trim().toLowerCase().replace(/\s+/g, '');
+  function startSession(sessionFloorId: string = floorId) {
+    exercises = ExerciseGenerator.generateSession(sessionFloorId, 10);
+    currentIndex = 0;
+    userAnswer = '';
+    attemptsLeft = 2;
+    feedback = '';
+    feedbackKind = 'error';
+    isAnswerChecked = false;
+    isCorrect = false;
+    score = 0;
+    sessionCompleted = false;
+    showVisualHelp = false;
+  }
 
-        if (cleanedUser === cleanedCorrect) {
-            isCorrect = true;
-            isAnswerChecked = true;
-            score++;
-            feedback = "🎉 Bravo ! C'est la bonne réponse.";
-            if (typeof (AudioManager as any).play === 'function') (AudioManager as any).play('success');
-        } else {
-            attemptsLeft--;
-            if (attemptsLeft > 0) {
-                isCorrect = false;
-                feedback = `❌ Oups ! Il te reste ${attemptsLeft} essai. Indice : ${currentEx.hint || 'Réessaie.'}`;
-                if (typeof (AudioManager as any).play === 'function') (AudioManager as any).play('error');
-            } else {
-                isCorrect = false;
-                isAnswerChecked = true;
-                feedback = `❌ Dommage ! La bonne réponse était : ${currentEx.correctAnswer}`;
-                if (typeof (AudioManager as any).play === 'function') (AudioManager as any).play('error');
-            }
-        }
+  function speakQuestion() {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(currentEx.question);
+    utterance.lang = 'fr-CH';
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function selectQcmOption(option: string) {
+    if (isAnswerChecked) return;
+    userAnswer = option;
+    checkAnswer(option);
+  }
+
+  function appendToInput(char: string) {
+    if (isAnswerChecked) return;
+    if (char === '⌫') {
+      userAnswer = userAnswer.slice(0, -1);
+    } else if (char === 'Effacer') {
+      userAnswer = '';
+    } else {
+      userAnswer += char;
+    }
+  }
+
+  function selectNumberLineTick(tick: number) {
+    if (isAnswerChecked) return;
+    const total = currentEx.interactiveData?.totalParts ?? 1;
+    userAnswer = `${tick}/${total}`;
+    feedback = '';
+  }
+
+  function normalizeAnswer(value: string): string {
+    const cleaned = value.trim().toLowerCase().replace(/\s+/g, '');
+    // La virgule et le point sont tous deux acceptés comme séparateur décimal.
+    if (/^-?\d+[.,]\d+$/.test(cleaned)) return cleaned.replace('.', ',');
+    return cleaned;
+  }
+
+  function fractionParts(value: string): { numerator: number; denominator: number } | null {
+    const match = value.match(/^(-?\d+)\/(-?\d+)$/);
+    if (!match) return null;
+    const numerator = Number.parseInt(match[1], 10);
+    const denominator = Number.parseInt(match[2], 10);
+    if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return null;
+    return { numerator, denominator };
+  }
+
+  function greatestCommonDivisor(a: number, b: number): number {
+    let x = Math.abs(a);
+    let y = Math.abs(b);
+    while (y !== 0) {
+      const remainder = x % y;
+      x = y;
+      y = remainder;
+    }
+    return x || 1;
+  }
+
+  function answersMatch(userValue: string, correctValue: string): boolean {
+    const normalizedUser = normalizeAnswer(userValue);
+    const normalizedCorrect = normalizeAnswer(correctValue);
+    if (normalizedUser === normalizedCorrect) return true;
+
+    // Accepter une virgule ou un point, ainsi que les zéros décimaux non significatifs.
+    const decimalPattern = /^-?\d+[,.]\d+$/;
+    if (decimalPattern.test(userValue.trim()) && decimalPattern.test(correctValue.trim())) {
+      const userDecimal = Number(userValue.trim().replace(',', '.'));
+      const correctDecimal = Number(correctValue.trim().replace(',', '.'));
+      if (Number.isFinite(userDecimal) && Number.isFinite(correctDecimal) && Math.abs(userDecimal - correctDecimal) < 1e-10) return true;
     }
 
-    function nextQuestion() {
-        if (currentIndex < exercises.length - 1) {
-            currentIndex++;
-            userAnswer = "";
-            attemptsLeft = 2;
-            feedback = "";
-            isAnswerChecked = false;
-            isCorrect = false;
-            showVisualHelp = false;
-        } else {
-            sessionCompleted = true;
-            if (onComplete) onComplete(score);
-        }
+    if (currentEx.answerMode === 'exact' || currentEx.type !== 'input') return false;
+
+    // Pour les saisies de fractions, accepter une fraction de même valeur sauf si le format exact est demandé.
+    const userFraction = fractionParts(normalizedUser);
+    const correctFraction = fractionParts(normalizedCorrect);
+    if (userFraction && correctFraction) {
+      return userFraction.numerator * correctFraction.denominator ===
+        correctFraction.numerator * userFraction.denominator;
     }
 
-    function restartSession() {
-        exercises = ExerciseGenerator.generateSession(floorId, 10);
-        currentIndex = 0;
-        userAnswer = "";
-        attemptsLeft = 2;
-        feedback = "";
-        isAnswerChecked = false;
-        isCorrect = false;
-        score = 0;
-        sessionCompleted = false;
-        showVisualHelp = false;
+    return false;
+  }
+
+  function checkAnswer(answerOverride?: string) {
+    if (isAnswerChecked) return;
+
+    if (answerOverride !== undefined) userAnswer = answerOverride;
+
+    if (currentEx.type === 'slice_interactive' && !userAnswer) {
+      // Le compteur affiche 1 au départ : on vérifie donc la valeur réellement affichée.
+      userAnswer = '1';
     }
+
+    if (!userAnswer.trim()) {
+      feedback = currentEx.type === 'number_line'
+        ? 'Choisis d’abord une graduation sur la droite.'
+        : currentEx.type === 'color_interactive'
+          ? 'Clique sur une case pour commencer à colorier.'
+          : 'Écris ou sélectionne une réponse avant de vérifier.';
+      feedbackKind = 'error';
+      return;
+    }
+
+    if (answersMatch(userAnswer, currentEx.correctAnswer)) {
+      isCorrect = true;
+      isAnswerChecked = true;
+      score += 1;
+      feedback = 'Bravo ! C’est la bonne réponse.';
+      feedbackKind = 'success';
+      if (typeof (AudioManager as any).play === 'function') (AudioManager as any).play('success');
+      return;
+    }
+
+    isCorrect = false;
+    attemptsLeft -= 1;
+    const hint = currentEx.hint || 'Relis la question et vérifie ta méthode.';
+
+    if (attemptsLeft > 0) {
+      feedback = `Pas tout à fait. Piste : ${hint} Il te reste ${attemptsLeft} essai.`;
+      feedbackKind = 'error';
+    } else {
+      isAnswerChecked = true;
+      feedback = `Ce n’est pas encore juste. Piste : ${hint} Réponse attendue : ${currentEx.correctAnswer}.`;
+      feedbackKind = 'error';
+    }
+    if (typeof (AudioManager as any).play === 'function') (AudioManager as any).play('error');
+  }
+
+  function nextQuestion() {
+    if (currentIndex < exercises.length - 1) {
+      currentIndex += 1;
+      resetCurrentQuestion();
+      return;
+    }
+
+    sessionCompleted = true;
+    if (onComplete) onComplete(score);
+  }
+
+  function resetCurrentQuestion() {
+    userAnswer = '';
+    attemptsLeft = 2;
+    feedback = '';
+    feedbackKind = 'error';
+    isAnswerChecked = false;
+    isCorrect = false;
+    showVisualHelp = false;
+  }
+
+  function restartSession() {
+    startSession();
+  }
 </script>
 
 <div class="training-container">
-    {#if !sessionCompleted}
-        <header class="training-header">
-            <span class="floor-badge">Étage {floorNum} — Entraînement</span>
-            <span class="score-counter">Question {currentIndex + 1} / {exercises.length} (Score: {score})</span>
-        </header>
+  {#if !sessionCompleted}
+    <header class="training-header">
+      <span class="floor-badge">Étage {floorNum} — Entraînement</span>
+      <span class="score-counter">
+        Question {exercises.length ? currentIndex + 1 : 0} / {exercises.length} · Score : {score}
+      </span>
+    </header>
 
-        <main class="training-card">
-            <div class="question-row">
-                <h2>{currentEx.question}</h2>
-                <div class="action-buttons-top">
-                    <button class="help-btn" onclick={() => showVisualHelp = !showVisualHelp} title="Aide visuelle">
-                        💡 Aide
-                    </button>
-                    <button class="speak-btn" onclick={speakQuestion} title="Écouter">🔊</button>
-                </div>
-            </div>
-
-            <!-- PANNEAU D'AIDE VISUELLE (DESSIN DE REPRÉSENTATION) -->
-            {#if showVisualHelp}
-                <div class="visual-help-panel">
-                    <p class="help-title">🎨 Schéma de compréhension :</p>
-                    <div class="visual-bar-wrapper">
-                        {#each Array(extractedFraction().den) as _, i}
-                            <div class="bar-segment {i < extractedFraction().num ? 'colored' : 'empty'}">
-                                <span>{i + 1}</span>
-                            </div>
-                        {/each}
-                    </div>
-                    <p class="visual-caption">Représentation : {extractedFraction().num} part(s) coloriée(s) sur un total de {extractedFraction().den} parts égales.</p>
-                </div>
-            {/if}
-
-            <!-- MODE QCM / COMPARAISON -->
-            {#if currentEx.type === 'qcm' || currentEx.type === 'comparison'}
-                <div class="options-grid">
-                    {#each (currentEx.options || []) as opt}
-                        <button 
-                            class="option-btn {userAnswer === opt ? 'selected' : ''}" 
-                            onclick={() => selectQcmOption(opt)}
-                            disabled={isAnswerChecked}
-                        >
-                            {opt}
-                        </button>
-                    {/each}
-                </div>
-            {/if}
-
-            <!-- MODE SAISIE LIBRE + CLAVIER VIRTUEL -->
-            {#if currentEx.type === 'input' || currentEx.type === 'number_line'}
-                <div class="input-section">
-                    <input 
-                        type="text" 
-                        bind:value={userAnswer} 
-                        placeholder="Ta réponse..." 
-                        onkeydown={(e) => e.key === 'Enter' && checkAnswer()}
-                        disabled={isAnswerChecked}
-                    />
-                    
-                    <div class="virtual-keypad">
-                        {#each ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '/', '.', '⌫'] as key}
-                            <button class="key-btn" onclick={() => appendToInput(key)} disabled={isAnswerChecked}>
-                                {key}
-                            </button>
-                        {/each}
-                    </div>
-                </div>
-            {/if}
-
-            <!-- MODE COLORIAGE INTERACTIF (Colorie X parts sur Y) -->
-            {#if currentEx.type === 'color_interactive'}
-                <div class="interactive-box">
-                    <p class="instruction-mini">👇 Clique sur les parts pour les colorer :</p>
-                    <div class="visual-bar-wrapper clickable">
-                        {#each Array(currentEx.interactiveData?.totalParts || 4) as _, i}
-                            {@const coloredCount = userAnswer ? parseInt(userAnswer.split('/')[0]) || 0 : 0}
-                            <button 
-                                type="button"
-                                class="bar-segment-interactive {i < coloredCount ? 'colored' : 'empty'}"
-                                onclick={() => {
-                                    if (isAnswerChecked) return;
-                                    const nextCount = coloredCount === i + 1 ? i : i + 1;
-                                    const total = currentEx.interactiveData?.totalParts || 4;
-                                    userAnswer = `${nextCount}/${total}`;
-                                }}
-                                disabled={isAnswerChecked}
-                            >
-                                <span>{i + 1}</span>
-                            </button>
-                        {/each}
-                    </div>
-                    <p class="visual-caption">Parts colorées : {userAnswer ? userAnswer.split('/')[0] : '0'} / {currentEx.interactiveData?.totalParts}</p>
-                </div>
-            {/if}
-
-            <!-- MODE DÉCOUPAGE INTERACTIF (Choisis le dénominateur) -->
-            {#if currentEx.type === 'slice_interactive'}
-                <div class="interactive-box">
-                    <p class="instruction-mini">👇 Ajuste le nombre de parts :</p>
-                    <div class="slider-row">
-                        <button 
-                            type="button"
-                            class="adjust-btn" 
-                            onclick={() => {
-                                if (isAnswerChecked) return;
-                                const cur = parseInt(userAnswer || '1');
-                                if (cur > 1) userAnswer = (cur - 1).toString();
-                            }}
-                            disabled={isAnswerChecked}
-                        >-</button>
-                        <span class="slice-counter">{userAnswer || '1'} parts</span>
-                        <button 
-                            type="button"
-                            class="adjust-btn" 
-                            onclick={() => {
-                                if (isAnswerChecked) return;
-                                const cur = parseInt(userAnswer || '1');
-                                if (cur < 12) userAnswer = (cur + 1).toString();
-                            }}
-                            disabled={isAnswerChecked}
-                        >+</button>
-                    </div>
-                </div>
-            {/if}
-
-            <!-- BOUTONS D'ACTION (VALIDATION OU SUIVANT POUR TOUS LES MODES) -->
-            <div class="action-row">
-                {#if !isAnswerChecked}
-                    {#if currentEx.type === 'input' || currentEx.type === 'number_line' || currentEx.type === 'color_interactive' || currentEx.type === 'slice_interactive'}
-                        <button class="btn-verify" onclick={checkAnswer}>Valider ma réponse</button>
-                    {/if}
-                {:else}
-                    <button class="btn-next" onclick={nextQuestion}>
-                        {currentIndex === exercises.length - 1 ? 'Voir mon score final 🎯' : 'Question suivante →'}
-                    </button>
-                {/if}
-            </div>
-
-            {#if feedback}
-                <p class="feedback {isCorrect ? 'success' : 'error'}">{feedback}</p>
-            {/if}
-        </main>
-
-        <footer class="training-footer">
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: {((currentIndex + 1) / exercises.length) * 100}%"></div>
-            </div>
-        </footer>
-
-    {:else}
-        <!-- ÉCRAN DE FIN DE SESSION -->
-        <div class="completion-screen {score >= 9 ? 'fireworks-bg' : score >= 7 ? 'confetti-bg' : ''}">
-            <h2>🏆 Session terminée !</h2>
-            <div class="score-display">
-                <span class="score-number">{score} / 10</span>
-            </div>
-
-            {#if score >= 9}
-                <p class="congrats-text">🌟 Fantastique ! C'est un triomphe absolu ! Feux d'artifice ! 🎆</p>
-            {:else if score >= 7}
-                <p class="congrats-text">🎉 Bravo ! Tu as validé ton entraînement avec succès ! Confettis ! ✨</p>
-            {:else}
-                <p class="congrats-text warning">💪 Oups, il te faut au moins 7/10 pour valider l'étage. Réessaie, tu vas y arriver !</p>
-            {/if}
-
-            <div class="end-actions">
-                {#if score < 7}
-                    <button class="btn-retry" onclick={restartSession}>Recommencer l'entraînement 🔄</button>
-                {/if}
-                <button class="btn-close" onclick={() => onComplete(score)}>Fermer et retourner à la tour 🚪</button>
-            </div>
+    {#if exercises.length > 0}
+      <main class="training-card">
+        <div class="question-row">
+          <h2>{currentEx.question}</h2>
+          <div class="action-buttons-top">
+            <button
+              type="button"
+              class="help-btn"
+              onclick={() => (showVisualHelp = !showVisualHelp)}
+              aria-expanded={showVisualHelp}
+              title="Afficher ou masquer l’aide visuelle"
+            >
+              💡 Aide
+            </button>
+            <button type="button" class="speak-btn" onclick={speakQuestion} title="Écouter la question" aria-label="Écouter la question">
+              🔊
+            </button>
+          </div>
         </div>
+
+        {#if showVisualHelp}
+          <div class="visual-help-panel">
+            <p class="help-title">Schéma de compréhension</p>
+            <div class="visual-bar-wrapper" aria-label="Schéma en parts égales">
+              {#each Array(extractedFraction.den) as _, i}
+                <div class="bar-segment {i < extractedFraction.num ? 'colored' : 'empty'}">
+                  <span>{i + 1}</span>
+                </div>
+              {/each}
+            </div>
+            <p class="visual-caption">{extractedFraction.caption} {extractedFraction.num} part(s) colorée(s) sur {extractedFraction.den}.</p>
+          </div>
+        {/if}
+
+        {#if currentEx.type === 'qcm' || currentEx.type === 'comparison'}
+          <div class="options-grid">
+            {#each currentEx.options ?? [] as option}
+              <button
+                type="button"
+                class="option-btn"
+                class:selected={userAnswer === option}
+                class:correct_option={isAnswerChecked && userAnswer === currentEx.correctAnswer && userAnswer === option}
+                onclick={() => selectQcmOption(option)}
+                disabled={isAnswerChecked}
+              >
+                {option}
+              </button>
+            {/each}
+          </div>
+        {/if}
+
+        {#if currentEx.type === 'input' || (currentEx.type === 'number_line' && !currentEx.interactiveData?.totalParts)}
+          <div class="input-section">
+            <label class="sr-only" for="exercise-answer">Ta réponse</label>
+            <input
+              id="exercise-answer"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              bind:value={userAnswer}
+              placeholder="Ta réponse…"
+              onkeydown={(event) => event.key === 'Enter' && checkAnswer()}
+              disabled={isAnswerChecked}
+              aria-label="Ta réponse"
+            />
+
+            <div class="virtual-keypad" aria-label="Pavé numérique">
+              {#each ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '/', ',', '.', '⌫', 'Effacer'] as key}
+                <button
+                  type="button"
+                  class="key-btn {key === 'Effacer' ? 'clear-key' : ''}"
+                  onclick={() => appendToInput(key)}
+                  disabled={isAnswerChecked}
+                  aria-label={key === '⌫' ? 'Effacer le dernier caractère' : key === 'Effacer' ? 'Effacer toute la réponse' : key === ',' ? 'Virgule' : key}
+                >
+                  {key}
+                </button>
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        {#if currentEx.type === 'number_line' && currentEx.interactiveData?.totalParts}
+          {@const totalParts = currentEx.interactiveData?.totalParts ?? 1}
+          <section class="interactive-box number-line-box">
+            <p class="instruction-mini">Clique sur la graduation qui correspond à la fraction.</p>
+            <div class="number-line-scroll">
+              <div class="number-line-visual" style={`min-width: ${Math.max(360, totalParts * 44)}px`}>
+                <div class="number-line-track"></div>
+                {#each Array(totalParts + 1) as _, tick}
+                  <button
+                    type="button"
+                    class="number-line-tick"
+                    class:selected={userAnswer === `${tick}/${totalParts}`}
+                    style={`left: ${(tick / totalParts) * 100}%`}
+                    onclick={() => selectNumberLineTick(tick)}
+                    disabled={isAnswerChecked}
+                    aria-label={tick === 0 ? 'Zéro' : tick === totalParts ? 'Un' : `${tick}/${totalParts}`}
+                    aria-pressed={userAnswer === `${tick}/${totalParts}`}
+                  >
+                    <span class="tick-mark"></span>
+                    <span class="tick-label">{tick === 0 ? '0' : tick === totalParts ? '1' : `${tick}/${totalParts}`}</span>
+                  </button>
+                {/each}
+              </div>
+            </div>
+          </section>
+        {/if}
+
+        {#if currentEx.type === 'color_interactive'}
+          {@const totalParts = currentEx.interactiveData?.totalParts ?? 4}
+          {@const coloredCount = userAnswer ? Number.parseInt(userAnswer.split('/')[0], 10) || 0 : 0}
+          <section class="interactive-box">
+            <p class="instruction-mini">Clique sur une case pour régler le nombre de parts coloriées.</p>
+            <div class="visual-bar-wrapper clickable" role="group" aria-label="Choisir le nombre de parts coloriées">
+              {#each Array(totalParts) as _, i}
+                <button
+                  type="button"
+                  class="bar-segment-interactive {i < coloredCount ? 'colored' : 'empty'}"
+                  onclick={() => {
+                    if (isAnswerChecked) return;
+                    const nextCount = coloredCount === i + 1 ? i : i + 1;
+                    userAnswer = `${nextCount}/${totalParts}`;
+                    feedback = '';
+                  }}
+                  disabled={isAnswerChecked}
+                  aria-label={`Colorier ${i + 1} part(s) sur ${totalParts}`}
+                  aria-pressed={i < coloredCount}
+                >
+                  <span>{i + 1}</span>
+                </button>
+              {/each}
+            </div>
+            <p class="visual-caption">Parts coloriées : {coloredCount} / {totalParts}</p>
+          </section>
+        {/if}
+
+        {#if currentEx.type === 'slice_interactive'}
+          <section class="interactive-box">
+            <p class="instruction-mini">Ajuste le nombre de parts égales avec les boutons + et −.</p>
+            <div class="slider-row">
+              <button
+                type="button"
+                class="adjust-btn"
+                onclick={() => {
+                  if (isAnswerChecked) return;
+                  const current = Number.parseInt(userAnswer || '1', 10);
+                  if (current > 1) userAnswer = String(current - 1);
+                  feedback = '';
+                }}
+                disabled={isAnswerChecked}
+                aria-label="Retirer une part"
+              >−</button>
+              <span class="slice-counter">{userAnswer || '1'} part(s)</span>
+              <button
+                type="button"
+                class="adjust-btn"
+                onclick={() => {
+                  if (isAnswerChecked) return;
+                  const current = Number.parseInt(userAnswer || '1', 10);
+                  if (current < 12) userAnswer = String(current + 1);
+                  feedback = '';
+                }}
+                disabled={isAnswerChecked}
+                aria-label="Ajouter une part"
+              >+</button>
+            </div>
+          </section>
+        {/if}
+
+        <div class="action-row">
+          {#if !isAnswerChecked}
+            {#if currentEx.type === 'input' || currentEx.type === 'number_line' || currentEx.type === 'color_interactive' || currentEx.type === 'slice_interactive'}
+              <button type="button" class="btn-verify" onclick={() => checkAnswer()}>
+                Vérifier ma réponse
+              </button>
+            {/if}
+          {:else}
+            <button type="button" class="btn-next" onclick={nextQuestion}>
+              {currentIndex === exercises.length - 1 ? 'Voir mon score final 🎯' : 'Question suivante →'}
+            </button>
+          {/if}
+        </div>
+
+        {#if feedback}
+          <p class="feedback {feedbackKind}" role="status" aria-live="polite">{feedback}</p>
+        {/if}
+      </main>
+
+      <footer class="training-footer" aria-label="Progression de la session">
+        <div class="progress-bar">
+          <div class="progress-fill" style={`width: ${((currentIndex + (isAnswerChecked ? 1 : 0)) / exercises.length) * 100}%`}></div>
+        </div>
+      </footer>
+    {:else}
+      <main class="training-card loading-card" aria-live="polite">Préparation des exercices…</main>
     {/if}
+  {:else}
+    <section class="completion-screen {score >= excellentScore ? 'fireworks-bg' : score >= passingScore ? 'confetti-bg' : ''}">
+      <h2>Session terminée !</h2>
+      <div class="score-display" aria-label={`Score ${score} sur ${exercises.length}`}>
+        <span class="score-number">{score} / {exercises.length}</span>
+      </div>
+
+      {#if score >= excellentScore}
+        <p class="congrats-text">Excellent travail ! Tu maîtrises très bien ces notions.</p>
+      {:else if score >= passingScore}
+        <p class="congrats-text">Bravo ! Tu as atteint le seuil de réussite de l’entraînement.</p>
+      {:else}
+        <p class="congrats-text warning">
+          Tu as besoin de {passingScore} bonnes réponses sur {exercises.length} pour valider cet entraînement. Relis les pistes et recommence.
+        </p>
+      {/if}
+
+      <div class="end-actions">
+        {#if score < passingScore}
+          <button type="button" class="btn-retry" onclick={restartSession}>Recommencer l’entraînement ↻</button>
+        {/if}
+        <button type="button" class="btn-close" onclick={() => onComplete?.(score)}>
+          Fermer et retourner à la tour
+        </button>
+      </div>
+    </section>
+  {/if}
 </div>
 
 <style>
-    .training-container {
-        max-width: 700px;
-        margin: 0 auto;
-        background: #0f172a;
-        color: #f8fafc;
-        border-radius: 16px;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        font-family: system-ui, sans-serif;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-    }
+  .training-container {
+    max-width: 760px;
+    margin: 0 auto;
+    background: #0f172a;
+    color: #f8fafc;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: system-ui, sans-serif;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.28);
+  }
 
-    .training-header {
-        background: #1e293b;
-        padding: 1rem 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #334155;
-    }
+  .training-header {
+    background: #1e293b;
+    padding: 1rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid #334155;
+  }
 
-    .floor-badge {
-        font-weight: bold;
-        color: #38bdf8;
-        font-size: 0.9rem;
-    }
+  .floor-badge { font-weight: 800; color: #7dd3fc; font-size: 0.9rem; }
+  .score-counter { font-size: 0.85rem; color: #cbd5e1; text-align: right; }
 
-    .score-counter {
-        font-size: 0.85rem;
-        color: #94a3b8;
-    }
+  .training-card {
+    padding: clamp(1rem, 4vw, 2rem);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
 
-    .training-card {
-        padding: 2rem;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
+  .question-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+  h2 { font-size: 1.25rem; margin: 0; color: #f8fafc; line-height: 1.5; overflow-wrap: anywhere; }
+  .action-buttons-top { display: flex; gap: 0.5rem; flex-shrink: 0; }
 
-    .question-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-    }
+  .help-btn, .speak-btn {
+    background: #334155;
+    border: 1px solid #64748b;
+    color: #f8fafc;
+    font-size: 0.95rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 750;
+  }
+  .help-btn:hover, .speak-btn:hover { background: #475569; }
+  button:focus-visible, input:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+  button:disabled { cursor: not-allowed; opacity: 0.65; }
 
-    h2 {
-        font-size: 1.3rem;
-        margin: 0;
-        color: #f8fafc;
-        line-height: 1.4;
-    }
+  .visual-help-panel, .interactive-box {
+    background: #1e293b;
+    border: 2px solid #38bdf8;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .help-title, .instruction-mini { font-size: 0.95rem; font-weight: 800; color: #7dd3fc; margin: 0 0 0.75rem; text-align: left; }
 
-    .action-buttons-top {
-        display: flex;
-        gap: 8px;
-    }
+  .visual-bar-wrapper {
+    display: flex;
+    min-height: 46px;
+    border: 2px solid #64748b;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #0f172a;
+    margin-bottom: 0.5rem;
+  }
+  .bar-segment {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    border-right: 1px solid #64748b;
+  }
+  .bar-segment:last-child { border-right: none; }
+  .bar-segment.colored { background: #0284c7; color: #fff; }
+  .bar-segment.empty { background: #1e293b; color: #cbd5e1; }
+  .visual-caption { font-size: 0.85rem; color: #cbd5e1; margin: 0; line-height: 1.45; }
 
-    .help-btn, .speak-btn {
-        background: #334155;
-        border: 1px solid #475569;
-        color: #f8fafc;
-        font-size: 0.95rem;
-        padding: 0.5rem 0.8rem;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-    }
-    .help-btn:hover, .speak-btn:hover { background: #475569; }
+  .options-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+  .option-btn {
+    background: #1e293b;
+    border: 2px solid #475569;
+    color: #fff;
+    min-height: 58px;
+    padding: 0.8rem;
+    font-size: 1rem;
+    font-weight: 750;
+    border-radius: 12px;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .option-btn:hover:not(:disabled) { background: #334155; border-color: #7dd3fc; }
+  .option-btn.selected { background: #075985; border-color: #7dd3fc; }
+  .option-btn.correct_option { background: #166534; border-color: #4ade80; }
 
-    .visual-help-panel, .interactive-box {
-        background: #1e293b;
-        border: 2px solid #38bdf8;
-        border-radius: 12px;
-        padding: 1rem;
-        text-align: center;
-    }
+  .input-section { display: flex; flex-direction: column; gap: 0.85rem; }
+  input[type='text'] {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 54px;
+    padding: 0.75rem 1rem;
+    font-size: 1.25rem;
+    background: #1e293b;
+    border: 2px solid #64748b;
+    border-radius: 8px;
+    color: #fff;
+    text-align: center;
+    outline: none;
+  }
+  input[type='text']:focus { border-color: #38bdf8; }
 
-    .help-title, .instruction-mini {
-        font-size: 0.9rem;
-        font-weight: bold;
-        color: #38bdf8;
-        margin-bottom: 0.6rem;
-        text-align: left;
-    }
+  .virtual-keypad { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.4rem; }
+  .key-btn {
+    background: #334155;
+    border: 1px solid #64748b;
+    color: #fff;
+    min-height: 48px;
+    padding: 0.45rem 0.2rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .key-btn:hover:not(:disabled) { background: #475569; }
+  .key-btn.clear-key { font-size: 0.8rem; }
 
-    .visual-bar-wrapper {
-        display: flex;
-        height: 48px;
-        border: 2px solid #64748b;
-        border-radius: 8px;
-        overflow: hidden;
-        background: #0f172a;
-        margin-bottom: 0.5rem;
-    }
+  .number-line-box { padding-bottom: 1.25rem; }
+  .number-line-scroll { overflow-x: auto; padding: 0.25rem 0.25rem 0.5rem; }
+  .number-line-visual { box-sizing: border-box; position: relative; height: 112px; margin: 0 auto; }
+  .number-line-track { position: absolute; left: 18px; right: 18px; top: 30px; height: 4px; border-radius: 4px; background: #94a3b8; }
+  .number-line-tick {
+    position: absolute;
+    top: 12px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    min-width: 36px;
+    padding: 0.15rem 0.05rem;
+    background: transparent;
+    border: 0;
+    color: #f8fafc;
+    cursor: pointer;
+  }
+  .number-line-tick:first-of-type { transform: translateX(-15%); }
+  .number-line-tick:last-of-type { transform: translateX(-85%); }
+  .tick-mark { display: block; width: 3px; height: 24px; background: #cbd5e1; border-radius: 2px; }
+  .tick-label { display: block; font-size: 0.72rem; line-height: 1; white-space: nowrap; color: #cbd5e1; }
+  .number-line-tick.selected .tick-mark { width: 5px; background: #fbbf24; height: 30px; }
+  .number-line-tick.selected .tick-label { color: #fbbf24; font-weight: 900; }
 
-    .bar-segment {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 0.9rem;
-        border-right: 1px solid #64748b;
-    }
+  .bar-segment-interactive {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+    border: 0;
+    border-right: 1px solid #64748b;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .bar-segment-interactive:last-child { border-right: none; }
+  .bar-segment-interactive.colored { background: #0284c7; color: #fff; }
+  .bar-segment-interactive.empty { background: #1e293b; color: #cbd5e1; }
+  .bar-segment-interactive:hover:not(:disabled) { filter: brightness(1.18); }
 
-    .bar-segment-interactive {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 0.95rem;
-        border: none;
-        border-right: 1px solid #64748b;
-        cursor: pointer;
-        transition: background 0.2s;
-    }
-    .bar-segment-interactive:last-child { border-right: none; }
-    .bar-segment-interactive.colored { background: #0284c7; color: white; }
-    .bar-segment-interactive.empty { background: #1e293b; color: #94a3b8; }
-    .bar-segment-interactive:hover { opacity: 0.85; }
+  .slider-row { display: flex; align-items: center; justify-content: center; gap: 1.5rem; padding: 0.5rem; }
+  .adjust-btn {
+    background: #0284c7;
+    color: white;
+    border: none;
+    width: 48px;
+    height: 48px;
+    font-size: 1.6rem;
+    font-weight: 900;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .adjust-btn:hover:not(:disabled) { background: #0369a1; }
+  .slice-counter { min-width: 115px; font-size: 1.15rem; font-weight: 800; color: #f8fafc; }
 
-    .bar-segment:last-child { border-right: none; }
-    .bar-segment.colored { background: #0284c7; color: white; }
-    .bar-segment.empty { background: #1e293b; color: #94a3b8; }
+  .action-row { display: flex; justify-content: center; }
+  .btn-verify, .btn-next {
+    background: #0ea5e9;
+    color: white;
+    border: none;
+    min-height: 50px;
+    padding: 0.8rem 1.6rem;
+    font-size: 1.05rem;
+    font-weight: 850;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .btn-verify:hover, .btn-next:hover { background: #0284c7; }
 
-    .visual-caption {
-        font-size: 0.85rem;
-        color: #94a3b8;
-        margin: 0;
-        font-style: italic;
-    }
+  .feedback { font-weight: 750; text-align: left; font-size: 1rem; line-height: 1.55; margin: 0; padding: 0.9rem 1rem; border-radius: 10px; }
+  .feedback.success { color: #dcfce7; background: #14532d; border: 1px solid #22c55e; }
+  .feedback.error { color: #fee2e2; background: #7f1d1d; border: 1px solid #f87171; }
 
-    .slider-row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 1.5rem;
-        padding: 0.5rem;
-    }
+  .training-footer { background: #1e293b; height: 8px; overflow: hidden; }
+  .progress-bar { height: 100%; background: #334155; }
+  .progress-fill { height: 100%; background: #38bdf8; transition: width 0.3s ease; }
 
-    .adjust-btn {
-        background: #0284c7;
-        color: white;
-        border: none;
-        width: 40px;
-        height: 40px;
-        font-size: 1.5rem;
-        font-weight: bold;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-    .adjust-btn:hover { background: #0284c7; }
+  .loading-card { text-align: center; min-height: 150px; justify-content: center; color: #cbd5e1; }
+  .completion-screen {
+    padding: clamp(1.5rem, 5vw, 3rem) 1.25rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+  }
+  .completion-screen h2 { font-size: 1.65rem; }
+  .score-display { font-size: 3rem; font-weight: 900; color: #7dd3fc; background: #1e293b; border: 4px solid #334155; padding: 1rem 2rem; border-radius: 20px; }
+  .congrats-text { font-size: 1.1rem; max-width: 520px; line-height: 1.55; margin: 0; }
+  .congrats-text.warning { color: #fecaca; }
+  .end-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 0.5rem; }
+  .btn-retry, .btn-close { min-height: 48px; padding: 0.75rem 1.2rem; font-weight: 850; border: 0; border-radius: 10px; cursor: pointer; }
+  .btn-retry { background: #facc15; color: #172033; }
+  .btn-close { background: #22c55e; color: #052e16; }
+  .confetti-bg { animation: pulse-bg 2s infinite alternate; }
+  .fireworks-bg { animation: glow-bg 1.5s infinite alternate; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
-    .slice-counter {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: #f8fafc;
-    }
+  @keyframes pulse-bg { from { background-color: #0f172a; } to { background-color: #142850; } }
+  @keyframes glow-bg { from { background-color: #0f172a; box-shadow: inset 0 0 50px rgba(56, 189, 248, 0.2); } to { background-color: #1e1b4b; box-shadow: inset 0 0 80px rgba(234, 179, 8, 0.25); } }
 
-    .options-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-    }
-
-    .option-btn {
-        background: #1e293b;
-        border: 2px solid #475569;
-        color: white;
-        padding: 1rem;
-        font-size: 1.1rem;
-        font-weight: bold;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .option-btn.selected {
-        background: #0284c7;
-        border-color: #38bdf8;
-    }
-
-    .input-section {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    input[type="text"] {
-        width: 100%;
-        padding: 0.8rem 1rem;
-        font-size: 1.3rem;
-        background: #1e293b;
-        border: 2px solid #475569;
-        border-radius: 8px;
-        color: white;
-        text-align: center;
-        outline: none;
-    }
-    input[type="text"]:focus { border-color: #38bdf8; }
-
-    .virtual-keypad {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 6px;
-    }
-
-    .key-btn {
-        background: #334155;
-        border: 1px solid #475569;
-        color: white;
-        padding: 0.8rem 0;
-        font-size: 1.1rem;
-        font-weight: bold;
-        border-radius: 6px;
-        cursor: pointer;
-    }
-    .key-btn:hover { background: #475569; }
-
-    .action-row {
-        display: flex;
-        justify-content: center;
-    }
-
-    .btn-verify, .btn-next {
-        background: #0ea5e9;
-        color: white;
-        border: none;
-        padding: 0.8rem 2rem;
-        font-size: 1.1rem;
-        font-weight: bold;
-        border-radius: 10px;
-        cursor: pointer;
-    }
-    .btn-verify:hover, .btn-next:hover { background: #0284c7; }
-
-    .feedback {
-        font-weight: bold;
-        text-align: center;
-        font-size: 1.05rem;
-        margin: 0;
-    }
-    .feedback.success { color: #4ade80; }
-    .feedback.error { color: #f87171; }
-
-    .training-footer {
-        background: #1e293b;
-        height: 8px;
-        overflow: hidden;
-    }
-
-    .progress-fill {
-        height: 100%;
-        background: #38bdf8;
-        transition: width 0.3s ease;
-    }
-
-    .completion-screen {
-        padding: 3rem 2rem;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1.5rem;
-        background: linear-gradient(135deg, #0f172a, #1e293b);
-    }
-
-    .score-display {
-        font-size: 3.5rem;
-        font-weight: 900;
-        color: #38bdf8;
-        background: #1e293b;
-        border: 4px solid #334155;
-        padding: 1rem 2.5rem;
-        border-radius: 20px;
-        box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
-    }
-
-    .congrats-text {
-        font-size: 1.2rem;
-        max-width: 500px;
-        line-height: 1.5;
-    }
-    .congrats-text.warning { color: #f87171; }
-
-    .end-actions {
-        display: flex;
-        gap: 1rem;
-        margin-top: 1rem;
-    }
-
-    .btn-retry {
-        background: #eab308;
-        color: #0f172a;
-        border: none;
-        padding: 0.8rem 1.5rem;
-        font-weight: bold;
-        border-radius: 10px;
-        cursor: pointer;
-    }
-    .btn-close {
-        background: #22c55e;
-        color: white;
-        border: none;
-        padding: 0.8rem 1.5rem;
-        font-weight: bold;
-        border-radius: 10px;
-        cursor: pointer;
-    }
-
-    .confetti-bg { animation: pulse-bg 2s infinite alternate; }
-    .fireworks-bg { animation: glow-bg 1.5s infinite alternate; }
-
-    @keyframes pulse-bg {
-        from { background-color: #0f172a; }
-        to { background-color: #142850; }
-    }
-    @keyframes glow-bg {
-        from { background-color: #0f172a; box-shadow: inset 0 0 50px rgba(56, 189, 248, 0.3); }
-        to { background-color: #1e1b4b; box-shadow: inset 0 0 80px rgba(234, 179, 8, 0.4); }
-    }
+  @media (max-width: 520px) {
+    .training-header { align-items: flex-start; flex-direction: column; }
+    .score-counter { text-align: left; }
+    .question-row { flex-direction: column; }
+    .action-buttons-top { align-self: flex-end; }
+    .options-grid { grid-template-columns: 1fr; }
+    .option-btn { min-height: 50px; }
+    .virtual-keypad { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .key-btn { min-height: 45px; }
+    .score-display { font-size: 2.4rem; }
+  }
 </style>

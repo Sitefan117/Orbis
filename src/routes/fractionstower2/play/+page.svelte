@@ -16,6 +16,8 @@
     import { languageState } from '$lib/fractionstower2/persistence/LanguageManager';
     import { SaveManager } from '$lib/fractionstower2/persistence/SaveManager';
     import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
+    import { ProgressManager } from '$lib/fractionstower2/persistence/ProgressManager';
+
 
     const game = createGameState();
     let floor = $derived(FloorManager.getFloor(game.player.currentFloorId));
@@ -316,9 +318,17 @@
     <ActivityModal activityId={activeActivityId} onClose={() => activeActivityId = null} />
 {/if}
 {#if activeBossFloorId === 'floor-1'}
-    <BossFloor1 game={game} onComplete={() => activeBossFloorId = null} onClose={() => activeBossFloorId = null} />
+  <BossFloor1 game={game} onComplete={() => activeBossFloorId = null} onClose={() => activeBossFloorId = null} />
 {:else if activeBossFloorId}
-    <BossBattle floorId={activeBossFloorId} onComplete={() => activeBossFloorId = null} />
+  <BossBattle
+    floorId={activeBossFloorId}
+    game={game}
+    onComplete={(score = 0) => {
+      ProgressManager.recordFloorCompletion(activeBossFloorId!, score, 18);
+      activeBossFloorId = null;
+    }}
+    onClose={() => activeBossFloorId = null}
+  />
 {/if}
 {#if activeCourseFloorId}
     <CourseViewer floorId={activeCourseFloorId} onClose={() => activeCourseFloorId = null} />

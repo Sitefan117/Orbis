@@ -1,464 +1,1101 @@
 <script lang="ts">
+let steps = [
+  // ============================================================
+  // ÉTAGE 1 — PARTAGE ÉQUITABLE ET VOCABULAIRE
+  // ============================================================
+  {
+    floor: 1,
+    floorTitle: "Étage 1 — Le partage équitable",
+    title: "1. Une fraction, c'est un partage équitable",
+    theory: "Une fraction permet de représenter une quantité quand une unité est partagée en parts <strong>de même taille</strong>. Si les parts sont différentes, le partage n'est pas équitable.",
+    visualDesc: `<svg viewBox="0 0 320 125" role="img" aria-label="Deux tablettes de chocolat, l'une partagée en carrés égaux et l'autre en morceaux inégaux">
+      <text x="75" y="16" text-anchor="middle" font-size="11" fill="currentColor">Parts égales</text>
+      <rect x="25" y="27" width="100" height="60" rx="4" fill="#8b5e3c" stroke="#4e342e" stroke-width="2"/>
+      <path d="M58 27V87 M92 27V87 M25 57H125" stroke="#f3d4b2" stroke-width="2"/>
+      <text x="75" y="106" text-anchor="middle" font-size="11" fill="currentColor">Équitable</text>
+      <text x="235" y="16" text-anchor="middle" font-size="11" fill="currentColor">Parts inégales</text>
+      <path d="M185 27H285V87H185Z" fill="#8b5e3c" stroke="#4e342e" stroke-width="2"/>
+      <path d="M207 27L220 87 M255 27L246 87 M185 53L285 63" stroke="#f3d4b2" stroke-width="2"/>
+      <text x="235" y="106" text-anchor="middle" font-size="11" fill="currentColor">Non équitable</text>
+    </svg>`,
+    example: "Tu partages une tablette de chocolat entre 4 personnes. Pour que chacun reçoive la même quantité, il faut 4 parts de même taille.",
+    question: "Pour représenter un partage en quarts, les 4 parts doivent-elles être de même taille ?",
+    expected: ["oui"],
+    hint: "Pense à ce que chacun doit recevoir dans un partage équitable.",
+    errorExplanation: "Oui. Pour parler de quarts, l'unité doit être partagée en 4 parts égales. Quatre morceaux de tailles différentes ne représentent pas quatre quarts."
+  },
+  {
+    floor: 1,
+    floorTitle: "Étage 1 — Le partage équitable",
+    title: "2. Le numérateur et le dénominateur",
+    theory: "Dans une fraction, le nombre du <strong>bas</strong> s'appelle le <strong>dénominateur</strong> : il indique en combien de parts égales l'unité est partagée. Le nombre du <strong>haut</strong> s'appelle le <strong>numérateur</strong> : il indique combien de parts on compte.",
+    visualDesc: `<svg viewBox="0 0 320 125" role="img" aria-label="Quatre cases dont trois coloriées pour représenter trois quarts">
+      <rect x="18" y="35" width="144" height="36" fill="#d9eaf7" stroke="#245b83" stroke-width="2"/>
+      <rect x="18" y="35" width="36" height="36" fill="#2786c7"/>
+      <rect x="54" y="35" width="36" height="36" fill="#2786c7"/>
+      <rect x="90" y="35" width="36" height="36" fill="#2786c7"/>
+      <path d="M54 35V71 M90 35V71 M126 35V71" stroke="#245b83" stroke-width="1.5"/>
+      <text x="90" y="22" text-anchor="middle" font-size="12" fill="currentColor">3 parts prises</text>
+      <text x="90" y="88" text-anchor="middle" font-size="12" fill="currentColor">4 parts en tout</text>
+      <text x="220" y="42" text-anchor="middle" font-size="12" fill="currentColor">Numérateur</text>
+      <path d="M220 46V52" stroke="currentColor" stroke-width="1.5"/>
+      <text x="220" y="69" text-anchor="middle" font-size="24" fill="currentColor">3</text>
+      <path d="M201 75H239" stroke="currentColor" stroke-width="2"/>
+      <text x="220" y="99" text-anchor="middle" font-size="24" fill="currentColor">4</text>
+      <text x="220" y="115" text-anchor="middle" font-size="12" fill="currentColor">Dénominateur</text>
+    </svg>`,
+    example: "Dans 3/4, le 4 indique que la tablette est partagée en 4 parts égales. Le 3 indique que l'on compte 3 de ces parts.",
+    question: "Dans la fraction 3/4, comment s'appelle le nombre du haut ?",
+    expected: ["numérateur", "le numérateur"],
+    hint: "C'est le nombre qui compte les parts prises.",
+    errorExplanation: "Le nombre du haut est le numérateur. Dans 3/4, le numérateur est 3 et le dénominateur est 4."
+  },
+  {
+    floor: 1,
+    floorTitle: "Étage 1 — Le partage équitable",
+    title: "3. Comment lire une fraction ?",
+    theory: "Le nombre du bas donne le nom des parts. On dit par exemple <strong>un demi</strong> pour 1/2, <strong>un tiers</strong> pour 1/3 et <strong>un quart</strong> pour 1/4. Pour 3/4, on dit <strong>trois quarts</strong>.",
+    visualDesc: `<svg viewBox="0 0 320 100" role="img" aria-label="Trois bandes représentant un demi, un tiers et un quart">
+      <g transform="translate(12 12)">
+        <rect width="82" height="24" fill="#e7e5e4" stroke="#555"/>
+        <rect width="41" height="24" fill="#2786c7" stroke="#555"/>
+        <text x="41" y="43" text-anchor="middle" font-size="12" fill="currentColor">1/2 : un demi</text>
+      </g>
+      <g transform="translate(119 12)">
+        <rect width="82" height="24" fill="#e7e5e4" stroke="#555"/>
+        <rect width="27.3" height="24" fill="#2786c7" stroke="#555"/>
+        <path d="M27.3 0V24 M54.6 0V24" stroke="#555"/>
+        <text x="41" y="43" text-anchor="middle" font-size="12" fill="currentColor">1/3 : un tiers</text>
+      </g>
+      <g transform="translate(226 12)">
+        <rect width="82" height="24" fill="#e7e5e4" stroke="#555"/>
+        <rect width="20.5" height="24" fill="#2786c7" stroke="#555"/>
+        <path d="M20.5 0V24 M41 0V24 M61.5 0V24" stroke="#555"/>
+        <text x="41" y="43" text-anchor="middle" font-size="12" fill="currentColor">1/4 : un quart</text>
+      </g>
+    </svg>`,
+    example: "Une recette demande 1/2 litre de lait : cela signifie un demi-litre, donc la moitié d'un litre.",
+    question: "Comment nomme-t-on une fraction dont le dénominateur est 3, par exemple 1/3 ?",
+    expected: ["tiers", "un tiers", "des tiers"],
+    hint: "On partage l'unité en trois parts égales.",
+    errorExplanation: "1/3 se lit « un tiers ». Le dénominateur 3 indique que l'unité est divisée en trois parts égales."
+  },
+
+  // ============================================================
+  // ÉTAGE 2 — LIRE ET REPRÉSENTER
+  // ============================================================
+  {
+    floor: 2,
+    floorTitle: "Étage 2 — Lire et représenter",
+    title: "1. Lire une fraction en chiffres",
+    theory: "Une fraction s'écrit avec deux nombres séparés par une barre. Le numérateur est en haut et le dénominateur en bas. Pour lire 3/5, on peut dire « trois cinquièmes » ou « trois sur cinq ».",
+    visualDesc: `<svg viewBox="0 0 320 100" role="img" aria-label="Cinq cases, dont trois colorées, représentant trois cinquièmes">
+      <g transform="translate(20 18)">
+        <rect width="140" height="34" fill="#e5e7eb" stroke="#374151" stroke-width="1.5"/>
+        <rect width="28" height="34" fill="#2786c7"/>
+        <rect x="28" width="28" height="34" fill="#2786c7"/>
+        <rect x="56" width="28" height="34" fill="#2786c7"/>
+        <path d="M28 0V34 M56 0V34 M84 0V34 M112 0V34" stroke="#374151"/>
+      </g>
+      <text x="90" y="72" text-anchor="middle" font-size="13" fill="currentColor">3 parts colorées sur 5</text>
+      <text x="235" y="39" text-anchor="middle" font-size="25" fill="currentColor">3/5</text>
+      <text x="235" y="63" text-anchor="middle" font-size="13" fill="currentColor">trois cinquièmes</text>
+    </svg>`,
+    example: "Sur une boîte de 5 biscuits, tu en manges 3. La quantité mangée représente 3/5 de la boîte.",
+    question: "Écris en chiffres « quatre septièmes » sous la forme d'une fraction.",
+    expected: ["4/7", "4 / 7"],
+    hint: "Écris 4 au numérateur et 7 au dénominateur.",
+    errorExplanation: "« Quatre septièmes » s'écrit 4/7 : le nombre de parts comptées est en haut et le nombre total de parts égales est en bas."
+  },
+  {
+    floor: 2,
+    floorTitle: "Étage 2 — Lire et représenter",
+    title: "2. Passer des chiffres au dessin",
+    theory: "Pour représenter une fraction, dessine une unité et partage-la en autant de parts égales que l'indique le dénominateur. Colorie ensuite le nombre de parts indiqué par le numérateur.",
+    visualDesc: `<svg viewBox="0 0 320 100" role="img" aria-label="Méthode pour représenter deux tiers : trois cases égales dont deux colorées">
+      <text x="160" y="14" text-anchor="middle" font-size="12" fill="currentColor">Représenter 2/3</text>
+      <rect x="70" y="25" width="60" height="35" fill="#2786c7" stroke="#245b83" stroke-width="1.5"/>
+      <rect x="130" y="25" width="60" height="35" fill="#2786c7" stroke="#245b83" stroke-width="1.5"/>
+      <rect x="190" y="25" width="60" height="35" fill="#e5e7eb" stroke="#245b83" stroke-width="1.5"/>
+      <text x="160" y="80" text-anchor="middle" font-size="12" fill="currentColor">3 parts égales, 2 coloriées</text>
+    </svg>`,
+    example: "Pour représenter 2/3 d'une barre de céréales, partage la barre en 3 morceaux de même taille, puis colorie-en 2.",
+    question: "Pour représenter 3/8, en combien de parts égales faut-il partager l'unité ?",
+    expected: ["8", "huit"],
+    hint: "Regarde le nombre placé en bas de la fraction.",
+    errorExplanation: "Il faut 8 parts égales, car le dénominateur de 3/8 est 8. On en coloriera ensuite 3."
+  },
+  {
+    floor: 2,
+    floorTitle: "Étage 2 — Lire et représenter",
+    title: "3. Relier dessin, fraction et mots",
+    theory: "Le dessin, l'écriture en chiffres et le nom de la fraction représentent la même quantité. Vérifie toujours deux choses : le nombre total de parts égales, puis le nombre de parts coloriées.",
+    visualDesc: `<svg viewBox="0 0 320 95" role="img" aria-label="Deux parts coloriées sur quatre, soit deux quarts">
+      <g transform="translate(18 20)">
+        <rect width="120" height="28" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="60" height="28" fill="#2786c7"/>
+        <path d="M30 0V28 M60 0V28 M90 0V28" stroke="#374151"/>
+      </g>
+      <text x="158" y="39" font-size="20" fill="currentColor">= 2/4</text>
+      <text x="240" y="39" font-size="14" fill="currentColor">deux quarts</text>
+      <text x="160" y="76" text-anchor="middle" font-size="12" fill="currentColor">2 parts coloriées sur 4 parts égales</text>
+    </svg>`,
+    example: "Deux parts coloriées sur quatre se notent 2/4 et se lisent « deux quarts ».",
+    question: "Comment se lit la fraction 5/6 ?",
+    expected: ["cinq sixièmes", "cinq sixieme", "cinq sur six"],
+    hint: "Le numérateur se lit d'abord, puis le nom donné par le dénominateur.",
+    errorExplanation: "5/6 se lit « cinq sixièmes » : on compte cinq parts parmi six parts égales."
+  },
+
+  // ============================================================
+  // ÉTAGE 3 — DROITE GRADUÉE
+  // ============================================================
+  {
+    floor: 3,
+    floorTitle: "Étage 3 — La droite graduée",
+    title: "1. Partager l'unité en intervalles égaux",
+    theory: "Sur une droite graduée, l'espace entre 0 et 1 représente une unité. Pour placer une fraction, on partage cet espace en intervalles <strong>égaux</strong>.",
+    visualDesc: `<svg viewBox="0 0 320 90" role="img" aria-label="Segment de zéro à un divisé en quatre intervalles égaux">
+      <path d="M30 42H290" stroke="currentColor" stroke-width="2"/>
+      <path d="M30 32V52 M95 32V52 M160 32V52 M225 32V52 M290 32V52" stroke="currentColor" stroke-width="2"/>
+      <text x="30" y="23" text-anchor="middle" font-size="12" fill="currentColor">0</text>
+      <text x="290" y="23" text-anchor="middle" font-size="12" fill="currentColor">1</text>
+      <text x="160" y="72" text-anchor="middle" font-size="12" fill="currentColor">4 intervalles égaux</text>
+    </svg>`,
+    example: "Sur une droite allant de 0 à 1, si tu partages l'espace en 4 intervalles égaux, chaque intervalle vaut 1/4.",
+    question: "Entre 0 et 1, tu partages la droite en 6 intervalles égaux. Quel est le dénominateur des fractions représentées par les graduations ?",
+    expected: ["6", "six"],
+    hint: "Le dénominateur compte les intervalles entre 0 et 1.",
+    errorExplanation: "Le dénominateur est 6, car l'unité entre 0 et 1 est partagée en six intervalles égaux."
+  },
+  {
+    floor: 3,
+    floorTitle: "Étage 3 — La droite graduée",
+    title: "2. Le dénominateur donne les pas",
+    theory: "Le dénominateur indique en combien d'intervalles égaux l'unité est partagée. Si le dénominateur vaut 5, chaque intervalle représente un cinquième.",
+    visualDesc: `<svg viewBox="0 0 320 90" role="img" aria-label="Droite graduée de zéro à un avec cinq intervalles">
+      <path d="M25 40H295" stroke="currentColor" stroke-width="2"/>
+      <path d="M25 30V50 M79 30V50 M133 30V50 M187 30V50 M241 30V50 M295 30V50" stroke="currentColor" stroke-width="2"/>
+      <text x="25" y="20" text-anchor="middle" font-size="12" fill="currentColor">0</text>
+      <text x="295" y="20" text-anchor="middle" font-size="12" fill="currentColor">1</text>
+      <text x="160" y="70" text-anchor="middle" font-size="12" fill="currentColor">Chaque pas vaut 1/5</text>
+    </svg>`,
+    example: "Si un trajet d'un kilomètre est partagé en 5 portions égales, chaque portion représente 1/5 du kilomètre.",
+    question: "Sur une droite de 0 à 1 partagée en 5 intervalles égaux, quelle fraction représente le premier trait après 0 ?",
+    expected: ["1/5", "1 / 5"],
+    hint: "Le premier trait correspond à un seul intervalle.",
+    errorExplanation: "Le premier trait après 0 représente 1/5 : un intervalle parcouru sur les cinq que compte l'unité."
+  },
+  {
+    floor: 3,
+    floorTitle: "Étage 3 — La droite graduée",
+    title: "3. Le numérateur compte les pas",
+    theory: "Le numérateur indique combien d'intervalles on parcourt à partir de 0. Pour placer 3/5, on avance de trois pas sur une droite où l'unité est partagée en cinq intervalles égaux.",
+    visualDesc: `<svg viewBox="0 0 320 95" role="img" aria-label="Le point trois cinquièmes placé à la troisième graduation sur cinq">
+      <path d="M25 42H295" stroke="currentColor" stroke-width="2"/>
+      <path d="M25 32V52 M79 32V52 M133 32V52 M187 32V52 M241 32V52 M295 32V52" stroke="currentColor" stroke-width="2"/>
+      <circle cx="187" cy="42" r="6" fill="#2786c7"/>
+      <text x="25" y="22" text-anchor="middle" font-size="12" fill="currentColor">0</text>
+      <text x="187" y="22" text-anchor="middle" font-size="12" fill="currentColor">3/5</text>
+      <text x="295" y="22" text-anchor="middle" font-size="12" fill="currentColor">1</text>
+      <text x="160" y="76" text-anchor="middle" font-size="12" fill="currentColor">3 pas sur 5</text>
+    </svg>`,
+    example: "Pour placer 4/6, partage l'unité en 6 intervalles égaux, puis compte 4 intervalles depuis 0.",
+    question: "Sur une droite de 0 à 1 partagée en 5 intervalles égaux, quelle fraction représente le troisième trait après 0 ?",
+    expected: ["3/5", "3 / 5"],
+    hint: "Le dénominateur est 5 et tu as avancé de 3 pas.",
+    errorExplanation: "La fraction est 3/5 : les cinq intervalles sont indiqués par le dénominateur, et le troisième trait correspond à trois pas depuis 0."
+  },
+
+  // ============================================================
+  // ÉTAGE 4 — FRACTIONS ÉQUIVALENTES
+  // ============================================================
+  {
+    floor: 4,
+    floorTitle: "Étage 4 — Équivalences et simplification",
+    title: "1. Une même quantité, plusieurs fractions",
+    theory: "Deux fractions sont <strong>équivalentes</strong> quand elles représentent la même quantité. Les nombres peuvent changer, mais la quantité représentée reste identique.",
+    visualDesc: `<svg viewBox="0 0 320 105" role="img" aria-label="Trois bandes de même longueur représentant une moitié, deux quarts et quatre huitièmes">
+      <g transform="translate(10 12)">
+        <rect width="84" height="22" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="42" height="22" fill="#2786c7"/>
+        <text x="42" y="40" text-anchor="middle" font-size="12" fill="currentColor">1/2</text>
+      </g>
+      <g transform="translate(118 12)">
+        <rect width="84" height="22" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="42" height="22" fill="#2786c7"/>
+        <path d="M21 0V22 M42 0V22 M63 0V22" stroke="#374151"/>
+        <text x="42" y="40" text-anchor="middle" font-size="12" fill="currentColor">2/4</text>
+      </g>
+      <g transform="translate(226 12)">
+        <rect width="84" height="22" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="42" height="22" fill="#2786c7"/>
+        <path d="M10.5 0V22 M21 0V22 M31.5 0V22 M42 0V22 M52.5 0V22 M63 0V22 M73.5 0V22" stroke="#374151"/>
+        <text x="42" y="40" text-anchor="middle" font-size="12" fill="currentColor">4/8</text>
+      </g>
+      <text x="160" y="82" text-anchor="middle" font-size="13" fill="currentColor">La quantité coloriée est la même.</text>
+    </svg>`,
+    example: "Une demi-pizza représente la même quantité que deux quarts de cette même pizza.",
+    question: "Les fractions 1/2 et 2/4 représentent-elles la même quantité ? Réponds par oui ou non.",
+    expected: ["oui"],
+    hint: "Compare la quantité coloriée, pas le nombre de morceaux.",
+    errorExplanation: "Oui. Une moitié et deux quarts couvrent la même quantité. Les parts sont découpées différemment, mais la surface coloriée reste identique."
+  },
+  {
+    floor: 4,
+    floorTitle: "Étage 4 — Équivalences et simplification",
+    title: "2. Fabriquer une fraction équivalente",
+    theory: "Pour obtenir une fraction équivalente, on multiplie le numérateur <strong>et</strong> le dénominateur par le même nombre non nul. La quantité représentée ne change pas.",
+    visualDesc: `<svg viewBox="0 0 320 100" role="img" aria-label="Une moitié transformée en deux quarts en multipliant le numérateur et le dénominateur par deux">
+      <text x="72" y="38" text-anchor="middle" font-size="23" fill="currentColor">1/2</text>
+      <path d="M110 34H205" stroke="#2786c7" stroke-width="2.5"/>
+      <path d="M195 26L205 34L195 42" fill="none" stroke="#2786c7" stroke-width="2.5"/>
+      <text x="160" y="20" text-anchor="middle" font-size="11" fill="currentColor">× 2 en haut et en bas</text>
+      <text x="245" y="38" text-anchor="middle" font-size="23" fill="currentColor">2/4</text>
+      <text x="160" y="70" text-anchor="middle" font-size="13" fill="currentColor">Même quantité, nouvelle écriture</text>
+    </svg>`,
+    example: "Pour transformer 1/2 en une fraction de dénominateur 4, on fait 2 × 2 = 4 en bas. On fait aussi 1 × 2 = 2 en haut : 1/2 = 2/4.",
+    question: "Complète : 2/3 = ?/6. Quel nombre doit remplacer le point d'interrogation ?",
+    expected: ["4"],
+    hint: "Pour passer de 3 à 6, tu multiplies le dénominateur par 2.",
+    errorExplanation: "Le dénominateur passe de 3 à 6 en étant multiplié par 2. Il faut donc aussi multiplier le numérateur par 2 : 2 × 2 = 4. La fraction équivalente est 4/6."
+  },
+  {
+    floor: 4,
+    floorTitle: "Étage 4 — Équivalences et simplification",
+    title: "3. Simplifier une fraction",
+    theory: "Simplifier une fraction, c'est écrire la même quantité avec des nombres plus petits. On divise le numérateur et le dénominateur par le même nombre, à condition que les deux divisions tombent juste.",
+    visualDesc: `<svg viewBox="0 0 320 100" role="img" aria-label="Quatre huitièmes simplifiés en une moitié">
+      <text x="70" y="35" text-anchor="middle" font-size="23" fill="currentColor">4/8</text>
+      <path d="M112 32H205" stroke="#2786c7" stroke-width="2.5"/>
+      <path d="M195 24L205 32L195 40" fill="none" stroke="#2786c7" stroke-width="2.5"/>
+      <text x="158" y="20" text-anchor="middle" font-size="11" fill="currentColor">÷ 4 en haut et en bas</text>
+      <text x="245" y="35" text-anchor="middle" font-size="23" fill="currentColor">1/2</text>
+      <text x="160" y="70" text-anchor="middle" font-size="13" fill="currentColor">La quantité ne change pas.</text>
+    </svg>`,
+    example: "4/8 se simplifie en 1/2 : 4 ÷ 4 = 1 et 8 ÷ 4 = 2.",
+    question: "Simplifie 3/6 en divisant le numérateur et le dénominateur par 3.",
+    expected: ["1/2", "1 / 2"],
+    hint: "Calcule 3 ÷ 3 en haut et 6 ÷ 3 en bas.",
+    errorExplanation: "3 ÷ 3 = 1 et 6 ÷ 3 = 2. Donc 3/6 = 1/2. Les deux nombres doivent être divisés par le même nombre."
+  },
+
+  // ============================================================
+  // ÉTAGE 5 — COMPARER ET ORDONNER
+  // ============================================================
+  {
+    floor: 5,
+    floorTitle: "Étage 5 — Comparer et ordonner",
+    title: "1. Même dénominateur : comparer le haut",
+    theory: "Quand deux fractions ont le même dénominateur, les parts ont la même taille. La fraction qui a le plus grand numérateur représente la plus grande quantité.",
+    visualDesc: `<svg viewBox="0 0 320 100" role="img" aria-label="Comparaison de trois huitièmes et cinq huitièmes">
+      <text x="14" y="15" font-size="12" fill="currentColor">3/8</text>
+      <g transform="translate(14 23)">
+        <rect width="136" height="20" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="51" height="20" fill="#2786c7"/>
+        <path d="M17 0V20 M34 0V20 M51 0V20 M68 0V20 M85 0V20 M102 0V20 M119 0V20" stroke="#374151"/>
+      </g>
+      <text x="14" y="63" font-size="12" fill="currentColor">5/8</text>
+      <g transform="translate(14 71)">
+        <rect width="136" height="20" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="85" height="20" fill="#2786c7"/>
+        <path d="M17 0V20 M34 0V20 M51 0V20 M68 0V20 M85 0V20 M102 0V20 M119 0V20" stroke="#374151"/>
+      </g>
+      <text x="228" y="49" text-anchor="middle" font-size="20" fill="currentColor">3/8 &lt; 5/8</text>
+    </svg>`,
+    example: "Trois huitièmes de tablette, c'est moins que cinq huitièmes : les carrés sont de la même taille, mais il y en a moins.",
+    question: "Complète avec <, > ou = : 3/8 __ 5/8. Écris uniquement le symbole.",
+    expected: ["<"],
+    hint: "Les deux dénominateurs sont identiques : compare 3 et 5.",
+    errorExplanation: "Le bon symbole est <. Les parts ont la même taille et 3 parts sont moins nombreuses que 5 parts : 3/8 < 5/8."
+  },
+  {
+    floor: 5,
+    floorTitle: "Étage 5 — Comparer et ordonner",
+    title: "2. Même numérateur : comparer le bas",
+    theory: "Quand le numérateur est identique, les fractions ne sont pas forcément égales. Si on prend le même nombre de parts, des parts plus grandes donnent une quantité plus grande. Un plus petit dénominateur signifie des parts plus grandes.",
+    visualDesc: `<svg viewBox="0 0 320 100" role="img" aria-label="Un tiers comparé à un dixième">
+      <text x="12" y="15" font-size="12" fill="currentColor">1/3</text>
+      <g transform="translate(12 23)">
+        <rect width="132" height="22" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="44" height="22" fill="#2786c7"/>
+        <path d="M44 0V22 M88 0V22" stroke="#374151"/>
+      </g>
+      <text x="12" y="62" font-size="12" fill="currentColor">1/10</text>
+      <g transform="translate(12 70)">
+        <rect width="132" height="22" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="13.2" height="22" fill="#2786c7"/>
+        <path d="M13.2 0V22 M26.4 0V22 M39.6 0V22 M52.8 0V22 M66 0V22 M79.2 0V22 M92.4 0V22 M105.6 0V22 M118.8 0V22" stroke="#374151"/>
+      </g>
+      <text x="235" y="52" text-anchor="middle" font-size="20" fill="currentColor">1/3 &gt; 1/10</text>
+    </svg>`,
+    example: "Un tiers d'une pizza est plus grand qu'un dixième de la même pizza. Dans les deux cas, on prend une seule part, mais les parts n'ont pas la même taille.",
+    question: "Quelle fraction est la plus grande : 1/3 ou 1/10 ? Écris la fraction.",
+    expected: ["1/3", "1 / 3"],
+    hint: "Un tiers est une grosse part ; un dixième est une petite part.",
+    errorExplanation: "1/3 est plus grand que 1/10. Quand le numérateur est le même, un dénominateur plus petit correspond à des parts plus grandes."
+  },
+  {
+    floor: 5,
+    floorTitle: "Étage 5 — Comparer et ordonner",
+    title: "3. Reconnaître deux fractions égales",
+    theory: "Pour comparer deux fractions, regarde d'abord si elles représentent la même quantité. Par exemple, 1/2 et 2/4 sont équivalentes : elles représentent toutes les deux la moitié.",
+    visualDesc: `<svg viewBox="0 0 320 80" role="img" aria-label="Une moitié égale à deux quarts">
+      <g transform="translate(12 15)">
+        <rect width="100" height="22" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="50" height="22" fill="#2786c7"/>
+        <text x="50" y="42" text-anchor="middle" font-size="12" fill="currentColor">1/2</text>
+      </g>
+      <text x="160" y="32" text-anchor="middle" font-size="22" fill="currentColor">=</text>
+      <g transform="translate(208 15)">
+        <rect width="100" height="22" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="50" height="22" fill="#2786c7"/>
+        <path d="M25 0V22 M50 0V22 M75 0V22" stroke="#374151"/>
+        <text x="50" y="42" text-anchor="middle" font-size="12" fill="currentColor">2/4</text>
+      </g>
+    </svg>`,
+    example: "Deux quarts de pizza correspondent à la moitié d'une pizza. Les deux écritures représentent la même quantité.",
+    question: "Quel symbole faut-il placer entre 1/2 et 2/4 ? Écris uniquement le symbole.",
+    expected: ["="],
+    hint: "Les deux fractions représentent-elles la même quantité ?",
+    errorExplanation: "Le symbole est =, car 1/2 et 2/4 représentent exactement la même quantité."
+  },
+
+  // ============================================================
+  // ÉTAGE 6 — FRACTIONS DÉCIMALES ET NOMBRES DÉCIMAUX
+  // ============================================================
+  {
+    floor: 6,
+    floorTitle: "Étage 6 — Fractions décimales",
+    title: "1. Les fractions décimales",
+    theory: "Une fraction décimale a pour dénominateur 10, 100, 1 000, etc. Ces fractions sont pratiques pour représenter des dixièmes, des centièmes ou des millièmes.",
+    visualDesc: `<svg viewBox="0 0 320 90" role="img" aria-label="Dix cases dont sept coloriées pour représenter sept dixièmes">
+      <g transform="translate(20 18)">
+        <rect width="280" height="30" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="196" height="30" fill="#2786c7"/>
+        <path d="M28 0V30 M56 0V30 M84 0V30 M112 0V30 M140 0V30 M168 0V30 M196 0V30 M224 0V30 M252 0V30" stroke="#374151"/>
+      </g>
+      <text x="160" y="70" text-anchor="middle" font-size="13" fill="currentColor">7/10 = sept dixièmes</text>
+    </svg>`,
+    example: "Un euro contient 100 centimes. 25 centimes représentent 25/100 d'euro.",
+    question: "Quel est le dénominateur de la fraction décimale 34/100 ?",
+    expected: ["100", "cent"],
+    hint: "Le dénominateur est le nombre placé sous la barre.",
+    errorExplanation: "Le dénominateur est 100. La fraction 34/100 représente 34 centièmes."
+  },
+  {
+    floor: 6,
+    floorTitle: "Étage 6 — Fractions décimales",
+    title: "2. Passer des dixièmes à la virgule",
+    theory: "Quand le dénominateur est 10, le numérateur indique le nombre de dixièmes. Pour écrire la fraction en nombre décimal, on place les dixièmes après la virgule.",
+    visualDesc: `<svg viewBox="0 0 320 85" role="img" aria-label="Sept dixièmes correspondent à zéro virgule sept">
+      <text x="82" y="36" text-anchor="middle" font-size="24" fill="currentColor">7/10</text>
+      <path d="M125 32H194" stroke="#2786c7" stroke-width="2.5"/>
+      <path d="M184 24L194 32L184 40" fill="none" stroke="#2786c7" stroke-width="2.5"/>
+      <text x="250" y="36" text-anchor="middle" font-size="24" fill="currentColor">0,7</text>
+      <text x="160" y="67" text-anchor="middle" font-size="12" fill="currentColor">Sept dixièmes</text>
+    </svg>`,
+    example: "7/10 = 0,7. Il y a sept dixièmes et aucun entier complet.",
+    question: "Écris 7/10 sous forme de nombre décimal.",
+    expected: ["0,7", "0.7"],
+    hint: "Sept dixièmes s'écrivent avec 7 au rang des dixièmes.",
+    errorExplanation: "7/10 = 0,7. Le 7 est placé juste après la virgule, au rang des dixièmes. La virgule ou le point sont acceptés."
+  },
+  {
+    floor: 6,
+    floorTitle: "Étage 6 — Fractions décimales",
+    title: "3. Passer des centièmes à la virgule",
+    theory: "Quand le dénominateur est 100, le numérateur indique le nombre de centièmes. Les deux premiers chiffres après la virgule correspondent aux dixièmes et aux centièmes. Si nécessaire, on ajoute un zéro.",
+    visualDesc: `<svg viewBox="0 0 320 85" role="img" aria-label="Trente-quatre centièmes correspondent à zéro virgule trente-quatre">
+      <text x="76" y="36" text-anchor="middle" font-size="24" fill="currentColor">34/100</text>
+      <path d="M125 32H194" stroke="#2786c7" stroke-width="2.5"/>
+      <path d="M184 24L194 32L184 40" fill="none" stroke="#2786c7" stroke-width="2.5"/>
+      <text x="253" y="36" text-anchor="middle" font-size="24" fill="currentColor">0,34</text>
+      <text x="160" y="67" text-anchor="middle" font-size="12" fill="currentColor">Trente-quatre centièmes</text>
+    </svg>`,
+    example: "34/100 = 0,34. Pour l'argent, 34 centimes correspondent à 0,34 CHF.",
+    question: "Écris 34/100 sous forme de nombre décimal.",
+    expected: ["0,34", "0.34"],
+    hint: "Il faut deux chiffres après la virgule pour représenter des centièmes.",
+    errorExplanation: "34/100 = 0,34. Le 3 représente trois dixièmes et le 4 représente quatre centièmes. La virgule ou le point sont acceptés."
+  },
+
+  // ============================================================
+  // ÉTAGE 7 — ADDITION ET SOUSTRACTION, MÊME DÉNOMINATEUR
+  // ============================================================
+  {
+    floor: 7,
+    floorTitle: "Étage 7 — Opérations avec le même dénominateur",
+    title: "1. Additionner des fractions de même dénominateur",
+    theory: "Si les dénominateurs sont identiques, les parts ont la même taille. Pour additionner les fractions, on additionne les numérateurs et on garde le dénominateur.",
+    visualDesc: `<svg viewBox="0 0 320 105" role="img" aria-label="Deux huitièmes plus trois huitièmes donnent cinq huitièmes">
+      <text x="12" y="15" font-size="12" fill="currentColor">2/8</text>
+      <g transform="translate(12 22)">
+        <rect width="104" height="20" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="26" height="20" fill="#2786c7"/>
+        <path d="M13 0V20 M26 0V20 M39 0V20 M52 0V20 M65 0V20 M78 0V20 M91 0V20" stroke="#374151"/>
+      </g>
+      <text x="160" y="36" text-anchor="middle" font-size="20" fill="currentColor">+</text>
+      <text x="204" y="15" font-size="12" fill="currentColor">3/8</text>
+      <g transform="translate(204 22)">
+        <rect width="104" height="20" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="39" height="20" fill="#2786c7"/>
+        <path d="M13 0V20 M26 0V20 M39 0V20 M52 0V20 M65 0V20 M78 0V20 M91 0V20" stroke="#374151"/>
+      </g>
+      <text x="160" y="73" text-anchor="middle" font-size="16" fill="currentColor">2/8 + 3/8 = 5/8</text>
+      <text x="160" y="93" text-anchor="middle" font-size="12" fill="currentColor">2 parts + 3 parts = 5 parts sur 8</text>
+    </svg>`,
+    example: "Tu manges 2 carrés d'une tablette de 8 carrés, puis encore 3 carrés. Tu as mangé 5/8 de la tablette.",
+    question: "Calcule 3/8 + 2/8. Écris le résultat sous forme de fraction.",
+    expected: ["5/8", "5 / 8"],
+    hint: "Additionne les nombres du haut et garde le 8 en bas.",
+    errorExplanation: "3 + 2 = 5. Le dénominateur reste 8, car les parts sont toujours des huitièmes. Le résultat est 5/8."
+  },
+  {
+    floor: 7,
+    floorTitle: "Étage 7 — Opérations avec le même dénominateur",
+    title: "2. Soustraire des fractions de même dénominateur",
+    theory: "Pour soustraire des fractions de même dénominateur, on soustrait les numérateurs et on garde le dénominateur. On retire des parts de même taille.",
+    visualDesc: `<svg viewBox="0 0 320 90" role="img" aria-label="Cinq huitièmes moins deux huitièmes donnent trois huitièmes">
+      <text x="12" y="15" font-size="12" fill="currentColor">5/8</text>
+      <g transform="translate(12 22)">
+        <rect width="144" height="22" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="90" height="22" fill="#2786c7"/>
+        <path d="M18 0V22 M36 0V22 M54 0V22 M72 0V22 M90 0V22 M108 0V22 M126 0V22" stroke="#374151"/>
+      </g>
+      <path d="M166 33H194" stroke="#c2410c" stroke-width="2.5"/>
+      <path d="M174 25L166 33L174 41" fill="none" stroke="#c2410c" stroke-width="2.5"/>
+      <text x="215" y="15" font-size="12" fill="currentColor">2/8 retirés</text>
+      <text x="160" y="70" text-anchor="middle" font-size="16" fill="currentColor">5/8 − 2/8 = 3/8</text>
+    </svg>`,
+    example: "Tu as 5/8 d'une tablette. Tu en manges 2/8. Il reste 3/8 de la tablette.",
+    question: "Calcule 6/9 − 2/9. Écris le résultat sous forme de fraction.",
+    expected: ["4/9", "4 / 9"],
+    hint: "Calcule 6 − 2 et conserve le dénominateur 9.",
+    errorExplanation: "6 − 2 = 4. Le dénominateur reste 9, car les parts ont toujours la même taille. Le résultat est 4/9."
+  },
+
+  // ============================================================
+  // ÉTAGE 8 — DÉNOMINATEURS DIFFÉRENTS
+  // ============================================================
+  {
+    floor: 8,
+    floorTitle: "Étage 8 — Dénominateurs différents",
+    title: "1. Pourquoi faut-il le même dénominateur ?",
+    theory: "On ne peut pas additionner directement des fractions dont les parts n'ont pas la même taille. Il faut d'abord écrire les fractions avec un <strong>même dénominateur</strong>, pour compter des parts de même taille.",
+    visualDesc: `<svg viewBox="0 0 320 95" role="img" aria-label="Une moitié et un quart sont des parts de tailles différentes">
+      <text x="16" y="15" font-size="12" fill="currentColor">1/2</text>
+      <g transform="translate(16 22)">
+        <rect width="100" height="24" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="50" height="24" fill="#2786c7"/>
+      </g>
+      <text x="160" y="39" text-anchor="middle" font-size="22" fill="currentColor">≠</text>
+      <text x="205" y="15" font-size="12" fill="currentColor">1/4</text>
+      <g transform="translate(205 22)">
+        <rect width="100" height="24" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="25" height="24" fill="#2786c7"/>
+        <path d="M25 0V24 M50 0V24 M75 0V24" stroke="#374151"/>
+      </g>
+      <text x="160" y="76" text-anchor="middle" font-size="12" fill="currentColor">Un demi et un quart ne sont pas des parts de même taille.</text>
+    </svg>`,
+    example: "Une demi-pizza et un quart de pizza ne sont pas des parts de même taille. Pour les additionner, on peut transformer 1/2 en 2/4.",
+    question: "Avant d'additionner 1/2 et 1/4, faut-il les écrire avec le même dénominateur ?",
+    expected: ["oui"],
+    hint: "Demande-toi si un demi et un quart sont des parts de même taille.",
+    errorExplanation: "Oui. Les deux fractions doivent avoir le même dénominateur pour compter des parts de même taille. Ici, on peut transformer 1/2 en 2/4."
+  },
+  {
+    floor: 8,
+    floorTitle: "Étage 8 — Dénominateurs différents",
+    title: "2. Transformer une fraction sans changer sa valeur",
+    theory: "Pour passer à un dénominateur commun, on peut multiplier le numérateur et le dénominateur par le même nombre. La fraction garde la même valeur : on change le découpage, pas la quantité.",
+    visualDesc: `<svg viewBox="0 0 320 110" role="img" aria-label="Une moitié devient deux quarts : multiplication du numérateur et du dénominateur par deux">
+      <text x="60" y="24" text-anchor="middle" font-size="20" fill="currentColor">1/2</text>
+      <path d="M90 20H220" stroke="#2786c7" stroke-width="2.5"/>
+      <path d="M210 12L220 20L210 28" fill="none" stroke="#2786c7" stroke-width="2.5"/>
+      <text x="155" y="12" text-anchor="middle" font-size="11" fill="currentColor">× 2 en haut et en bas</text>
+      <text x="260" y="24" text-anchor="middle" font-size="20" fill="currentColor">2/4</text>
+      <g transform="translate(22 43)">
+        <rect width="100" height="22" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="50" height="22" fill="#2786c7"/>
+      </g>
+      <g transform="translate(198 43)">
+        <rect width="100" height="22" fill="#e5e7eb" stroke="#374151"/>
+        <rect width="50" height="22" fill="#2786c7"/>
+        <path d="M25 0V22 M50 0V22 M75 0V22" stroke="#374151"/>
+      </g>
+      <text x="160" y="89" text-anchor="middle" font-size="12" fill="currentColor">La surface coloriée reste la même.</text>
+    </svg>`,
+    example: "Pour transformer 1/2 en quarts, on multiplie le haut et le bas par 2 : 1 × 2 = 2 et 2 × 2 = 4. Donc 1/2 = 2/4.",
+    question: "Complète : 1/2 = ?/4. Quel nombre doit remplacer le point d'interrogation ?",
+    expected: ["2"],
+    hint: "Le dénominateur passe de 2 à 4 en étant multiplié par 2.",
+    errorExplanation: "2 × 2 = 4 au dénominateur. Il faut multiplier le numérateur par le même nombre : 1 × 2 = 2. Donc 1/2 = 2/4."
+  },
+  {
+    floor: 8,
+    floorTitle: "Étage 8 — Dénominateurs différents",
+    title: "3. Additionner après la transformation",
+    theory: "Une fois les dénominateurs identiques, additionne les numérateurs et garde le dénominateur commun. Tu peux ensuite simplifier le résultat si c'est possible.",
+    visualDesc: `<svg viewBox="0 0 320 90" role="img" aria-label="Un demi plus un quart devient deux quarts plus un quart, soit trois quarts">
+      <text x="160" y="20" text-anchor="middle" font-size="16" fill="currentColor">1/2 + 1/4</text>
+      <path d="M160 27V39" stroke="#2786c7" stroke-width="2"/>
+      <path d="M153 33L160 40L167 33" fill="none" stroke="#2786c7" stroke-width="2"/>
+      <text x="160" y="58" text-anchor="middle" font-size="16" fill="currentColor">2/4 + 1/4 = 3/4</text>
+      <text x="160" y="78" text-anchor="middle" font-size="12" fill="currentColor">2 parts + 1 part = 3 quarts</text>
+    </svg>`,
+    example: "Pour calculer 1/2 + 1/4, on écrit 1/2 = 2/4. Puis 2/4 + 1/4 = 3/4.",
+    question: "Calcule 1/2 + 1/4. Écris le résultat sous forme de fraction.",
+    expected: ["3/4", "3 / 4"],
+    hint: "Transforme d'abord 1/2 en 2/4, puis additionne les numérateurs.",
+    errorExplanation: "1/2 devient 2/4. Ensuite, 2/4 + 1/4 = 3/4, car 2 + 1 = 3 et le dénominateur commun reste 4."
+  },
+
+  // ============================================================
+  // ÉTAGE 9 — MULTIPLICATION ET DIVISION
+  // ============================================================
+  {
+    floor: 9,
+    floorTitle: "Étage 9 — Multiplication et division",
+    title: "1. Multiplier deux fractions",
+    theory: "Pour multiplier deux fractions, multiplie les numérateurs entre eux, puis les dénominateurs entre eux. Il n'est pas nécessaire de chercher un dénominateur commun.",
+    visualDesc: `<svg viewBox="0 0 320 95" role="img" aria-label="Deux fractions multipliées : deux tiers fois trois quarts égale six douzièmes">
+      <text x="160" y="24" text-anchor="middle" font-size="18" fill="currentColor">2/3 × 3/4</text>
+      <path d="M160 32V43" stroke="#2786c7" stroke-width="2"/>
+      <path d="M153 37L160 44L167 37" fill="none" stroke="#2786c7" stroke-width="2"/>
+      <text x="160" y="64" text-anchor="middle" font-size="18" fill="currentColor">(2 × 3)/(3 × 4) = 6/12</text>
+      <text x="160" y="84" text-anchor="middle" font-size="12" fill="currentColor">Haut × haut, bas × bas</text>
+    </svg>`,
+    example: "2/3 × 3/4 = (2 × 3)/(3 × 4) = 6/12. On multiplie les nombres du haut entre eux et les nombres du bas entre eux.",
+    question: "Calcule 1/2 × 3/4. Écris le résultat sous forme de fraction.",
+    expected: ["3/8", "3 / 8"],
+    hint: "Multiplie 1 × 3 en haut et 2 × 4 en bas.",
+    errorExplanation: "Le numérateur est 1 × 3 = 3. Le dénominateur est 2 × 4 = 8. Le résultat est 3/8."
+  },
+  {
+    floor: 9,
+    floorTitle: "Étage 9 — Multiplication et division",
+    title: "2. Comprendre l'inverse d'une fraction",
+    theory: "L'inverse d'une fraction s'obtient en échangeant le numérateur et le dénominateur. Par exemple, l'inverse de 2/3 est 3/2. Une fraction non nulle multipliée par son inverse donne 1.",
+    visualDesc: `<svg viewBox="0 0 320 90" role="img" aria-label="L'inverse de deux tiers est trois demis, les nombres du haut et du bas sont échangés">
+      <text x="75" y="34" text-anchor="middle" font-size="22" fill="currentColor">2/3</text>
+      <path d="M115 29H205" stroke="#2786c7" stroke-width="2.5"/>
+      <path d="M195 21L205 29L195 37" fill="none" stroke="#2786c7" stroke-width="2.5"/>
+      <text x="160" y="18" text-anchor="middle" font-size="11" fill="currentColor">On échange</text>
+      <text x="245" y="34" text-anchor="middle" font-size="22" fill="currentColor">3/2</text>
+      <text x="160" y="70" text-anchor="middle" font-size="12" fill="currentColor">Le haut et le bas changent de place.</text>
+    </svg>`,
+    example: "L'inverse de 4/5 est 5/4. Attention : l'inverse n'est pas le résultat de 1 moins la fraction.",
+    question: "Quel est l'inverse de 2/3 ? Écris le résultat sous forme de fraction.",
+    expected: ["3/2", "3 / 2"],
+    hint: "Échange le numérateur et le dénominateur.",
+    errorExplanation: "L'inverse de 2/3 est 3/2 : le numérateur 2 devient le dénominateur, et le dénominateur 3 devient le numérateur."
+  },
+  {
+    floor: 9,
+    floorTitle: "Étage 9 — Multiplication et division",
+    title: "3. Diviser par une fraction",
+    theory: "Pour diviser par une fraction, on multiplie par son inverse. On garde la première fraction, on remplace le signe de division par une multiplication, puis on retourne la deuxième fraction.",
+    visualDesc: `<svg viewBox="0 0 320 105" role="img" aria-label="La division un demi divisé par un quart devient un demi multiplié par quatre">
+      <text x="160" y="23" text-anchor="middle" font-size="17" fill="currentColor">1/2 ÷ 1/4</text>
+      <path d="M160 31V42" stroke="#2786c7" stroke-width="2"/>
+      <path d="M153 36L160 43L167 36" fill="none" stroke="#2786c7" stroke-width="2"/>
+      <text x="160" y="63" text-anchor="middle" font-size="17" fill="currentColor">1/2 × 4/1</text>
+      <text x="160" y="88" text-anchor="middle" font-size="13" fill="currentColor">Diviser par 1/4 revient à multiplier par 4.</text>
+    </svg>`,
+    example: "1/2 ÷ 1/4 = 1/2 × 4/1 = 4/2 = 2. Il y a deux quarts dans une moitié.",
+    question: "Pour calculer 2/3 ÷ 1/4, par quelle fraction faut-il remplacer 1/4 après avoir changé la division en multiplication ?",
+    expected: ["4/1", "4", "4 / 1"],
+    hint: "Il faut prendre l'inverse de la deuxième fraction.",
+    errorExplanation: "L'inverse de 1/4 est 4/1. Donc 2/3 ÷ 1/4 devient 2/3 × 4/1. On inverse uniquement la deuxième fraction."
+  }
+];
+
+  // Les étapes pédagogiques ci-dessus sont partagées entre les neuf étages.
+  // Le composant n'affiche que les étapes correspondant au floorId reçu.
   let { floorId = 'floor-1', onComplete } = $props<{
     floorId?: string;
     onComplete?: () => void;
   }>();
 
-  let floorNum = $derived(parseInt(floorId.match(/(\d+)/)?.[1] || '1'));
+  let floorNum = $derived(Number.parseInt(floorId.match(/(\d+)/)?.[1] ?? '1', 10));
+  let floorSteps = $derived(steps.filter((step) => step.floor === floorNum));
 
-  const floorCourses: Record<number, { title: string, subSteps: Array<{ subtitle: string, theory: string, example: string, visualType: 'pizzas' | 'bar' | 'line' | 'money' | 'circle' | 'grid', visualData: any, question: string, expected: string[], hint: string }> }> = {
-    // --- ÉTAGE 1 : Le partage équitable & Lexique ---
-    1: {
-      title: "Étage 1 — Le partage équitable et les bases",
-      subSteps: [
-        {
-          subtitle: "1. Qu'est-ce qu'une fraction ?",
-          theory: "Une fraction sert à exprimer des parts d'un tout qui a été partagé. Règle d'or : pour faire des fractions, les parts doivent être <strong>strictement égales</strong>.",
-          example: "Si tu partages une pizza en 4 parts de tailles différentes, ce ne sont pas des quarts !",
-          visualType: "pizzas",
-          visualData: {},
-          question: "Laquelle des deux pizzas permet de faire de vraies fractions ? (Tape 'égale' ou 'inégale')",
-          expected: ["égale", "egale"],
-          hint: "Regarde bien la taille des parts : elles doivent être pareilles."
-        },
-        {
-          subtitle: "2. Numérateur et Dénominateur",
-          theory: "La fraction s'écrit avec une barre au milieu : <br>• En bas, le <strong>dénominateur</strong> indique le nombre total de parts égales.<br>• En haut, le <strong>numérateur</strong> indique le nombre de parts que l'on prend.",
-          example: "Avec <span class='fraction'><span>3</span><span>4</span></span>, le dénominateur est 4 et le numérateur est 3.",
-          visualType: "bar",
-          visualData: { total: 4, colored: 3 },
-          question: "Dans la fraction <span class='fraction'><span>3</span><span>4</span></span>, comment appelle-t-on le nombre du bas (4) ?",
-          expected: ["dénominateur", "denominateur"],
-          hint: "Indice : il 'dénomme' ou nomme la taille des parts."
-        },
-        {
-          subtitle: "3. Le lexique des fractions",
-          theory: "On nomme les fractions selon leurs parts : 2 parts = un <strong>demi</strong> (<span class='fraction'><span>1</span><span>2</span></span>), 3 parts = un <strong>tiers</strong> (<span class='fraction'><span>1</span><span>3</span></span>), 4 parts = un <strong>quart</strong> (<span class='fraction'><span>1</span><span>4</span></span>). Dès 5 parts, on ajoute <strong>-ième</strong>.",
-          example: "Une unité coupée en 3 parts égales donne des tiers.",
-          visualType: "bar",
-          visualData: { total: 3, colored: 1 },
-          question: "Comment nomme-t-on une unité coupée en 3 parts égales ?",
-          expected: ["tiers", "le tiers"],
-          hint: "Pense au mot 'partage par trois'."
-        }
-      ]
-    },
-
-    // --- ÉTAGE 2 : Lire et représenter ---
-    2: {
-      title: "Étage 2 — Lire et représenter",
-      subSteps: [
-        {
-          subtitle: "1. Les trois visages d'une fraction",
-          theory: "Une fraction se lit de trois manières : par un dessin (coloriage), par une écriture chiffrée, et par des mots (ex: trois cinquièmes).",
-          example: "Sur une bande de 5 cases dont 3 sont coloriées, on écrit <span class='fraction'><span>3</span><span>5</span></span> et on lit 'trois cinquièmes'.",
-          visualType: "bar",
-          visualData: { total: 5, colored: 3 },
-          question: "Écris en chiffres la fraction 'quatre septièmes'.",
-          expected: ["4/7", "4 / 7"],
-          hint: "Écris le numérateur, un slash, puis le dénominateur."
-        }
-      ]
-    },
-
-    // --- ÉTAGE 3 : La droite graduée ---
-    3: {
-      title: "Étage 3 — La droite graduée",
-      subSteps: [
-        {
-          subtitle: "1. Se repérer de 0 à 1",
-          theory: "Sur une droite graduée entre 0 et 1, l'unité est partagée en intervalles égaux. Le dénominateur indique le nombre total d'intervalles.",
-          example: "Si la ligne entre 0 et 1 est coupée en 5 intervalles, le 3e trait après 0 correspond à <span class='fraction'><span>3</span><span>5</span></span>.",
-          visualType: "line",
-          visualData: { parts: 5, target: 3 },
-          question: "Sur une droite de 0 à 1 partagée en 5 intervalles égaux, quelle fraction représente le 3e trait ?",
-          expected: ["3/5", "3 / 5"],
-          hint: "Le nombre d'intervalles est en bas, le nombre de pas en haut."
-        }
-      ]
-    },
-
-    // --- ÉTAGE 4 : Équivalences et simplification ---
-    4: {
-      title: "Étage 4 — Équivalences et simplification",
-      subSteps: [
-        {
-          subtitle: "1. Des écritures différentes pour une même quantité",
-          theory: "Deux fractions sont <strong>équivalentes</strong> si elles représentent exactement la même quantité. Pour simplifier, on divise ou multiplie le haut et le bas par le même nombre.",
-          example: "<span class='fraction'><span>2</span><span>4</span></span> et <span class='fraction'><span>1</span><span>2</span></span> couvrent la même surface.",
-          visualType: "circle",
-          visualData: { total: 4, colored: 2 },
-          question: "Complète l'égalité : <span class='fraction'><span>1</span><span>2</span></span> = <span class='fraction'><span>?</span><span>4</span></span>. Quel nombre manque ?",
-          expected: ["2"],
-          hint: "Multiplie le haut et le bas par 2."
-        }
-      ]
-    },
-
-    // --- ÉTAGE 5 : Comparer et fractions supérieures à 1 ---
-    5: {
-      title: "Étage 5 — Comparer et ordonner",
-      subSteps: [
-        {
-          subtitle: "1. Qui est le plus grand ?",
-          theory: "Si les dénominateurs sont identiques, la fraction avec le plus grand numérateur est la plus grande. Si les numérateurs sont identiques, c'est celle qui a le plus petit dénominateur.",
-          example: "<span class='fraction'><span>3</span><span>8</span></span> est plus petit que <span class='fraction'><span>5</span><span>8</span></span>.",
-          visualType: "bar",
-          visualData: { total: 8, colored: 5 },
-          question: "Quel symbole faut-il mettre entre <span class='fraction'><span>3</span><span>8</span></span> et <span class='fraction'><span>5</span><span>8</span></span> ? (<, >, ou =)",
-          expected: ["<"],
-          hint: "Utilise le signe 'plus petit que'."
-        },
-        {
-          subtitle: "2. Quand le haut dépasse le bas",
-          theory: "Si le numérateur est plus grand que le dénominateur, la fraction est <strong>plus grande que 1</strong> (elle dépasse une unité entière).",
-          example: "Par exemple, <span class='fraction'><span>5</span><span>4</span></span> représente un gâteau entier plus un quart de gâteau.",
-          visualType: "bar",
-          visualData: { total: 4, colored: 4 },
-          question: "Une fraction dont le numérateur est égal au dénominateur (comme <span class='fraction'><span>4</span><span>4</span></span>) vaut exactement combien ?",
-          expected: ["1", "un"],
-          hint: "Ça représente un tout entier."
-        }
-      ]
-    },
-
-    // --- ÉTAGE 6 : Fractions décimales ---
-    6: {
-      title: "Étage 6 — Fractions décimales",
-      subSteps: [
-        {
-          subtitle: "1. Lien avec les nombres décimaux",
-          theory: "Une fraction décimale a pour dénominateur 10, 100 ou 1000. Elle se traduit directement en nombre à virgule.",
-          example: "Exemple monétaire : 75 centimes valent <span class='fraction'><span>75</span><span>100</span></span> de franc, soit 0,75 CHF.",
-          visualType: "money",
-          visualData: {},
-          question: "Écris la fraction <span class='fraction'><span>7</span><span>10</span></span> sous forme de nombre décimal.",
-          expected: ["0,7", "0.7"],
-          hint: "Utilise une virgule ou un point : 0,..."
-        }
-      ]
-    },
-
-    // --- ÉTAGE 7 : Opérations (même dénominateur) ---
-    7: {
-      title: "Étage 7 — Opérations (même dénominateur)",
-      subSteps: [
-        {
-          subtitle: "1. Additionner des parts identiques",
-          theory: "Quand les dénominateurs sont identiques, les parts ont la même taille. On additionne ou soustrait uniquement les numérateurs, et le dénominateur ne bouge pas.",
-          example: "<span class='fraction'><span>2</span><span>7</span></span> + <span class='fraction'><span>3</span><span>7</span></span> = <span class='fraction'><span>5</span><span>7</span></span>.",
-          visualType: "bar",
-          visualData: { total: 7, colored: 5 },
-          question: "Calcule : <span class='fraction'><span>3</span><span>8</span></span> + <span class='fraction'><span>2</span><span>8</span></span>. Écris le résultat sous forme de fraction.",
-          expected: ["5/8", "5 / 8"],
-          hint: "Additionne les numérateurs (3 + 2) et garde le dénominateur."
-        }
-      ]
-    },
-
-    // --- ÉTAGE 8 : Dénominateurs différents ---
-    8: {
-      title: "Étage 8 — Dénominateurs différents",
-      subSteps: [
-        {
-          subtitle: "1. Harmoniser grâce aux équivalences",
-          theory: "On ne peut pas additionner directement des parts de tailles différentes. Il faut d'abord transformer les fractions pour qu'elles aient le même dénominateur (en utilisant les fractions équivalentes de l'étage 4).",
-          example: "Pour <span class='fraction'><span>1</span><span>2</span></span> + <span class='fraction'><span>1</span><span>4</span></span>, on transforme <span class='fraction'><span>1</span><span>2</span></span> en <span class='fraction'><span>2</span><span>4</span></span>. Ensuite, <span class='fraction'><span>2</span><span>4</span></span> + <span class='fraction'><span>1</span><span>4</span></span> = <span class='fraction'><span>3</span><span>4</span></span>.",
-          visualType: "circle",
-          visualData: { total: 4, colored: 3 },
-          question: "Pour calculer <span class='fraction'><span>1</span><span>2</span></span> + <span class='fraction'><span>1</span><span>4</span></span>, en combien de parts égales (dénominateur) dois-tu transformer les demis ?",
-          expected: ["4"],
-          hint: "Regarde le plus grand dénominateur."
-        }
-      ]
-    },
-
-    // --- ÉTAGE 9 : Multiplication et division ---
-    9: {
-      title: "Étage 9 — Multiplication et division",
-      subSteps: [
-        {
-          subtitle: "1. Croiser et inverser",
-          theory: "Multiplication : on multiplie les numérateurs entre eux et les dénominateurs entre eux. Division : diviser par une fraction revient à multiplier par son inverse.",
-          example: "Exemple : l'inverse de <span class='fraction'><span>2</span><span>3</span></span> est <span class='fraction'><span>3</span><span>2</span></span>.",
-          visualType: "grid",
-          visualData: { total: 6, colored: 2 },
-          question: "Quel est l'inverse de la fraction <span class='fraction'><span>2</span><span>3</span></span> ?",
-          expected: ["3/2", "3 / 2"],
-          hint: "Inverse le numérateur et le dénominateur (le haut va en bas)."
-        }
-      ]
-    }
+  const fallbackStep = {
+    floor: 1,
+    floorTitle: 'Cours sur les fractions',
+    title: 'Découvrir les fractions',
+    theory: 'Lis la règle, observe la représentation, puis réponds à la question.',
+    visualDesc: '<svg viewBox="0 0 320 70" role="img" aria-label="Représentation indisponible"><text x="160" y="38" text-anchor="middle" fill="currentColor">Représentation</text></svg>',
+    example: 'Observe la règle et applique-la à la question.',
+    question: 'Es-tu prêt à commencer ?',
+    expected: ['oui'],
+    hint: 'Relis la règle avant de répondre.',
+    errorExplanation: 'Relis la règle, puis essaie une nouvelle réponse.'
   };
 
-  let currentCourse = $derived(floorCourses[floorNum] || floorCourses[1]);
   let currentSubStepIndex = $state(0);
-  let userAnswer = $state("");
-  let feedbackMessage = $state("");
+  let userAnswer = $state('');
+  let feedbackMessage = $state('');
   let isCorrect = $state(false);
 
-  // Sécurisation stricte de l'étape active selon l'étage
   let activeStep = $derived(
-    currentCourse?.subSteps[currentSubStepIndex] || 
-    currentCourse?.subSteps[0] || 
-    { subtitle: "", theory: "", example: "", visualType: 'bar', visualData: {}, question: "", expected: [], hint: "" }
+    floorSteps[currentSubStepIndex] ?? floorSteps[0] ?? fallbackStep
   );
 
+  // Réinitialiser uniquement lorsque l'étage change, pas lors d'un simple rendu.
+  // Variable de comparaison uniquement : pas besoin d'en faire un état réactif.
+  // La valeur est renseignée par l'effet dès son premier passage.
+  let previousFloorId = '';
   $effect(() => {
-    floorNum;
-    currentSubStepIndex = 0;
-    userAnswer = "";
-    feedbackMessage = "";
-    isCorrect = false;
+    const nextFloorId = floorId;
+    if (nextFloorId !== previousFloorId) {
+      previousFloorId = nextFloorId;
+      currentSubStepIndex = 0;
+      userAnswer = '';
+      feedbackMessage = '';
+      isCorrect = false;
+    }
   });
 
+  function normalizeAnswer(value: string): string {
+    return value
+      .trim()
+      .toLocaleLowerCase('fr-CH')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s*\/\s*/g, '/')
+      .replace(/\s+/g, ' ');
+  }
+
   function checkAnswer() {
-    const cleaned = userAnswer.trim().toLowerCase();
-    const match = activeStep.expected.some(exp => exp.toLowerCase() === cleaned);
-    if (match) {
+    if (isCorrect) return;
+
+    if (!userAnswer.trim()) {
+      feedbackMessage = 'Écris une réponse avant de la vérifier.';
+      return;
+    }
+
+    const cleanedAnswer = normalizeAnswer(userAnswer);
+    const matches = activeStep.expected.some(
+      (expectedAnswer) => normalizeAnswer(expectedAnswer) === cleanedAnswer
+    );
+
+    if (matches) {
       isCorrect = true;
-      feedbackMessage = "🎉 Bravo ! C'est validé.";
+      feedbackMessage = 'Bravo ! Ta réponse est correcte. Tu peux passer à la suite.';
     } else {
       isCorrect = false;
-      feedbackMessage = `❌ Pas tout à fait. ${activeStep.hint}`;
+      feedbackMessage = `Pas encore. ${activeStep.errorExplanation} Indice : ${activeStep.hint}`;
     }
   }
 
   function nextSubStep() {
-    if (currentSubStepIndex < currentCourse.subSteps.length - 1) {
-      currentSubStepIndex++;
-      userAnswer = "";
-      feedbackMessage = "";
+    // Sécurité : une étape ne peut pas être franchie sans validation correcte.
+    if (!isCorrect) return;
+
+    if (currentSubStepIndex < floorSteps.length - 1) {
+      currentSubStepIndex += 1;
+      userAnswer = '';
+      feedbackMessage = '';
       isCorrect = false;
     } else {
-      if (onComplete) onComplete();
+      onComplete?.();
     }
   }
 
   function prevSubStep() {
-    if (currentSubStepIndex > 0) {
-      currentSubStepIndex--;
-      userAnswer = "";
-      feedbackMessage = "";
-      isCorrect = true;
-    }
-  }
+    if (currentSubStepIndex <= 0) return;
 
-  function speakText() {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(`${activeStep.subtitle}. ${activeStep.theory.replace(/<[^>]*>/g, '')}. ${activeStep.example}`);
-    utterance.lang = 'fr-CH';
-    window.speechSynthesis.speak(utterance);
+    currentSubStepIndex -= 1;
+    userAnswer = '';
+    feedbackMessage = '';
+    // Revalider cette étape est nécessaire après y être revenu.
+    isCorrect = false;
   }
 </script>
 
 <div class="intro-course-container">
   <main class="course-card">
     <div class="card-top-row">
-      <div class="floor-tag">Étage {floorNum}</div>
-      <button class="speak-btn" onclick={speakText} title="Écouter la leçon">🔊 Écouter</button>
+      <span class="floor-tag">Étage {floorNum}</span>
+      <span class="step-count">Partie {currentSubStepIndex + 1} sur {floorSteps.length || 1}</span>
     </div>
 
-    <h2>{currentCourse.title}</h2>
-    <h3 class="subtitle">{activeStep.subtitle}</h3>
+    <h2>{activeStep.floorTitle}</h2>
+    <h3 class="subtitle">{activeStep.title}</h3>
 
-    <!-- BLOC THÉORIE -->
-    <div class="theory-block">
-      <p><strong>Règle :</strong> {@html activeStep.theory}</p>
-    </div>
+    <section class="theory-block" aria-labelledby="theory-heading">
+      <h4 id="theory-heading">Règle à retenir</h4>
+      <div class="rich-text">{@html activeStep.theory}</div>
+    </section>
 
-    <!-- REPRÉSENTATION GRAPHIQUE VISUELLE -->
-    <div class="visual-container">
-      <p class="visual-label">🎨 Illustration visuelle :</p>
-      
-      {#if activeStep.visualType === 'pizzas'}
-        <div class="pizzas-comparison">
-          <div class="pizza-box">
-            <div class="pizza-circle equal">
-              <div class="slice s1"></div><div class="slice s2"></div><div class="slice s3"></div><div class="slice s4"></div>
-            </div>
-            <span class="pizza-label">Pizza A : Parts <strong>égales</strong> ✔️</span>
-          </div>
-          <div class="pizza-box">
-            <div class="pizza-circle unequal">
-              <div class="weird-slice w1"></div><div class="weird-slice w2"></div><div class="weird-slice w3"></div>
-            </div>
-            <span class="pizza-label">Pizza B : Parts <strong>inégales</strong> ❌</span>
-          </div>
-        </div>
+    <section class="visual-container" aria-labelledby="visual-heading">
+      <h4 id="visual-heading" class="section-label">Illustration</h4>
+      <div class="visual-svg">{@html activeStep.visualDesc}</div>
+    </section>
 
-      {:else if activeStep.visualType === 'bar'}
-        <div class="visual-bar-wrapper">
-          {#each Array(activeStep.visualData.total) as _, i}
-            <div class="bar-segment {i < activeStep.visualData.colored ? 'colored' : 'empty'}">
-              <span>{i + 1}</span>
-            </div>
-          {/each}
-        </div>
-        <p class="visual-caption">{activeStep.visualData.colored} parties sur {activeStep.visualData.total} parts totales</p>
+    <section class="example-block" aria-labelledby="example-heading">
+      <h4 id="example-heading">Exemple du quotidien</h4>
+      <p>{activeStep.example}</p>
+    </section>
 
-      {:else if activeStep.visualType === 'line'}
-        <div class="visual-number-line">
-          <div class="line-track"></div>
-          {#each Array(activeStep.visualData.parts + 1) as _, i}
-            <div class="line-tick" style="left: {(i / activeStep.visualData.parts) * 100}%">
-              <span class="tick-mark">|</span>
-              <span class="tick-label">{i}/{activeStep.visualData.parts}</span>
-            </div>
-          {/each}
-        </div>
-        <p class="visual-caption">Droite graduée de 0 à 1 découpée en {activeStep.visualData.parts} intervalles égaux</p>
+    <section class="validation-box" aria-labelledby="question-heading">
+      <h4 id="question-heading" class="question-title">À toi de répondre</h4>
+      <p class="question-text">{activeStep.question}</p>
 
-      {:else if activeStep.visualType === 'money'}
-        <div class="visual-money-box">
-          <span class="money-icon">🪙</span>
-          <div class="money-text">
-            <strong>75 centimes</strong> = <span class='fraction'><span>75</span><span>100</span></span> CHF = <strong>0,75 CHF</strong>
-          </div>
-        </div>
-
-      {:else}
-        <div class="visual-circle-pie">
-          <p class="visual-caption">Représentation proportionnelle de l'unité.</p>
-        </div>
-      {/if}
-    </div>
-
-    <!-- BLOC EXEMPLE CONCRET -->
-    <div class="example-block">
-      <p>💡 <strong>Exemple du quotidien :</strong> {@html activeStep.example}</p>
-    </div>
-
-    <!-- QUESTION DE VALIDATION INTERACTIVE -->
-    <div class="validation-box">
-      <p class="question-title">✨ Question interactive :</p>
-      <p class="question-text">{@html activeStep.question}</p>
-      
-      <div class="input-row">
-        <input 
-          type="text" 
-          bind:value={userAnswer} 
-          placeholder="Ta réponse ici..." 
-          onkeydown={(e) => e.key === 'Enter' && checkAnswer()}
+      <form class="input-row" onsubmit={(event) => { event.preventDefault(); checkAnswer(); }}>
+        <label class="sr-only" for="course-answer">Ta réponse</label>
+        <input
+          id="course-answer"
+          type="text"
+          bind:value={userAnswer}
+          placeholder="Écris ta réponse ici…"
+          autocomplete="off"
           disabled={isCorrect}
         />
         {#if !isCorrect}
-          <button class="btn-check" onclick={checkAnswer}>Vérifier</button>
+          <button class="btn-check" type="submit">Vérifier</button>
         {:else}
-          <span class="validated-badge">Validé ✔️</span>
+          <span class="validated-badge" role="status">Validé</span>
         {/if}
-      </div>
+      </form>
 
       {#if feedbackMessage}
-        <p class="feedback {isCorrect ? 'success' : 'error'}">{feedbackMessage}</p>
+        <p class="feedback" class:success={isCorrect} class:error={!isCorrect} role="status">
+          {feedbackMessage}
+        </p>
       {/if}
-    </div>
+    </section>
   </main>
 
-  <!-- NAVIGATION ENTRE LES SOUS-ÉTAPES -->
   <footer class="course-footer">
-    <button class="btn-nav secondary" onclick={prevSubStep} disabled={currentSubStepIndex === 0}>
+    <button
+      class="btn-nav secondary"
+      type="button"
+      onclick={prevSubStep}
+      disabled={currentSubStepIndex === 0}
+    >
       ← Précédent
     </button>
-    
-    <span class="progress-indicator">Partie {currentSubStepIndex + 1} / {currentCourse.subSteps.length}</span>
 
-    <button 
-      class="btn-nav primary" 
-      onclick={nextSubStep} 
+    <span class="progress-indicator" aria-live="polite">
+      Partie {currentSubStepIndex + 1} / {floorSteps.length || 1}
+    </span>
+
+    <button
+      class="btn-nav primary"
+      type="button"
+      onclick={nextSubStep}
       disabled={!isCorrect}
     >
-      {currentSubStepIndex === currentCourse.subSteps.length - 1 ? 'Terminer la leçon 🎯' : 'Étape suivante →'}
+      {currentSubStepIndex === floorSteps.length - 1 ? 'Terminer la leçon' : 'Étape suivante →'}
     </button>
   </footer>
 </div>
 
 <style>
-  :global(.fraction) {
-    display: inline-flex;
-    flex-direction: column;
-    vertical-align: middle;
-    text-align: center;
-    font-size: 0.9em;
-    padding: 0 3px;
-  }
-  :global(.fraction > span:first-child) {
-    border-bottom: 1px solid currentColor;
-    padding-bottom: 1px;
-  }
-  :global(.fraction > span:last-child) {
-    padding-top: 1px;
-  }
-
   .intro-course-container {
-    max-width: 720px; margin: 0 auto; background: #ffffff; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; font-family: Arial, sans-serif; color: #202124;
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #d8e0e8;
+    border-radius: 16px;
+    background: #ffffff;
+    color: #202124;
+    font-family: Arial, Helvetica, sans-serif;
   }
-  .course-card { padding: 1.5rem 2rem; flex: 1; overflow-y: auto; max-height: 70vh; }
-  .card-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-  .floor-tag { font-size: 0.8rem; font-weight: bold; color: #2563eb; text-transform: uppercase; background: #eff6ff; padding: 0.2rem 0.6rem; border-radius: 6px; }
-  h2 { font-size: 1.3rem; color: #1e293b; margin: 0 0 0.3rem 0; }
-  .subtitle { font-size: 1.15rem; color: #2563eb; margin: 0 0 1rem 0; }
-  .speak-btn { background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
-  .speak-btn:hover { background: #dcfce7; }
-  .theory-block { background: #eff6ff; border-left: 5px solid #3b82f6; padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin-bottom: 1.2rem; line-height: 1.6; font-size: 1.05rem; }
-  .visual-container { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem; text-align: center; }
-  .visual-label { font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 0.8rem; text-align: left; }
 
-  .pizzas-comparison { display: flex; justify-content: space-around; gap: 1rem; }
-  .pizza-box { display: flex; flex-direction: column; align-items: center; gap: 6px; background: #fff; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; flex: 1; }
-  .pizza-circle { width: 80px; height: 80px; border-radius: 50%; background: #fde047; border: 3px solid #ca8a04; position: relative; overflow: hidden; }
-  .pizza-circle.equal .slice { position: absolute; top:0; left:0; width:100%; height:100%; border:1px dashed rgba(0,0,0,0.3); }
-  .pizza-circle.equal .s1 { background: rgba(239, 68, 68, 0.2); clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 50%); }
-  .pizza-circle.equal .s2 { background: rgba(59, 130, 246, 0.2); clip-path: polygon(50% 50%, 50% 0%, 100% 100%, 50% 100%); }
-  .pizza-circle.equal .s3 { background: rgba(34, 197, 94, 0.2); clip-path: polygon(50% 50%, 0% 50%, 0% 0%, 50% 0%); }
-  .pizza-circle.equal .s4 { background: rgba(168, 85, 247, 0.2); clip-path: polygon(50% 50%, 0% 50%, 0% 100%, 50% 100%); }
-  .pizza-circle.unequal .weird-slice { position: absolute; background: rgba(239, 68, 68, 0.3); border: 1px solid #b91c1c; }
-  .pizza-circle.unequal .w1 { top: 0; left: 0; width: 70%; height: 100%; }
-  .pizza-circle.unequal .w2 { top: 0; left: 70%; width: 30%; height: 50%; background: rgba(59, 130, 246, 0.3); }
-  .pizza-circle.unequal .w3 { top: 50%; left: 70%; width: 30%; height: 50%; background: rgba(34, 197, 94, 0.3); }
-  .pizza-label { font-size: 0.8rem; color: #334155; text-align: center; }
+  .course-card {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    max-height: 70vh;
+  }
 
-  .visual-bar-wrapper { display: flex; height: 40px; border: 2px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #fff; margin-bottom: 0.4rem; }
-  .bar-segment { flex: 1; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; border-right: 1px solid #cbd5e1; }
-  .bar-segment:last-child { border-right: none; }
-  .bar-segment.colored { background: #3b82f6; color: white; }
-  .bar-segment.empty { background: #f1f5f9; color: #64748b; }
+  .card-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+  }
 
-  .visual-number-line { position: relative; height: 45px; margin: 10px 15px 20px 15px; }
-  .line-track { position: absolute; top: 12px; left: 0; right: 0; height: 4px; background: #64748b; border-radius: 2px; }
-  .line-tick { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
-  .tick-mark { font-size: 1.1rem; font-weight: bold; color: #334155; background: #f8fafc; padding: 0 4px; }
-  .tick-label { font-size: 0.75rem; font-weight: bold; color: #1e293b; margin-top: 2px; }
+  .floor-tag {
+    display: inline-block;
+    border-radius: 6px;
+    background: #e8f3ed;
+    padding: 0.3rem 0.65rem;
+    color: #176b4d;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
 
-  .visual-money-box { display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; }
-  .money-icon { font-size: 1.8rem; }
-  .money-text { font-size: 1.05rem; color: #1e293b; }
-  .visual-caption { font-size: 0.85rem; color: #475569; margin: 0; font-style: italic; }
+  .step-count {
+    color: #536273;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
 
-  .example-block { background: #fefce8; border-left: 5px solid #eab308; padding: 0.9rem 1.2rem; border-radius: 0 8px 8px 0; margin-bottom: 1.5rem; line-height: 1.5; font-size: 1.02rem; }
-  .validation-box { background: #f8fafc; border: 2px dashed #94a3b8; border-radius: 12px; padding: 1.2rem; }
-  .question-title { font-weight: bold; color: #dc2626; margin-bottom: 0.3rem; }
-  .question-text { font-size: 1.05rem; margin-bottom: 0.8rem; line-height: 1.4; }
+  h2 {
+    margin: 0 0 0.4rem;
+    color: #1e293b;
+    font-size: 1.3rem;
+    line-height: 1.35;
+  }
 
-  .input-row { display: flex; gap: 0.6rem; align-items: center; }
-  input[type="text"] { flex: 1; padding: 0.6rem 0.8rem; font-size: 1.1rem; border: 2px solid #cbd5e1; border-radius: 8px; outline: none; background: #fff; color: #1f2937; }
-  input[type="text"]:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+  .subtitle {
+    margin: 0 0 1.1rem;
+    color: #176b4d;
+    font-size: 1.15rem;
+    line-height: 1.4;
+  }
 
-  .btn-check { background: #2563eb; color: white; border: none; padding: 0.6rem 1.2rem; font-size: 1rem; font-weight: bold; border-radius: 8px; cursor: pointer; }
-  .btn-check:hover { background: #1d4ed8; }
-  .validated-badge { color: #16a34a; font-weight: bold; font-size: 1.05rem; background: #f0fdf4; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #bbf7d0; }
+  .theory-block,
+  .example-block,
+  .validation-box,
+  .visual-container {
+    margin-bottom: 1.1rem;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+  }
 
-  .feedback { margin-top: 0.6rem; font-weight: bold; font-size: 0.95rem; }
-  .feedback.success { color: #16a34a; }
-  .feedback.error { color: #dc2626; }
+  .theory-block {
+    border-left: 5px solid #2786c7;
+    background: #eef6fc;
+    line-height: 1.65;
+    font-size: 1.03rem;
+  }
 
-  .course-footer { background: #f1f5f9; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #cbd5e1; }
-  .btn-nav { padding: 0.6rem 1.2rem; font-size: 1rem; font-weight: bold; border-radius: 8px; cursor: pointer; border: none; transition: all 0.2s; }
-  .btn-nav.secondary { background: #ffffff; color: #475569; border: 1px solid #cbd5e1; }
-  .btn-nav.secondary:hover:not(:disabled) { background: #f8fafc; }
-  .btn-nav.primary { background: #0d9488; color: white; }
-  .btn-nav.primary:hover:not(:disabled) { background: #0f766e; }
-  .btn-nav:disabled { opacity: 0.4; cursor: not-allowed; }
-  .progress-indicator { font-size: 0.9rem; color: #475569; font-weight: bold; }
+  .example-block {
+    border-left: 5px solid #e6a23c;
+    background: #fff8e8;
+    line-height: 1.6;
+    font-size: 1rem;
+  }
+
+  .example-block p {
+    margin: 0;
+  }
+
+  .visual-container {
+    border: 1px solid #dce4eb;
+    background: #f8fafc;
+    text-align: center;
+  }
+
+  .visual-svg {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .visual-svg :global(svg) {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    height: auto;
+    margin: 0 auto;
+  }
+
+  h4 {
+    margin: 0 0 0.55rem;
+    color: #263445;
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .section-label {
+    text-align: left;
+    color: #536273;
+  }
+
+  .rich-text :global(strong) {
+    color: #163d5c;
+  }
+
+  .validation-box {
+    border: 2px dashed #a8b5c3;
+    background: #f8fafc;
+  }
+
+  .question-title {
+    color: #263445;
+  }
+
+  .question-text {
+    margin: 0 0 0.9rem;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  input[type='text'] {
+    box-sizing: border-box;
+    min-width: 0;
+    flex: 1;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 0.7rem 0.8rem;
+    color: #1f2937;
+    font: inherit;
+    font-size: 1rem;
+  }
+
+  input[type='text']:focus-visible,
+  button:focus-visible {
+    outline: 3px solid #2786c7;
+    outline-offset: 3px;
+  }
+
+  input[type='text']:disabled {
+    background: #f0fdf4;
+    color: #14532d;
+  }
+
+  .btn-check {
+    border: 0;
+    border-radius: 8px;
+    background: #176b4d;
+    padding: 0.7rem 1rem;
+    color: white;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+  }
+
+  .btn-check:hover {
+    background: #12543c;
+  }
+
+  .validated-badge {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #a7d9bf;
+    border-radius: 8px;
+    background: #eaf7ef;
+    padding: 0.6rem 0.9rem;
+    color: #176b4d;
+    font-weight: 700;
+  }
+
+  .feedback {
+    margin: 0.8rem 0 0;
+    border-radius: 8px;
+    padding: 0.75rem 0.85rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+
+  .feedback.success {
+    background: #eaf7ef;
+    color: #176b4d;
+  }
+
+  .feedback.error {
+    background: #fff1f0;
+    color: #9f2d25;
+  }
+
+  .course-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    border-top: 1px solid #d8e0e8;
+    background: #f1f5f9;
+    padding: 1rem 1.25rem;
+  }
+
+  .btn-nav {
+    border: 0;
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .btn-nav.secondary {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+  }
+
+  .btn-nav.primary {
+    background: #176b4d;
+    color: white;
+  }
+
+  .btn-nav.primary:hover:not(:disabled) {
+    background: #12543c;
+  }
+
+  .btn-nav:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .progress-indicator {
+    flex-shrink: 0;
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (max-width: 540px) {
+    .course-card {
+      padding: 1rem;
+      max-height: 66vh;
+    }
+
+    .course-footer {
+      flex-wrap: wrap;
+      padding: 0.8rem;
+    }
+
+    .btn-nav {
+      padding: 0.65rem 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .progress-indicator {
+      order: -1;
+      width: 100%;
+    }
+
+    .input-row {
+      flex-direction: column;
+    }
+
+    .btn-check,
+    .validated-badge {
+      justify-content: center;
+      min-height: 42px;
+    }
+  }
 </style>

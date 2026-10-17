@@ -1,194 +1,869 @@
+/**
+ * FractionTower2 — générateur algorithmique d'exercices.
+ *
+ * Les questions sont créées à la demande : les nombres, les opérations et les
+ * réponses varient d'une session à l'autre. Le générateur reste compatible avec
+ * les types déjà pris en charge par TrainingSession.svelte.
+ * Aucune dépendance externe.
+ */
+
 export interface Exercise {
-    id: string;
-    question: string;
-    correctAnswer: string;
-    type: 'input' | 'qcm' | 'comparison' | 'number_line' | 'color_interactive' | 'slice_interactive';
-    options?: string[];
-    fractions?: Array<{ numerator: number; denominator: number }>;
-    hint?: string;
-    // Propriétés spécifiques pour les exercices interactifs visuels
-    interactiveData?: {
-        totalParts?: number;
-        targetParts?: number;
-    };
+  id: string;
+  question: string;
+  correctAnswer: string;
+  type: 'input' | 'qcm' | 'comparison' | 'number_line' | 'color_interactive' | 'slice_interactive';
+  options?: string[];
+  fractions?: Array<{ numerator: number; denominator: number }>;
+  hint?: string;
+  /** 'exact' pour un format explicitement demandé ; 'equivalent' accepte une fraction de même valeur. */
+  answerMode?: 'exact' | 'equivalent';
+  interactiveData?: {
+    totalParts?: number;
+    targetParts?: number;
+  };
+}
+
+type ExerciseType = Exercise['type'];
+type ComparisonSymbol = '<' | '>' | '=';
+
+const COMPARISON_OPTIONS: ComparisonSymbol[] = ['<', '>', '='];
+
+function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function choose<T>(items: readonly T[]): T {
+  return items[randomInt(0, items.length - 1)];
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = randomInt(0, i);
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+function idFactory(floor: number): () => string {
+  let counter = 0;
+  return () => `f${floor}-${++counter}`;
+}
+
+function gcd(a: number, b: number): number {
+  let x = Math.abs(a);
+  let y = Math.abs(b);
+  while (y !== 0) {
+    const remainder = x % y;
+    x = y;
+    y = remainder;
+  }
+  return x || 1;
+}
+
+function lcm(a: number, b: number): number {
+  return Math.abs(a * b) / gcd(a, b);
+}
+
+function fractionText(numerator: number, denominator: number): string {
+  return `${numerator}/${denominator}`;
+}
+
+function reducedFractionText(numerator: number, denominator: number): string {
+  const divisor = gcd(numerator, denominator);
+  return fractionText(numerator / divisor, denominator / divisor);
+}
+
+function compareNumbers(a: number, b: number): ComparisonSymbol {
+  if (a < b) return '<';
+  if (a > b) return '>';
+  return '=';
+}
+
+function makeQcm(
+  id: string,
+  question: string,
+  correctAnswer: string,
+  options: string[],
+  hint: string
+): Exercise {
+  const uniqueOptions = [...new Set(options)];
+  if (!uniqueOptions.includes(correctAnswer)) uniqueOptions.unshift(correctAnswer);
+  return {
+    id,
+    question,
+    correctAnswer,
+    type: 'qcm',
+    options: shuffle(uniqueOptions),
+    hint
+  };
+}
+
+function makeInput(
+  id: string,
+  question: string,
+  correctAnswer: string,
+  hint: string,
+  answerMode: 'exact' | 'equivalent' = 'equivalent'
+): Exercise {
+  return { id, question, correctAnswer, type: 'input', hint, answerMode };
+}
+
+function makeComparison(
+  id: string,
+  question: string,
+  correctAnswer: ComparisonSymbol,
+  hint: string,
+  fractions?: Array<{ numerator: number; denominator: number }>
+): Exercise {
+  return {
+    id,
+    question,
+    correctAnswer,
+    type: 'comparison',
+    options: [...COMPARISON_OPTIONS],
+    fractions,
+    hint
+  };
+}
+
+function makeColor(
+  id: string,
+  question: string,
+  totalParts: number,
+  targetParts: number,
+  hint: string
+): Exercise {
+  return {
+    id,
+    question,
+    correctAnswer: fractionText(targetParts, totalParts),
+    type: 'color_interactive',
+    interactiveData: { totalParts, targetParts },
+    hint,
+    answerMode: 'exact'
+  };
+}
+
+function makeSlice(id: string, question: string, targetParts: number, hint: string): Exercise {
+  return {
+    id,
+    question,
+    correctAnswer: String(targetParts),
+    type: 'slice_interactive',
+    interactiveData: { targetParts },
+    hint
+  };
+}
+
+function makeNumberLine(
+  id: string,
+  totalParts: number,
+  targetParts: number
+): Exercise {
+  return {
+    id,
+    question: `Sur une droite graduée de 0 à 1 partagée en ${totalParts} intervalles égaux, place ${targetParts}/${totalParts}. Clique sur la bonne graduation.`,
+    correctAnswer: fractionText(targetParts, totalParts),
+    type: 'number_line',
+    interactiveData: { totalParts, targetParts },
+    answerMode: 'exact',
+    hint: `Le dénominateur ${totalParts} indique le nombre total d'intervalles. À partir de 0, avance de ${targetParts} intervalle(s).`
+  };
+}
+
+function makeOptions(correct: string, distractors: string[], total = 4): string[] {
+  const unique = [...new Set([correct, ...shuffle(distractors).filter((item) => item !== correct)])];
+  return shuffle(unique.slice(0, Math.max(total, 2)));
+}
+
+function numberName(value: number): string {
+  const names: Record<number, string> = {
+    1: 'un', 2: 'deux', 3: 'trois', 4: 'quatre', 5: 'cinq', 6: 'six',
+    7: 'sept', 8: 'huit', 9: 'neuf', 10: 'dix', 11: 'onze', 12: 'douze'
+  };
+  return names[value] ?? String(value);
+}
+
+function fractionReading(numerator: number, denominator: number): string {
+  const singularOrPlural: Record<number, [string, string]> = {
+    2: ['demi', 'demis'],
+    3: ['tiers', 'tiers'],
+    4: ['quart', 'quarts'],
+    5: ['cinquième', 'cinquièmes'],
+    6: ['sixième', 'sixièmes'],
+    7: ['septième', 'septièmes'],
+    8: ['huitième', 'huitièmes'],
+    9: ['neuvième', 'neuvièmes'],
+    10: ['dixième', 'dixièmes'],
+    12: ['douzième', 'douzièmes'],
+    100: ['centième', 'centièmes']
+  };
+  const names = singularOrPlural[denominator];
+  if (!names) return `${numberName(numerator)} sur ${numberName(denominator)}`;
+  const first = numerator === 1 ? 'un' : numberName(numerator);
+  return `${first} ${numerator === 1 ? names[0] : names[1]}`;
+}
+
+function formatDecimal(numerator: number, denominator: 10 | 100): string {
+  if (denominator === 10) return `0,${numerator}`;
+  return `0,${String(numerator).padStart(2, '0')}`;
+}
+
+function randomProperFraction(denominatorMin = 2, denominatorMax = 12): { n: number; d: number } {
+  const d = randomInt(denominatorMin, denominatorMax);
+  return { n: randomInt(1, d - 1), d };
+}
+
+function decimalValue(numerator: number, denominator: number): number {
+  return numerator / denominator;
+}
+
+function pickDifferentNumber(correct: number, min: number, max: number): number {
+  if (min === max) return correct;
+  let value = randomInt(min, max);
+  while (value === correct) value = randomInt(min, max);
+  return value;
+}
+
+function makeSessionPool(floor: number): Exercise[] {
+  const makeId = idFactory(floor);
+  const exercises: Exercise[] = [];
+
+  switch (floor) {
+    case 1: {
+      // Partage équitable, numérateur, dénominateur et vocabulaire numérique.
+      for (let i = 0; i < 12; i++) {
+        const total = randomInt(3, 10);
+        const taken = randomInt(1, total - 1);
+        if (i % 3 === 0) {
+          const correct = i % 2 === 0 ? 'oui' : 'non';
+          exercises.push(makeQcm(
+            makeId(),
+            i % 2 === 0
+              ? `Pour représenter ${total} parts de même taille, faut-il que les parts soient égales ?`
+              : 'Peut-on appeler « quarts » quatre morceaux de tailles différentes ?',
+            correct,
+            ['oui', 'non'],
+            'Une fraction décrit des parts de même taille : le partage doit être équitable.'
+          ));
+        } else if (i % 3 === 1) {
+          const askNumerator = Math.random() < 0.5;
+          exercises.push(makeQcm(
+            makeId(),
+            askNumerator
+              ? `Dans ${taken}/${total}, quel est le numérateur ?`
+              : `Dans ${taken}/${total}, quel est le dénominateur ?`,
+            String(askNumerator ? taken : total),
+            makeOptions(String(askNumerator ? taken : total), [String(total), String(taken), String(taken + total), String(Math.abs(total - taken))]),
+            askNumerator ? 'Le numérateur est le nombre placé en haut.' : 'Le dénominateur est le nombre placé en bas.'
+          ));
+        } else {
+          exercises.push(makeQcm(
+            makeId(),
+            `Quelle fraction représente ${taken} part(s) sur ${total} parts égales ?`,
+            fractionText(taken, total),
+            makeOptions(fractionText(taken, total), [fractionText(total, taken), fractionText(taken + 1, total), fractionText(taken, total + 1)]),
+            'Les parts prises vont au numérateur, en haut. Le total va au dénominateur, en bas.'
+          ));
+        }
+      }
+      for (let i = 0; i < 12; i++) {
+        const total = randomInt(2, 12);
+        const taken = randomInt(1, total);
+        exercises.push(makeInput(
+          makeId(),
+          `Écris la fraction qui représente ${taken} part(s) prise(s) sur ${total} parts égales.`,
+          fractionText(taken, total),
+          `Écris ${taken} en haut et ${total} en bas : numérateur/dénominateur.`
+        ));
+      }
+      for (let i = 0; i < 7; i++) {
+        const total = randomInt(3, 10);
+        const taken = randomInt(1, total - 1);
+        exercises.push(makeColor(
+          makeId(),
+          `Colorie ${taken} part(s) sur les ${total} parts égales pour représenter ${taken}/${total}.`,
+          total,
+          taken,
+          `Le nombre du haut indique combien de parts colorier : ${taken}.`
+        ));
+      }
+      for (let i = 0; i < 5; i++) {
+        const total = randomInt(2, 12);
+        exercises.push(makeSlice(makeId(), `Découpe l'unité en ${total} parts égales.`, total, `Ajuste le compteur pour obtenir ${total} parts égales.`));
+      }
+      break;
+    }
+
+    case 2: {
+      // Lire, écrire, représenter et relier les trois formes.
+      const readableDenominators = [2, 3, 4, 5, 6, 7, 8, 10, 12];
+      for (let i = 0; i < 14; i++) {
+        const d = choose(readableDenominators);
+        const n = randomInt(1, Math.min(d - 1, 9));
+        const correct = fractionReading(n, d);
+        const wrong1 = fractionReading(Math.min(d - 1, n + 1), d);
+        const wrong2 = fractionReading(n, choose(readableDenominators.filter((item) => item !== d)));
+        exercises.push(makeQcm(
+          makeId(),
+          `Comment lit-on la fraction ${n}/${d} ?`,
+          correct,
+          makeOptions(correct, [wrong1, wrong2, `${numberName(d)} sur ${numberName(n)}`]),
+          'Lis d’abord le numérateur, puis le nom donné par le dénominateur. Dans ce type de question, les mots sont proposés dans le QCM.'
+        ));
+      }
+      for (let i = 0; i < 14; i++) {
+        const d = randomInt(2, 12);
+        const n = randomInt(1, d);
+        exercises.push(makeInput(
+          makeId(),
+          `Écris en chiffres la fraction représentée par ${n} part(s) sur ${d} parts égales.`,
+          fractionText(n, d),
+          `Le nombre de parts comptées est ${n} ; le nombre total de parts est ${d}. Écris ${n}/${d}.`
+        ));
+      }
+      for (let i = 0; i < 8; i++) {
+        const d = randomInt(3, 10);
+        const n = randomInt(1, d - 1);
+        exercises.push(makeColor(
+          makeId(),
+          `Représente ${n}/${d} en coloriant les parts nécessaires.`,
+          d,
+          n,
+          `Il faut colorier ${n} parts parmi ${d} parts égales.`
+        ));
+      }
+      for (let i = 0; i < 5; i++) {
+        const d = choose(readableDenominators);
+        const n = randomInt(1, d - 1);
+        exercises.push(makeQcm(
+          makeId(),
+          `Un dessin montre ${n} case(s) coloriée(s) parmi ${d} cases égales. Quelle fraction écrit-on ?`,
+          fractionText(n, d),
+          makeOptions(fractionText(n, d), [fractionText(d, n), fractionText(n, d + 1), fractionText(Math.max(1, n - 1), d)]),
+          'Le numérateur compte les cases coloriées ; le dénominateur compte toutes les cases.'
+        ));
+      }
+      break;
+    }
+
+    case 3: {
+      // Droite graduée : questions écrites et placements sur une droite interactive.
+      for (let i = 0; i < 12; i++) {
+        const total = randomInt(3, 12);
+        const target = randomInt(1, total - 1);
+        exercises.push(makeNumberLine(makeId(), total, target));
+      }
+      for (let i = 0; i < 10; i++) {
+        const total = randomInt(3, 12);
+        const target = randomInt(1, total - 1);
+        exercises.push(makeInput(
+          makeId(),
+          `Entre 0 et 1, la droite est partagée en ${total} intervalles égaux. Écris la fraction du ${target}${target === 1 ? 'er' : 'e'} trait après 0.`,
+          fractionText(target, total),
+          `Le dénominateur compte ${total} intervalles ; le numérateur compte les ${target} pas depuis 0.`
+        ));
+      }
+      for (let i = 0; i < 8; i++) {
+        const total = randomInt(3, 12);
+        const target = randomInt(1, total - 1);
+        exercises.push(makeQcm(
+          makeId(),
+          `Sur une droite de 0 à 1 partagée en ${total} intervalles égaux, que représente le ${target}${target === 1 ? 'er' : 'e'} trait après 0 ?`,
+          fractionText(target, total),
+          makeOptions(fractionText(target, total), [fractionText(target + 1, total), fractionText(target, total - 1), fractionText(total, target)]),
+          `Compte les intervalles depuis 0 : ${target} pas sur ${total}.`
+        ));
+      }
+      for (let i = 0; i < 5; i++) {
+        const total = randomInt(3, 10);
+        exercises.push(makeSlice(makeId(), `Découpe l'unité en ${total} intervalles égaux.`, total, `Sur la droite, l'unité doit contenir ${total} intervalles égaux.`));
+      }
+      break;
+    }
+
+    case 4: {
+      // Équivalences, complétion, simplification et comparaison.
+      for (let i = 0; i < 10; i++) {
+        const base = randomProperFraction(2, 8);
+        const factor = randomInt(2, 4);
+        const biggerN = base.n * factor;
+        const biggerD = base.d * factor;
+        exercises.push(makeInput(
+          makeId(),
+          `Complète : ${base.n}/${base.d} = ?/${biggerD}. Écris le numérateur manquant.`,
+          String(biggerN),
+          `Le dénominateur est multiplié par ${factor}. Multiplie aussi le numérateur par ${factor}.`
+        ));
+      }
+      for (let i = 0; i < 10; i++) {
+        let baseD = randomInt(2, 6);
+        let baseN = randomInt(1, baseD - 1);
+        while (gcd(baseN, baseD) !== 1) {
+          baseD = randomInt(2, 6);
+          baseN = randomInt(1, baseD - 1);
+        }
+        const factor = randomInt(2, 4);
+        const n = baseN * factor;
+        const d = baseD * factor;
+        exercises.push(makeInput(
+          makeId(),
+          `Simplifie ${n}/${d}. Écris la fraction simplifiée.`,
+          reducedFractionText(n, d),
+          `Divise le numérateur ${n} et le dénominateur ${d} par leur diviseur commun ${factor} si possible.`
+        ));
+      }
+      for (let i = 0; i < 8; i++) {
+        const base = randomProperFraction(2, 5);
+        const factor = randomInt(2, Math.min(4, Math.floor(12 / base.d)));
+        const total = base.d * factor;
+        const target = base.n * factor;
+        exercises.push(makeColor(
+          makeId(),
+          `Colorie ${target} part(s) sur ${total}. Cette quantité est équivalente à ${base.n}/${base.d}.`,
+          total,
+          target,
+          `Multiplie le numérateur et le dénominateur de ${base.n}/${base.d} par ${factor}.`
+        ));
+      }
+      for (let i = 0; i < 10; i++) {
+        const n = randomInt(1, 4);
+        const d = randomInt(n + 1, 6);
+        const factor = choose([2, 3, 4]);
+        const leftN = n;
+        const leftD = d;
+        const rightN = n * factor;
+        const rightD = d * factor;
+        exercises.push(makeComparison(
+          makeId(),
+          `Quel symbole convient ? ${leftN}/${leftD} __ ${rightN}/${rightD}`,
+          '=',
+          'Les nombres du haut et du bas ont été multipliés par le même nombre : la quantité ne change pas.',
+          [{ numerator: leftN, denominator: leftD }, { numerator: rightN, denominator: rightD }]
+        ));
+      }
+      for (let i = 0; i < 5; i++) {
+        const n = randomInt(1, 5);
+        const factor = randomInt(2, 5);
+        const correct = fractionText(n, n * factor);
+        exercises.push(makeQcm(
+          makeId(),
+          `Quelle est la forme simplifiée de ${n}/${n * factor} ?`,
+          reducedFractionText(n, n * factor),
+          makeOptions(reducedFractionText(n, n * factor), [correct, fractionText(n, factor), fractionText(n * factor, n)]),
+          'Divise le numérateur et le dénominateur par le même facteur.'
+        ));
+      }
+      break;
+    }
+
+    case 5: {
+      // Comparer : dénominateur commun, numérateur commun, équivalences et ordre.
+      for (let i = 0; i < 14; i++) {
+        const d = randomInt(4, 12);
+        let a = randomInt(1, d - 1);
+        let b = randomInt(1, d - 1);
+        if (a === b) b = a === d - 1 ? a - 1 : a + 1;
+        const symbol = compareNumbers(a, b);
+        exercises.push(makeComparison(
+          makeId(),
+          `Quel symbole convient ? ${a}/${d} __ ${b}/${d}`,
+          symbol,
+          'Les dénominateurs sont identiques : les parts ont la même taille. Compare les numérateurs.',
+          [{ numerator: a, denominator: d }, { numerator: b, denominator: d }]
+        ));
+      }
+      for (let i = 0; i < 10; i++) {
+        const n = randomInt(1, 4);
+        const d1 = randomInt(n + 2, 12);
+        const possibleDenominators = Array.from({ length: 12 - n }, (_, index) => n + 1 + index)
+          .filter((denominator) => denominator !== d1);
+        const d2 = choose(possibleDenominators);
+        const symbol = compareNumbers(n / d1, n / d2);
+        exercises.push(makeComparison(
+          makeId(),
+          `Quel symbole convient ? ${n}/${d1} __ ${n}/${d2}`,
+          symbol,
+          'Le numérateur est identique : les parts les plus grandes correspondent au plus petit dénominateur.',
+          [{ numerator: n, denominator: d1 }, { numerator: n, denominator: d2 }]
+        ));
+      }
+      for (let i = 0; i < 10; i++) {
+        const base = randomProperFraction(2, 8);
+        const factor = randomInt(2, 4);
+        const equivalent = { n: base.n * factor, d: base.d * factor };
+        exercises.push(makeComparison(
+          makeId(),
+          `Quel symbole convient ? ${base.n}/${base.d} __ ${equivalent.n}/${equivalent.d}`,
+          '=',
+          'Les deux fractions sont équivalentes : on a multiplié le haut et le bas par le même nombre.',
+          [{ numerator: base.n, denominator: base.d }, { numerator: equivalent.n, denominator: equivalent.d }]
+        ));
+      }
+      for (let i = 0; i < 10; i++) {
+        const d = randomInt(4, 12);
+        let a = randomInt(1, d - 1);
+        let b = randomInt(1, d - 1);
+        if (a === b) b = a === d - 1 ? a - 1 : a + 1;
+        const larger = a > b ? fractionText(a, d) : fractionText(b, d);
+        exercises.push(makeInput(
+          makeId(),
+          `Écris la plus grande fraction : ${a}/${d} ou ${b}/${d}.`,
+          larger,
+          `Les dénominateurs sont égaux : compare ${a} et ${b}. Le plus grand numérateur donne la plus grande fraction.`
+        ));
+      }
+      for (let i = 0; i < 6; i++) {
+        const d = randomInt(3, 10);
+        const n = randomInt(1, d - 1);
+        exercises.push(makeColor(makeId(), `Représente ${n}/${d} pour pouvoir comparer cette quantité à d'autres fractions.`, d, n, `Colorie ${n} part(s) sur ${d}.`));
+      }
+      break;
+    }
+
+    case 6: {
+      // Fractions décimales et conversions dans les deux sens.
+      for (let i = 0; i < 14; i++) {
+        const denominator: 10 | 100 = Math.random() < 0.5 ? 10 : 100;
+        const n = randomInt(1, denominator - 1);
+        const decimal = formatDecimal(n, denominator);
+        exercises.push(makeInput(
+          makeId(),
+          `Écris ${n}/${denominator} sous forme de nombre décimal.`,
+          decimal,
+          denominator === 10
+            ? `Le dénominateur est 10 : écris ${n} au rang des dixièmes.`
+            : `Le dénominateur est 100 : écris deux chiffres après la virgule. Pour ${n} centièmes, utilise ${decimal}.`
+        ));
+      }
+      for (let i = 0; i < 12; i++) {
+        const denominator: 10 | 100 = Math.random() < 0.5 ? 10 : 100;
+        const n = randomInt(1, denominator - 1);
+        const decimal = formatDecimal(n, denominator);
+        exercises.push(makeInput(
+          makeId(),
+          `Écris ${decimal} sous forme de fraction décimale.`,
+          fractionText(n, denominator),
+          denominator === 10
+            ? 'Un chiffre après la virgule correspond ici à des dixièmes : le dénominateur est 10.'
+            : 'Deux chiffres après la virgule correspondent à des centièmes : le dénominateur est 100.'
+        ));
+      }
+      for (let i = 0; i < 12; i++) {
+        const a = randomInt(1, 98);
+        let b = randomInt(1, 98);
+        if (b === a) b = a === 98 ? 97 : a + 1;
+        const da = a / 100;
+        const db = b / 100;
+        const left = `0,${String(a).padStart(2, '0')}`;
+        const right = `0,${String(b).padStart(2, '0')}`;
+        exercises.push(makeComparison(
+          makeId(),
+          `Quel symbole convient ? ${left} __ ${right}`,
+          compareNumbers(da, db),
+          'Compare les chiffres après la virgule en respectant leur rang : dixièmes, puis centièmes.'
+        ));
+      }
+      for (let i = 0; i < 8; i++) {
+        const n = randomInt(1, 9);
+        const decimal = `0,${n}`;
+        exercises.push(makeQcm(
+          makeId(),
+          `Quelle écriture correspond à ${n}/10 ?`,
+          decimal,
+          makeOptions(decimal, [`0,0${n}`, `${n},0`, `0,${Math.min(9, n + 1)}`]),
+          'Le dénominateur 10 signifie que le chiffre est placé au rang des dixièmes.'
+        ));
+      }
+      for (let i = 0; i < 6; i++) {
+        const n = randomInt(1, 9);
+        exercises.push(makeColor(makeId(), `Représente ${n}/10 en coloriant les dixièmes nécessaires.`, 10, n, `Colorie ${n} parts sur les 10 parts égales.`));
+      }
+      break;
+    }
+
+    case 7: {
+      // Additions et soustractions avec même dénominateur.
+      for (let i = 0; i < 16; i++) {
+        const d = randomInt(5, 12);
+        const a = randomInt(1, d - 2);
+        const b = randomInt(1, d - a);
+        exercises.push(makeInput(
+          makeId(),
+          `Calcule : ${a}/${d} + ${b}/${d}. Écris le résultat sous forme de fraction.`,
+          fractionText(a + b, d),
+          `Les parts ont la même taille : calcule ${a} + ${b} en haut et garde ${d} en bas.`
+        ));
+      }
+      for (let i = 0; i < 16; i++) {
+        const d = randomInt(5, 12);
+        const a = randomInt(2, d);
+        const b = randomInt(1, a - 1);
+        exercises.push(makeInput(
+          makeId(),
+          `Calcule : ${a}/${d} − ${b}/${d}. Écris le résultat sous forme de fraction.`,
+          fractionText(a - b, d),
+          `Retire ${b} parts des ${a} parts : calcule ${a} − ${b} en haut et garde ${d} en bas.`
+        ));
+      }
+      for (let i = 0; i < 10; i++) {
+        const d = randomInt(5, 12);
+        const a = randomInt(1, d - 2);
+        const b = randomInt(1, d - a);
+        const isAddition = Math.random() < 0.5;
+        const operation = isAddition ? '+' : '−';
+        const start = isAddition ? a : Math.min(d, a + b);
+        const removed = isAddition ? b : b;
+        const expectedN = isAddition ? a + b : start - removed;
+        exercises.push(makeQcm(
+          makeId(),
+          isAddition
+            ? `Quel est le résultat de ${a}/${d} + ${b}/${d} ?`
+            : `Quel est le résultat de ${start}/${d} − ${removed}/${d} ?`,
+          fractionText(expectedN, d),
+          makeOptions(fractionText(expectedN, d), [fractionText(expectedN, d + 1), fractionText(expectedN + 1, d), fractionText(Math.abs(a - b), d)]),
+          `Les dénominateurs sont identiques : ${operation === '+' ? 'additionne' : 'soustrais'} les numérateurs et garde ${d} au dénominateur.`
+        ));
+      }
+      for (let i = 0; i < 8; i++) {
+        const d = randomInt(4, 10);
+        const target = randomInt(1, d);
+        exercises.push(makeColor(makeId(), `Représente ${target}/${d} en coloriant les parts nécessaires.`, d, target, `Colorie ${target} part(s) parmi ${d}.`));
+      }
+      for (let i = 0; i < 5; i++) {
+        exercises.push(makeQcm(
+          makeId(),
+          'Quand on additionne ou soustrait deux fractions de même dénominateur, que fait-on du dénominateur ?',
+          'on le garde',
+          ['on le garde', 'on l’additionne', 'on le multiplie', 'on le remplace par 1'],
+          'Les parts gardent la même taille : le dénominateur ne change pas.'
+        ));
+      }
+      break;
+    }
+
+    case 8: {
+      // Additions et soustractions : dénominateur commun obtenu par équivalence.
+      const denominatorPairs: Array<[number, number]> = [[2, 3], [2, 4], [2, 5], [3, 4], [3, 6], [3, 8], [4, 6], [4, 8], [4, 10], [5, 10], [6, 8], [6, 12]];
+      for (let i = 0; i < 20; i++) {
+        let [d1, d2] = choose(denominatorPairs);
+        if (Math.random() < 0.5) [d1, d2] = [d2, d1];
+        let n1 = randomInt(1, d1 - 1);
+        let n2 = randomInt(1, d2 - 1);
+        const isAddition = Math.random() < 0.65;
+        // En soustraction, choisir deux valeurs différentes et mettre la plus grande en premier.
+        if (!isAddition) {
+          let safety = 0;
+          while (Math.abs(n1 / d1 - n2 / d2) < 1e-9 && safety < 20) {
+            n2 = randomInt(1, d2 - 1);
+            safety += 1;
+          }
+          if (Math.abs(n1 / d1 - n2 / d2) < 1e-9) {
+            n1 = 1;
+            n2 = d2 - 1;
+          }
+          if (n1 / d1 < n2 / d2) {
+            const oldN = n1;
+            const oldD = d1;
+            n1 = n2;
+            d1 = d2;
+            n2 = oldN;
+            d2 = oldD;
+          }
+        }
+        const common = lcm(d1, d2);
+        const scaled1 = n1 * (common / d1);
+        const scaled2 = n2 * (common / d2);
+        const resultN = isAddition ? scaled1 + scaled2 : scaled1 - scaled2;
+        const operation = isAddition ? '+' : '−';
+        exercises.push(makeInput(
+          makeId(),
+          `Calcule : ${n1}/${d1} ${operation} ${n2}/${d2}. Utilise un dénominateur commun et écris la fraction obtenue.`,
+          fractionText(resultN, common),
+          `Le dénominateur commun est ${common}. Transforme ${n1}/${d1} et ${n2}/${d2} en fractions de dénominateur ${common}, puis ${isAddition ? 'additionne' : 'soustrais'} les numérateurs.`
+        ));
+      }
+      for (let i = 0; i < 12; i++) {
+        const d1 = choose([2, 3, 4, 5, 6, 8]);
+        const factor = choose([2, 3, 4]);
+        const d2 = d1 * factor;
+        if (d2 > 24) continue;
+        const n = randomInt(1, d1 - 1);
+        exercises.push(makeInput(
+          makeId(),
+          `Complète l'équivalence : ${n}/${d1} = ?/${d2}. Écris le numérateur manquant.`,
+          String(n * factor),
+          `Le dénominateur ${d1} est multiplié par ${factor} pour devenir ${d2}. Multiplie aussi le numérateur par ${factor}.`
+        ));
+      }
+      for (let i = 0; i < 10; i++) {
+        const total = choose([4, 6, 8, 10, 12]);
+        const target = randomInt(1, total - 1);
+        exercises.push(makeComparison(
+          makeId(),
+          `Quel symbole convient ? ${target}/${total} __ ${reducedFractionText(target, total)}`,
+          '=',
+          'Les deux écritures représentent la même quantité : la fraction de droite est simplifiée.'
+        ));
+      }
+      for (let i = 0; i < 8; i++) {
+        const correct = 'même dénominateur';
+        exercises.push(makeQcm(
+          makeId(),
+          'Avant d’additionner deux fractions de dénominateurs différents, que faut-il chercher ?',
+          correct,
+          ['même dénominateur', 'même numérateur', 'un dénominateur égal à zéro', 'des dénominateurs différents'],
+          'On transforme les fractions pour compter des parts de même taille.'
+        ));
+      }
+      for (let i = 0; i < 6; i++) {
+        const total = choose([4, 6, 8, 10, 12]);
+        const target = randomInt(1, total - 1);
+        exercises.push(makeColor(makeId(), `Représente ${target}/${total}. Cette représentation t'aidera à visualiser une fraction équivalente.`, total, target, `Colorie ${target} parts sur ${total} parts égales.`));
+      }
+      break;
+    }
+
+    case 9: {
+      // Multiplication, inverse et division par une fraction.
+      for (let i = 0; i < 16; i++) {
+        const a = randomInt(1, 5);
+        const b = randomInt(a + 1, 8);
+        const c = randomInt(1, 5);
+        const d = randomInt(c + 1, 8);
+        exercises.push(makeInput(
+          makeId(),
+          `Calcule : ${a}/${b} × ${c}/${d}. Écris le résultat sans simplifier.`,
+          fractionText(a * c, b * d),
+          `Multiplie les numérateurs : ${a} × ${c}. Puis multiplie les dénominateurs : ${b} × ${d}.`,
+          'exact'
+        ));
+      }
+      for (let i = 0; i < 14; i++) {
+        const a = randomInt(1, 5);
+        const b = randomInt(a + 1, 8);
+        const c = randomInt(1, 5);
+        const d = randomInt(c + 1, 8);
+        const resultN = a * d;
+        const resultD = b * c;
+        exercises.push(makeInput(
+          makeId(),
+          `Calcule : ${a}/${b} ÷ ${c}/${d}. Écris le résultat sous forme de fraction.`,
+          fractionText(resultN, resultD),
+          `Garde ${a}/${b}, remplace ÷ par ×, puis inverse la deuxième fraction : ${d}/${c}. Calcule ensuite ${a}/${b} × ${d}/${c}.`
+        ));
+      }
+      for (let i = 0; i < 12; i++) {
+        const n = randomInt(1, 8);
+        const d = randomInt(n + 1, 10);
+        exercises.push(makeQcm(
+          makeId(),
+          `Quel est l'inverse de ${n}/${d} ?`,
+          fractionText(d, n),
+          makeOptions(fractionText(d, n), [fractionText(n, d), fractionText(1, d), fractionText(d, d + n)]),
+          'L’inverse s’obtient en échangeant le numérateur et le dénominateur.'
+        ));
+      }
+      for (let i = 0; i < 9; i++) {
+        if (i % 3 === 0) {
+          const correct = 'multiplier les numérateurs entre eux et les dénominateurs entre eux';
+          exercises.push(makeQcm(
+            makeId(),
+            'Pour multiplier deux fractions, quelle règle faut-il appliquer ?',
+            correct,
+            [correct, 'additionner les numérateurs et les dénominateurs', 'multiplier seulement les nombres du haut', 'chercher toujours un dénominateur commun'],
+            'Multiplie les nombres du haut entre eux, puis les nombres du bas entre eux.'
+          ));
+        } else if (i % 3 === 1) {
+          exercises.push(makeQcm(
+            makeId(),
+            'Diviser par une fraction revient à multiplier par…',
+            'son inverse',
+            ['son inverse', 'son double', 'son opposé', 'son dénominateur seulement'],
+            'Remplace la division par une multiplication et inverse la deuxième fraction.'
+          ));
+        } else {
+          const n = randomInt(1, 7);
+          const d = randomInt(n + 1, 10);
+          exercises.push(makeQcm(
+            makeId(),
+            `Quel est l’inverse de ${n}/${d} ?`,
+            fractionText(d, n),
+            makeOptions(fractionText(d, n), [fractionText(n, d), fractionText(1, d), fractionText(d, d + n)]),
+            'Échange le numérateur et le dénominateur : le haut passe en bas et le bas passe en haut.'
+          ));
+        }
+      }
+      for (let i = 0; i < 8; i++) {
+        const total = choose([4, 6, 8, 10, 12]);
+        const target = randomInt(1, total - 1);
+        exercises.push(makeColor(makeId(), `Représente ${target}/${total} en coloriant les parts nécessaires.`, total, target, `Colorie ${target} parts sur ${total}.`));
+      }
+      for (let i = 0; i < 5; i++) {
+        exercises.push(makeSlice(makeId(), 'Une moitié contient combien de quarts ? Règle le compteur sur ce nombre.', 2, 'Une moitié correspond à deux quarts : 1/2 = 2/4.'));
+      }
+      break;
+    }
+
+    default:
+      return makeSessionPool(1);
+  }
+
+  return exercises;
 }
 
 export class ExerciseGenerator {
-    static generateSession(floorId: string, count: number = 10): Exercise[] {
-        const floorNum = parseInt(floorId.replace('floor-', '') || '1');
-        const pool = this.getPoolForFloor(floorNum);
-        
-        // Mélange aléatoire et sélection de 'count' questions
-        const shuffled = [...pool].sort(() => Math.random() - 0.5);
-        return shuffled.slice(0, count);
+  /**
+   * Produit une session avec un choix équilibré des types d'exercices.
+   * Les données sont régénérées à chaque appel pour renouveler les questions.
+   */
+  static generateSession(floorId: string, count = 10): Exercise[] {
+    const parsed = Number.parseInt(String(floorId).match(/\d+/)?.[0] ?? '1', 10);
+    const floor = Number.isFinite(parsed) ? Math.min(9, Math.max(1, parsed)) : 1;
+    const requestedCount = Number.isFinite(count) ? Math.max(1, Math.floor(count)) : 10;
+    const pool = makeSessionPool(floor);
+
+    if (requestedCount <= pool.length) {
+      return this.selectBalanced(pool, requestedCount);
     }
 
-    private static getPoolForFloor(floor: number): Exercise[] {
-        switch (floor) {
-            case 1: // Étage 1 : Partage équitable et bases (Curated + Interactifs)
-                return [
-                    { id: 'f1-1', question: "Dans une pizza coupée en 4 parts égales, comment appelle-t-on le nombre du bas (4) ?", correctAnswer: 'dénominateur', type: 'qcm', options: ['dénominateur', 'numérateur', 'quotient', 'diviseur'], hint: "Il donne le nom de la part." },
-                    { id: 'f1-2', question: "Quel nombre représente le nombre de parts que l'on prend (en haut d'une fraction) ?", correctAnswer: 'numérateur', type: 'qcm', options: ['dénominateur', 'numérateur', 'fraction', 'part'], hint: "Il 'numère' les parts." },
-                    { id: 'f1-3', question: "Pour pouvoir écrire une fraction, les parts d'une unité doivent obligatoirement être de...", correctAnswer: 'même taille', type: 'qcm', options: ['même taille', 'tailles différentes', 'formes différentes', 'couleurs différentes'], hint: "Le partage doit être équitable." },
-                    { id: 'f1-4', question: "Écris la fraction correspondant à 3 parts prises sur un total de 4 parts égales.", correctAnswer: '3/4', type: 'input', hint: "Utilise un slash : numérateur/dénominateur." },
-                    { id: 'f1-5', question: "Si on prend 2 parts sur 5 parts égales, quelle fraction écrit-on ?", correctAnswer: '2/5', type: 'input', hint: "2 en haut, 5 en bas." },
-                    { id: 'f1-6', question: "Quel est le numérateur de la fraction 5/7 ?", correctAnswer: '5', type: 'qcm', options: ['5', '7', '12', '2'], hint: "C'est le nombre du haut." },
-                    { id: 'f1-7', question: "Quel est le dénominateur de la fraction 3/8 ?", correctAnswer: '8', type: 'qcm', options: ['3', '8', '5', '11'], hint: "C'est le nombre du bas." },
-                    { id: 'f1-8', question: "Représente 'un tiers' sous forme de fraction chiffrée.", correctAnswer: '1/3', type: 'input', hint: "1 sur 3." },
-                    { id: 'f1-9', question: "Une unité partagée en 6 parts égales dont on prend 4 parts s'écrit :", correctAnswer: '4/6', type: 'qcm', options: ['4/6', '6/4', '2/6', '4/2'], hint: "Le total en bas, les parts prises en haut." },
-                    { id: 'f1-10', question: "Vrai ou Faux : 2/4 représente un partage en parts égales.", correctAnswer: 'vrai', type: 'qcm', options: ['vrai', 'faux'], hint: "Les moitiés sont égales." },
-                    // Nouveaux exercices interactifs de coloriage visuel
-                    { id: 'f1-inter-1', question: "Colorie exactement 3 parts sur une unité découpée en 4 parts égales pour représenter 3/4.", correctAnswer: '3/4', type: 'color_interactive', interactiveData: { totalParts: 4, targetParts: 3 }, hint: "Clique sur 3 parts pour les colorer." },
-                    { id: 'f1-inter-2', question: "Colorie 2 parts sur un total de 5 parts égales.", correctAnswer: '2/5', type: 'color_interactive', interactiveData: { totalParts: 5, targetParts: 2 }, hint: "Atteins le numérateur 2 en coloriant." }
-                ];
+    const selected = this.selectBalanced(pool, pool.length);
+    let round = 1;
+    while (selected.length < requestedCount) {
+      const extraPool = makeSessionPool(floor);
+      const needed = Math.min(extraPool.length, requestedCount - selected.length);
+      const extra = this.selectBalanced(extraPool, needed);
+      selected.push(...extra.map((exercise, index) => ({
+        ...exercise,
+        id: `${exercise.id}-r${round}-${index + 1}`
+      })));
+      round++;
+    }
+    return selected;
+  }
 
-            case 2: // Étage 2 : Lire et représenter
-                return [
-                    { id: 'f2-1', question: "Comment lit-on la fraction 3/5 ?", correctAnswer: 'trois cinquièmes', type: 'qcm', options: ['trois cinquièmes', 'cinq tiers', 'trois sur cinq', 'cinq sur trois'], hint: "On nomme le nombre du bas en -ième." },
-                    { id: 'f2-2', question: "Écris en chiffres la fraction 'quatre septièmes'.", correctAnswer: '4/7', type: 'input', hint: "4 sur 7." },
-                    { id: 'f2-3', question: "Comment lit-on la fraction 1/2 ?", correctAnswer: 'un demi', type: 'qcm', options: ['un demi', 'un deux', 'deux un', 'un second'], hint: "Le cas particulier de 2 au dénominateur." },
-                    { id: 'f2-4', question: "Comment lit-on la fraction 1/3 ?", correctAnswer: 'un tiers', type: 'qcm', options: ['un tiers', 'un trois', 'trois un', 'un trentième'], hint: "Le cas particulier de 3 au dénominateur." },
-                    { id: 'f2-5', question: "Écris en chiffres 'cinq sixièmes'.", correctAnswer: '5/6', type: 'input', hint: "5 / 6" },
-                    { id: 'f2-6', question: "Quelle lecture correspond à 2/4 ?", correctAnswer: 'deux quarts', type: 'qcm', options: ['deux quarts', 'quatre demis', 'deux sur quatre', 'un quart'], hint: "4 en bas se lit quarts." },
-                    { id: 'f2-7', question: "Écris en chiffres 'trois huitièmes'.", correctAnswer: '3/8', type: 'input', hint: "3 / 8" },
-                    { id: 'f2-8', question: "Comment lit-on la fraction 4/10 ?", correctAnswer: 'quatre dixièmes', type: 'qcm', options: ['quatre dixièmes', 'dix quarts', 'quatre sur dix', 'quarante'], hint: "10 en bas se lit dixièmes." }
-                ];
-
-            case 3: // Étage 3 : La droite graduée & Découpage interactif
-                return [
-                    { id: 'f3-1', question: "Sur une droite de 0 à 1 partagée en 4, où se situe 3/4 ?", correctAnswer: '3/4', type: 'input', hint: "Au 3ème intervalle." },
-                    { id: 'f3-2', question: "Sur une droite de 0 à 1 partagée en 5, que représente le 2e trait après 0 ?", correctAnswer: '2/5', type: 'input', hint: "2 pas sur 5." },
-                    { id: 'f3-3', question: "Entre 0 et 1, si un segment est coupé en 3, le 1er trait après 0 vaut :", correctAnswer: '1/3', type: 'qcm', options: ['1/3', '3/1', '1/2', '2/3'], hint: "Premier pas sur trois." },
-                    { id: 'f3-4', question: "Sur une droite graduée en quarts, quel nombre est exactement au milieu entre 0 et 1 ?", correctAnswer: '2/4', type: 'qcm', options: ['2/4', '1/4', '3/4', '1/1'], hint: "La moitié de 4." },
-                    { id: 'f3-5', question: "Sur une droite de 0 à 1 partagée en 10, que vaut le 7e trait ?", correctAnswer: '7/10', type: 'input', hint: "7 / 10" },
-                    // Exercice interactif de découpage
-                    { id: 'f3-inter-1', question: "Utilise le sélecteur pour découper l'unité en 6 parts égales.", correctAnswer: '6', type: 'slice_interactive', interactiveData: { targetParts: 6 }, hint: "Ajuste le nombre de parts à 6." }
-                ];
-
-            case 4: // Étage 4 : Équivalences et simplification (Algorithmique enrichi)
-                return this.generateEquivalenceExercises();
-
-            case 5: // Étage 5 : Comparer et ordonner (Algorithmique)
-                return this.generateComparisonExercises();
-
-            case 6: // Étage 6 : Fractions décimales (Algorithmique)
-                return this.generateDecimalExercises();
-
-            case 7: // Étage 7 : Opérations même dénominateur (Algorithmique)
-                return this.generateSameDenominatorExercises();
-
-            case 8: // Étage 8 : Dénominateurs différents (Algorithmique)
-                return this.generateDifferentDenominatorExercises();
-
-            case 9: // Étage 9 : Multiplication et division (Algorithmique)
-            default:
-                return this.generateAdvancedExercises();
-        }
+  private static selectBalanced(pool: Exercise[], count: number): Exercise[] {
+    const groups = new Map<ExerciseType, Exercise[]>();
+    for (const exercise of shuffle(pool)) {
+      const group = groups.get(exercise.type) ?? [];
+      group.push(exercise);
+      groups.set(exercise.type, group);
     }
 
-    // --- GÉNÉRATEURS ALGORITHMIQUES (Procéduraux & Étendus) ---
-
-    private static generateEquivalenceExercises(): Exercise[] {
-        const exercises: Exercise[] = [];
-        const baseFrags = [
-            { n: 1, d: 2 }, { n: 1, d: 3 }, { n: 2, d: 3 }, 
-            { n: 3, d: 4 }, { n: 1, d: 5 }, { n: 2, d: 5 },
-            { n: 3, d: 4 }, { n: 4, d: 5 }
-        ];
-        
-        baseFrags.forEach((f, idx) => {
-            const factor = Math.floor(Math.random() * 3) + 2; // Facteur 2, 3 ou 4
-            const newN = f.n * factor;
-            const newD = f.d * factor;
-
-            exercises.push({
-                id: `alg-e4-${idx}`,
-                question: `Complète l'égalité d'équivalence : ${f.n}/${f.d} = ? / ${newD}`,
-                correctAnswer: newN.toString(),
-                type: 'input',
-                hint: `Multiplie le haut et le bas par ${factor}.`
-            });
-        });
-        return exercises;
+    const types = shuffle([...groups.keys()]);
+    const selected: Exercise[] = [];
+    while (selected.length < count) {
+      let added = false;
+      for (const type of types) {
+        const exercise = groups.get(type)?.pop();
+        if (!exercise) continue;
+        selected.push(exercise);
+        added = true;
+        if (selected.length >= count) break;
+      }
+      if (!added) break;
     }
-
-    private static generateComparisonExercises(): Exercise[] {
-        const exercises: Exercise[] = [];
-        const denoms = [5, 7, 8, 10, 12, 100];
-        
-        denoms.forEach((d, idx) => {
-            const n1 = Math.floor(Math.random() * (d - 2)) + 1;
-            let n2 = Math.floor(Math.random() * (d - 1)) + 1;
-            if (n1 === n2) n2 = n1 + 1 <= d ? n1 + 1 : n1 - 1;
-
-            const symbol = n1 < n2 ? '<' : '>';
-            exercises.push({
-                id: `alg-e5-${idx}`,
-                question: `Quel symbole manque entre ${n1}/${d} et ${n2}/${d} ? (<, >, ou =)`,
-                correctAnswer: symbol,
-                type: 'comparison',
-                options: ['<', '>', '='],
-                hint: "Compare les numérateurs du haut !"
-            });
-        });
-        return exercises;
-    }
-
-    private static generateDecimalExercises(): Exercise[] {
-        const exercises: Exercise[] = [];
-        const numerators = [1, 2, 3, 4, 5, 6, 7, 8, 9, 15, 25, 75];
-        
-        numerators.forEach((n, idx) => {
-            const denom = n >= 10 ? 100 : 10;
-            const decimalVal = (n / denom).toFixed(denom === 100 ? 2 : 1).replace('.', ',');
-            exercises.push({
-                id: `alg-e6-${idx}`,
-                question: `Écris la fraction ${n}/${denom} sous forme de nombre décimal.`,
-                correctAnswer: decimalVal,
-                type: 'input',
-                hint: "Utilise une virgule (ex: 0,x)"
-            });
-        });
-        return exercises;
-    }
-
-    private static generateSameDenominatorExercises(): Exercise[] {
-        const exercises: Exercise[] = [];
-        const denoms = [6, 8, 10, 12, 100];
-
-        denoms.forEach((d, idx) => {
-            const n1 = Math.floor(Math.random() * 4) + 1;
-            const n2 = Math.floor(Math.random() * 4) + 1;
-            const sum = n1 + n2;
-
-            exercises.push({
-                id: `alg-e7-${idx}`,
-                question: `Calcule : ${n1}/${d} + ${n2}/${d}`,
-                correctAnswer: `${sum}/${d}`,
-                type: 'input',
-                hint: "Additionne les numérateurs, garde le dénominateur."
-            });
-        });
-        return exercises;
-    }
-
-    private static generateDifferentDenominatorExercises(): Exercise[] {
-        return [
-            { id: 'alg-e8-1', question: "Calcule : 1/2 + 1/4", correctAnswer: '3/4', type: 'input', hint: "Transforme les demis en quarts." },
-            { id: 'alg-e8-2', question: "Calcule : 1/3 + 1/6", correctAnswer: '1/2', type: 'input', hint: "Dénominateur commun : 6." },
-            { id: 'alg-e8-3', question: "Calcule : 1/2 + 1/3", correctAnswer: '5/6', type: 'input', hint: "Dénominateur commun : 6." },
-            { id: 'alg-e8-4', question: "Soustraction : 1/2 - 1/4", correctAnswer: '1/4', type: 'input', hint: "2/4 - 1/4" },
-            { id: 'alg-e8-5', question: "Calcule : 1/4 + 3/8", correctAnswer: '5/8', type: 'input', hint: "Mets les quarts en huitièmes (2/8 + 3/8)." }
-        ];
-    }
-
-    private static generateAdvancedExercises(): Exercise[] {
-        return [
-            { id: 'alg-e9-1', question: "Quel est l'inverse de la fraction 2/3 ?", correctAnswer: '3/2', type: 'qcm', options: ['3/2', '2/3', '-2/3'], hint: "Inverse le haut et le bas." },
-            { id: 'alg-e9-2', question: "Quel est l'inverse de 3/4 ?", correctAnswer: '4/3', type: 'qcm', options: ['4/3', '3/4', '1/4'], hint: "Inverse le haut et le bas." },
-            { id: 'alg-e9-3', question: "Multiplication : 1/2 × 3/4", correctAnswer: '3/8', type: 'input', hint: "Haut × haut, bas × bas." },
-            { id: 'alg-e9-4', question: "Diviser par une fraction, c'est multiplier par son...", correctAnswer: 'inverse', type: 'qcm', options: ['inverse', 'double', 'opposé'], hint: "La règle de la division." },
-            { id: 'alg-e9-5', question: "Multiplication : 2/3 × 3/4", correctAnswer: '6/12', type: 'input', hint: "Multiplie les numérateurs et dénominateurs." }
-        ];
-    }
+    return shuffle(selected);
+  }
 }
