@@ -220,7 +220,31 @@
         on:click={() => currentView = 'HUB'}
         aria-label="ORBIS : revenir à l'accueil"
       >
-        <span class="brand-icon" aria-hidden="true">◉</span>
+        <!-- Logo ORBIS : planète et anneau orbital. -->
+        <span class="orbis-logo-tests" aria-hidden="true">
+          <svg viewBox="0 0 64 64" focusable="false">
+            <circle
+              cx="32"
+              cy="32"
+              r="15"
+              fill="var(--orbis-paper, #f3efe5)"
+              stroke="var(--orbis-ink, #191815)"
+              stroke-width="2.5"
+            />
+            <circle cx="27" cy="27" r="4" fill="var(--orbis-orange, #ed8125)" />
+            <ellipse
+              class="orbis-orbit-ring"
+              cx="32"
+              cy="32"
+              rx="27"
+              ry="11"
+              fill="none"
+              stroke="var(--orbis-orange, #ed8125)"
+              stroke-width="4"
+            />
+            <circle cx="53" cy="19" r="3" fill="var(--orbis-ink, #191815)" />
+          </svg>
+        </span>
         <span class="brand-text">
           <span class="brand-title">ORBIS</span>
           <span class="brand-subtitle">Apprendre. Explorer. Progresser.</span>
@@ -357,7 +381,31 @@
     {:else if !studentName}
       <!-- Connexion élève : même stockage et même validation qu'avant. -->
       <section class="card auth-card center">
-        <div class="avatar-badge" aria-hidden="true">◉</div>
+        <!-- Même logo orbital que dans l'en-tête. -->
+        <div class="avatar-badge orbis-welcome-logo" aria-hidden="true">
+          <svg viewBox="0 0 64 64" focusable="false">
+            <circle
+              cx="32"
+              cy="32"
+              r="15"
+              fill="var(--orbis-paper, #f3efe5)"
+              stroke="var(--orbis-ink, #191815)"
+              stroke-width="2.5"
+            />
+            <circle cx="27" cy="27" r="4" fill="var(--orbis-orange, #ed8125)" />
+            <ellipse
+              class="orbis-orbit-ring"
+              cx="32"
+              cy="32"
+              rx="27"
+              ry="11"
+              fill="none"
+              stroke="var(--orbis-orange, #ed8125)"
+              stroke-width="4"
+            />
+            <circle cx="53" cy="19" r="3" fill="var(--orbis-ink, #191815)" />
+          </svg>
+        </div>
         <p class="eyebrow">BIENVENUE SUR ORBIS</p>
         <h2>Ton espace d'apprentissage</h2>
         <p class="muted">Inscris ton prénom pour accéder aux activités.</p>
@@ -731,20 +779,6 @@
     color: inherit;
   }
 
-  .brand-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 2.6rem;
-    width: 2.6rem;
-    height: 2.6rem;
-    border-radius: 12px;
-    background: #e5efff;
-    color: #2458a6;
-    font-size: 2rem;
-    line-height: 1;
-  }
-
   .brand-text { display: flex; flex-direction: column; gap: .15rem; }
   .brand-title { color: #1d2939; font-size: 1.25rem; font-weight: 850; letter-spacing: .12em; }
   .brand-subtitle { color: #526175; font-size: .78rem; }
@@ -945,7 +979,6 @@
   .card-top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
   .category-tag { color: #344f96; font-size: .7rem; font-weight: 800; letter-spacing: .04em; }
   .status-label { color: #16734a; font-size: .72rem; font-weight: 750; }
-  .card-icon { display: flex; justify-content: center; align-items: center; min-height: 70px; font-size: 2.7rem; }
   .card-info { flex: 1; min-width: 0; }
   .game-title { margin: 0 0 .4rem; color: #1d2939; font-size: 1.08rem; font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; }
   .game-desc { margin: 0; color: #526175; font-size: .9rem; line-height: 1.5; overflow-wrap: anywhere; }
@@ -1014,14 +1047,12 @@
   :global(html[data-theme='dark']) .lab-card-title,
   :global(html[data-theme='dark']) .breadcrumb-current,
   :global(html[data-theme='dark']) .auth-card h2 { color: #eef2f7; }
-  :global(html[data-theme='dark']) .brand-icon,
   :global(html[data-theme='dark']) .avatar-badge { background: #263a5a; color: #a9cbff; }
   :global(html[data-theme='dark']) .brand-subtitle,
   :global(html[data-theme='dark']) .hero-sub,
   :global(html[data-theme='dark']) .portal-desc,
   :global(html[data-theme='dark']) .game-desc,
   :global(html[data-theme='dark']) .lab-card-desc,
-  :global(html[data-theme='dark']) .lab-subtitle,
   :global(html[data-theme='dark']) .muted { color: #b1bdcc; }
   :global(html[data-theme='dark']) .profile-chip { background: #1d2531; border-color: #3a4555; }
   :global(html[data-theme='dark']) .profile-label,
@@ -1189,10 +1220,6 @@
     backdrop-filter: none;
   }
   .header-inner { max-width: 1440px; }
-  .brand-icon {
-    border-radius: 0; background: var(--orbis-orange); color: var(--orbis-ink);
-    border: 1px solid var(--orbis-ink); box-shadow: 3px 3px 0 var(--orbis-ink);
-  }
   .brand-title { color: var(--orbis-ink); letter-spacing: .16em; }
   .brand-subtitle { color: var(--orbis-muted); }
   .btn, .btn-teacher, .btn-ghost, .btn-back, .subject-pill, .domain-pill, .filter-btn, .theme-options button {
@@ -1267,7 +1294,7 @@
   .btn-play, .btn-lab-open, .btn-lab-game { justify-content: space-between; width: 100%; border-radius: 0; }
   .meta-tag, .lab-level-badge, .feature-tag { background: transparent; color: var(--orbis-muted); border: 1px solid var(--orbis-line); }
   .auth-card { border-radius: 0; }
-  .avatar-badge { border-radius: 0; background: var(--orbis-orange); color: var(--orbis-ink); border: 1px solid var(--orbis-ink); }
+  .avatar-badge { border-radius: 0; background: #ffffff; color: var(--orbis-ink); border: 1px solid var(--orbis-ink); }
   .input-gaming { border-radius: 0; border-color: var(--orbis-ink); background: var(--orbis-card); color: var(--orbis-ink); }
   .input-group label { color: var(--orbis-ink); }
   .settings-panel { background: var(--orbis-card); color: var(--orbis-ink); }
@@ -1302,4 +1329,50 @@
     .portal-icon { min-height: 110px; }
     .brand-marquee-track span { padding-block: .5rem; }
   }
+
+
+  /* ============================================================
+     LOGO ORBIS — ANNEAU ORBITAL
+     Utilisé dans l'en-tête et dans la carte de bienvenue.
+     ============================================================ */
+  .orbis-logo-tests {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+  }
+
+  .orbis-logo-tests svg,
+  .orbis-welcome-logo svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .orbis-orbit-ring {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: orbis-orbit-rotation 18s linear infinite;
+  }
+
+  @keyframes orbis-orbit-rotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .orbis-welcome-logo {
+    display: grid;
+    place-items: center;
+    overflow: visible;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .orbis-orbit-ring { animation: none; }
+  }
+
+  :global(html[data-motion='reduced']) .orbis-orbit-ring { animation: none; }
+
 </style>
