@@ -9,7 +9,6 @@ export type WorldId =
   | 'race'
   | 'swissgamefactory'
   | 'mathhunt'
-  | 'fractionstower1'
   | 'fractionstower2';
 
 
@@ -24,7 +23,7 @@ export const worlds: Array<{
   {
   id: 'race',
   title: 'Racer',
-  subtitle: 'TEST',
+  subtitle: 'Arriveras-tu à franchir la ligne d’arrivée ?',
   route: '/race',
   emoji: '🏎️',
   color: 'blue'
@@ -32,7 +31,7 @@ export const worlds: Array<{
   {
     id: 'livrets',
     title: "L'Atelier des Livrets",
-    subtitle: 'Défis de tables de multiplication avec aides visuelles.',
+    subtitle: 'Défis de tables de multiplication.',
     route: '/livrets',
     emoji: '✖️',
     color: 'indigo'
@@ -40,7 +39,7 @@ export const worlds: Array<{
   {
     id: 'geometrie',
     title: 'Le Défi des Formes',
-    subtitle: 'Identification, intrus visuels et tri 2D/3D.',
+    subtitle: 'Connais-tu tes figures et solides sur le bout des doigts ? ',
     route: '/geometrie',
     emoji: '📐',
     color: 'emerald'
@@ -48,7 +47,7 @@ export const worlds: Array<{
   {
     id: 'calculs',
     title: 'Le Calcul Décimal',
-    subtitle: 'Opérations décimales avec ardoise tactique.',
+    subtitle: 'Les nombres à virgule ont-ils encore des secrets pour toi ?',
     route: '/calculs',
     emoji: '🔢',
     color: 'rose'
@@ -56,7 +55,7 @@ export const worlds: Array<{
   {
     id: 'numeria',
     title: 'Les Royaumes de Numéria',
-    subtitle: 'Quête de numération HarmoS, étoiles et codex.',
+    subtitle: 'Arriveras-tu à maîtriser les nombres aussi grands que les millions ?',
     route: '/numeria',
     emoji: '📜',
     color: 'purple'
@@ -64,7 +63,7 @@ export const worlds: Array<{
   {
     id: 'pcp',
     title: 'Espace PCP / Orientation',
-    subtitle: 'CV, lettre de motivation et projet professionnel.',
+    subtitle: 'Prêt à voir dans ton avenir ? ',
     route: '/pcp',
     emoji: '💼',
     color: 'amber'
@@ -72,7 +71,7 @@ export const worlds: Array<{
   {
     id: 'convertigo',
     title: 'Convertigo',
-    subtitle: 'Outil de conversion et exercices pratiques.',
+    subtitle: 'Les nombres ont différents noms, arriveras-tu à les décoder ?', // <-- Le guillemet manquant est ici
     route: '/convertigo', // <-- C'est l'adresse URL de ton module
     emoji: '🔄',
     color: 'blue'
@@ -80,7 +79,7 @@ export const worlds: Array<{
   {
     id: 'conju_fighter',
     title: 'Conju_fighter',
-    subtitle: 'Outil de conversion et exercices pratiques.',
+    subtitle: ' Qui est le meilleur conjugueur ?',
     route: '/conju_fighter', // <-- C'est l'adresse URL de ton module
     emoji: '🔄',
     color: 'blue'
@@ -89,25 +88,16 @@ export const worlds: Array<{
   {
     id: 'swissgamefactory',
     title: 'Swiss Game Factory',
-    subtitle: 'Plateforme de création de jeux vidéo éducatifs.',
+    subtitle: ' Arriveras-tu à terminer les commandes ?',
     route: '/swissgamefactory',
     emoji: '🎮',
     color: 'green'
   },
 
   {
-  id: 'fractionstower1',
-  title: 'Fractions Tower 1',
-  subtitle: 'Plateforme de création de jeux vidéo éducatifs.',
-  route: '/fractionstower1', // <-- Bien s'assurer qu'il n'y a PAS de /play ici !
-  emoji: '🎮',
-  color: 'green'
-},
-  
-  {
     id: 'fractionstower2',
-    title: 'Fractions Tower 2',
-    subtitle: 'Plateforme de création de jeux vidéo éducatifs.',
+    title: 'Fractions Tower',
+    subtitle: ' Vaincras-tu la tour ?',
     route: '/fractionstower2',
     emoji: '🎮',
     color: 'green'
@@ -116,7 +106,7 @@ export const worlds: Array<{
   {
     id: 'mathhunt',
     title: 'Math Hunt',
-    subtitle: 'Chasse aux livrets',
+    subtitle: 'Chasse aux canards !',
     route: '/mathhunt',
     emoji: '🔍',
     color: 'yellow'
@@ -134,6 +124,5 @@ export const worldLabels: Record<WorldId, string> = {
   race: 'race',
   swissgamefactory: 'swissgamefactory',
   mathhunt: 'mathhunt',
-  fractionstower1: 'Tour des Fractions 1',
   fractionstower2: 'Tour des Fractions 2'
 };

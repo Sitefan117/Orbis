@@ -3,33 +3,125 @@
   import { onMount } from 'svelte';
   import { clearStudentName, getStudentName, storeStudentName } from '$lib/client/activity';
   import { worlds } from '$lib/worlds';
-  import { labModules, type LabModule } from '$lib/modules';
+  import { labModules } from '$lib/modules';
 
+  // =========================================================
+  // ÉTAT DE LA PAGE ET PROFIL ÉLÈVE
+  // =========================================================
   let ready = false;
   let studentName = '';
   let nameInput = '';
-
-  // Gestion des vues : 'HUB' | 'ARCADE' | 'LAB'
   let currentView: 'HUB' | 'ARCADE' | 'LAB' = 'HUB';
 
-  // Filtres Arcade
+  // Filtres de l'Arcade.
   let selectedArcadeCategory = 'TOUS';
   const arcadeCategories = ['TOUS', 'MATHS', 'FRANÇAIS', 'SCIENCES', 'AUTRES'];
 
-  // Navigation Learning Lab (Matière -> Domaine)
+  // Navigation du Learning Lab : matière puis domaine.
   let selectedSubject: string | null = null;
   let selectedDomain: string | null = null;
 
+  // =========================================================
+  // PRÉFÉRENCES D'AFFICHAGE ORBIS
+  // Enregistrées dans le navigateur, indépendamment du profil.
+  // =========================================================
+  type OrbisTheme = 'light' | 'dark';
+  type BooleanPreference = 'largeText' | 'comfortableSpacing' | 'highContrast' | 'reduceMotion';
+
+  interface OrbisPreferences {
+    theme: OrbisTheme;
+    largeText: boolean;
+    comfortableSpacing: boolean;
+    highContrast: boolean;
+    reduceMotion: boolean;
+  }
+
+  let theme: OrbisTheme = 'light';
+  let settingsOpen = false;
+  let largeText = false;
+  let comfortableSpacing = false;
+  let highContrast = false;
+  let reduceMotion = false;
+
+  // Charge le profil et les préférences uniquement côté navigateur.
   onMount(() => {
-    const stored = getStudentName('');
-    studentName = stored;
-    nameInput = stored;
+    const storedName = getStudentName('');
+    studentName = storedName;
+    nameInput = storedName;
+
+    try {
+      const raw = localStorage.getItem('orbis-preferences');
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<OrbisPreferences>;
+        if (saved.theme === 'light' || saved.theme === 'dark') theme = saved.theme;
+        largeText = saved.largeText === true;
+        comfortableSpacing = saved.comfortableSpacing === true;
+        highContrast = saved.highContrast === true;
+        reduceMotion = saved.reduceMotion === true;
+      }
+    } catch {
+      // Si les données sont illisibles, on garde les réglages par défaut.
+    }
+
+    applyOrbisPreferences();
     ready = true;
   });
 
+  // Applique les préférences au document pour que le CSS les utilise.
+  function applyOrbisPreferences() {
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    root.dataset.textSize = largeText ? 'large' : 'normal';
+    root.dataset.spacing = comfortableSpacing ? 'comfortable' : 'normal';
+    root.dataset.contrast = highContrast ? 'high' : 'normal';
+    root.dataset.motion = reduceMotion ? 'reduced' : 'normal';
+  }
+
+  // Enregistre les réglages et les applique immédiatement.
+  function saveOrbisPreferences() {
+    const preferences: OrbisPreferences = {
+      theme,
+      largeText,
+      comfortableSpacing,
+      highContrast,
+      reduceMotion
+    };
+
+    applyOrbisPreferences();
+
+    try {
+      localStorage.setItem('orbis-preferences', JSON.stringify(preferences));
+    } catch {
+      // Les réglages restent actifs jusqu'au rechargement si le stockage échoue.
+    }
+  }
+
+  function setOrbisTheme(nextTheme: OrbisTheme) {
+    theme = nextTheme;
+    saveOrbisPreferences();
+  }
+
+  function setBooleanPreference(preference: BooleanPreference, event: Event) {
+    const enabled = (event.currentTarget as HTMLInputElement).checked;
+
+    // Chaque préférence est indépendante des autres.
+    switch (preference) {
+      case 'largeText': largeText = enabled; break;
+      case 'comfortableSpacing': comfortableSpacing = enabled; break;
+      case 'highContrast': highContrast = enabled; break;
+      case 'reduceMotion': reduceMotion = enabled; break;
+    }
+
+    saveOrbisPreferences();
+  }
+
+  // =========================================================
+  // PROFIL ÉLÈVE
+  // =========================================================
   function login() {
     const nextName = nameInput.trim();
     if (nextName.length < 2) return;
+
     studentName = nextName;
     storeStudentName(nextName);
   }
@@ -41,64 +133,77 @@
     currentView = 'HUB';
   }
 
+  // Conserve la méthode de navigation existante avec le prénom en URL.
   function routeFor(route: string): string {
-    return `${base}${route}?eleve=${encodeURIComponent(studentName)}`;
+    const cleanRoute = route.startsWith('/') ? route : `/${route}`;
+    return `${base}${cleanRoute}?eleve=${encodeURIComponent(studentName)}`;
   }
 
+  // Classe les jeux automatiquement à partir de leur titre et description.
   function detectCategory(title: string, subtitle: string): string {
     const text = `${title} ${subtitle}`.toLowerCase();
-    if (text.match(/math|nombre|calcul|géométrie|chiffre|livret|tables|fraction|soustraction|addition|multiplication/i)) {
+
+    if (/math|nombre|calcul|géométrie|chiffre|livret|tables|fraction|soustraction|addition|multiplication/i.test(text)) {
       return 'MATHS';
     }
-    if (text.match(/conj|français|verbe|mot|orthographe|grammaire|lecture|phrase|vocabulaire/i)) {
+    if (/conj|français|verbe|mot|orthographe|grammaire|lecture|phrase|vocabulaire/i.test(text)) {
       return 'FRANÇAIS';
     }
-    if (text.match(/science|physique|chimie|corps|planète|nature|espace|lab/i)) {
+    if (/science|physique|chimie|corps|planète|nature|espace|lab/i.test(text)) {
       return 'SCIENCES';
     }
     return 'AUTRES';
   }
 
-  $: filteredWorlds = worlds.filter(w => {
-    if (selectedArcadeCategory === 'TOUS') return true;
-    return detectCategory(w.title, w.subtitle) === selectedArcadeCategory;
-  });
+  // Données calculées pour les filtres Arcade et Learning Lab.
+  $: filteredWorlds = worlds.filter((world) =>
+    selectedArcadeCategory === 'TOUS'
+      ? true
+      : detectCategory(world.title, world.subtitle) === selectedArcadeCategory
+  );
 
-  // Extraction dynamique des matières et domaines du Learning Lab
-  $: subjects = Array.from(new Set(labModules.map(m => m.subject)));
+  $: subjects = Array.from(new Set(labModules.map((module) => module.subject)));
 
   $: domainsForSubject = selectedSubject
-    ? Array.from(new Set(labModules.filter(m => m.subject === selectedSubject).map(m => m.domain)))
+    ? Array.from(new Set(
+        labModules
+          .filter((module) => module.subject === selectedSubject)
+          .map((module) => module.domain)
+      ))
     : [];
 
-  $: filteredLabModules = labModules.filter(m => {
-    if (selectedSubject && m.subject !== selectedSubject) return false;
-    if (selectedDomain && m.domain !== selectedDomain) return false;
+  $: filteredLabModules = labModules.filter((module) => {
+    if (selectedSubject && module.subject !== selectedSubject) return false;
+    if (selectedDomain && module.domain !== selectedDomain) return false;
     return true;
   });
 
-  function selectSubject(subj: string) {
-    if (selectedSubject === subj) {
+  function selectSubject(subject: string) {
+    if (selectedSubject === subject) {
       selectedSubject = null;
       selectedDomain = null;
     } else {
-      selectedSubject = subj;
+      selectedSubject = subject;
       selectedDomain = null;
     }
   }
 
-  function selectDomain(dom: string) {
-    selectedDomain = selectedDomain === dom ? null : dom;
+  function selectDomain(domain: string) {
+    selectedDomain = selectedDomain === domain ? null : domain;
   }
 </script>
 
 <svelte:head>
-  <title>LEARNING HUB — QG Gamifié</title>
-  <meta name="description" content="Plateforme d'apprentissage numérique : Arcade et Learning Lab" />
+  <title>ORBIS — Apprendre, explorer, progresser</title>
+  <meta
+    name="description"
+    content="Orbis, un espace pour apprendre en jouant et explorer des cours interactifs."
+  />
+  <meta name="theme-color" content={theme === 'dark' ? '#11151c' : '#f4f6fa'} />
 </svelte:head>
 
-<!-- Arrière-plan animé Dark Gaming -->
-<div class="bg-container">
+<!-- Arrière-plan décoratif : aucun contenu fonctionnel n'en dépend. -->
+<div class="bg-container" aria-hidden="true">
   <div class="glow-orb orb-1"></div>
   <div class="glow-orb orb-2"></div>
   <div class="glow-orb orb-3"></div>
@@ -106,302 +211,385 @@
 </div>
 
 <div class="app-layout">
-  <!-- Header Sticky -->
+  <!-- En-tête conservé sur les trois vues. -->
   <header class="header">
     <div class="header-inner">
-      <button class="brand brand-btn" type="button" on:click={() => currentView = 'HUB'}>
-        <span class="brand-icon">⚡</span>
-        <div class="brand-text">
-          <h1 class="brand-title">LEARNING <span class="gradient-text">HUB</span></h1>
-          <p class="brand-subtitle">Ton espace pour apprendre en mode jeu</p>
-        </div>
+      <button
+        class="brand brand-btn"
+        type="button"
+        on:click={() => currentView = 'HUB'}
+        aria-label="ORBIS : revenir à l'accueil"
+      >
+        <span class="brand-icon" aria-hidden="true">◉</span>
+        <span class="brand-text">
+          <span class="brand-title">ORBIS</span>
+          <span class="brand-subtitle">Apprendre. Explorer. Progresser.</span>
+        </span>
       </button>
 
       <div class="header-actions">
         {#if studentName}
-          <div class="profile-chip">
+          <div class="profile-chip" aria-label={`Profil élève : ${studentName}`}>
             <span class="profile-label">ÉLÈVE</span>
             <span class="profile-name">{studentName}</span>
           </div>
-          <button class="btn btn-ghost btn-sm" type="button" on:click={logout} title="Changer de profil">
-            🔒
+
+          <button
+            class="btn btn-ghost btn-sm"
+            type="button"
+            on:click={logout}
+            title="Changer de profil"
+            aria-label="Changer de profil élève"
+          >
+            ↪
           </button>
         {/if}
-        <a class="btn btn-teacher" href="{base}/teacher">
-           <span>Espace Enseignant</span>
+
+        <button
+          class="btn btn-teacher settings-toggle"
+          type="button"
+          aria-expanded={settingsOpen}
+          aria-controls="orbis-settings"
+          on:click={() => settingsOpen = !settingsOpen}
+        >
+          <span aria-hidden="true">⚙</span>
+          <span class="settings-label">Affichage</span>
+        </button>
+
+        <a class="btn btn-teacher teacher-link" href={`${base}/teacher`}>
+          Espace enseignant
         </a>
       </div>
     </div>
   </header>
 
+  <!-- Bandeau défilant de marque : décoratif, avec une version statique accessible. -->
+  <div class="brand-marquee" aria-label="Orbis — apprendre, explorer, progresser">
+    <div class="brand-marquee-track" aria-hidden="true">
+      <span>ORBIS <b>✳</b> APPRENDRE <b>✳</b> EXPLORER <b>✳</b> PROGRESSER <b>✳</b> ORBIS <b>✳</b> APPRENDRE <b>✳</b> EXPLORER <b>✳</b> PROGRESSER <b>✳</b></span>
+      <span>ORBIS <b>✳</b> APPRENDRE <b>✳</b> EXPLORER <b>✳</b> PROGRESSER <b>✳</b> ORBIS <b>✳</b> APPRENDRE <b>✳</b> EXPLORER <b>✳</b> PROGRESSER <b>✳</b></span>
+    </div>
+  </div>
+
+  <!-- Panneau de préférences, indépendant de la vue active. -->
+  {#if settingsOpen}
+    <section
+      id="orbis-settings"
+      class="settings-panel"
+      aria-labelledby="orbis-settings-title"
+    >
+      <div class="settings-panel-header">
+        <div>
+          <h2 id="orbis-settings-title">Réglages d'affichage</h2>
+          <p>Adapte Orbis à tes besoins.</p>
+        </div>
+        <button
+          class="settings-close"
+          type="button"
+          aria-label="Fermer les réglages"
+          on:click={() => settingsOpen = false}
+        >×</button>
+      </div>
+
+      <fieldset class="settings-fieldset">
+        <legend>Thème</legend>
+        <div class="theme-options">
+          <button
+            class:active={theme === 'light'}
+            type="button"
+            aria-pressed={theme === 'light'}
+            on:click={() => setOrbisTheme('light')}
+          >☀️ Clair</button>
+          <button
+            class:active={theme === 'dark'}
+            type="button"
+            aria-pressed={theme === 'dark'}
+            on:click={() => setOrbisTheme('dark')}
+          >🌙 Sombre</button>
+        </div>
+      </fieldset>
+
+      <label class="setting-option">
+        <span><strong>Texte plus grand</strong><small>Facilite la lecture.</small></span>
+        <input
+          type="checkbox"
+          checked={largeText}
+          on:change={(event) => setBooleanPreference('largeText', event)}
+        />
+      </label>
+
+      <label class="setting-option">
+        <span><strong>Espacement augmenté</strong><small>Aère les contenus et les cartes.</small></span>
+        <input
+          type="checkbox"
+          checked={comfortableSpacing}
+          on:change={(event) => setBooleanPreference('comfortableSpacing', event)}
+        />
+      </label>
+
+      <label class="setting-option">
+        <span><strong>Contraste renforcé</strong><small>Rend les contours plus visibles.</small></span>
+        <input
+          type="checkbox"
+          checked={highContrast}
+          on:change={(event) => setBooleanPreference('highContrast', event)}
+        />
+      </label>
+
+      <label class="setting-option">
+        <span><strong>Réduire les animations</strong><small>Limite les mouvements décoratifs.</small></span>
+        <input
+          type="checkbox"
+          checked={reduceMotion}
+          on:change={(event) => setBooleanPreference('reduceMotion', event)}
+        />
+      </label>
+    </section>
+  {/if}
+
   <main class="main-content">
     {#if !ready}
-      <section class="card auth-card center">
-        <div class="loader"></div>
-        <p class="muted">Connexion au Hub en cours...</p>
+      <section class="card auth-card center" aria-live="polite">
+        <div class="loader" aria-hidden="true"></div>
+        <p class="muted">Préparation d'Orbis…</p>
       </section>
 
     {:else if !studentName}
-      <!-- Connexion Élève -->
+      <!-- Connexion élève : même stockage et même validation qu'avant. -->
       <section class="card auth-card center">
-        <div class="avatar-badge">🎮</div>
-        <h2>BIENVENUE SUR LE HUB</h2>
-        <p class="muted">Inscris ton prénom pour déverrouiller ton espace d'apprentissage.</p>
-        
+        <div class="avatar-badge" aria-hidden="true">◉</div>
+        <p class="eyebrow">BIENVENUE SUR ORBIS</p>
+        <h2>Ton espace d'apprentissage</h2>
+        <p class="muted">Inscris ton prénom pour accéder aux activités.</p>
+
         <form class="auth-form" on:submit|preventDefault={login}>
           <div class="input-group">
-            <label for="student-name-input">TON PRÉNOM</label>
-            <input 
+            <label for="student-name-input">Ton prénom</label>
+            <input
               id="student-name-input"
-              class="input-gaming" 
-              bind:value={nameInput} 
-              required 
-              minlength="2" 
-              placeholder="Ex: Lucas, Léa..." 
-              autocomplete="off"
+              class="input-gaming"
+              bind:value={nameInput}
+              required
+              minlength="2"
+              maxlength="40"
+              placeholder="Ex. : Lucas, Léa…"
+              autocomplete="given-name"
             />
           </div>
-          <button class="btn btn-primary btn-glow" type="submit">
-            ENTRER DANS LE HUB ➔
-          </button>
+          <button class="btn btn-primary" type="submit">Entrer dans Orbis <span aria-hidden="true">→</span></button>
         </form>
       </section>
 
     {:else}
-      <!-- FIL D'ARIANE / NAVIGATION SUPERIEURE -->
       {#if currentView !== 'HUB'}
-        <nav class="breadcrumb-nav">
-          <button class="btn-back" on:click={() => currentView = 'HUB'}>
-            ← Retour au Hub
+        <nav class="breadcrumb-nav" aria-label="Fil d'Ariane">
+          <button class="btn-back" type="button" on:click={() => currentView = 'HUB'}>
+            ← Retour à l'accueil
           </button>
-          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-separator" aria-hidden="true">/</span>
           <span class="breadcrumb-current">
-            {currentView === 'ARCADE' ? '🎮 ARCADE' : '🧠 LEARNING LAB'}
+            {currentView === 'ARCADE' ? 'Arcade' : 'Learning Lab'}
           </span>
         </nav>
       {/if}
 
-      <!-- ================================================================= -->
-      <!-- VUE 1 : VUE DU HUB PRINCIPAL (ENTRÉE GÉNÉRALE) -->
-      <!-- ================================================================= -->
       {#if currentView === 'HUB'}
+        <!-- ACCUEIL : les deux entrées principales sont conservées. -->
         <section class="hero-banner">
           <div class="hero-content">
-            <span class="badge-tag">CENTRE D'APPRENTISSAGE</span>
-            <h2 class="hero-title">
-              Salut <span class="student-highlight">{studentName}</span> !
-            </h2>
-            <p class="hero-sub">
-              Choisis ta destination pour aujourd'hui.
-            </p>
+            <span class="badge-tag">TON ESPACE D'APPRENTISSAGE</span>
+            <h2 class="hero-title">Bonjour <span class="student-highlight">{studentName}</span> !</h2>
+            <p class="hero-sub">Que souhaites-tu explorer aujourd'hui ?</p>
           </div>
         </section>
 
-        <!-- Les Deux Entrées Majeures du Hub -->
-        <div class="hub-portals-grid">
-          <!-- Entrée ARCADE -->
-          <button class="portal-card arcade-portal" on:click={() => currentView = 'ARCADE'}>
-            <div class="portal-badge">ESPACE JEUX</div>
-            <div class="portal-icon">🎮</div>
-            <h3 class="portal-title">ARCADE</h3>
-            <p class="portal-desc">
-              Rejoins la zone de jeu. Relève des défis, bats tes records et affronte les quiz interactifs !
-            </p>
-            <div class="portal-footer">
-              <span class="btn btn-portal btn-arcade">JOUER ➔</span>
-            </div>
+        <section class="hub-portals-grid" aria-label="Choisir un espace">
+          <button class="portal-card arcade-portal" type="button" on:click={() => currentView = 'ARCADE'}>
+            <span class="portal-badge">JEUX ÉDUCATIFS</span>
+            <span class="portal-icon" aria-hidden="true">🎮</span>
+            <span class="portal-title">Arcade</span>
+            <span class="portal-desc">Relève des défis, entraîne-toi et découvre les jeux éducatifs disponibles.</span>
+            <span class="portal-footer"><span class="btn btn-portal btn-arcade">Explorer les jeux <span aria-hidden="true">→</span></span></span>
           </button>
 
-          <!-- Entrée LEARNING LAB -->
-          <button class="portal-card lab-portal" on:click={() => currentView = 'LAB'}>
-            <div class="portal-badge lab-badge">COURS INTERACTIFS</div>
-            <div class="portal-icon">🧠</div>
-            <h3 class="portal-title">LEARNING LAB</h3>
-            <p class="portal-desc">
-              Accède aux modules de cours, schémas, manipulations interactives et corrigés intégrés.
-            </p>
-            <div class="portal-footer">
-              <span class="btn btn-portal btn-lab">APPRENDRE ➔</span>
-            </div>
+          <button class="portal-card lab-portal" type="button" on:click={() => currentView = 'LAB'}>
+            <span class="portal-badge lab-badge">COURS INTERACTIFS</span>
+            <span class="portal-icon" aria-hidden="true">📘</span>
+            <span class="portal-title">Learning Lab</span>
+            <span class="portal-desc">Explore des cours, des schémas, des manipulations et des ressources interactives.</span>
+            <span class="portal-footer"><span class="btn btn-portal btn-lab">Explorer les cours <span aria-hidden="true">→</span></span></span>
           </button>
-        </div>
+        </section>
 
-        <!-- Aperçu Structure Progression Future -->
-        <section class="progression-block card">
-          <div class="progression-header">
-            <div>
-              <h3>PROGRESSION GLOBALE DU HUB</h3>
-              <span class="status-badge">ACCÈS LIBRE LIBÉRÉ</span>
+        <!-- Chiffres calculés depuis les listes réelles, sans XP fictifs. -->
+        <section class="hub-overview card" aria-labelledby="hub-overview-title">
+          <div class="hub-overview-copy">
+            <h3 id="hub-overview-title">À explorer</h3>
+            <p>Choisis une activité, avance à ton rythme et reviens quand tu veux.</p>
+          </div>
+          <div class="hub-overview-stats">
+            <div class="overview-stat">
+              <strong>{worlds.length}</strong>
+              <span>jeux répertoriés</span>
             </div>
-            <div class="xp-placeholder">0 / 1000 XP</div>
-          </div>
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" style="width: 25%;"></div>
-          </div>
-          <div class="progression-features-preview">
-            <span>⭐ Modules complétés</span>
-            <span>🏆 Badges débloqués</span>
-            <span>⚡ Défis validés</span>
+            <div class="overview-stat">
+              <strong>{labModules.length}</strong>
+              <span>modules de cours</span>
+            </div>
           </div>
         </section>
 
-      <!-- ================================================================= -->
-      <!-- VUE 2 : ARCADE (JEUX ÉDUCATIFS) -->
-      <!-- ================================================================= -->
       {:else if currentView === 'ARCADE'}
+        <!-- ARCADE : mêmes données, catégories et destinations qu'avant. -->
         <section class="library-section">
           <div class="library-header">
             <div>
-              <h2 class="section-title">🎮 ARCADE</h2>
-              <p class="muted small">Sélectionne un jeu pour commencer la partie.</p>
+              <p class="eyebrow">JOUER ET S'ENTRAÎNER</p>
+              <h2 class="section-title">Arcade</h2>
+              <p class="muted small">Sélectionne un jeu pour commencer.</p>
             </div>
 
-            <!-- Filtres Catégories Arcade -->
-            <div class="filter-bar">
-              {#each arcadeCategories as cat}
-                <button 
-                  class="filter-btn" 
-                  class:active={selectedArcadeCategory === cat}
-                  on:click={() => selectedArcadeCategory = cat}
-                >
-                  {cat}
-                </button>
+            <div class="filter-bar" aria-label="Filtrer les jeux">
+              {#each arcadeCategories as category}
+                <button
+                  class="filter-btn"
+                  class:active={selectedArcadeCategory === category}
+                  aria-pressed={selectedArcadeCategory === category}
+                  type="button"
+                  on:click={() => selectedArcadeCategory = category}
+                >{category}</button>
               {/each}
             </div>
           </div>
 
-          <!-- Grille des Jeux -->
-          <div class="world-grid">
-            {#each filteredWorlds as world}
-              {@const cat = detectCategory(world.title, world.subtitle)}
-              <article class="card game-card">
-                <div class="card-top">
-                  <span class="category-tag">{cat}</span>
-                  <span class="status-dot" title="Prêt à jouer"></span>
-                </div>
-                
-                <div class="card-icon">{world.emoji}</div>
-
-                <div class="card-info">
-                  <h3 class="game-title">{world.title}</h3>
-                  <p class="game-desc">{world.subtitle}</p>
-                </div>
-
-                <div class="card-meta">
-                  <span class="meta-tag">JEU INTERACTIF</span>
-                  <span class="meta-tag highlight">DISPONIBLE</span>
-                </div>
-
-                <a
-  class="btn btn-play"
-  href={routeFor(world.route)}
-  data-sveltekit-preload-data="off"
-  data-sveltekit-preload-code="off"
->
-  ▶ JOUER
-</a>
-              </article>
-            {/each}
-          </div>
+          {#if filteredWorlds.length > 0}
+            <div class="world-grid">
+              {#each filteredWorlds as world}
+                {@const category = detectCategory(world.title, world.subtitle)}
+                <article class="card game-card">
+                  <!-- Carte extérieure + cadre intérieur, inspirés des portfolios éditoriaux. -->
+                  <div class="tile-frame">
+                    <div class="card-top">
+                      <span class="category-tag">{category}</span>
+                      <span class="status-label">Disponible</span>
+                    </div>
+                    <div class="tile-art" aria-hidden="true">
+                      <span class="tile-art-mark">{world.emoji}</span>
+                      <span class="tile-art-index">ORBIS / JEU</span>
+                    </div>
+                    <div class="card-info">
+                      <h3 class="game-title">{world.title}</h3>
+                      <p class="game-desc">{world.subtitle}</p>
+                    </div>
+                    <div class="card-meta"><span class="meta-tag">Jeu interactif</span></div>
+                    <a class="btn btn-play" href={routeFor(world.route)}>Jouer <span aria-hidden="true">→</span></a>
+                  </div>
+                </article>
+              {/each}
+            </div>
+          {:else}
+            <div class="card empty-state">
+              <h3>Aucun jeu dans cette catégorie</h3>
+              <p class="muted">Essaie une autre catégorie.</p>
+            </div>
+          {/if}
         </section>
 
-      <!-- ================================================================= -->
-      <!-- VUE 3 : LEARNING LAB (COURS & RESSOURCES INTERACTIVES) -->
-      <!-- ================================================================= -->
       {:else if currentView === 'LAB'}
+        <!-- LEARNING LAB : navigation matière puis domaine conservée. -->
         <section class="lab-section">
           <div class="lab-header">
-            <h2 class="section-title lab-title-glow">🧠 LEARNING LAB</h2>
-            <p class="lab-subtitle">Espace de cours interactifs et manipulations numériques.</p>
+            <p class="eyebrow">COMPRENDRE ET PRATIQUER</p>
+            <h2 class="section-title">Learning Lab</h2>
+            <p class="muted">Cours interactifs et ressources pour apprendre à ton rythme.</p>
           </div>
 
-          <!-- ÉTAPE 1 : Choix de la Matière -->
           <div class="lab-navigation-block">
-            <h3 class="nav-label">1. Choisi ta matière :</h3>
+            <h3 class="nav-label">1. Choisis ta matière</h3>
             <div class="subject-pills">
-              <button 
-                class="subject-pill" 
+              <button
+                class="subject-pill"
                 class:active={selectedSubject === null}
+                type="button"
+                aria-pressed={selectedSubject === null}
                 on:click={() => { selectedSubject = null; selectedDomain = null; }}
-              >
-                Toutes les matières
-              </button>
-              {#each subjects as subj}
-                <button 
-                  class="subject-pill" 
-                  class:active={selectedSubject === subj}
-                  on:click={() => selectSubject(subj)}
+              >Toutes les matières</button>
+
+              {#each subjects as subject}
+                <button
+                  class="subject-pill"
+                  class:active={selectedSubject === subject}
+                  type="button"
+                  aria-pressed={selectedSubject === subject}
+                  on:click={() => selectSubject(subject)}
                 >
-                  {#if subj === 'Mathématiques'}📚{:else if subj === 'Français'}🇫🇷{:else if subj === 'Sciences'}🔬{:else}📖{/if}
-                  {subj}
+                  {#if subject === 'Mathématiques'}📐{:else if subject === 'Français'}📖{:else if subject === 'Sciences'}🔬{:else}📚{/if}
+                  {subject}
                 </button>
               {/each}
             </div>
           </div>
 
-          <!-- ÉTAPE 2 : Choix du Domaine (si matière sélectionnée) -->
           {#if selectedSubject && domainsForSubject.length > 0}
-            <div class="lab-navigation-block domain-block">
-              <h3 class="nav-label">2. Domaine ({selectedSubject}) :</h3>
+            <div class="lab-navigation-block">
+              <h3 class="nav-label">2. Choisis un domaine — {selectedSubject}</h3>
               <div class="domain-pills">
-                <button 
-                  class="domain-pill" 
+                <button
+                  class="domain-pill"
                   class:active={selectedDomain === null}
+                  type="button"
+                  aria-pressed={selectedDomain === null}
                   on:click={() => selectedDomain = null}
-                >
-                  Tous les domaines
-                </button>
-                {#each domainsForSubject as dom}
-                  <button 
-                    class="domain-pill" 
-                    class:active={selectedDomain === dom}
-                    on:click={() => selectDomain(dom)}
-                  >
-                    → {dom}
-                  </button>
+                >Tous les domaines</button>
+                {#each domainsForSubject as domain}
+                  <button
+                    class="domain-pill"
+                    class:active={selectedDomain === domain}
+                    type="button"
+                    aria-pressed={selectedDomain === domain}
+                    on:click={() => selectDomain(domain)}
+                  >{domain}</button>
                 {/each}
               </div>
             </div>
           {/if}
 
-          <!-- ÉTAPE 3 : Grille des Cartes de Modules de Cours -->
-          <div class="lab-modules-grid">
-            {#each filteredLabModules as module}
-              <article class="card lab-card">
-                <div class="lab-card-header">
-                  <span class="lab-subject-tag">{module.subject} • {module.domain}</span>
-                  <span class="lab-level-badge">{module.level}</span>
-                </div>
+          {#if filteredLabModules.length > 0}
+            <div class="lab-modules-grid">
+              {#each filteredLabModules as module}
+                <article class="card lab-card">
+                  <!-- La matière reste identifiée par le bandeau ; l'illustration est décorative. -->
+                  <div class="lab-card-header">
+                    <span class="lab-subject-tag">{module.subject}</span>
+                    <span class="lab-level-badge">{module.level}</span>
+                  </div>
+                  <div class="tile-art lab-tile-art" aria-hidden="true">
+                    <span class="tile-art-mark">{#if /math|mathématique/i.test(module.subject)}∑{:else if /français|langue/i.test(module.subject)}Aa{:else if /science/i.test(module.subject)}⚗{:else if /allemand|anglais/i.test(module.subject)}文{:else}✳{/if}</span>
+                    <span class="tile-art-index">{module.domain}</span>
+                  </div>
+                  <h3 class="lab-card-title">{module.title}</h3>
+                  <p class="lab-card-desc">{module.description}</p>
 
-                <h3 class="lab-card-title">{module.title}</h3>
-                <p class="lab-card-desc">{module.description}</p>
-
-                <div class="lab-card-features">
-                  {#if module.isInteractive}
-                    <span class="feature-tag">✨ INTERACTIF</span>
+                  {#if module.isInteractive || module.duration}
+                    <div class="lab-card-features">
+                      {#if module.isInteractive}<span class="feature-tag">Interactif</span>{/if}
+                      {#if module.duration}<span class="feature-tag">Durée : {module.duration}</span>{/if}
+                    </div>
                   {/if}
-                  {#if module.duration}
-                    <span class="feature-tag">⏱️ {module.duration}</span>
-                  {/if}
-                </div>
 
-                <div class="lab-card-actions">
-                  <a class="btn btn-lab-open" href={routeFor(module.href)}>
-                    📖 OUVRIR →
-                  </a>
-                  {#if module.gameLink}
-                    <a class="btn btn-lab-game" href={routeFor(module.gameLink.route)}>
-                      🎮 {module.gameLink.title}
-                    </a>
-                  {/if}
-                </div>
-              </article>
-            {/each}
-          </div>
-
-          {#if filteredLabModules.length === 0}
-            <div class="card empty-state center">
-              <p class="muted">Aucun module de cours disponible pour cette sélection pour le moment.</p>
+                  <div class="lab-card-actions">
+                    <a class="btn btn-lab-open" href={routeFor(module.href)}>Ouvrir le cours →</a>
+                    {#if module.gameLink}
+                      <a class="btn btn-lab-game" href={routeFor(module.gameLink.route)}>🎮 {module.gameLink.title}</a>
+                    {/if}
+                  </div>
+                </article>
+              {/each}
+            </div>
+          {:else}
+            <div class="card empty-state">
+              <h3>Aucun module pour cette sélection</h3>
+              <p class="muted">Essaie une autre matière ou un autre domaine.</p>
             </div>
           {/if}
         </section>
@@ -410,15 +598,21 @@
   </main>
 
   <footer class="footer">
-    <span>© 2026 LEARNING HUB — Espace d'Apprentissage Interactif</span>
+    <span>© 2026 ORBIS — Espace d'apprentissage interactif</span>
   </footer>
 </div>
 
 <style>
+  /* =========================================================
+     BASE : typographie lisible, largeur stable, thème clair.
+     ========================================================= */
+  :global(*) { box-sizing: border-box; }
+
   :global(html) {
     width: 100%;
     min-height: 100%;
     overflow-x: hidden;
+    scroll-behavior: smooth;
   }
 
   :global(body) {
@@ -426,115 +620,67 @@
     min-height: 100%;
     margin: 0;
     padding: 0;
-    background-color: #090d16;
-    color: #f1f5f9;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-      Roboto, Oxygen, Ubuntu, sans-serif;
+    background: #f4f6fa;
+    color: #1d2939;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     overflow-x: hidden;
   }
 
-  :global(*) {
-    box-sizing: border-box;
-  }
-
-  :global(a),
-  :global(button) {
+  :global(button), :global(a), :global(input) {
+    font: inherit;
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* =========================================================
-     FOND ANIMÉ
-     ========================================================= */
+  :global(button:focus-visible), :global(a:focus-visible), :global(input:focus-visible) {
+    outline: 3px solid #3778c8;
+    outline-offset: 3px;
+  }
 
+  /* Fond discret, purement décoratif. */
   .bg-container {
     position: fixed;
     inset: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
     z-index: 0;
+    overflow: hidden;
     pointer-events: none;
-    background: radial-gradient(
-      circle at 50% 0%,
-      #111827 0%,
-      #060810 100%
-    );
+    background: linear-gradient(145deg, #f7f9fc 0%, #edf2f8 100%);
   }
 
   .grid-overlay {
     position: absolute;
     inset: 0;
     background-image:
-      linear-gradient(
-        to right,
-        rgba(255, 255, 255, 0.03) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        to bottom,
-        rgba(255, 255, 255, 0.03) 1px,
-        transparent 1px
-      );
+      linear-gradient(to right, rgba(45, 65, 95, .035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(45, 65, 95, .035) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 
   .glow-orb {
     position: absolute;
+    width: 380px;
+    height: 380px;
     border-radius: 50%;
-    filter: blur(100px);
-    opacity: 0.22;
-    animation: float 20s infinite alternate ease-in-out;
-    will-change: transform;
+    filter: blur(110px);
+    opacity: .07;
+    animation: orb-float 24s infinite alternate ease-in-out;
   }
 
-  .orb-1 {
-    width: 500px;
-    height: 500px;
-    background: #06b6d4;
-    top: -100px;
-    left: -100px;
+  .orb-1 { top: -140px; left: -120px; background: #3d83d8; }
+  .orb-2 { right: -140px; bottom: -150px; background: #7d82d8; animation-delay: -8s; }
+  .orb-3 { top: 42%; left: 40%; background: #55a7c8; animation-delay: -14s; }
+
+  @keyframes orb-float {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(24px, 18px, 0); }
   }
 
-  .orb-2 {
-    width: 600px;
-    height: 600px;
-    background: #6366f1;
-    bottom: -150px;
-    right: -100px;
-    animation-delay: -5s;
-  }
-
-  .orb-3 {
-    width: 400px;
-    height: 400px;
-    background: #3b82f6;
-    top: 40%;
-    left: 40%;
-    animation-delay: -10s;
-  }
-
-  @keyframes float {
-    0% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-
-    100% {
-      transform: translate3d(50px, 40px, 0) scale(1.1);
-    }
-  }
-
-  /* =========================================================
-     STRUCTURE PRINCIPALE
-     ========================================================= */
-
- .app-layout {
+  .app-layout {
     position: relative;
     z-index: 1;
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
     width: 100%;
-    max-width: 100%;
   }
 
   .main-content {
@@ -542,79 +688,72 @@
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem 1.5rem;
+    padding: 2rem 1.5rem 2.5rem;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
     min-width: 0;
   }
 
   /* =========================================================
-     HEADER
+     EN-TÊTE ET IDENTITÉ ORBIS
      ========================================================= */
-
   .header {
     position: sticky;
     top: 0;
     z-index: 50;
-    width: 100%;
-    background: rgba(10, 15, 29, 0.85);
+    background: rgba(255, 255, 255, .94);
+    border-bottom: 1px solid #dce3ed;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .header-inner {
-    width: 100%;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0.85rem 1.5rem;
+    padding: .8rem 1.5rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    min-width: 0;
   }
 
   .brand-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    text-align: left;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: .75rem;
     min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    color: inherit;
   }
 
   .brand-icon {
-    font-size: 1.8rem;
-    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 2.6rem;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 12px;
+    background: #e5efff;
+    color: #2458a6;
+    font-size: 2rem;
+    line-height: 1;
   }
 
-  .brand-text {
-    min-width: 0;
-  }
-
-  .brand-title {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    color: #fff;
-  }
-
-  .brand-subtitle {
-    margin: 0;
-    font-size: 0.75rem;
-    color: #94a3b8;
-  }
+  .brand-text { display: flex; flex-direction: column; gap: .15rem; }
+  .brand-title { color: #1d2939; font-size: 1.25rem; font-weight: 850; letter-spacing: .12em; }
+  .brand-subtitle { color: #526175; font-size: .78rem; }
 
   .header-actions {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    justify-content: flex-end;
+    gap: .55rem;
     flex-shrink: 0;
   }
 
@@ -622,940 +761,545 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 0.35rem 0.75rem;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: .35rem .7rem;
+    border: 1px solid #dce3ed;
+    border-radius: 9px;
+    background: #f1f5fa;
   }
 
-  .profile-label {
-    font-size: 0.65rem;
-    color: #38bdf8;
-    font-weight: 700;
-  }
+  .profile-label { color: #2458a6; font-size: .63rem; font-weight: 800; letter-spacing: .06em; }
+  .profile-name { color: #1d2939; font-size: .9rem; font-weight: 750; }
 
-  .profile-name {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #fff;
-  }
-
-  /* =========================================================
-     FIL D'ARIANE
-     ========================================================= */
-
-  .breadcrumb-nav {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.9rem;
-  }
-
-  .btn-back {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #38bdf8;
-    padding: 0.4rem 0.85rem;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  .breadcrumb-separator {
-    color: #64748b;
-  }
-
-  .breadcrumb-current {
-    font-weight: 800;
-    color: #f1f5f9;
-  }
-
-  /* =========================================================
-     HERO
-     ========================================================= */
-
-  .hero-banner {
-    width: 100%;
-    background: linear-gradient(
-      135deg,
-      rgba(30, 27, 75, 0.7),
-      rgba(15, 23, 42, 0.8)
-    );
-    border: 1px solid rgba(99, 102, 241, 0.25);
-    border-radius: 20px;
-    padding: 2rem;
-  }
-
-  .badge-tag {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    background: rgba(99, 102, 241, 0.2);
-    border: 1px solid rgba(99, 102, 241, 0.4);
-    color: #818cf8;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
-
-  .hero-title {
-    margin: 0 0 0.5rem 0;
-    font-size: 2rem;
-    font-weight: 900;
-  }
-
-  .hero-sub {
-    margin: 0;
-    color: #cbd5e1;
-    font-size: 1.05rem;
-  }
-
-  .student-highlight {
-    color: #38bdf8;
-    font-weight: 800;
-  }
-
-  /* =========================================================
-     HUB PORTALS
-     ========================================================= */
-
-  .hub-portals-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
-    width: 100%;
-  }
-
-  .portal-card {
-    width: 100%;
-    min-width: 0;
-    background: rgba(15, 23, 42, 0.7);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
-    cursor: pointer;
-    transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
-    color: inherit;
-    position: relative;
-  }
-
-  .portal-card:hover {
-    transform: translateY(-4px);
-  }
-
-  .arcade-portal:hover {
-    border-color: #06b6d4;
-    box-shadow: 0 0 30px rgba(6, 182, 212, 0.25);
-  }
-
-  .lab-portal:hover {
-    border-color: #a855f7;
-    box-shadow: 0 0 30px rgba(168, 85, 247, 0.25);
-  }
-
-  .portal-badge {
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    padding: 0.2rem 0.6rem;
-    background: rgba(6, 182, 212, 0.2);
-    color: #22d3ee;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-  }
-
-  .lab-badge {
-    background: rgba(168, 85, 247, 0.2);
-    color: #c084fc;
-  }
-
-  .portal-icon {
-    font-size: 3.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .portal-title {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.8rem;
-    font-weight: 900;
-  }
-
-  .portal-desc {
-    margin: 0 0 1.5rem 0;
-    color: #94a3b8;
-    font-size: 0.95rem;
-    line-height: 1.5;
-    flex: 1;
-  }
-
-  .portal-footer {
-    width: 100%;
-  }
-
-  .btn-portal {
-    width: 100%;
-    padding: 0.85rem;
-    font-size: 1rem;
-    border-radius: 12px;
-  }
-
-  .btn-arcade {
-    background: linear-gradient(135deg, #06b6d4, #3b82f6);
-    color: #fff;
-  }
-
-  .btn-lab {
-    background: linear-gradient(135deg, #8b5cf6, #6366f1);
-    color: #fff;
-  }
-
-  /* =========================================================
-     LEARNING LAB
-     ========================================================= */
-
-  .lab-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .lab-header {
-    margin-bottom: 0.5rem;
-  }
-
-  .section-title {
-    margin: 0 0 0.25rem 0;
-    font-size: 1.8rem;
-    font-weight: 900;
-  }
-
-  .lab-title-glow {
-    color: #a78bfa;
-  }
-
-  .lab-subtitle {
-    margin: 0;
-    color: #94a3b8;
-    font-size: 0.95rem;
-  }
-
-  .lab-navigation-block {
-    width: 100%;
-    background: rgba(15, 23, 42, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 14px;
-    padding: 1rem 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .nav-label {
-    margin: 0;
-    font-size: 0.85rem;
-    color: #cbd5e1;
-    font-weight: 700;
-  }
-
-  .subject-pills,
-  .domain-pills {
-    display: flex;
-    gap: 0.6rem;
-    flex-wrap: wrap;
-  }
-
-  .subject-pill,
-  .domain-pill {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #cbd5e1;
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition:
-      background-color 0.2s ease,
-      border-color 0.2s ease,
-      color 0.2s ease;
-  }
-
-  .subject-pill.active {
-    background: #8b5cf6;
-    color: #fff;
-    border-color: #a78bfa;
-    box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
-  }
-
-  .domain-pill.active {
-    background: #06b6d4;
-    color: #000;
-    border-color: #67e8f9;
-  }
-
-  /* =========================================================
-     CARTES LEARNING LAB
-     ========================================================= */
-
-  .lab-modules-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
-    width: 100%;
-  }
-
-  .lab-card {
-    width: 100%;
-    min-width: 0;
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid rgba(139, 92, 246, 0.25);
-    border-radius: 16px;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
-  }
-
-  .lab-card:hover {
-    border-color: rgba(168, 85, 247, 0.6);
-  }
-
-  .lab-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .lab-subject-tag {
-    font-size: 0.7rem;
-    font-weight: 800;
-    color: #c084fc;
-    letter-spacing: 0.05em;
-  }
-
-  .lab-level-badge {
-    flex-shrink: 0;
-    font-size: 0.7rem;
-    font-weight: 800;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    color: #e2e8f0;
-  }
-
-  .lab-card-title {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: #fff;
-    line-height: 1.3;
-  }
-
-  .lab-card-desc {
-    margin: 0;
-    font-size: 0.88rem;
-    color: #94a3b8;
-    line-height: 1.5;
-    flex: 1;
-  }
-
-  .lab-card-features {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .feature-tag {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-    color: #cbd5e1;
-    font-weight: 600;
-  }
-
-  .lab-card-actions {
-    display: flex;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
-    width: 100%;
-  }
-
-  .btn-lab-open {
-    flex: 1;
-    min-width: 0;
-    background: #8b5cf6;
-    color: #fff;
-    text-align: center;
-    padding: 0.65rem;
-    border-radius: 10px;
-    font-weight: 800;
-    font-size: 0.85rem;
-    text-decoration: none;
-    transition: background-color 0.2s ease;
-  }
-
-  .btn-lab-open:hover {
-    background: #7c3aed;
-  }
-
-  .btn-lab-game {
-    flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.08);
-    color: #38bdf8;
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    padding: 0.65rem 0.85rem;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 0.85rem;
-    text-decoration: none;
-  }
-
-  /* =========================================================
-     BOUTONS / UTILITAIRES
-     ========================================================= */
-
-  .card {
-    width: 100%;
-    min-width: 0;
-    background: rgba(15, 23, 42, 0.65);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 1.5rem;
-  }
-
+  /* Styles partagés des boutons. */
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.65rem 1.25rem;
+    gap: .4rem;
+    min-height: 42px;
+    padding: .65rem .95rem;
+    border: 1px solid transparent;
     border-radius: 10px;
-    font-weight: 800;
-    font-size: 0.85rem;
+    font-size: .88rem;
+    font-weight: 750;
+    text-align: center;
     text-decoration: none;
     cursor: pointer;
-    border: none;
-    flex-shrink: 0;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
   }
 
-  .btn-primary {
-    background: linear-gradient(135deg, #06b6d4, #3b82f6);
-    color: #fff;
+  .btn-primary { background: #2458a6; color: #fff; }
+  .btn-primary:hover { background: #1d498b; }
+  .btn-teacher, .btn-ghost {
+    background: #f7f9fc;
+    color: #344054;
+    border-color: #d5deea;
+  }
+  .btn-teacher:hover, .btn-ghost:hover { background: #eaf0f8; }
+  .btn-sm { min-width: 40px; padding: .45rem .65rem; }
+  .settings-toggle { white-space: nowrap; }
+
+  /* Panneau de préférences. */
+  .settings-panel {
+    position: fixed;
+    z-index: 100;
+    top: 5.4rem;
+    right: max(calc((100vw - 1200px) / 2 + 1.5rem), 1rem);
+    width: min(420px, calc(100vw - 2rem));
+    max-height: calc(100dvh - 7rem);
+    overflow-y: auto;
+    padding: 1.25rem;
+    border: 1px solid #d5deea;
+    border-radius: 16px;
+    background: #fff;
+    color: #1d2939;
+    box-shadow: 0 16px 48px rgba(20, 35, 60, .18);
   }
 
-  .btn-glow {
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
-  }
+  .settings-panel-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+  .settings-panel-header h2 { margin: 0 0 .25rem; font-size: 1.15rem; }
+  .settings-panel-header p { margin: 0; color: #526175; font-size: .9rem; }
+  .settings-close { width: 2.1rem; height: 2.1rem; border: 1px solid #d5deea; border-radius: 8px; background: #f1f5fa; color: #1d2939; font-size: 1.4rem; cursor: pointer; }
+  .settings-fieldset { margin: 0 0 .8rem; padding: 0; border: 0; }
+  .settings-fieldset legend { margin-bottom: .5rem; font-size: .88rem; font-weight: 800; }
+  .theme-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  .theme-options button { padding: .7rem; border: 1px solid #d5deea; border-radius: 9px; background: #f7f9fc; color: #344054; cursor: pointer; }
+  .theme-options button.active { background: #e8f0ff; color: #214b88; border-color: #8eaddb; font-weight: 800; }
 
-  .btn-teacher {
-    background: rgba(255, 255, 255, 0.05);
-    color: #cbd5e1;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .btn-ghost {
-    background: transparent;
-    color: #94a3b8;
-  }
-
-  .btn-sm {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.8rem;
-  }
-
-  .auth-card {
-    max-width: 420px;
-    margin: 3rem auto;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    text-align: center;
-  }
-
-  .avatar-badge {
-    
-    font-size: 3rem;
-  }
-
-  .auth-form {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    text-align: left;
-  }
-
-  .input-group label {
-    font-size: 0.7rem;
-    font-weight: 800;
-    color: #38bdf8;
-  }
-
-  .input-gaming {
-    width: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 10px;
-    padding: 0.8rem 1rem;
-    color: #fff;
-    font-size: 1rem;
-    outline: none;
-  }
-
-  .gradient-text {
-    background: linear-gradient(135deg, #38bdf8, #818cf8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .muted {
-    color: #94a3b8;
-  }
-
-  .muted.small {
-    font-size: 0.85rem;
-  }
-
-  .center {
-    text-align: center;
-  }
+  .setting-option { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-top: 1px solid #e5eaf1; cursor: pointer; }
+  .setting-option span { display: flex; flex-direction: column; gap: .2rem; }
+  .setting-option strong { font-size: .88rem; }
+  .setting-option small { color: #526175; font-size: .78rem; line-height: 1.4; }
+  .setting-option input { width: 1.15rem; height: 1.15rem; flex-shrink: 0; accent-color: #2458a6; }
 
   /* =========================================================
-     PROGRESSION
+     ACCUEIL ET CARTES PRINCIPALES
      ========================================================= */
-
-  .progression-block {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    background: rgba(15, 23, 42, 0.4);
-  }
-
-  .progression-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .progression-header h3 {
-    margin: 0;
-    font-size: 0.95rem;
-  }
-
-  .status-badge {
-    font-size: 0.65rem;
-    background: rgba(234, 179, 8, 0.15);
-    color: #fde047;
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
-    font-weight: 700;
-  }
-
-  .xp-placeholder {
-    font-family: monospace;
-    font-size: 0.85rem;
-    color: #64748b;
-    flex-shrink: 0;
-  }
-
-  .progress-bar-bg {
-    width: 100%;
-    height: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .progress-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #06b6d4, #8b5cf6);
-  }
-
-  .progression-features-preview {
-    display: flex;
-    gap: 1.5rem;
-    font-size: 0.8rem;
-    color: #64748b;
-    flex-wrap: wrap;
-  }
-
-  /* =========================================================
-     ARCADE
-     ========================================================= */
-
-  .library-section {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .library-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 1rem;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .filter-bar {
-    display: flex;
-    gap: 0.4rem;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 0.3rem;
-    border-radius: 10px;
-    overflow-x: auto;
-    max-width: 100%;
-  }
-
-  .filter-btn {
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    padding: 0.4rem 0.75rem;
-    border-radius: 6px;
-    font-weight: 700;
-    font-size: 0.75rem;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-
-  .filter-btn.active {
-    background: #38bdf8;
-    color: #090d16;
-  }
-
-  /* =========================================================
-     GRILLE DES JEUX
-     ========================================================= */
-
-  /* =========================================================
-   GRILLE DES JEUX — STABLE
-   ========================================================= */
-
-.world-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.5rem;
-  width: 100%;
-  align-items: stretch;
-}
-
-.game-card {
-  width: 100%;
-  min-width: 0;
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  position: relative;
-  overflow: hidden;
-
-  /* IMPORTANT : aucune transformation */
-  transform: none !important;
-  translate: none !important;
-  scale: 1 !important;
-
-  /* La taille ne change jamais */
-  box-sizing: border-box;
-}
-
-/* Hover de la carte :
-   uniquement changement visuel, jamais de géométrie */
-.game-card:hover {
-  transform: none !important;
-  translate: none !important;
-  scale: 1 !important;
-
-  border-color: rgba(56, 189, 248, 0.35);
-}
-
-.card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  min-height: 18px;
-}
-
-.category-tag {
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: #818cf8;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  min-width: 8px;
-  background: #10b981;
-  border-radius: 50%;
-}
-
-.card-icon {
-  font-size: 2.8rem;
-  text-align: center;
-  margin: 0.25rem 0;
-  line-height: 1;
-}
-
-.card-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.game-title {
-  margin: 0 0 0.4rem 0;
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
-
-.game-desc {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #94a3b8;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-.card-meta {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.meta-tag {
-  font-size: 0.65rem;
-  padding: 0.2rem 0.5rem;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 4px;
-  color: #64748b;
-}
-
-.meta-tag.highlight {
-  color: #34d399;
-}
-
-
-/* =========================================================
-   BOUTON JOUER — ZONE 100 % STABLE
-   ========================================================= */
-
-.btn-play {
-  display: flex;
-
-  width: 100%;
-  min-width: 0;
-  height: 42px;
-  min-height: 42px;
-  max-height: 42px;
-
-  flex-shrink: 0;
-  box-sizing: border-box;
-
-  align-items: center;
-  justify-content: center;
-
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-
-  text-align: center;
-  text-decoration: none;
-
-  cursor: pointer;
-
-  /* AUCUN déplacement */
-  position: relative;
-  top: 0;
-  left: 0;
-
-  transform: none !important;
-  translate: none !important;
-  scale: 1 !important;
-
-  /* Seuls les changements visuels sont animés */
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
-}
-
-/* Souris au-dessus du bouton */
-.btn-play:hover {
-  transform: none !important;
-  translate: none !important;
-  scale: 1 !important;
-
-  top: 0;
-  left: 0;
-
-  background: rgba(56, 189, 248, 0.14);
-  border-color: rgba(56, 189, 248, 0.5);
-}
-
-/* Clic */
-.btn-play:active {
-  transform: none !important;
-  translate: none !important;
-  scale: 1 !important;
-
-  top: 0;
-  left: 0;
-
-  background: rgba(56, 189, 248, 0.2);
-}
-
-/* Navigation clavier */
-.btn-play:focus-visible {
-  outline: 2px solid #38bdf8;
-  outline-offset: 2px;
-
-  transform: none !important;
-}
-
-
-/* =========================================================
-   SÉCURITÉ : AUCUN ENFANT DU BOUTON NE DOIT LE DÉFORMER
-   ========================================================= */
-
-.btn-play *,
-.btn-play:hover *,
-.btn-play:active * {
-  transform: none !important;
-  translate: none !important;
-  scale: 1 !important;
-}
-
-  /* =========================================================
-     FOOTER
-     ========================================================= */
-
-  .footer {
-    width: 100%;
+  .hero-banner {
     padding: 2rem;
-    text-align: center;
-    font-size: 0.8rem;
-    color: #475569;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid #dce3ed;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #fff, #f0f5fc);
+    box-shadow: 0 4px 18px rgba(30, 50, 80, .045);
   }
+
+  .eyebrow, .badge-tag {
+    display: inline-block;
+    margin: 0 0 .55rem;
+    color: #2458a6;
+    font-size: .75rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+  }
+
+  .badge-tag {
+    padding: .35rem .7rem;
+    border: 1px solid #c9dafa;
+    border-radius: 999px;
+    background: #e8f0ff;
+  }
+
+  .hero-title { margin: 0 0 .5rem; color: #1d2939; font-size: clamp(1.7rem, 4vw, 2.25rem); line-height: 1.2; font-weight: 850; }
+  .hero-sub { margin: 0; color: #526175; font-size: 1.05rem; line-height: 1.6; }
+  .student-highlight { color: #2458a6; }
+
+  .hub-portals-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+
+  .portal-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    width: 100%;
+    padding: 1.7rem;
+    border: 1px solid #dce3ed;
+    border-top: 3px solid #3274c8;
+    border-radius: 17px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 4px 18px rgba(30, 50, 80, .045);
+    color: #1d2939;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .lab-portal { border-top-color: #6875bb; }
+  .portal-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(30, 70, 130, .09); }
+  .portal-card:focus-visible { outline-offset: 4px; }
+  .portal-badge { margin-bottom: 1rem; padding: .3rem .55rem; border-radius: 6px; background: #e8f0ff; color: #2458a6; font-size: .7rem; font-weight: 800; letter-spacing: .04em; }
+  .lab-badge { background: #edf0ff; color: #535f9e; }
+  .portal-icon { margin-bottom: .55rem; font-size: 2.8rem; }
+  .portal-title { margin-bottom: .45rem; font-size: 1.55rem; font-weight: 850; }
+  .portal-desc { flex: 1; margin: 0 0 1.35rem; color: #526175; font-size: .98rem; line-height: 1.6; }
+  .portal-footer { width: 100%; }
+  .btn-portal { width: 100%; min-height: 46px; }
+  .btn-arcade { background: #2458a6; color: #fff; }
+  .btn-arcade:hover { background: #1d498b; }
+  .btn-lab { background: #535f9e; color: #fff; }
+  .btn-lab:hover { background: #424d85; }
+
+  .hub-overview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.4rem 1.5rem;
+    border: 1px solid #dce3ed;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, .96);
+  }
+
+  .hub-overview-copy h3 { margin: 0 0 .4rem; color: #1d2939; font-size: 1.05rem; }
+  .hub-overview-copy p { margin: 0; color: #526175; line-height: 1.55; }
+  .hub-overview-stats { display: flex; gap: .75rem; flex-shrink: 0; }
+  .overview-stat { display: flex; flex-direction: column; gap: .2rem; min-width: 120px; padding: .8rem .9rem; border: 1px solid #dce3ed; border-radius: 11px; background: #f1f5fa; }
+  .overview-stat strong { color: #2458a6; font-size: 1.45rem; line-height: 1.2; }
+  .overview-stat span { color: #526175; font-size: .78rem; }
 
   /* =========================================================
-     LOADER
+     NAVIGATION SECONDAIRE, FILTRES ET TITRES DE SECTION
      ========================================================= */
+  .breadcrumb-nav { display: flex; align-items: center; flex-wrap: wrap; gap: .7rem; font-size: .9rem; }
+  .btn-back { padding: .55rem .8rem; border: 1px solid #d5deea; border-radius: 9px; background: #f7f9fc; color: #2458a6; font-weight: 750; cursor: pointer; }
+  .breadcrumb-separator { color: #8a96a8; }
+  .breadcrumb-current { color: #1d2939; font-weight: 800; }
 
-  .loader {
-    width: 30px;
-    height: 30px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    border-top-color: #38bdf8;
-    border-radius: 50%;
-    animation: spin 1s infinite linear;
-  }
+  .library-section, .lab-section { width: 100%; min-width: 0; }
+  .library-header { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem; }
+  .section-title { margin: 0 0 .3rem; color: #1d2939; font-size: 1.8rem; font-weight: 850; }
+  .small { font-size: .88rem; }
+  .muted { color: #526175; }
+  .library-header p, .lab-header p { margin-top: .2rem; margin-bottom: 0; }
+  .lab-header { margin-bottom: .25rem; }
 
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
+  .filter-bar { display: flex; flex-wrap: wrap; gap: .35rem; max-width: 100%; padding: .3rem; border-radius: 10px; background: #e9eef5; }
+  .filter-btn { padding: .5rem .7rem; border: 1px solid transparent; border-radius: 7px; background: transparent; color: #526175; font-size: .78rem; font-weight: 750; cursor: pointer; }
+  .filter-btn.active { background: #2458a6; color: #fff; }
 
   /* =========================================================
-     RESPONSIVE
+     GRILLES DE JEUX ET DE MODULES
      ========================================================= */
+  .world-grid, .lab-modules-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 1.15rem; }
+  .card { min-width: 0; padding: 1.25rem; border: 1px solid #dce3ed; border-radius: 15px; background: rgba(255, 255, 255, .96); box-shadow: 0 4px 18px rgba(30, 50, 80, .045); }
+  .game-card { display: flex; flex-direction: column; gap: .9rem; overflow: hidden; }
+  .card-top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+  .category-tag { color: #344f96; font-size: .7rem; font-weight: 800; letter-spacing: .04em; }
+  .status-label { color: #16734a; font-size: .72rem; font-weight: 750; }
+  .card-icon { display: flex; justify-content: center; align-items: center; min-height: 70px; font-size: 2.7rem; }
+  .card-info { flex: 1; min-width: 0; }
+  .game-title { margin: 0 0 .4rem; color: #1d2939; font-size: 1.08rem; font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; }
+  .game-desc { margin: 0; color: #526175; font-size: .9rem; line-height: 1.5; overflow-wrap: anywhere; }
+  .card-meta, .lab-card-features { display: flex; flex-wrap: wrap; gap: .45rem; }
+  .meta-tag, .feature-tag { padding: .25rem .5rem; border-radius: 5px; background: #eef2f7; color: #526175; font-size: .72rem; font-weight: 650; }
+  .btn-play { width: 100%; min-height: 44px; background: #edf3fb; color: #214b88; border-color: #cbd8e8; }
+  .btn-play:hover { background: #dfeafb; border-color: #8eaddb; }
 
-  @media (max-width: 900px) {
-    .world-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+  .lab-section { display: flex; flex-direction: column; gap: 1.2rem; }
+  .lab-navigation-block { display: flex; flex-direction: column; gap: .75rem; padding: 1rem 1.2rem; border: 1px solid #dce3ed; border-radius: 14px; background: rgba(255, 255, 255, .96); }
+  .nav-label { margin: 0; color: #344054; font-size: .95rem; font-weight: 800; }
+  .subject-pills, .domain-pills { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .subject-pill, .domain-pill { padding: .55rem .85rem; border: 1px solid #d5deea; border-radius: 9px; background: #f7f9fc; color: #344054; font-size: .86rem; font-weight: 700; cursor: pointer; }
+  .subject-pill.active, .domain-pill.active { border-color: #2458a6; background: #2458a6; color: #fff; }
+  .lab-card { display: flex; flex-direction: column; gap: .85rem; }
+  .lab-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; }
+  .lab-subject-tag { color: #344f96; font-size: .73rem; font-weight: 800; line-height: 1.4; }
+  .lab-level-badge { flex-shrink: 0; padding: .25rem .45rem; border-radius: 5px; background: #edf1f7; color: #344054; font-size: .72rem; font-weight: 800; }
+  .lab-card-title { margin: 0; color: #1d2939; font-size: 1.2rem; line-height: 1.35; }
+  .lab-card-desc { flex: 1; margin: 0; color: #526175; font-size: .9rem; line-height: 1.55; }
+  .lab-card-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .2rem; }
+  .btn-lab-open, .btn-lab-game { flex: 1 1 auto; }
+  .btn-lab-open { background: #344f96; color: #fff; }
+  .btn-lab-open:hover { background: #293f7a; }
+  .btn-lab-game { background: #f1f5fa; color: #2458a6; border-color: #cbd8e8; }
+  .empty-state { text-align: center; }
+  .empty-state h3 { margin-top: 0; }
+
+  /* =========================================================
+     FORMULAIRE DE CONNEXION ET ÉTATS GÉNÉRAUX
+     ========================================================= */
+  .auth-card { display: flex; flex-direction: column; align-items: center; gap: 1rem; width: 100%; max-width: 460px; margin: 3rem auto; text-align: center; }
+  .avatar-badge { display: flex; align-items: center; justify-content: center; width: 4rem; height: 4rem; border-radius: 16px; background: #e5efff; color: #2458a6; font-size: 2.5rem; }
+  .auth-card h2 { margin: 0; color: #1d2939; font-size: 1.55rem; }
+  .auth-card > p { margin: 0; line-height: 1.55; }
+  .auth-form { display: flex; flex-direction: column; gap: 1.1rem; width: 100%; margin-top: .35rem; }
+  .input-group { display: flex; flex-direction: column; gap: .45rem; text-align: left; }
+  .input-group label { color: #2458a6; font-size: .82rem; font-weight: 800; }
+  .input-gaming { width: 100%; min-height: 46px; padding: .75rem .9rem; border: 1px solid #bdc9d9; border-radius: 10px; background: #fff; color: #1d2939; font-size: 1rem; }
+  .input-gaming:focus-visible { outline-offset: 2px; }
+  .center { text-align: center; }
+  .loader { width: 30px; height: 30px; border: 3px solid #dce3ed; border-top-color: #2458a6; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .footer { padding: 1.5rem; border-top: 1px solid #dce3ed; color: #64748b; font-size: .8rem; text-align: center; }
+
+  /* =========================================================
+     THÈME SOMBRE : anthracite, surfaces distinctes, texte clair.
+     ========================================================= */
+  :global(html[data-theme='dark']) { color-scheme: dark; }
+  :global(html[data-theme='dark'] body) { background: #11151c; color: #eef2f7; }
+  :global(html[data-theme='dark']) .bg-container { background: linear-gradient(145deg, #171e2b, #0c1017); }
+  :global(html[data-theme='dark']) .grid-overlay {
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,.025) 1px, transparent 1px);
+  }
+  :global(html[data-theme='dark']) .glow-orb { opacity: .1; }
+  :global(html[data-theme='dark']) .header { background: rgba(17, 21, 28, .95); border-bottom-color: #303846; }
+  :global(html[data-theme='dark']) .brand-title,
+  :global(html[data-theme='dark']) .profile-name,
+  :global(html[data-theme='dark']) .hero-title,
+  :global(html[data-theme='dark']) .portal-title,
+  :global(html[data-theme='dark']) .section-title,
+  :global(html[data-theme='dark']) .game-title,
+  :global(html[data-theme='dark']) .lab-card-title,
+  :global(html[data-theme='dark']) .breadcrumb-current,
+  :global(html[data-theme='dark']) .auth-card h2 { color: #eef2f7; }
+  :global(html[data-theme='dark']) .brand-icon,
+  :global(html[data-theme='dark']) .avatar-badge { background: #263a5a; color: #a9cbff; }
+  :global(html[data-theme='dark']) .brand-subtitle,
+  :global(html[data-theme='dark']) .hero-sub,
+  :global(html[data-theme='dark']) .portal-desc,
+  :global(html[data-theme='dark']) .game-desc,
+  :global(html[data-theme='dark']) .lab-card-desc,
+  :global(html[data-theme='dark']) .lab-subtitle,
+  :global(html[data-theme='dark']) .muted { color: #b1bdcc; }
+  :global(html[data-theme='dark']) .profile-chip { background: #1d2531; border-color: #3a4555; }
+  :global(html[data-theme='dark']) .profile-label,
+  :global(html[data-theme='dark']) .student-highlight,
+  :global(html[data-theme='dark']) .category-tag,
+  :global(html[data-theme='dark']) .lab-subject-tag { color: #91baff; }
+  :global(html[data-theme='dark']) .hero-banner,
+  :global(html[data-theme='dark']) .portal-card,
+  :global(html[data-theme='dark']) .lab-navigation-block,
+  :global(html[data-theme='dark']) .lab-card,
+  :global(html[data-theme='dark']) .card,
+  :global(html[data-theme='dark']) .hub-overview {
+    background: #1a212c;
+    border-color: #343e4d;
+    box-shadow: none;
+  }
+  :global(html[data-theme='dark']) .hero-banner { background: linear-gradient(135deg, #202a3b, #191f2a); }
+  :global(html[data-theme='dark']) .badge-tag { background: #263752; border-color: #3b5274; color: #a9cbff; }
+  :global(html[data-theme='dark']) .arcade-portal { border-top-color: #4da2e8; }
+  :global(html[data-theme='dark']) .lab-portal { border-top-color: #8f9be2; }
+  :global(html[data-theme='dark']) .portal-card:hover,
+  :global(html[data-theme='dark']) .lab-card:hover { border-color: #668abd; box-shadow: 0 8px 24px rgba(0,0,0,.16); }
+  :global(html[data-theme='dark']) .portal-badge { background: #263752; color: #a9cbff; }
+  :global(html[data-theme='dark']) .lab-badge { background: #302f4b; color: #c2c9ff; }
+  :global(html[data-theme='dark']) .btn-teacher,
+  :global(html[data-theme='dark']) .btn-ghost,
+  :global(html[data-theme='dark']) .btn-back,
+  :global(html[data-theme='dark']) .subject-pill,
+  :global(html[data-theme='dark']) .domain-pill,
+  :global(html[data-theme='dark']) .filter-bar,
+  :global(html[data-theme='dark']) .filter-btn {
+    background: #202936;
+    border-color: #3a4656;
+    color: #d1dae6;
+  }
+  :global(html[data-theme='dark']) .subject-pill.active,
+  :global(html[data-theme='dark']) .domain-pill.active,
+  :global(html[data-theme='dark']) .filter-btn.active { background: #315b96; border-color: #648bc2; color: #fff; }
+  :global(html[data-theme='dark']) .nav-label { color: #d1dae6; }
+  :global(html[data-theme='dark']) .lab-level-badge,
+  :global(html[data-theme='dark']) .feature-tag,
+  :global(html[data-theme='dark']) .meta-tag,
+  :global(html[data-theme='dark']) .overview-stat { background: #242e3b; border-color: #3a4656; color: #c0cad8; }
+  :global(html[data-theme='dark']) .status-label { color: #8ee0b4; }
+  :global(html[data-theme='dark']) .btn-play,
+  :global(html[data-theme='dark']) .btn-lab-game { background: #242e3b; color: #c2d9ff; border-color: #46566e; }
+  :global(html[data-theme='dark']) .btn-play:hover { background: #2c3d53; border-color: #789ac7; }
+  :global(html[data-theme='dark']) .btn-lab-open { background: #40568f; }
+  :global(html[data-theme='dark']) .input-gaming { background: #111720; color: #eef2f7; border-color: #465365; }
+  :global(html[data-theme='dark']) .input-group label,
+  :global(html[data-theme='dark']) .overview-stat strong { color: #a9cbff; }
+  :global(html[data-theme='dark']) .hub-overview-copy h3 { color: #eef2f7; }
+  :global(html[data-theme='dark']) .hub-overview-copy p,
+  :global(html[data-theme='dark']) .overview-stat span,
+  :global(html[data-theme='dark']) .footer { color: #b1bdcc; }
+  :global(html[data-theme='dark']) .overview-stat { border-color: #3a4656; }
+  :global(html[data-theme='dark']) .settings-panel { background: #1a212c; color: #eef2f7; border-color: #3a4656; }
+  :global(html[data-theme='dark']) .settings-panel-header p,
+  :global(html[data-theme='dark']) .setting-option small { color: #b1bdcc; }
+  :global(html[data-theme='dark']) .settings-close,
+  :global(html[data-theme='dark']) .theme-options button { background: #242e3b; color: #eef2f7; border-color: #465365; }
+  :global(html[data-theme='dark']) .theme-options button.active { background: #2b4265; color: #c2d9ff; border-color: #648bc2; }
+  :global(html[data-theme='dark']) .setting-option { border-top-color: #343e4d; }
+  :global(html[data-theme='dark']) .footer { border-top-color: #303846; }
+
+  /* Réglages indépendants d'accessibilité. */
+  :global(html[data-text-size='large']) { font-size: 112.5%; }
+  :global(html[data-spacing='comfortable']) .main-content { gap: 2rem; line-height: 1.65; }
+  :global(html[data-spacing='comfortable']) .card,
+  :global(html[data-spacing='comfortable']) .portal-card,
+  :global(html[data-spacing='comfortable']) .lab-card { padding: 1.65rem; }
+  :global(html[data-spacing='comfortable']) .world-grid,
+  :global(html[data-spacing='comfortable']) .lab-modules-grid,
+  :global(html[data-spacing='comfortable']) .hub-portals-grid { gap: 1.6rem; }
+
+  :global(html[data-contrast='high']) .card,
+  :global(html[data-contrast='high']) .portal-card,
+  :global(html[data-contrast='high']) .lab-card,
+  :global(html[data-contrast='high']) .lab-navigation-block,
+  :global(html[data-contrast='high']) .settings-panel,
+  :global(html[data-contrast='high']) .input-gaming { border-width: 2px; border-color: #526175; }
+
+  :global(html[data-theme='dark'][data-contrast='high']) .card,
+  :global(html[data-theme='dark'][data-contrast='high']) .portal-card,
+  :global(html[data-theme='dark'][data-contrast='high']) .lab-card,
+  :global(html[data-theme='dark'][data-contrast='high']) .lab-navigation-block,
+  :global(html[data-theme='dark'][data-contrast='high']) .settings-panel,
+  :global(html[data-theme='dark'][data-contrast='high']) .input-gaming { border-color: #c0cad8; }
+
+  :global(html[data-motion='reduced'] *),
+  :global(html[data-motion='reduced'] *::before),
+  :global(html[data-motion='reduced'] *::after) {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
   }
 
-  @media (max-width: 768px) {
-    .hub-portals-grid {
-      grid-template-columns: 1fr;
-    }
+  /* Mise en page adaptée aux tablettes et aux téléphones. */
+  @media (max-width: 1000px) {
+    .world-grid, .lab-modules-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
 
-    .lab-modules-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .header-inner {
-      padding: 0.75rem 1rem;
-    }
-
-    .main-content {
-      padding: 1.5rem 1rem;
-    }
+  @media (max-width: 760px) {
+    .hub-portals-grid { grid-template-columns: 1fr; }
+    .header-inner { padding: .75rem 1rem; }
+    .main-content { padding: 1.4rem 1rem 2rem; }
+    .hub-overview { align-items: stretch; flex-direction: column; }
+    .hub-overview-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .overview-stat { min-width: 0; }
   }
 
   @media (max-width: 600px) {
-    .world-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .brand-subtitle {
-      display: none;
-    }
-
-    .profile-chip {
-      display: none;
-    }
-
-    .header-actions {
-      gap: 0.4rem;
-    }
-
-    .progression-header {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .hero-title {
-      font-size: 1.6rem;
-    }
-
-    .hero-banner {
-      padding: 1.5rem;
-    }
+    .world-grid, .lab-modules-grid { grid-template-columns: 1fr; }
+    .brand-subtitle, .profile-chip, .settings-label { display: none; }
+    .header-actions { gap: .35rem; }
+    .teacher-link { padding-inline: .65rem; font-size: .78rem; }
+    .hero-banner { padding: 1.35rem; }
+    .portal-card { padding: 1.4rem; }
+    .settings-panel { top: 5rem; right: .5rem; width: calc(100vw - 1rem); max-height: calc(100dvh - 5.5rem); }
+    .library-header { align-items: flex-start; }
+    .filter-bar { width: 100%; }
+    .filter-btn { flex: 1 1 auto; }
+    .lab-card-actions { flex-direction: column; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .glow-orb {
-      animation: none;
-    }
+    .glow-orb { animation: none; }
+    *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  }
 
-    .portal-card,
-    .btn-play,
-    .lab-card,
-    .subject-pill,
-    .domain-pill {
-      transition: none;
-    }
+  /* =========================================================
+     ORBIS — NOUVELLE IDENTITÉ VISUELLE
+     Couleurs crème, encre et orange ; formes carrées ; texture légère.
+     Cette couche remplace progressivement les anciennes couleurs bleues.
+     ========================================================= */
+  :global(:root) {
+    --orbis-paper: #f3efe5;
+    --orbis-card: #fbf9f3;
+    --orbis-ink: #191815;
+    --orbis-muted: #625e55;
+    --orbis-line: #c9c2b5;
+    --orbis-orange: #ed8125;
+    --orbis-orange-soft: #f6dfc7;
+  }
+
+  :global(html) { background: var(--orbis-paper); }
+  :global(body) {
+    background: var(--orbis-paper);
+    color: var(--orbis-ink);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .bg-container {
+    background-color: var(--orbis-paper);
+    background-image: repeating-linear-gradient(0deg, rgb(45 38 25 / 2%) 0, rgb(45 38 25 / 2%) 1px, transparent 1px, transparent 5px);
+    opacity: 1;
+  }
+  .glow-orb, .grid-overlay { display: none; }
+  .app-layout { position: relative; z-index: 1; }
+  .header {
+    position: relative;
+    background: rgb(243 239 229 / 96%);
+    border-bottom: 1px solid var(--orbis-ink);
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .header-inner { max-width: 1440px; }
+  .brand-icon {
+    border-radius: 0; background: var(--orbis-orange); color: var(--orbis-ink);
+    border: 1px solid var(--orbis-ink); box-shadow: 3px 3px 0 var(--orbis-ink);
+  }
+  .brand-title { color: var(--orbis-ink); letter-spacing: .16em; }
+  .brand-subtitle { color: var(--orbis-muted); }
+  .btn, .btn-teacher, .btn-ghost, .btn-back, .subject-pill, .domain-pill, .filter-btn, .theme-options button {
+    border-radius: 0; box-shadow: none;
+  }
+  .btn-teacher, .btn-ghost, .btn-back { background: var(--orbis-card); color: var(--orbis-ink); border-color: var(--orbis-line); }
+  .btn-primary, .btn-portal, .btn-play, .btn-lab-open { background: var(--orbis-orange); color: var(--orbis-ink); border: 1px solid var(--orbis-ink); font-weight: 800; }
+  .btn-primary:hover, .btn-portal:hover, .btn-play:hover, .btn-lab-open:hover { background: #f59a4d; color: var(--orbis-ink); }
+  .brand-marquee {
+    overflow: hidden; border-bottom: 1px solid var(--orbis-ink);
+    background: var(--orbis-orange); color: var(--orbis-ink);
+    white-space: nowrap; font-size: .72rem; font-weight: 900; letter-spacing: .16em;
+  }
+  .brand-marquee-track { display: flex; width: max-content; animation: orbis-marquee 32s linear infinite; }
+  .brand-marquee-track span { display: block; flex: 0 0 auto; padding: .62rem 1.4rem; }
+  .brand-marquee-track b { padding: 0 1.2rem; font-weight: 900; }
+  @keyframes orbis-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .main-content { max-width: 1440px; }
+  .hero-banner, .hub-overview, .card, .portal-card, .lab-navigation-block, .settings-panel {
+    border-radius: 0; background: var(--orbis-card); border: 1px solid var(--orbis-ink);
+    box-shadow: 4px 4px 0 rgb(25 24 21 / 12%);
+  }
+  .hero-banner { background: transparent; border: 0; box-shadow: none; padding-inline: 0; }
+  .badge-tag, .portal-badge, .category-tag, .lab-subject-tag, .lab-level-badge, .feature-tag, .meta-tag, .overview-stat {
+    border-radius: 0;
+  }
+  .badge-tag { background: var(--orbis-orange-soft); color: var(--orbis-ink); border: 1px solid var(--orbis-ink); }
+  .hero-title, .portal-title, .section-title, .game-title, .lab-card-title, .auth-card h2, .hub-overview-copy h3 { color: var(--orbis-ink); }
+  .hero-sub, .portal-desc, .game-desc, .lab-card-desc, .muted, .hub-overview-copy p { color: var(--orbis-muted); }
+  .student-highlight { color: var(--orbis-ink); text-decoration: underline; text-decoration-color: var(--orbis-orange); text-decoration-thickness: .18em; text-underline-offset: .12em; }
+  .hub-portals-grid { gap: 1.25rem; }
+  .portal-card {
+    position: relative; align-items: flex-start; text-align: left; padding: 1.25rem;
+    border-top: 1px solid var(--orbis-ink); border-left: 1px solid var(--orbis-ink);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+  }
+  .portal-card:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 rgb(25 24 21 / 18%); border-color: var(--orbis-ink); }
+  .portal-icon {
+    display: grid; place-items: center; width: 100%; min-height: 140px; margin: .85rem 0;
+    border: 1px solid var(--orbis-ink); background: var(--orbis-orange-soft); font-size: 3.4rem;
+  }
+  .portal-title { font-size: clamp(1.5rem, 2.5vw, 2.1rem); font-weight: 850; letter-spacing: -.04em; }
+  .portal-footer { width: 100%; margin-top: auto; }
+  .portal-badge { background: var(--orbis-orange); color: var(--orbis-ink); border: 1px solid var(--orbis-ink); }
+  .lab-badge { background: var(--orbis-card); }
+  .hub-overview { background: rgb(251 249 243 / 72%); }
+  .overview-stat { background: var(--orbis-paper); border: 1px solid var(--orbis-line); }
+  .library-header { border-bottom: 1px solid var(--orbis-line); padding-bottom: 1rem; }
+  .filter-bar { border-radius: 0; background: transparent; border-color: var(--orbis-line); }
+  .filter-btn { border-radius: 0; color: var(--orbis-ink); }
+  .filter-btn.active, .subject-pill.active, .domain-pill.active { background: var(--orbis-orange); color: var(--orbis-ink); border-color: var(--orbis-ink); }
+  .subject-pill, .domain-pill { background: var(--orbis-card); border-color: var(--orbis-line); color: var(--orbis-ink); }
+  .world-grid, .lab-modules-grid { gap: 1.1rem; }
+  .game-card, .lab-card { padding: .65rem; gap: .7rem; background: var(--orbis-card); border: 1px solid var(--orbis-ink); box-shadow: 3px 3px 0 rgb(25 24 21 / 10%); transition: transform 180ms ease, box-shadow 180ms ease; }
+  .game-card:hover, .lab-card:hover { transform: translateY(-3px); box-shadow: 6px 6px 0 rgb(25 24 21 / 16%); }
+  .tile-frame { display: flex; flex-direction: column; gap: .75rem; height: 100%; padding: .55rem; border: 1px solid var(--orbis-line); }
+  .card-top, .lab-card-header { align-items: center; }
+  .category-tag, .lab-subject-tag { display: inline-flex; align-self: flex-start; background: var(--orbis-orange); color: var(--orbis-ink); border: 1px solid var(--orbis-ink); padding: .3rem .45rem; font-size: .68rem; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
+  .status-label { color: #41623c; }
+  .tile-art {
+    display: grid; position: relative; place-items: center; min-height: 170px;
+    border: 1px solid var(--orbis-ink); background: var(--orbis-paper); overflow: hidden;
+    background-image: linear-gradient(135deg, transparent 49.7%, rgb(25 24 21 / 6%) 50%, transparent 50.3%);
+  }
+  .tile-art::before { content: ""; position: absolute; inset: 10px; border: 1px solid var(--orbis-line); pointer-events: none; }
+  .tile-art-mark { position: relative; z-index: 1; font-size: 3.5rem; line-height: 1; }
+  .tile-art-index { position: absolute; right: .65rem; bottom: .55rem; font-size: .58rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+  .lab-tile-art { min-height: 145px; background-color: #f7e7d6; }
+  .lab-tile-art .tile-art-mark { font-family: Georgia, serif; font-size: 3.3rem; font-weight: 700; }
+  .game-title, .lab-card-title { font-size: 1.2rem; line-height: 1.25; font-weight: 850; letter-spacing: -.025em; }
+  .game-desc, .lab-card-desc { font-size: .88rem; line-height: 1.55; }
+  .btn-play, .btn-lab-open, .btn-lab-game { justify-content: space-between; width: 100%; border-radius: 0; }
+  .meta-tag, .lab-level-badge, .feature-tag { background: transparent; color: var(--orbis-muted); border: 1px solid var(--orbis-line); }
+  .auth-card { border-radius: 0; }
+  .avatar-badge { border-radius: 0; background: var(--orbis-orange); color: var(--orbis-ink); border: 1px solid var(--orbis-ink); }
+  .input-gaming { border-radius: 0; border-color: var(--orbis-ink); background: var(--orbis-card); color: var(--orbis-ink); }
+  .input-group label { color: var(--orbis-ink); }
+  .settings-panel { background: var(--orbis-card); color: var(--orbis-ink); }
+  .setting-option { border-color: var(--orbis-line); }
+  .footer { color: var(--orbis-muted); border-top-color: var(--orbis-line); }
+
+  /* Thème sombre : encre profonde et orange conservé comme accent. */
+  :global(html[data-theme='dark']) { --orbis-paper: #191815; --orbis-card: #24221e; --orbis-ink: #f5f0e6; --orbis-muted: #c5bfb3; --orbis-line: #5b554a; --orbis-orange: #f29a4b; --orbis-orange-soft: #483326; color-scheme: dark; }
+  :global(html[data-theme='dark'] body) { background: #191815; color: #f5f0e6; }
+  :global(html[data-theme='dark']) .bg-container { background-color: #191815; background-image: repeating-linear-gradient(0deg, rgb(255 255 255 / 1.5%) 0, rgb(255 255 255 / 1.5%) 1px, transparent 1px, transparent 5px); }
+  :global(html[data-theme='dark']) .header { background: rgb(25 24 21 / 97%); border-bottom-color: #f5f0e6; }
+  :global(html[data-theme='dark']) .brand-title, :global(html[data-theme='dark']) .hero-title, :global(html[data-theme='dark']) .portal-title, :global(html[data-theme='dark']) .section-title, :global(html[data-theme='dark']) .game-title, :global(html[data-theme='dark']) .lab-card-title, :global(html[data-theme='dark']) .auth-card h2 { color: var(--orbis-ink); }
+  :global(html[data-theme='dark']) .brand-subtitle, :global(html[data-theme='dark']) .hero-sub, :global(html[data-theme='dark']) .portal-desc, :global(html[data-theme='dark']) .game-desc, :global(html[data-theme='dark']) .lab-card-desc, :global(html[data-theme='dark']) .muted { color: var(--orbis-muted); }
+  :global(html[data-theme='dark']) .hero-banner, :global(html[data-theme='dark']) .portal-card, :global(html[data-theme='dark']) .lab-navigation-block, :global(html[data-theme='dark']) .lab-card, :global(html[data-theme='dark']) .card, :global(html[data-theme='dark']) .hub-overview, :global(html[data-theme='dark']) .settings-panel { background: var(--orbis-card); border-color: var(--orbis-line); box-shadow: 3px 3px 0 rgb(0 0 0 / 25%); }
+  :global(html[data-theme='dark']) .hero-banner { background: transparent; box-shadow: none; border: 0; }
+  :global(html[data-theme='dark']) .tile-frame { border-color: var(--orbis-line); }
+  :global(html[data-theme='dark']) .tile-art { background-color: #302d27; }
+  :global(html[data-theme='dark']) .brand-marquee { background: var(--orbis-orange); color: #191815; }
+  :global(html[data-theme='dark']) .filter-bar, :global(html[data-theme='dark']) .filter-btn, :global(html[data-theme='dark']) .subject-pill, :global(html[data-theme='dark']) .domain-pill, :global(html[data-theme='dark']) .btn-teacher, :global(html[data-theme='dark']) .btn-ghost, :global(html[data-theme='dark']) .btn-back { background: var(--orbis-card); color: var(--orbis-ink); border-color: var(--orbis-line); }
+  :global(html[data-theme='dark']) .filter-btn.active, :global(html[data-theme='dark']) .subject-pill.active, :global(html[data-theme='dark']) .domain-pill.active { background: var(--orbis-orange); color: #191815; border-color: var(--orbis-orange); }
+  :global(html[data-theme='dark']) .input-gaming { background: #191815; color: var(--orbis-ink); border-color: var(--orbis-line); }
+  :global(html[data-theme='dark']) .settings-close, :global(html[data-theme='dark']) .theme-options button { background: var(--orbis-card); color: var(--orbis-ink); border-color: var(--orbis-line); }
+  :global(html[data-theme='dark']) .settings-close, :global(html[data-theme='dark']) .theme-options button.active { background: var(--orbis-orange); color: #191815; }
+
+  /* Les animations sont discrètes et respectent le réglage de réduction. */
+  @media (hover: none) { .portal-card:hover, .game-card:hover, .lab-card:hover { transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .brand-marquee-track { animation: none; } }
+  :global(html[data-motion='reduced']) .brand-marquee-track { animation: none; }
+
+  @media (max-width: 600px) {
+    .tile-art { min-height: 145px; }
+    .portal-icon { min-height: 110px; }
+    .brand-marquee-track span { padding-block: .5rem; }
   }
 </style>

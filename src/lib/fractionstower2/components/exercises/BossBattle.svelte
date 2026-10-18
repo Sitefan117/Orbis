@@ -9,18 +9,18 @@
   import { ExerciseGenerator, type Exercise } from '$lib/fractionstower2/engines/ExerciseGenerator';
 
   let {
-    floorId = 'floor-1',
-    onComplete,
-    onClose,
-    game
-  }: {
-    floorId?: string;
-    onComplete: (score?: number) => void;
-    onClose?: () => void;
-    game?: {
-      markBossDefeated?: (floorId: string) => void;
-    };
-  } = $props();
+  floorId = 'floor-1',
+  onComplete,
+  onClose,
+  game
+}: {
+  floorId?: string;
+  onComplete: (score?: number) => void;
+  onClose?: () => void;
+  game?: {
+    markBossDefeated?: (floorId: string) => void;
+  };
+} = $props();
 
   let activeFloor = $derived(String(floorId).startsWith('floor-') ? floorId : `floor-${floorId}`);
   const QUESTIONS_PER_PHASE = 6;
