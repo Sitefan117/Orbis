@@ -13,9 +13,15 @@
   let nameInput = '';
   let currentView: 'HUB' | 'ARCADE' | 'LAB' = 'HUB';
 
-  // Filtres de l'Arcade.
+  // Filtres de l'Arcade : les matières sont définies explicitement dans worlds.ts.
   let selectedArcadeCategory = 'TOUS';
-  const arcadeCategories = ['TOUS', 'MATHS', 'FRANÇAIS', 'SCIENCES', 'AUTRES'];
+  const arcadeCategories = ['TOUS', 'MATHS', 'FRANÇAIS', 'SCIENCES', 'AUTRES', 'À CLASSER'];
+
+  const statusLabels = {
+    available: 'Disponible',
+    development: 'En développement',
+    prototype: 'Prototype'
+  } as const;
 
   // Navigation du Learning Lab : matière puis domaine.
   let selectedSubject: string | null = null;
@@ -139,27 +145,12 @@
     return `${base}${cleanRoute}?eleve=${encodeURIComponent(studentName)}`;
   }
 
-  // Classe les jeux automatiquement à partir de leur titre et description.
-  function detectCategory(title: string, subtitle: string): string {
-    const text = `${title} ${subtitle}`.toLowerCase();
-
-    if (/math|nombre|calcul|géométrie|chiffre|livret|tables|fraction|soustraction|addition|multiplication/i.test(text)) {
-      return 'MATHS';
-    }
-    if (/conj|français|verbe|mot|orthographe|grammaire|lecture|phrase|vocabulaire/i.test(text)) {
-      return 'FRANÇAIS';
-    }
-    if (/science|physique|chimie|corps|planète|nature|espace|lab/i.test(text)) {
-      return 'SCIENCES';
-    }
-    return 'AUTRES';
-  }
+  // Les matières sont renseignées dans worlds.ts. Les jeux non classés restent visibles.
+  // Cela évite de déduire une matière à partir du nom d'un jeu.
 
   // Données calculées pour les filtres Arcade et Learning Lab.
   $: filteredWorlds = worlds.filter((world) =>
-    selectedArcadeCategory === 'TOUS'
-      ? true
-      : detectCategory(world.title, world.subtitle) === selectedArcadeCategory
+    selectedArcadeCategory === 'TOUS' || world.subject === selectedArcadeCategory
   );
 
   $: subjects = Array.from(new Set(labModules.map((module) => module.subject)));
@@ -488,16 +479,16 @@
         </section>
 
       {:else if currentView === 'ARCADE'}
-        <!-- ARCADE : mêmes données, catégories et destinations qu'avant. -->
+        <!-- ARCADE : présentation modernisée des cartes uniquement. -->
         <section class="library-section">
           <div class="library-header">
             <div>
               <p class="eyebrow">JOUER ET S'ENTRAÎNER</p>
               <h2 class="section-title">Arcade</h2>
-              <p class="muted small">Sélectionne un jeu pour commencer.</p>
+              <p class="muted small">Choisis un univers et relève le défi.</p>
             </div>
 
-            <div class="filter-bar" aria-label="Filtrer les jeux">
+            <div class="filter-bar" aria-label="Filtrer les jeux par matière">
               {#each arcadeCategories as category}
                 <button
                   class="filter-btn"
@@ -513,23 +504,36 @@
           {#if filteredWorlds.length > 0}
             <div class="world-grid">
               {#each filteredWorlds as world}
-                {@const category = detectCategory(world.title, world.subtitle)}
+                {@const status = world.status ?? 'available'}
                 <article class="card game-card">
-                  <!-- Carte extérieure + cadre intérieur, inspirés des portfolios éditoriaux. -->
                   <div class="tile-frame">
                     <div class="card-top">
-                      <span class="category-tag">{category}</span>
-                      <span class="status-label">Disponible</span>
+                      <span class="category-tag">{world.subject}</span>
+                      <span class={`status-label status-${status}`}>{statusLabels[status]}</span>
                     </div>
                     <div class="tile-art" aria-hidden="true">
-                      <span class="tile-art-mark">{world.emoji}</span>
+                      <!--
+                        Image attendue dans static/images/games/{world.id}.png.
+                        Le décor graphique reste visible tant que l'image n'est pas ajoutée.
+                      -->
+                      <div class="tile-art-placeholder">
+                        <span class="placeholder-orbit placeholder-orbit-one"></span>
+                        <span class="placeholder-orbit placeholder-orbit-two"></span>
+                        <span class="placeholder-mark">ORBIS</span>
+                      </div>
+                      <img
+                        class="game-art-image"
+                        src={`${base}/images/games/${world.id}.png`}
+                        alt=""
+                        loading="lazy"
+                        on:error={(event) => { (event.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      />
                       <span class="tile-art-index">ORBIS / JEU</span>
                     </div>
                     <div class="card-info">
                       <h3 class="game-title">{world.title}</h3>
                       <p class="game-desc">{world.subtitle}</p>
                     </div>
-                    <div class="card-meta"><span class="meta-tag">Jeu interactif</span></div>
                     <a class="btn btn-play" href={routeFor(world.route)}>Jouer <span aria-hidden="true">→</span></a>
                   </div>
                 </article>
@@ -1374,5 +1378,85 @@
   }
 
   :global(html[data-motion='reduced']) .orbis-orbit-ring { animation: none; }
+
+
+
+  /* ============================================================
+     ARCADE — CARTES ILLUSTRÉES ET STATUTS
+     Couche limitée à la grille des jeux ; le reste de la page reste inchangé.
+     ============================================================ */
+  @media (min-width: 1200px) {
+    .world-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  }
+
+  .game-card { min-width: 0; padding: .55rem; }
+  .tile-frame { gap: .75rem; padding: .5rem; }
+  .card-top { align-items: flex-start; flex-wrap: wrap; gap: .4rem; }
+  .category-tag { max-width: 100%; }
+  .status-label {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .28rem .42rem; border: 1px solid currentColor;
+    font-size: .66rem; font-weight: 850; line-height: 1.2;
+    white-space: normal; overflow-wrap: anywhere;
+  }
+  .status-label::before {
+    content: ""; display: inline-block; width: .42rem; height: .42rem;
+    flex: 0 0 .42rem; border-radius: 50%; background: currentColor;
+  }
+  .status-available { color: #226b42; background: #e3f1e6; }
+  .status-development { color: #914b0f; background: #ffead5; }
+  .status-prototype { color: #a42b2b; background: #f9e1df; }
+
+  .tile-art {
+    position: relative; display: block; min-height: 0; aspect-ratio: 16 / 9;
+    background: var(--orbis-orange-soft); isolation: isolate;
+  }
+  .tile-art::before { inset: 8px; z-index: 1; }
+  .tile-art-placeholder {
+    position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden;
+    background:
+      linear-gradient(135deg, transparent 0 48%, rgb(25 24 21 / 7%) 49% 51%, transparent 52%),
+      var(--orbis-orange-soft);
+  }
+  .placeholder-mark {
+    position: relative; z-index: 1; padding: .3rem .55rem;
+    border: 2px solid var(--orbis-ink); color: var(--orbis-ink);
+    background: var(--orbis-card); font-size: clamp(1rem, 2vw, 1.5rem);
+    font-weight: 950; letter-spacing: .15em;
+  }
+  .placeholder-orbit {
+    position: absolute; display: block; width: 55%; aspect-ratio: 1;
+    border: 2px solid var(--orbis-orange); border-radius: 50%;
+    transform: rotate(-24deg) scaleY(.42);
+  }
+  .placeholder-orbit-one { width: 72%; }
+  .placeholder-orbit-two { width: 48%; border-color: var(--orbis-ink); transform: rotate(42deg) scaleY(.42); }
+  .game-art-image {
+    position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%;
+    display: block; object-fit: cover; object-position: center;
+  }
+  .tile-art-index {
+    z-index: 3; padding: .25rem .35rem; background: var(--orbis-card);
+    border: 1px solid var(--orbis-ink); color: var(--orbis-ink);
+    font-size: .53rem; letter-spacing: .08em;
+  }
+  .game-title { margin-bottom: .3rem; font-size: 1.08rem; }
+  .game-desc { min-height: 2.7em; }
+  .btn-play { margin-top: auto; min-height: 42px; }
+  .btn-play span { font-size: 1.2em; transition: transform 160ms ease; }
+  .btn-play:hover span { transform: translateX(3px); }
+
+  :global(html[data-theme='dark']) .status-available { color: #a8e1ba; background: #203b2b; }
+  :global(html[data-theme='dark']) .status-development { color: #ffd09d; background: #49301d; }
+  :global(html[data-theme='dark']) .status-prototype { color: #ffb2ad; background: #4b2525; }
+  :global(html[data-theme='dark']) .tile-art-placeholder { background-color: #483326; }
+  :global(html[data-theme='dark']) .placeholder-mark,
+  :global(html[data-theme='dark']) .tile-art-index { background: var(--orbis-card); color: var(--orbis-ink); border-color: var(--orbis-ink); }
+
+  @media (max-width: 600px) {
+    .tile-art { aspect-ratio: 16 / 9; min-height: 0; }
+    .game-desc { min-height: 0; }
+    .status-label { font-size: .64rem; }
+  }
 
 </style>

@@ -11,38 +11,59 @@ export type WorldId =
   | 'mathhunt'
   | 'fractionstower2';
 
+export type WorldSubject =
+  | 'MATHS'
+  | 'FRANÇAIS'
+  | 'SCIENCES'
+  | 'AUTRES'
+  | 'À CLASSER';
 
-export const worlds: Array<{
+export type GameStatus = 'available' | 'development' | 'prototype';
+
+export interface World {
   id: WorldId;
   title: string;
   subtitle: string;
   route: string;
+  /** Conservé pour compatibilité avec d'éventuels usages existants. */
   emoji: string;
   color: string;
-}> = [
+  /** Matière affichée et utilisée par les filtres de l'Arcade. */
+  subject: WorldSubject;
+  /** Statut affiché sur la carte. */
+  status: GameStatus;
+}
+
+export const worlds: World[] = [
   {
-  id: 'race',
-  title: 'Racer',
-  subtitle: 'Arriveras-tu à franchir la ligne d’arrivée ?',
-  route: '/race',
-  emoji: '🏎️',
-  color: 'blue'
-},
+    id: 'race',
+    title: 'Racer',
+    subtitle: 'Arriveras-tu à franchir la ligne d’arrivée ?',
+    route: '/race',
+    emoji: '🏎️',
+    color: 'blue',
+    subject: 'MATHS',
+    status: 'prototype'
+  },
   {
     id: 'livrets',
     title: "L'Atelier des Livrets",
     subtitle: 'Défis de tables de multiplication.',
     route: '/livrets',
     emoji: '✖️',
-    color: 'indigo'
+    color: 'indigo',
+    subject: 'MATHS',
+    status: 'available'
   },
   {
     id: 'geometrie',
     title: 'Le Défi des Formes',
-    subtitle: 'Connais-tu tes figures et solides sur le bout des doigts ? ',
+    subtitle: 'Connais-tu tes figures et solides sur le bout des doigts ?',
     route: '/geometrie',
     emoji: '📐',
-    color: 'emerald'
+    color: 'emerald',
+    subject: 'MATHS',
+    status: 'development'
   },
   {
     id: 'calculs',
@@ -50,7 +71,9 @@ export const worlds: Array<{
     subtitle: 'Les nombres à virgule ont-ils encore des secrets pour toi ?',
     route: '/calculs',
     emoji: '🔢',
-    color: 'rose'
+    color: 'rose',
+    subject: 'MATHS',
+    status: 'available'
   },
   {
     id: 'numeria',
@@ -58,58 +81,69 @@ export const worlds: Array<{
     subtitle: 'Arriveras-tu à maîtriser les nombres aussi grands que les millions ?',
     route: '/numeria',
     emoji: '📜',
-    color: 'purple'
+    color: 'purple',
+    subject: 'MATHS',
+    status: 'prototype'
   },
   {
     id: 'pcp',
     title: 'Espace PCP / Orientation',
-    subtitle: 'Prêt à voir dans ton avenir ? ',
+    subtitle: 'Prêt à voir dans ton avenir ?',
     route: '/pcp',
     emoji: '💼',
-    color: 'amber'
+    color: 'amber',
+    subject: 'AUTRES',
+    status: 'prototype'
   },
   {
     id: 'convertigo',
     title: 'Convertigo',
-    subtitle: 'Les nombres ont différents noms, arriveras-tu à les décoder ?', // <-- Le guillemet manquant est ici
-    route: '/convertigo', // <-- C'est l'adresse URL de ton module
+    subtitle: 'Les nombres ont différents noms, arriveras-tu à les décoder ?',
+    route: '/convertigo',
     emoji: '🔄',
-    color: 'blue'
+    color: 'blue',
+    subject: 'MATHS',
+    status: 'prototype'
   },
   {
     id: 'conju_fighter',
     title: 'Conju_fighter',
-    subtitle: ' Qui est le meilleur conjugueur ?',
-    route: '/conju_fighter', // <-- C'est l'adresse URL de ton module
+    subtitle: 'Qui est le meilleur conjugueur ?',
+    route: '/conju_fighter',
     emoji: '🔄',
-    color: 'blue'
+    color: 'blue',
+    subject: 'FRANÇAIS',
+    status: 'development'
   },
-  
   {
     id: 'swissgamefactory',
     title: 'Swiss Game Factory',
-    subtitle: ' Arriveras-tu à terminer les commandes ?',
+    subtitle: 'Arriveras-tu à terminer les commandes ?',
     route: '/swissgamefactory',
     emoji: '🎮',
-    color: 'green'
+    color: 'green',
+    subject: 'MATHS',
+    status: 'development'
   },
-
   {
     id: 'fractionstower2',
     title: 'Fractions Tower',
-    subtitle: ' Vaincras-tu la tour ?',
+    subtitle: 'Vaincras-tu la tour ?',
     route: '/fractionstower2',
     emoji: '🎮',
-    color: 'green'
+    color: 'green',
+    subject: 'MATHS',
+    status: 'available'
   },
-  
   {
     id: 'mathhunt',
     title: 'Math Hunt',
     subtitle: 'Chasse aux canards !',
     route: '/mathhunt',
     emoji: '🔍',
-    color: 'yellow'
+    color: 'yellow',
+    subject: 'MATHS',
+    status: 'development'
   }
 ];
 
