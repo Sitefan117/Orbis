@@ -143,7 +143,7 @@ export const worlds: World[] = [
     emoji: '🔍',
     color: 'yellow',
     subject: 'MATHS',
-    status: 'development'
+    status: 'available'
   }
 ];
 
