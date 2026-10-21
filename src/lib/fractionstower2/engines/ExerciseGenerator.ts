@@ -6,7 +6,6 @@
  * les types déjà pris en charge par TrainingSession.svelte.
  * Aucune dépendance externe.
  */
-
 export interface Exercise {
   id: string;
   question: string;
@@ -15,71 +14,61 @@ export interface Exercise {
   options?: string[];
   fractions?: Array<{ numerator: number; denominator: number }>;
   hint?: string;
-  /** 'exact' pour un format explicitement demandé ; 'equivalent' accepte une fraction de même valeur. */
+/** 'exact' pour un format explicitement demandé ; 'equivalent' accepte une fraction de même valeur. */
   answerMode?: 'exact' | 'equivalent';
   interactiveData?: {
     totalParts?: number;
     targetParts?: number;
+    /** Forme utilisée pour visualiser les parts à découper. */
+    visualShape?: 'bar' | 'circle';
   };
 }
-
 type ExerciseType = Exercise['type'];
 type ComparisonSymbol = '<' | '>' | '=';
-
 const COMPARISON_OPTIONS: ComparisonSymbol[] = ['<', '>', '='];
-
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
 function choose<T>(items: readonly T[]): T {
   return items[randomInt(0, items.length - 1)];
 }
-
 function shuffle<T>(items: T[]): T[] {
-  const result = [...items];
+const result = [...items];
   for (let i = result.length - 1; i > 0; i--) {
-    const j = randomInt(0, i);
+const j = randomInt(0, i);
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
 }
-
 function idFactory(floor: number): () => string {
-  let counter = 0;
+let counter = 0;
   return () => `f${floor}-${++counter}`;
 }
-
 function gcd(a: number, b: number): number {
-  let x = Math.abs(a);
-  let y = Math.abs(b);
+let x = Math.abs(a);
+let y = Math.abs(b);
   while (y !== 0) {
-    const remainder = x % y;
+const remainder = x % y;
     x = y;
     y = remainder;
   }
   return x || 1;
 }
-
 function lcm(a: number, b: number): number {
   return Math.abs(a * b) / gcd(a, b);
 }
-
 function fractionText(numerator: number, denominator: number): string {
   return `${numerator}/${denominator}`;
 }
-
 function reducedFractionText(numerator: number, denominator: number): string {
-  const divisor = gcd(numerator, denominator);
+const divisor = gcd(numerator, denominator);
   return fractionText(numerator / divisor, denominator / divisor);
 }
-
 function compareNumbers(a: number, b: number): ComparisonSymbol {
   if (a < b) return '<';
   if (a > b) return '>';
   return '=';
 }
-
 function makeQcm(
   id: string,
   question: string,
@@ -87,7 +76,7 @@ function makeQcm(
   options: string[],
   hint: string
 ): Exercise {
-  const uniqueOptions = [...new Set(options)];
+const uniqueOptions = [...new Set(options)];
   if (!uniqueOptions.includes(correctAnswer)) uniqueOptions.unshift(correctAnswer);
   return {
     id,
@@ -98,7 +87,6 @@ function makeQcm(
     hint
   };
 }
-
 function makeInput(
   id: string,
   question: string,
@@ -108,7 +96,6 @@ function makeInput(
 ): Exercise {
   return { id, question, correctAnswer, type: 'input', hint, answerMode };
 }
-
 function makeComparison(
   id: string,
   question: string,
@@ -126,7 +113,6 @@ function makeComparison(
     hint
   };
 }
-
 function makeColor(
   id: string,
   question: string,
@@ -144,18 +130,24 @@ function makeColor(
     answerMode: 'exact'
   };
 }
-
 function makeSlice(id: string, question: string, targetParts: number, hint: string): Exercise {
+  // La visualisation nouvelle de l'étage 3 est activée uniquement pour ses exercices.
+  // Les exercices de découpage des autres étages conservent leurs données actuelles.
+  const interactiveData: Exercise['interactiveData'] = { targetParts };
+  if (id.startsWith('f3-')) {
+    interactiveData.totalParts = targetParts;
+    interactiveData.visualShape = choose(['bar', 'circle'] as const);
+  }
+
   return {
     id,
     question,
     correctAnswer: String(targetParts),
     type: 'slice_interactive',
-    interactiveData: { targetParts },
+    interactiveData,
     hint
   };
 }
-
 function makeNumberLine(
   id: string,
   totalParts: number,
@@ -171,22 +163,19 @@ function makeNumberLine(
     hint: `Le dénominateur ${totalParts} indique le nombre total d'intervalles. À partir de 0, avance de ${targetParts} intervalle(s).`
   };
 }
-
 function makeOptions(correct: string, distractors: string[], total = 4): string[] {
-  const unique = [...new Set([correct, ...shuffle(distractors).filter((item) => item !== correct)])];
+const unique = [...new Set([correct, ...shuffle(distractors).filter((item) => item !== correct)])];
   return shuffle(unique.slice(0, Math.max(total, 2)));
 }
-
 function numberName(value: number): string {
-  const names: Record<number, string> = {
+const names: Record<number, string> = {
     1: 'un', 2: 'deux', 3: 'trois', 4: 'quatre', 5: 'cinq', 6: 'six',
     7: 'sept', 8: 'huit', 9: 'neuf', 10: 'dix', 11: 'onze', 12: 'douze'
   };
   return names[value] ?? String(value);
 }
-
 function fractionReading(numerator: number, denominator: number): string {
-  const singularOrPlural: Record<number, [string, string]> = {
+const singularOrPlural: Record<number, [string, string]> = {
     2: ['demi', 'demis'],
     3: ['tiers', 'tiers'],
     4: ['quart', 'quarts'],
@@ -199,45 +188,39 @@ function fractionReading(numerator: number, denominator: number): string {
     12: ['douzième', 'douzièmes'],
     100: ['centième', 'centièmes']
   };
-  const names = singularOrPlural[denominator];
+const names = singularOrPlural[denominator];
   if (!names) return `${numberName(numerator)} sur ${numberName(denominator)}`;
-  const first = numerator === 1 ? 'un' : numberName(numerator);
+const first = numerator === 1 ? 'un' : numberName(numerator);
   return `${first} ${numerator === 1 ? names[0] : names[1]}`;
 }
-
 function formatDecimal(numerator: number, denominator: 10 | 100): string {
   if (denominator === 10) return `0,${numerator}`;
   return `0,${String(numerator).padStart(2, '0')}`;
 }
-
 function randomProperFraction(denominatorMin = 2, denominatorMax = 12): { n: number; d: number } {
-  const d = randomInt(denominatorMin, denominatorMax);
+const d = randomInt(denominatorMin, denominatorMax);
   return { n: randomInt(1, d - 1), d };
 }
-
 function decimalValue(numerator: number, denominator: number): number {
   return numerator / denominator;
 }
-
 function pickDifferentNumber(correct: number, min: number, max: number): number {
   if (min === max) return correct;
-  let value = randomInt(min, max);
+let value = randomInt(min, max);
   while (value === correct) value = randomInt(min, max);
   return value;
 }
-
 function makeSessionPool(floor: number): Exercise[] {
-  const makeId = idFactory(floor);
-  const exercises: Exercise[] = [];
-
+const makeId = idFactory(floor);
+const exercises: Exercise[] = [];
   switch (floor) {
     case 1: {
-      // Partage équitable, numérateur, dénominateur et vocabulaire numérique.
+// Partage équitable, numérateur, dénominateur et vocabulaire numérique.
       for (let i = 0; i < 12; i++) {
-        const total = randomInt(3, 10);
-        const taken = randomInt(1, total - 1);
+const total = randomInt(3, 10);
+const taken = randomInt(1, total - 1);
         if (i % 3 === 0) {
-          const correct = i % 2 === 0 ? 'oui' : 'non';
+const correct = i % 2 === 0 ? 'oui' : 'non';
           exercises.push(makeQcm(
             makeId(),
             i % 2 === 0
@@ -248,7 +231,7 @@ function makeSessionPool(floor: number): Exercise[] {
             'Une fraction décrit des parts de même taille : le partage doit être équitable.'
           ));
         } else if (i % 3 === 1) {
-          const askNumerator = Math.random() < 0.5;
+const askNumerator = Math.random() < 0.5;
           exercises.push(makeQcm(
             makeId(),
             askNumerator
@@ -269,8 +252,8 @@ function makeSessionPool(floor: number): Exercise[] {
         }
       }
       for (let i = 0; i < 12; i++) {
-        const total = randomInt(2, 12);
-        const taken = randomInt(1, total);
+const total = randomInt(2, 12);
+const taken = randomInt(1, total);
         exercises.push(makeInput(
           makeId(),
           `Écris la fraction qui représente ${taken} part(s) prise(s) sur ${total} parts égales.`,
@@ -279,8 +262,8 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 7; i++) {
-        const total = randomInt(3, 10);
-        const taken = randomInt(1, total - 1);
+const total = randomInt(3, 10);
+const taken = randomInt(1, total - 1);
         exercises.push(makeColor(
           makeId(),
           `Colorie ${taken} part(s) sur les ${total} parts égales pour représenter ${taken}/${total}.`,
@@ -290,21 +273,20 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 5; i++) {
-        const total = randomInt(2, 12);
+const total = randomInt(2, 12);
         exercises.push(makeSlice(makeId(), `Découpe l'unité en ${total} parts égales.`, total, `Ajuste le compteur pour obtenir ${total} parts égales.`));
       }
       break;
     }
-
     case 2: {
-      // Lire, écrire, représenter et relier les trois formes.
-      const readableDenominators = [2, 3, 4, 5, 6, 7, 8, 10, 12];
+// Lire, écrire, représenter et relier les trois formes.
+const readableDenominators = [2, 3, 4, 5, 6, 7, 8, 10, 12];
       for (let i = 0; i < 14; i++) {
-        const d = choose(readableDenominators);
-        const n = randomInt(1, Math.min(d - 1, 9));
-        const correct = fractionReading(n, d);
-        const wrong1 = fractionReading(Math.min(d - 1, n + 1), d);
-        const wrong2 = fractionReading(n, choose(readableDenominators.filter((item) => item !== d)));
+const d = choose(readableDenominators);
+const n = randomInt(1, Math.min(d - 1, 9));
+const correct = fractionReading(n, d);
+const wrong1 = fractionReading(Math.min(d - 1, n + 1), d);
+const wrong2 = fractionReading(n, choose(readableDenominators.filter((item) => item !== d)));
         exercises.push(makeQcm(
           makeId(),
           `Comment lit-on la fraction ${n}/${d} ?`,
@@ -314,8 +296,8 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 14; i++) {
-        const d = randomInt(2, 12);
-        const n = randomInt(1, d);
+const d = randomInt(2, 12);
+const n = randomInt(1, d);
         exercises.push(makeInput(
           makeId(),
           `Écris en chiffres la fraction représentée par ${n} part(s) sur ${d} parts égales.`,
@@ -324,8 +306,8 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 8; i++) {
-        const d = randomInt(3, 10);
-        const n = randomInt(1, d - 1);
+const d = randomInt(3, 10);
+const n = randomInt(1, d - 1);
         exercises.push(makeColor(
           makeId(),
           `Représente ${n}/${d} en coloriant les parts nécessaires.`,
@@ -335,8 +317,8 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 5; i++) {
-        const d = choose(readableDenominators);
-        const n = randomInt(1, d - 1);
+const d = choose(readableDenominators);
+const n = randomInt(1, d - 1);
         exercises.push(makeQcm(
           makeId(),
           `Un dessin montre ${n} case(s) coloriée(s) parmi ${d} cases égales. Quelle fraction écrit-on ?`,
@@ -347,17 +329,16 @@ function makeSessionPool(floor: number): Exercise[] {
       }
       break;
     }
-
     case 3: {
-      // Droite graduée : questions écrites et placements sur une droite interactive.
+// Droite graduée : questions écrites et placements sur une droite interactive.
       for (let i = 0; i < 12; i++) {
-        const total = randomInt(3, 12);
-        const target = randomInt(1, total - 1);
+const total = randomInt(3, 12);
+const target = randomInt(1, total - 1);
         exercises.push(makeNumberLine(makeId(), total, target));
       }
       for (let i = 0; i < 10; i++) {
-        const total = randomInt(3, 12);
-        const target = randomInt(1, total - 1);
+const total = randomInt(3, 12);
+const target = randomInt(1, total - 1);
         exercises.push(makeInput(
           makeId(),
           `Entre 0 et 1, la droite est partagée en ${total} intervalles égaux. Écris la fraction du ${target}${target === 1 ? 'er' : 'e'} trait après 0.`,
@@ -366,8 +347,8 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 8; i++) {
-        const total = randomInt(3, 12);
-        const target = randomInt(1, total - 1);
+const total = randomInt(3, 12);
+const target = randomInt(1, total - 1);
         exercises.push(makeQcm(
           makeId(),
           `Sur une droite de 0 à 1 partagée en ${total} intervalles égaux, que représente le ${target}${target === 1 ? 'er' : 'e'} trait après 0 ?`,
@@ -377,19 +358,18 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 5; i++) {
-        const total = randomInt(3, 10);
+const total = randomInt(3, 10);
         exercises.push(makeSlice(makeId(), `Découpe l'unité en ${total} intervalles égaux.`, total, `Sur la droite, l'unité doit contenir ${total} intervalles égaux.`));
       }
       break;
     }
-
     case 4: {
-      // Équivalences, complétion, simplification et comparaison.
+// Équivalences, complétion, simplification et comparaison.
       for (let i = 0; i < 10; i++) {
-        const base = randomProperFraction(2, 8);
-        const factor = randomInt(2, 4);
-        const biggerN = base.n * factor;
-        const biggerD = base.d * factor;
+const base = randomProperFraction(2, 8);
+const factor = randomInt(2, 4);
+const biggerN = base.n * factor;
+const biggerD = base.d * factor;
         exercises.push(makeInput(
           makeId(),
           `Complète : ${base.n}/${base.d} = ?/${biggerD}. Écris le numérateur manquant.`,
@@ -398,15 +378,15 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 10; i++) {
-        let baseD = randomInt(2, 6);
-        let baseN = randomInt(1, baseD - 1);
+let baseD = randomInt(2, 6);
+let baseN = randomInt(1, baseD - 1);
         while (gcd(baseN, baseD) !== 1) {
           baseD = randomInt(2, 6);
           baseN = randomInt(1, baseD - 1);
         }
-        const factor = randomInt(2, 4);
-        const n = baseN * factor;
-        const d = baseD * factor;
+const factor = randomInt(2, 4);
+const n = baseN * factor;
+const d = baseD * factor;
         exercises.push(makeInput(
           makeId(),
           `Simplifie ${n}/${d}. Écris la fraction simplifiée.`,
@@ -415,10 +395,10 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 8; i++) {
-        const base = randomProperFraction(2, 5);
-        const factor = randomInt(2, Math.min(4, Math.floor(12 / base.d)));
-        const total = base.d * factor;
-        const target = base.n * factor;
+const base = randomProperFraction(2, 5);
+const factor = randomInt(2, Math.min(4, Math.floor(12 / base.d)));
+const total = base.d * factor;
+const target = base.n * factor;
         exercises.push(makeColor(
           makeId(),
           `Colorie ${target} part(s) sur ${total}. Cette quantité est équivalente à ${base.n}/${base.d}.`,
@@ -428,13 +408,13 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 10; i++) {
-        const n = randomInt(1, 4);
-        const d = randomInt(n + 1, 6);
-        const factor = choose([2, 3, 4]);
-        const leftN = n;
-        const leftD = d;
-        const rightN = n * factor;
-        const rightD = d * factor;
+const n = randomInt(1, 4);
+const d = randomInt(n + 1, 6);
+const factor = choose([2, 3, 4]);
+const leftN = n;
+const leftD = d;
+const rightN = n * factor;
+const rightD = d * factor;
         exercises.push(makeComparison(
           makeId(),
           `Quel symbole convient ? ${leftN}/${leftD} __ ${rightN}/${rightD}`,
@@ -444,9 +424,9 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 5; i++) {
-        const n = randomInt(1, 5);
-        const factor = randomInt(2, 5);
-        const correct = fractionText(n, n * factor);
+const n = randomInt(1, 5);
+const factor = randomInt(2, 5);
+const correct = fractionText(n, n * factor);
         exercises.push(makeQcm(
           makeId(),
           `Quelle est la forme simplifiée de ${n}/${n * factor} ?`,
@@ -457,15 +437,14 @@ function makeSessionPool(floor: number): Exercise[] {
       }
       break;
     }
-
     case 5: {
-      // Comparer : dénominateur commun, numérateur commun, équivalences et ordre.
+// Comparer : dénominateur commun, numérateur commun, équivalences et ordre.
       for (let i = 0; i < 14; i++) {
-        const d = randomInt(4, 12);
-        let a = randomInt(1, d - 1);
-        let b = randomInt(1, d - 1);
+const d = randomInt(4, 12);
+let a = randomInt(1, d - 1);
+let b = randomInt(1, d - 1);
         if (a === b) b = a === d - 1 ? a - 1 : a + 1;
-        const symbol = compareNumbers(a, b);
+const symbol = compareNumbers(a, b);
         exercises.push(makeComparison(
           makeId(),
           `Quel symbole convient ? ${a}/${d} __ ${b}/${d}`,
@@ -475,12 +454,12 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 10; i++) {
-        const n = randomInt(1, 4);
-        const d1 = randomInt(n + 2, 12);
-        const possibleDenominators = Array.from({ length: 12 - n }, (_, index) => n + 1 + index)
+const n = randomInt(1, 4);
+const d1 = randomInt(n + 2, 12);
+const possibleDenominators = Array.from({ length: 12 - n }, (_, index) => n + 1 + index)
           .filter((denominator) => denominator !== d1);
-        const d2 = choose(possibleDenominators);
-        const symbol = compareNumbers(n / d1, n / d2);
+const d2 = choose(possibleDenominators);
+const symbol = compareNumbers(n / d1, n / d2);
         exercises.push(makeComparison(
           makeId(),
           `Quel symbole convient ? ${n}/${d1} __ ${n}/${d2}`,
@@ -490,9 +469,9 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 10; i++) {
-        const base = randomProperFraction(2, 8);
-        const factor = randomInt(2, 4);
-        const equivalent = { n: base.n * factor, d: base.d * factor };
+const base = randomProperFraction(2, 8);
+const factor = randomInt(2, 4);
+const equivalent = { n: base.n * factor, d: base.d * factor };
         exercises.push(makeComparison(
           makeId(),
           `Quel symbole convient ? ${base.n}/${base.d} __ ${equivalent.n}/${equivalent.d}`,
@@ -502,11 +481,11 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 10; i++) {
-        const d = randomInt(4, 12);
-        let a = randomInt(1, d - 1);
-        let b = randomInt(1, d - 1);
+const d = randomInt(4, 12);
+let a = randomInt(1, d - 1);
+let b = randomInt(1, d - 1);
         if (a === b) b = a === d - 1 ? a - 1 : a + 1;
-        const larger = a > b ? fractionText(a, d) : fractionText(b, d);
+const larger = a > b ? fractionText(a, d) : fractionText(b, d);
         exercises.push(makeInput(
           makeId(),
           `Écris la plus grande fraction : ${a}/${d} ou ${b}/${d}.`,
@@ -515,19 +494,18 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 6; i++) {
-        const d = randomInt(3, 10);
-        const n = randomInt(1, d - 1);
-        exercises.push(makeColor(makeId(), `Représente ${n}/${d} pour pouvoir comparer cette quantité à d'autres fractions.`, d, n, `Colorie ${n} part(s) sur ${d}.`));
+const d = randomInt(3, 10);
+const n = randomInt(1, d - 1);
+        exercises.push(makeColor(makeId(), `Représente ${n}/${d}.`, d, n, `Colorie ${n} part(s) sur ${d}.`));
       }
       break;
     }
-
     case 6: {
-      // Fractions décimales et conversions dans les deux sens.
+// Fractions décimales et conversions dans les deux sens.
       for (let i = 0; i < 14; i++) {
-        const denominator: 10 | 100 = Math.random() < 0.5 ? 10 : 100;
-        const n = randomInt(1, denominator - 1);
-        const decimal = formatDecimal(n, denominator);
+const denominator: 10 | 100 = Math.random() < 0.5 ? 10 : 100;
+const n = randomInt(1, denominator - 1);
+const decimal = formatDecimal(n, denominator);
         exercises.push(makeInput(
           makeId(),
           `Écris ${n}/${denominator} sous forme de nombre décimal.`,
@@ -538,9 +516,9 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 12; i++) {
-        const denominator: 10 | 100 = Math.random() < 0.5 ? 10 : 100;
-        const n = randomInt(1, denominator - 1);
-        const decimal = formatDecimal(n, denominator);
+const denominator: 10 | 100 = Math.random() < 0.5 ? 10 : 100;
+const n = randomInt(1, denominator - 1);
+const decimal = formatDecimal(n, denominator);
         exercises.push(makeInput(
           makeId(),
           `Écris ${decimal} sous forme de fraction décimale.`,
@@ -551,13 +529,13 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 12; i++) {
-        const a = randomInt(1, 98);
-        let b = randomInt(1, 98);
+const a = randomInt(1, 98);
+let b = randomInt(1, 98);
         if (b === a) b = a === 98 ? 97 : a + 1;
-        const da = a / 100;
-        const db = b / 100;
-        const left = `0,${String(a).padStart(2, '0')}`;
-        const right = `0,${String(b).padStart(2, '0')}`;
+const da = a / 100;
+const db = b / 100;
+const left = `0,${String(a).padStart(2, '0')}`;
+const right = `0,${String(b).padStart(2, '0')}`;
         exercises.push(makeComparison(
           makeId(),
           `Quel symbole convient ? ${left} __ ${right}`,
@@ -566,8 +544,8 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 8; i++) {
-        const n = randomInt(1, 9);
-        const decimal = `0,${n}`;
+const n = randomInt(1, 9);
+const decimal = `0,${n}`;
         exercises.push(makeQcm(
           makeId(),
           `Quelle écriture correspond à ${n}/10 ?`,
@@ -577,18 +555,17 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 6; i++) {
-        const n = randomInt(1, 9);
+const n = randomInt(1, 9);
         exercises.push(makeColor(makeId(), `Représente ${n}/10 en coloriant les dixièmes nécessaires.`, 10, n, `Colorie ${n} parts sur les 10 parts égales.`));
       }
       break;
     }
-
     case 7: {
-      // Additions et soustractions avec même dénominateur.
+// Additions et soustractions avec même dénominateur.
       for (let i = 0; i < 16; i++) {
-        const d = randomInt(5, 12);
-        const a = randomInt(1, d - 2);
-        const b = randomInt(1, d - a);
+const d = randomInt(5, 12);
+const a = randomInt(1, d - 2);
+const b = randomInt(1, d - a);
         exercises.push(makeInput(
           makeId(),
           `Calcule : ${a}/${d} + ${b}/${d}. Écris le résultat sous forme de fraction.`,
@@ -597,9 +574,9 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 16; i++) {
-        const d = randomInt(5, 12);
-        const a = randomInt(2, d);
-        const b = randomInt(1, a - 1);
+const d = randomInt(5, 12);
+const a = randomInt(2, d);
+const b = randomInt(1, a - 1);
         exercises.push(makeInput(
           makeId(),
           `Calcule : ${a}/${d} − ${b}/${d}. Écris le résultat sous forme de fraction.`,
@@ -608,14 +585,14 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 10; i++) {
-        const d = randomInt(5, 12);
-        const a = randomInt(1, d - 2);
-        const b = randomInt(1, d - a);
-        const isAddition = Math.random() < 0.5;
-        const operation = isAddition ? '+' : '−';
-        const start = isAddition ? a : Math.min(d, a + b);
-        const removed = isAddition ? b : b;
-        const expectedN = isAddition ? a + b : start - removed;
+const d = randomInt(5, 12);
+const a = randomInt(1, d - 2);
+const b = randomInt(1, d - a);
+const isAddition = Math.random() < 0.5;
+const operation = isAddition ? '+' : '−';
+const start = isAddition ? a : Math.min(d, a + b);
+const removed = isAddition ? b : b;
+const expectedN = isAddition ? a + b : start - removed;
         exercises.push(makeQcm(
           makeId(),
           isAddition
@@ -627,8 +604,8 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 8; i++) {
-        const d = randomInt(4, 10);
-        const target = randomInt(1, d);
+const d = randomInt(4, 10);
+const target = randomInt(1, d);
         exercises.push(makeColor(makeId(), `Représente ${target}/${d} en coloriant les parts nécessaires.`, d, target, `Colorie ${target} part(s) parmi ${d}.`));
       }
       for (let i = 0; i < 5; i++) {
@@ -642,19 +619,18 @@ function makeSessionPool(floor: number): Exercise[] {
       }
       break;
     }
-
     case 8: {
-      // Additions et soustractions : dénominateur commun obtenu par équivalence.
-      const denominatorPairs: Array<[number, number]> = [[2, 3], [2, 4], [2, 5], [3, 4], [3, 6], [3, 8], [4, 6], [4, 8], [4, 10], [5, 10], [6, 8], [6, 12]];
+// Additions et soustractions : dénominateur commun obtenu par équivalence.
+const denominatorPairs: Array<[number, number]> = [[2, 3], [2, 4], [2, 5], [3, 4], [3, 6], [3, 8], [4, 6], [4, 8], [4, 10], [5, 10], [6, 8], [6, 12]];
       for (let i = 0; i < 20; i++) {
-        let [d1, d2] = choose(denominatorPairs);
+let [d1, d2] = choose(denominatorPairs);
         if (Math.random() < 0.5) [d1, d2] = [d2, d1];
-        let n1 = randomInt(1, d1 - 1);
-        let n2 = randomInt(1, d2 - 1);
-        const isAddition = Math.random() < 0.65;
-        // En soustraction, choisir deux valeurs différentes et mettre la plus grande en premier.
+let n1 = randomInt(1, d1 - 1);
+let n2 = randomInt(1, d2 - 1);
+const isAddition = Math.random() < 0.65;
+// En soustraction, choisir deux valeurs différentes et mettre la plus grande en premier.
         if (!isAddition) {
-          let safety = 0;
+let safety = 0;
           while (Math.abs(n1 / d1 - n2 / d2) < 1e-9 && safety < 20) {
             n2 = randomInt(1, d2 - 1);
             safety += 1;
@@ -664,19 +640,19 @@ function makeSessionPool(floor: number): Exercise[] {
             n2 = d2 - 1;
           }
           if (n1 / d1 < n2 / d2) {
-            const oldN = n1;
-            const oldD = d1;
+const oldN = n1;
+const oldD = d1;
             n1 = n2;
             d1 = d2;
             n2 = oldN;
             d2 = oldD;
           }
         }
-        const common = lcm(d1, d2);
-        const scaled1 = n1 * (common / d1);
-        const scaled2 = n2 * (common / d2);
-        const resultN = isAddition ? scaled1 + scaled2 : scaled1 - scaled2;
-        const operation = isAddition ? '+' : '−';
+const common = lcm(d1, d2);
+const scaled1 = n1 * (common / d1);
+const scaled2 = n2 * (common / d2);
+const resultN = isAddition ? scaled1 + scaled2 : scaled1 - scaled2;
+const operation = isAddition ? '+' : '−';
         exercises.push(makeInput(
           makeId(),
           `Calcule : ${n1}/${d1} ${operation} ${n2}/${d2}. Utilise un dénominateur commun et écris la fraction obtenue.`,
@@ -685,11 +661,11 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 12; i++) {
-        const d1 = choose([2, 3, 4, 5, 6, 8]);
-        const factor = choose([2, 3, 4]);
-        const d2 = d1 * factor;
+const d1 = choose([2, 3, 4, 5, 6, 8]);
+const factor = choose([2, 3, 4]);
+const d2 = d1 * factor;
         if (d2 > 24) continue;
-        const n = randomInt(1, d1 - 1);
+const n = randomInt(1, d1 - 1);
         exercises.push(makeInput(
           makeId(),
           `Complète l'équivalence : ${n}/${d1} = ?/${d2}. Écris le numérateur manquant.`,
@@ -698,8 +674,8 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 10; i++) {
-        const total = choose([4, 6, 8, 10, 12]);
-        const target = randomInt(1, total - 1);
+const total = choose([4, 6, 8, 10, 12]);
+const target = randomInt(1, total - 1);
         exercises.push(makeComparison(
           makeId(),
           `Quel symbole convient ? ${target}/${total} __ ${reducedFractionText(target, total)}`,
@@ -708,7 +684,7 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 8; i++) {
-        const correct = 'même dénominateur';
+const correct = 'même dénominateur';
         exercises.push(makeQcm(
           makeId(),
           'Avant d’additionner deux fractions de dénominateurs différents, que faut-il chercher ?',
@@ -718,20 +694,19 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 6; i++) {
-        const total = choose([4, 6, 8, 10, 12]);
-        const target = randomInt(1, total - 1);
+const total = choose([4, 6, 8, 10, 12]);
+const target = randomInt(1, total - 1);
         exercises.push(makeColor(makeId(), `Représente ${target}/${total}. Cette représentation t'aidera à visualiser une fraction équivalente.`, total, target, `Colorie ${target} parts sur ${total} parts égales.`));
       }
       break;
     }
-
     case 9: {
-      // Multiplication, inverse et division par une fraction.
+// Multiplication, inverse et division par une fraction.
       for (let i = 0; i < 16; i++) {
-        const a = randomInt(1, 5);
-        const b = randomInt(a + 1, 8);
-        const c = randomInt(1, 5);
-        const d = randomInt(c + 1, 8);
+const a = randomInt(1, 5);
+const b = randomInt(a + 1, 8);
+const c = randomInt(1, 5);
+const d = randomInt(c + 1, 8);
         exercises.push(makeInput(
           makeId(),
           `Calcule : ${a}/${b} × ${c}/${d}. Écris le résultat sans simplifier.`,
@@ -741,12 +716,12 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 14; i++) {
-        const a = randomInt(1, 5);
-        const b = randomInt(a + 1, 8);
-        const c = randomInt(1, 5);
-        const d = randomInt(c + 1, 8);
-        const resultN = a * d;
-        const resultD = b * c;
+const a = randomInt(1, 5);
+const b = randomInt(a + 1, 8);
+const c = randomInt(1, 5);
+const d = randomInt(c + 1, 8);
+const resultN = a * d;
+const resultD = b * c;
         exercises.push(makeInput(
           makeId(),
           `Calcule : ${a}/${b} ÷ ${c}/${d}. Écris le résultat sous forme de fraction.`,
@@ -755,8 +730,8 @@ function makeSessionPool(floor: number): Exercise[] {
         ));
       }
       for (let i = 0; i < 12; i++) {
-        const n = randomInt(1, 8);
-        const d = randomInt(n + 1, 10);
+const n = randomInt(1, 8);
+const d = randomInt(n + 1, 10);
         exercises.push(makeQcm(
           makeId(),
           `Quel est l'inverse de ${n}/${d} ?`,
@@ -767,7 +742,7 @@ function makeSessionPool(floor: number): Exercise[] {
       }
       for (let i = 0; i < 9; i++) {
         if (i % 3 === 0) {
-          const correct = 'multiplier les numérateurs entre eux et les dénominateurs entre eux';
+const correct = 'multiplier les numérateurs entre eux et les dénominateurs entre eux';
           exercises.push(makeQcm(
             makeId(),
             'Pour multiplier deux fractions, quelle règle faut-il appliquer ?',
@@ -784,8 +759,8 @@ function makeSessionPool(floor: number): Exercise[] {
             'Remplace la division par une multiplication et inverse la deuxième fraction.'
           ));
         } else {
-          const n = randomInt(1, 7);
-          const d = randomInt(n + 1, 10);
+const n = randomInt(1, 7);
+const d = randomInt(n + 1, 10);
           exercises.push(makeQcm(
             makeId(),
             `Quel est l’inverse de ${n}/${d} ?`,
@@ -796,8 +771,8 @@ function makeSessionPool(floor: number): Exercise[] {
         }
       }
       for (let i = 0; i < 8; i++) {
-        const total = choose([4, 6, 8, 10, 12]);
-        const target = randomInt(1, total - 1);
+const total = choose([4, 6, 8, 10, 12]);
+const target = randomInt(1, total - 1);
         exercises.push(makeColor(makeId(), `Représente ${target}/${total} en coloriant les parts nécessaires.`, total, target, `Colorie ${target} parts sur ${total}.`));
       }
       for (let i = 0; i < 5; i++) {
@@ -805,35 +780,30 @@ function makeSessionPool(floor: number): Exercise[] {
       }
       break;
     }
-
     default:
       return makeSessionPool(1);
   }
-
   return exercises;
 }
-
 export class ExerciseGenerator {
-  /**
+/**
    * Produit une session avec un choix équilibré des types d'exercices.
    * Les données sont régénérées à chaque appel pour renouveler les questions.
    */
-  static generateSession(floorId: string, count = 10): Exercise[] {
-    const parsed = Number.parseInt(String(floorId).match(/\d+/)?.[0] ?? '1', 10);
-    const floor = Number.isFinite(parsed) ? Math.min(9, Math.max(1, parsed)) : 1;
-    const requestedCount = Number.isFinite(count) ? Math.max(1, Math.floor(count)) : 10;
-    const pool = makeSessionPool(floor);
-
+static generateSession(floorId: string, count = 10): Exercise[] {
+const parsed = Number.parseInt(String(floorId).match(/\d+/)?.[0] ?? '1', 10);
+const floor = Number.isFinite(parsed) ? Math.min(9, Math.max(1, parsed)) : 1;
+const requestedCount = Number.isFinite(count) ? Math.max(1, Math.floor(count)) : 10;
+const pool = makeSessionPool(floor);
     if (requestedCount <= pool.length) {
       return this.selectBalanced(pool, requestedCount);
     }
-
-    const selected = this.selectBalanced(pool, pool.length);
-    let round = 1;
+const selected = this.selectBalanced(pool, pool.length);
+let round = 1;
     while (selected.length < requestedCount) {
-      const extraPool = makeSessionPool(floor);
-      const needed = Math.min(extraPool.length, requestedCount - selected.length);
-      const extra = this.selectBalanced(extraPool, needed);
+const extraPool = makeSessionPool(floor);
+const needed = Math.min(extraPool.length, requestedCount - selected.length);
+const extra = this.selectBalanced(extraPool, needed);
       selected.push(...extra.map((exercise, index) => ({
         ...exercise,
         id: `${exercise.id}-r${round}-${index + 1}`
@@ -842,21 +812,19 @@ export class ExerciseGenerator {
     }
     return selected;
   }
-
-  private static selectBalanced(pool: Exercise[], count: number): Exercise[] {
-    const groups = new Map<ExerciseType, Exercise[]>();
+private static selectBalanced(pool: Exercise[], count: number): Exercise[] {
+const groups = new Map<ExerciseType, Exercise[]>();
     for (const exercise of shuffle(pool)) {
-      const group = groups.get(exercise.type) ?? [];
+const group = groups.get(exercise.type) ?? [];
       group.push(exercise);
       groups.set(exercise.type, group);
     }
-
-    const types = shuffle([...groups.keys()]);
-    const selected: Exercise[] = [];
+const types = shuffle([...groups.keys()]);
+const selected: Exercise[] = [];
     while (selected.length < count) {
-      let added = false;
+let added = false;
       for (const type of types) {
-        const exercise = groups.get(type)?.pop();
+const exercise = groups.get(type)?.pop();
         if (!exercise) continue;
         selected.push(exercise);
         added = true;

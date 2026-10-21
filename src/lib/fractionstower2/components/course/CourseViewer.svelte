@@ -15,8 +15,11 @@
   // Le document complet est chargé dans une iframe.
   // Ses scripts peuvent ainsi gérer les traductions, les réponses,
   // les zones de dessin et les corrigés sans être bloqués par {@html}.
-  const courseUrl = '/fractionstower2/courses/support_etage_complet.html';
+// Utilise le préfixe de déploiement défini dans svelte.config.js.
+// En production, cela ajoute /ma-classeV3 au chemin du cours.
+import { base } from '$app/paths';
 
+const courseUrl = `${base}/fractionstower2/courses/support_etage_complet.html`;
   // Fermer le cours avec la touche Échap.
   onMount(() => {
     const handleEscape = (event: KeyboardEvent) => {

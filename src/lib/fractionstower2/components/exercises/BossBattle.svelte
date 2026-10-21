@@ -1,5 +1,5 @@
 <script lang="ts">
-  /**
+/**
    * Combat de boss de FractionTower2.
    * Réutilise les mêmes types d'exercices, interactions et règles de réponse
    * que TrainingSession, avec 18 questions, trois phases et les vies existantes.
@@ -7,8 +7,7 @@
   import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
   import FractionBar from '$lib/fractionstower2/components/fraction/FractionBar.svelte';
   import { ExerciseGenerator, type Exercise } from '$lib/fractionstower2/engines/ExerciseGenerator';
-
-  let {
+let {
   floorId = 'floor-1',
   onComplete,
   onClose,
@@ -21,30 +20,27 @@
     markBossDefeated?: (floorId: string) => void;
   };
 } = $props();
-
-  let activeFloor = $derived(String(floorId).startsWith('floor-') ? floorId : `floor-${floorId}`);
-  const QUESTIONS_PER_PHASE = 6;
-  const TOTAL_PHASES = 3;
-  const TOTAL_QUESTIONS = QUESTIONS_PER_PHASE * TOTAL_PHASES;
-  const MAX_BOSS_LIVES = TOTAL_QUESTIONS;
-  const MAX_PLAYER_LIVES = 5;
-
-  let phase = $state(1);
-  let questionIndex = $state(0);
-  let score = $state(0);
-  let bossLives = $state(MAX_BOSS_LIVES);
-  let playerLives = $state(MAX_PLAYER_LIVES);
-  let answer = $state('');
-  let feedback = $state('');
-  let locked = $state(false);
-  let questions = $state<Exercise[]>([]);
-  let lastLoadedFloorId = '';
-
-  // Le bilan de l'étage 5 privilégie les étages récents dans les révisions.
-  // Le bilan de l'étage 8 révise les étages 5 à 7. L'étage 9 porte uniquement
-  // sur son propre contenu. Les autres boss utilisent leur étage uniquement.
-  function getQuestionPlan(bossFloor: string): Array<{ floor: number; count: number }> {
-    const number = Number.parseInt(bossFloor.match(/(\d+)/)?.[1] ?? '1', 10);
+let activeFloor = $derived(String(floorId).startsWith('floor-') ? floorId : `floor-${floorId}`);
+const QUESTIONS_PER_PHASE = 6;
+const TOTAL_PHASES = 3;
+const TOTAL_QUESTIONS = QUESTIONS_PER_PHASE * TOTAL_PHASES;
+const MAX_BOSS_LIVES = TOTAL_QUESTIONS;
+const MAX_PLAYER_LIVES = 5;
+let phase = $state(1);
+let questionIndex = $state(0);
+let score = $state(0);
+let bossLives = $state(MAX_BOSS_LIVES);
+let playerLives = $state(MAX_PLAYER_LIVES);
+let answer = $state('');
+let feedback = $state('');
+let locked = $state(false);
+let questions = $state<Exercise[]>([]);
+let lastLoadedFloorId = '';
+// Le bilan de l'étage 5 privilégie les étages récents dans les révisions.
+// Le bilan de l'étage 8 révise les étages 5 à 7. L'étage 9 porte uniquement
+// sur son propre contenu. Les autres boss utilisent leur étage uniquement.
+function getQuestionPlan(bossFloor: string): Array<{ floor: number; count: number }> {
+const number = Number.parseInt(bossFloor.match(/(\d+)/)?.[1] ?? '1', 10);
     if (number === 5) {
       return [
         { floor: 1, count: 1 },
@@ -65,79 +61,67 @@
     if (number === 9) return [{ floor: 9, count: TOTAL_QUESTIONS }];
     return [{ floor: Number.isFinite(number) ? Math.min(9, Math.max(1, number)) : 1, count: TOTAL_QUESTIONS }];
   }
-
-  function questionSignature(exercise: Exercise): string {
+function questionSignature(exercise: Exercise): string {
     return `${exercise.question.trim().toLowerCase().replace(/\s+/g, ' ')}|${exercise.correctAnswer.trim().toLowerCase()}`;
   }
-
-  /** Génère des variantes jusqu'à obtenir le nombre demandé sans doublons exacts. */
-  function collectUniqueExercises(
+/** Génère des variantes jusqu'à obtenir le nombre demandé sans doublons exacts. */
+function collectUniqueExercises(
     floorNumber: number,
     requestedCount: number,
     usedQuestions: Set<string>
   ): Exercise[] {
-    const selected: Exercise[] = [];
-    const floor = `floor-${floorNumber}`;
-
+const selected: Exercise[] = [];
+const floor = `floor-${floorNumber}`;
     for (let attempt = 0; attempt < 20 && selected.length < requestedCount; attempt++) {
-      const remaining = requestedCount - selected.length;
-      const batchCount = Math.min(30, Math.max(12, remaining * 3));
-      const candidates = ExerciseGenerator.generateSession(floor, batchCount);
-
+const remaining = requestedCount - selected.length;
+const batchCount = Math.min(30, Math.max(12, remaining * 3));
+const candidates = ExerciseGenerator.generateSession(floor, batchCount);
       for (const candidate of candidates) {
-        const signature = questionSignature(candidate);
+const signature = questionSignature(candidate);
         if (usedQuestions.has(signature)) continue;
         usedQuestions.add(signature);
         selected.push({ ...candidate, id: `boss-${floorNumber}-${selected.length + 1}-${candidate.id}` });
         if (selected.length >= requestedCount) break;
       }
     }
-
     return selected;
   }
-
-  function buildBossQuestions(bossFloor: string): Exercise[] {
-    const usedQuestions = new Set<string>();
-    const result: Exercise[] = [];
-
+function buildBossQuestions(bossFloor: string): Exercise[] {
+const usedQuestions = new Set<string>();
+const result: Exercise[] = [];
     for (const item of getQuestionPlan(bossFloor)) {
       result.push(...collectUniqueExercises(item.floor, item.count, usedQuestions));
     }
-
-    // Les banques actuelles sont assez grandes pour fournir 18 questions uniques.
-    // Si un futur étage n'en contient plus assez, on garde le combat jouable en
-    // complétant avec de nouvelles variantes de l'étage concerné.
+// Les banques actuelles sont assez grandes pour fournir 18 questions uniques.
+// Si un futur étage n'en contient plus assez, on garde le combat jouable en
+// complétant avec de nouvelles variantes de l'étage concerné.
     if (result.length < TOTAL_QUESTIONS) {
-      const fallbackFloor = Number.parseInt(bossFloor.match(/(\d+)/)?.[1] ?? '1', 10);
+const fallbackFloor = Number.parseInt(bossFloor.match(/(\d+)/)?.[1] ?? '1', 10);
       result.push(...collectUniqueExercises(fallbackFloor, TOTAL_QUESTIONS - result.length, usedQuestions));
     }
-
     return result.slice(0, TOTAL_QUESTIONS).map((exercise, index) => ({
       ...exercise,
       id: `${bossFloor}-boss-question-${index + 1}`
     }));
   }
-
-  let activeQuestionIndex = $derived((phase - 1) * QUESTIONS_PER_PHASE + questionIndex);
-  let currentExercise = $derived(questions[activeQuestionIndex] ?? {
+let activeQuestionIndex = $derived((phase - 1) * QUESTIONS_PER_PHASE + questionIndex);
+let currentExercise = $derived(questions[activeQuestionIndex] ?? {
     id: 'loading',
     question: 'Préparation des exercices…',
     correctAnswer: '',
     type: 'input' as const,
     hint: ''
   });
-  let phaseTitle = $derived(phase === 1 ? 'Révisions et bases' : phase === 2 ? 'Application' : 'Raisonnement');
-
-  // Recharge le combat si le composant reçoit un autre étage.
+let phaseTitle = $derived(phase === 1 ? 'Révisions et bases' : phase === 2 ? 'Application' : 'Raisonnement');
+// Recharge le combat si le composant reçoit un autre étage.
   $effect(() => {
-    const requestedFloor = activeFloor;
+const requestedFloor = activeFloor;
     if (requestedFloor && requestedFloor !== lastLoadedFloorId) {
       lastLoadedFloorId = requestedFloor;
       restartBoss(requestedFloor);
     }
   });
-
-  function restartBoss(bossFloor: string = activeFloor) {
+function restartBoss(bossFloor: string = activeFloor) {
     questions = buildBossQuestions(bossFloor);
     phase = 1;
     questionIndex = 0;
@@ -148,54 +132,46 @@
     feedback = '';
     locked = false;
   }
-
-  function normalizeAnswer(value: string): string {
-    const cleaned = value.trim().toLowerCase().replace(/\s+/g, '');
+function normalizeAnswer(value: string): string {
+const cleaned = value.trim().toLowerCase().replace(/\s+/g, '');
     if (/^-?\d+[.,]\d+$/.test(cleaned)) return cleaned.replace('.', ',');
     return cleaned;
   }
-
-  function fractionParts(value: string): { numerator: number; denominator: number } | null {
-    const match = value.match(/^(-?\d+)\/(-?\d+)$/);
+function fractionParts(value: string): { numerator: number; denominator: number } | null {
+const match = value.match(/^(-?\d+)\/(-?\d+)$/);
     if (!match) return null;
-    const numerator = Number.parseInt(match[1], 10);
-    const denominator = Number.parseInt(match[2], 10);
+const numerator = Number.parseInt(match[1], 10);
+const denominator = Number.parseInt(match[2], 10);
     if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return null;
     return { numerator, denominator };
   }
-
-  // Même politique de correction que TrainingSession : format exact si demandé,
-  // sinon fractions équivalentes acceptées pour les réponses saisies.
-  function answersMatch(userValue: string, correctValue: string): boolean {
-    const normalizedUser = normalizeAnswer(userValue);
-    const normalizedCorrect = normalizeAnswer(correctValue);
+// Même politique de correction que TrainingSession : format exact si demandé,
+// sinon fractions équivalentes acceptées pour les réponses saisies.
+function answersMatch(userValue: string, correctValue: string): boolean {
+const normalizedUser = normalizeAnswer(userValue);
+const normalizedCorrect = normalizeAnswer(correctValue);
     if (normalizedUser === normalizedCorrect) return true;
-
-    const decimalPattern = /^-?\d+[,.]\d+$/;
+const decimalPattern = /^-?\d+[,.]\d+$/;
     if (decimalPattern.test(userValue.trim()) && decimalPattern.test(correctValue.trim())) {
-      const userDecimal = Number(userValue.trim().replace(',', '.'));
-      const correctDecimal = Number(correctValue.trim().replace(',', '.'));
+const userDecimal = Number(userValue.trim().replace(',', '.'));
+const correctDecimal = Number(correctValue.trim().replace(',', '.'));
       if (Number.isFinite(userDecimal) && Number.isFinite(correctDecimal) && Math.abs(userDecimal - correctDecimal) < 1e-10) return true;
     }
-
     if (currentExercise.answerMode === 'exact' || currentExercise.type !== 'input') return false;
-    const userFraction = fractionParts(normalizedUser);
-    const correctFraction = fractionParts(normalizedCorrect);
+const userFraction = fractionParts(normalizedUser);
+const correctFraction = fractionParts(normalizedCorrect);
     if (userFraction && correctFraction) {
       return userFraction.numerator * correctFraction.denominator ===
         correctFraction.numerator * userFraction.denominator;
     }
     return false;
   }
-
-  function submit(value?: string) {
+function submit(value?: string) {
     if (locked || phase >= 4) return;
     if (value !== undefined) answer = value;
-    const submitted = value ?? answer;
-
+const submitted = value ?? answer;
     if (currentExercise.type === 'slice_interactive' && !answer) answer = '1';
-    const effectiveAnswer = currentExercise.type === 'slice_interactive' && !submitted ? answer : submitted;
-
+const effectiveAnswer = currentExercise.type === 'slice_interactive' && !submitted ? answer : submitted;
     if (!effectiveAnswer.trim()) {
       feedback = currentExercise.type === 'number_line'
         ? 'Choisis d’abord une graduation sur la droite.'
@@ -204,7 +180,6 @@
           : 'Écris ou sélectionne une réponse avant de vérifier.';
       return;
     }
-
     if (!answersMatch(effectiveAnswer, currentExercise.correctAnswer)) {
       playerLives = Math.max(0, playerLives - 1);
       feedback = playerLives === 0
@@ -214,13 +189,11 @@
       if (playerLives === 0) phase = 5;
       return;
     }
-
     locked = true;
     score += 1;
     bossLives = Math.max(0, bossLives - 1);
     feedback = 'Bravo ! C’est juste.';
     if (typeof (AudioManager as any).play === 'function') (AudioManager as any).play('success');
-
     setTimeout(() => {
       if (questionIndex < QUESTIONS_PER_PHASE - 1) {
         questionIndex += 1;
@@ -235,35 +208,43 @@
       locked = false;
     }, 900);
   }
-
-  function appendToInput(char: string) {
+function appendToInput(char: string) {
     if (locked) return;
     if (char === '⌫') answer = answer.slice(0, -1);
     else if (char === 'Effacer') answer = '';
     else answer += char;
   }
-
-  function selectNumberLineTick(tick: number) {
+function selectNumberLineTick(tick: number) {
     if (locked) return;
-    const total = currentExercise.interactiveData?.totalParts ?? 1;
+const total = currentExercise.interactiveData?.totalParts ?? 1;
     answer = `${tick}/${total}`;
     feedback = '';
   }
-
-  function readInstruction() {
+/** Calcule un secteur de cercle pour visualiser des parts de même taille. */
+function sliceWedgePath(index: number, total: number): string {
+  const center = 60;
+  const radius = 48;
+  const startAngle = -Math.PI / 2 + (index * 2 * Math.PI) / total;
+  const endAngle = -Math.PI / 2 + ((index + 1) * 2 * Math.PI) / total;
+  const startX = center + radius * Math.cos(startAngle);
+  const startY = center + radius * Math.sin(startAngle);
+  const endX = center + radius * Math.cos(endAngle);
+  const endY = center + radius * Math.sin(endAngle);
+  const largeArc = 2 * Math.PI / total > Math.PI ? 1 : 0;
+  return `M ${center} ${center} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY} Z`;
+}
+function readInstruction() {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(currentExercise.question);
+const utterance = new SpeechSynthesisUtterance(currentExercise.question);
     utterance.lang = 'fr-CH';
     window.speechSynthesis.speak(utterance);
   }
-
-  function finishBoss() {
+function finishBoss() {
     game?.markBossDefeated?.(activeFloor);
     onComplete(score);
   }
 </script>
-
 <div class="boss-overlay" role="presentation">
   <div class="boss-container" role="dialog" aria-modal="true" aria-label="Combat de Boss">
     <header class="boss-header">
@@ -289,7 +270,6 @@
         <button class="close-btn" onclick={() => onClose?.()} aria-label="Fermer le combat" title="Fermer (Échap)">✕</button>
       </div>
     </header>
-
     {#if phase < 4}
       <div class="boss-lives-line">
         <span>Vies du boss : ❤️ {bossLives}/{MAX_BOSS_LIVES}</span>
@@ -298,16 +278,13 @@
       <div class="progress-track" aria-label={`Vies restantes du boss : ${bossLives} sur ${MAX_BOSS_LIVES}`}>
         <div class="progress-fill" style={`width: ${(bossLives / MAX_BOSS_LIVES) * 100}%`}></div>
       </div>
-
       {#if questions.length > 0}
         <div class="boss-body">
           <div class="phase-title">
             <h3>Phase {phase} — {phaseTitle}</h3>
             <button class="audio-btn" onclick={readInstruction} aria-label="Lire la consigne" title="Écouter">🔊</button>
           </div>
-
           <p class="question-text">{currentExercise.question}</p>
-
           {#if currentExercise.type === 'qcm' || currentExercise.type === 'comparison'}
             <div class="options-grid">
               {#each currentExercise.options ?? [] as option}
@@ -321,14 +298,14 @@
               {/each}
             </div>
           {/if}
-
           {#if currentExercise.type === 'input' || (currentExercise.type === 'number_line' && !currentExercise.interactiveData?.totalParts)}
             <div class="input-section">
               <label class="sr-only" for="boss-answer">Ta réponse</label>
               <input
                 id="boss-answer"
                 type="text"
-                inputmode="decimal"
+                inputmode="none"
+                readonly
                 bind:value={answer}
                 placeholder="Ta réponse…"
                 autocomplete="off"
@@ -348,7 +325,6 @@
               </div>
             </div>
           {/if}
-
           {#if currentExercise.type === 'number_line' && currentExercise.interactiveData?.totalParts}
             {@const totalParts = currentExercise.interactiveData?.totalParts ?? 1}
             <section class="interactive-box number-line-box">
@@ -375,7 +351,6 @@
               </div>
             </section>
           {/if}
-
           {#if currentExercise.type === 'color_interactive'}
             {@const totalParts = currentExercise.interactiveData?.totalParts ?? 4}
             {@const coloredCount = answer ? Number.parseInt(answer.split('/')[0], 10) || 0 : 0}
@@ -388,7 +363,7 @@
                     class="bar-segment-interactive {i < coloredCount ? 'colored' : 'empty'}"
                     onclick={() => {
                       if (locked) return;
-                      const nextCount = coloredCount === i + 1 ? i : i + 1;
+const nextCount = coloredCount === i + 1 ? i : i + 1;
                       answer = `${nextCount}/${totalParts}`;
                       feedback = '';
                     }}
@@ -401,10 +376,32 @@
               <p class="visual-caption">Parts coloriées : {coloredCount} / {totalParts}</p>
             </section>
           {/if}
-
           {#if currentExercise.type === 'slice_interactive'}
-            <section class="interactive-box">
+            {@const sliceCount = Math.max(1, Math.min(12, Number.parseInt(answer || '1', 10) || 1))}
+            {@const sliceShape = currentExercise.interactiveData?.visualShape}
+            <section class="interactive-box slice-box">
               <p class="instruction-mini">Ajuste le nombre de parts égales avec les boutons + et −.</p>
+              {#if sliceShape}
+                {#if sliceShape === 'bar'}
+                  <div class="slice-bar-visual" role="img" aria-label={`Une unité découpée en ${sliceCount} parts égales`}>
+                    {#each Array(sliceCount) as _, index}
+                      <div class="slice-bar-part" class:alternate={index % 2 === 1}>
+                        <span>{index + 1}</span>
+                      </div>
+                    {/each}
+                  </div>
+                {:else}
+                  <svg class="slice-circle-visual" viewBox="0 0 120 120" role="img" aria-label={`Un cercle découpé en ${sliceCount} parts égales`}>
+                    {#if sliceCount === 1}
+                      <circle cx="60" cy="60" r="48" class="slice-wedge" />
+                    {:else}
+                      {#each Array(sliceCount) as _, index}
+                        <path d={sliceWedgePath(index, sliceCount)} class="slice-wedge" class:alternate={index % 2 === 1} />
+                      {/each}
+                    {/if}
+                  </svg>
+                {/if}
+              {/if}
               <div class="slider-row">
                 <button
                   type="button"
@@ -418,7 +415,9 @@
                   disabled={locked}
                   aria-label="Retirer une part"
                 >−</button>
-                <span class="slice-counter">{answer || '1'} part(s)</span>
+                <span class="slice-counter">
+                  {#if sliceShape}{sliceCount} part(s) égale(s){:else}{answer || '1'} part(s){/if}
+                </span>
                 <button
                   type="button"
                   class="adjust-btn"
@@ -434,11 +433,9 @@
               </div>
             </section>
           {/if}
-
           {#if ['input', 'number_line', 'color_interactive', 'slice_interactive'].includes(currentExercise.type)}
             <button type="button" class="primary verify-btn" onclick={() => submit()} disabled={locked}>Vérifier ma réponse</button>
           {/if}
-
           {#if feedback}
             <p class:success={locked} class="feedback" role="status" aria-live="polite">{feedback}</p>
           {/if}
@@ -466,7 +463,6 @@
     {/if}
   </div>
 </div>
-
 <style>
   .boss-overlay { position: fixed; inset: 0; z-index: 4000; display: flex; justify-content: center; align-items: center; padding: 1rem; background: rgba(2, 6, 23, .86); backdrop-filter: blur(6px); overflow-y: auto; }
   .boss-container { width: min(100%, 760px); margin: 0 auto; padding: 1.25rem; border-radius: 1.25rem; color: #f8fafc; background: #0f172a; border: 2px solid #0891b2; box-shadow: 0 18px 45px #0003; font-family: system-ui, sans-serif; max-height: 94vh; overflow-y: auto; }
@@ -518,6 +514,13 @@
   .slider-row { display: flex; justify-content: center; align-items: center; gap: 1rem; }
   .adjust-btn { width: 2.7rem; height: 2.7rem; border: 0; border-radius: .6rem; background: #0284c7; color: white; font-size: 1.5rem; font-weight: 900; cursor: pointer; }
   .slice-counter { min-width: 7rem; text-align: center; font-size: 1.1rem; font-weight: 800; }
+  .slice-bar-visual { display: flex; width: min(100%, 520px); min-height: 82px; margin: .25rem auto .5rem; overflow: hidden; border: 2px solid #cbd5e1; border-radius: .5rem; background: #0f172a; }
+  .slice-bar-part { display: flex; flex: 1 1 0; min-width: 0; align-items: center; justify-content: center; border-right: 2px solid #cbd5e1; background: #155e75; color: #f8fafc; font-weight: 800; }
+  .slice-bar-part.alternate { background: #164e63; }
+  .slice-bar-part:last-child { border-right: 0; }
+  .slice-circle-visual { display: block; width: 176px; height: 176px; max-width: 100%; margin: 0 auto .25rem; }
+  .slice-wedge { fill: #155e75; stroke: #cbd5e1; stroke-width: 1.5; }
+  .slice-wedge.alternate { fill: #164e63; }
   .primary { padding: .8rem 1.4rem; border: 0; border-radius: .65rem; background: #0891b2; color: white; font-weight: 700; cursor: pointer; }
   .primary:hover:not(:disabled) { background: #0e7490; }
   .primary:disabled, .option-btn:disabled, .key-btn:disabled, .number-line-tick:disabled, .bar-segment-interactive:disabled, .adjust-btn:disabled { opacity: .6; cursor: not-allowed; }
