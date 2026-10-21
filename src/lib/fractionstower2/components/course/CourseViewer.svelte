@@ -20,7 +20,9 @@
 import { base } from '$app/paths';
 
 const courseUrl = `${base}/fractionstower2/courses/support_etage_complet.html`;
-  // Fermer le cours avec la touche Échap.
+// Diagnostic temporaire : afficher le chemin calculé.
+
+// Fermer le cours avec la touche Échap.
   onMount(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -72,6 +74,7 @@ const courseUrl = `${base}/fractionstower2/courses/support_etage_complet.html`;
       Il contient déjà les boutons de traduction, le brouillon,
       les réponses interactives et les corrigés.
     -->
+      
     <iframe
       class="course-frame"
       src={courseUrl}
