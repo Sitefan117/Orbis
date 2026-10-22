@@ -1,13 +1,13 @@
 export type WorldId =
   | 'livrets'
-  | 'geometrie'
+  | 'nexus'
   | 'calculs'
   | 'numeria'
   | 'pcp'
   | 'convertigo'
   | 'conju_lab'
   | 'race'
-  | 'swissgamefactory'
+  | 'shift'
   | 'mathhunt'
   | 'fractionstower2';
 
@@ -56,8 +56,8 @@ export const worlds: World[] = [
     status: 'available'
   },
   {
-    id: 'geometrie',
-    title: 'Le Défi des Formes',
+    id: 'nexus',
+    title: 'Nexus - Le Défi des Formes',
     subtitle: 'Connais-tu tes figures et solides sur le bout des doigts ?',
     route: '/geometrie',
     emoji: '📐',
@@ -116,14 +116,14 @@ export const worlds: World[] = [
     status: 'available'
   },
   {
-    id: 'swissgamefactory',
-    title: 'Swiss Game Factory',
-    subtitle: 'Arriveras-tu à terminer les commandes ?',
-    route: '/swissgamefactory',
+    id: 'shift',
+    title: 'Shift',
+    subtitle: 'Arriveras-tu maîtriser petits et grands nombres ?',
+    route: '/shift',
     emoji: '🎮',
     color: 'green',
     subject: 'MATHS',
-    status: 'development'
+    status: 'available'
   },
   {
     id: 'fractionstower2',
@@ -149,14 +149,14 @@ export const worlds: World[] = [
 
 export const worldLabels: Record<WorldId, string> = {
   livrets: "L'Atelier des Livrets",
-  geometrie: 'Le Défi des Formes',
+  nexus: 'Nexus - Le Défi des Formes',
   calculs: 'Le Calcul Décimal',
   numeria: 'Les Royaumes de Numéria',
   pcp: 'Espace PCP / Orientation',
   convertigo: 'Convertigo',
   conju_lab: 'conju_lab',
   race: 'race',
-  swissgamefactory: 'swissgamefactory',
+  shift: 'shift',
   mathhunt: 'mathhunt',
   fractionstower2: 'Tour des Fractions 2'
 };
