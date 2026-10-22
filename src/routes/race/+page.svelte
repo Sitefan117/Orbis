@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-
+    import { base } from '$app/paths';
     // -------------------------------------------------------------------------
     // MATH RACER — prototype amélioré
     // Le jeu reste indépendant du portail, mais conserve un petit bilan local.
@@ -69,7 +69,8 @@
         dueSpawn: number;
     }
 
-    const ORBIS_HOME = '/'; // Modifier cette constante si l'accueil d'Orbis utilise une autre route.
+    // Retour à la racine du site, y compris sur GitHub Pages.
+const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis utilise une autre route.
     const STORAGE_KEY = 'orbis:math-racer:fact-stats:v1';
     const LANES = [-3.5, 0, 3.5];
     const BASE_SESSION_QUESTIONS = 12;
