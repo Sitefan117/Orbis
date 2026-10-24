@@ -5,7 +5,7 @@ export type WorldId =
   | 'numeria'
   | 'pcp'
   | 'convertigo'
-  | 'conju_fighter'
+  | 'conju_lab'
   | 'race'
   | 'swissgamefactory'
   | 'mathhunt'
@@ -43,7 +43,7 @@ export const worlds: World[] = [
     emoji: '🏎️',
     color: 'blue',
     subject: 'MATHS',
-    status: 'prototype'
+    status: 'available'
   },
   {
     id: 'livrets',
@@ -106,14 +106,14 @@ export const worlds: World[] = [
     status: 'prototype'
   },
   {
-    id: 'conju_fighter',
-    title: 'Conju_fighter',
+    id: 'conju_lab',
+    title: 'conju_lab',
     subtitle: 'Qui est le meilleur conjugueur ?',
-    route: '/conju_fighter',
+    route: '/conju_lab',
     emoji: '🔄',
     color: 'blue',
     subject: 'FRANÇAIS',
-    status: 'development'
+    status: 'available'
   },
   {
     id: 'swissgamefactory',
@@ -154,7 +154,7 @@ export const worldLabels: Record<WorldId, string> = {
   numeria: 'Les Royaumes de Numéria',
   pcp: 'Espace PCP / Orientation',
   convertigo: 'Convertigo',
-  conju_fighter: 'conju_fighter',
+  conju_lab: 'conju_lab',
   race: 'race',
   swissgamefactory: 'swissgamefactory',
   mathhunt: 'mathhunt',

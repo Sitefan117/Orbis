@@ -1,4 +1,6 @@
 <script lang="ts">
+  /* ORBIS — page d’accueil complète. Les commentaires repèrent les responsabilités ;
+     la navigation, les profils et les modules restent fournis par les fichiers existants. */
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { clearStudentName, getStudentName, storeStudentName } from '$lib/client/activity';
@@ -22,6 +24,19 @@
     development: 'En développement',
     prototype: 'Prototype'
   } as const;
+
+  // Le type est dérivé de statusLabels : impossible de créer un statut sans libellé.
+  type GameStatus = keyof typeof statusLabels;
+  type GameStatusFilter = 'ALL' | GameStatus;
+
+  // Les filtres sont indépendants : la catégorie et le statut se cumulent.
+  let selectedGameStatus: GameStatusFilter = 'ALL';
+  const gameStatusFilters: Array<{ value: GameStatusFilter; label: string }> = [
+    { value: 'ALL', label: 'Tous les statuts' },
+    { value: 'available', label: 'Disponible' },
+    { value: 'development', label: 'En développement' },
+    { value: 'prototype', label: 'Prototype' }
+  ];
 
   // Navigation du Learning Lab : matière puis domaine.
   let selectedSubject: string | null = null;
@@ -149,9 +164,18 @@
   // Cela évite de déduire une matière à partir du nom d'un jeu.
 
   // Données calculées pour les filtres Arcade et Learning Lab.
-  $: filteredWorlds = worlds.filter((world) =>
-    selectedArcadeCategory === 'TOUS' || world.subject === selectedArcadeCategory
-  );
+  // Un jeu n'a pas besoin de satisfaire les deux critères quand un filtre est sur « Tous ».
+  // Le statut 'available' sert de valeur de secours si un ancien jeu n'en possède pas encore.
+  $: filteredWorlds = worlds.filter((world) => {
+    const matchesCategory =
+      selectedArcadeCategory === 'TOUS' || world.subject === selectedArcadeCategory;
+
+    const status: GameStatus = world.status ?? 'available';
+    const matchesStatus =
+      selectedGameStatus === 'ALL' || status === selectedGameStatus;
+
+    return matchesCategory && matchesStatus;
+  });
 
   $: subjects = Array.from(new Set(labModules.map((module) => module.subject)));
 
@@ -488,16 +512,37 @@
               <p class="muted small">Choisis un univers et relève le défi.</p>
             </div>
 
-            <div class="filter-bar" aria-label="Filtrer les jeux par matière">
-              {#each arcadeCategories as category}
-                <button
-                  class="filter-btn"
-                  class:active={selectedArcadeCategory === category}
-                  aria-pressed={selectedArcadeCategory === category}
-                  type="button"
-                  on:click={() => selectedArcadeCategory = category}
-                >{category}</button>
-              {/each}
+            <!-- Les deux groupes sont empilés : la mise en page reste lisible sur tablette. -->
+            <div class="arcade-filters">
+              <div class="filter-group">
+                <span class="filter-caption">Matière</span>
+                <div class="filter-bar" role="group" aria-label="Filtrer les jeux par matière">
+                  {#each arcadeCategories as category}
+                    <button
+                      class="filter-btn"
+                      class:active={selectedArcadeCategory === category}
+                      aria-pressed={selectedArcadeCategory === category}
+                      type="button"
+                      on:click={() => selectedArcadeCategory = category}
+                    >{category}</button>
+                  {/each}
+                </div>
+              </div>
+
+              <div class="filter-group">
+                <span class="filter-caption">Statut</span>
+                <div class="filter-bar status-filter" role="group" aria-label="Filtrer les jeux par statut">
+                  {#each gameStatusFilters as statusFilter}
+                    <button
+                      class="filter-btn"
+                      class:active={selectedGameStatus === statusFilter.value}
+                      aria-pressed={selectedGameStatus === statusFilter.value}
+                      type="button"
+                      on:click={() => selectedGameStatus = statusFilter.value}
+                    >{statusFilter.label}</button>
+                  {/each}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -970,8 +1015,13 @@
   .library-header p, .lab-header p { margin-top: .2rem; margin-bottom: 0; }
   .lab-header { margin-bottom: .25rem; }
 
-  .filter-bar { display: flex; flex-wrap: wrap; gap: .35rem; max-width: 100%; padding: .3rem; border-radius: 10px; background: #e9eef5; }
+  /* Les filtres partagent le même style, mais restent groupés par fonction. */
+  .arcade-filters { display: flex; flex-direction: column; gap: .65rem; width: min(100%, 42rem); min-width: 0; }
+  .filter-group { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+  .filter-caption { color: #625e55; font-size: .68rem; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
+  .filter-bar { display: flex; flex-wrap: wrap; gap: .35rem; max-width: 100%; min-width: 0; padding: .3rem; border-radius: 10px; background: #e9eef5; }
   .filter-btn { padding: .5rem .7rem; border: 1px solid transparent; border-radius: 7px; background: transparent; color: #526175; font-size: .78rem; font-weight: 750; cursor: pointer; }
+  .status-filter .filter-btn { flex: 0 1 auto; }
   .filter-btn.active { background: #2458a6; color: #fff; }
 
   /* =========================================================
@@ -1178,6 +1228,7 @@
     .portal-card { padding: 1.4rem; }
     .settings-panel { top: 5rem; right: .5rem; width: calc(100vw - 1rem); max-height: calc(100dvh - 5.5rem); }
     .library-header { align-items: flex-start; }
+    .arcade-filters { width: 100%; }
     .filter-bar { width: 100%; }
     .filter-btn { flex: 1 1 auto; }
     .lab-card-actions { flex-direction: column; }
@@ -1283,6 +1334,8 @@
   .card-top, .lab-card-header { align-items: center; }
   .category-tag, .lab-subject-tag { display: inline-flex; align-self: flex-start; background: var(--orbis-orange); color: var(--orbis-ink); border: 1px solid var(--orbis-ink); padding: .3rem .45rem; font-size: .68rem; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
   .status-label { color: #41623c; }
+  .filter-caption { color: var(--orbis-muted); }
+  .arcade-filters .filter-bar { border: 1px solid var(--orbis-line); }
   .tile-art {
     display: grid; position: relative; place-items: center; min-height: 170px;
     border: 1px solid var(--orbis-ink); background: var(--orbis-paper); overflow: hidden;
@@ -1386,7 +1439,7 @@
      Couche limitée à la grille des jeux ; le reste de la page reste inchangé.
      ============================================================ */
   @media (min-width: 1200px) {
-    .world-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .world-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
   }
 
   .game-card { min-width: 0; padding: .55rem; }

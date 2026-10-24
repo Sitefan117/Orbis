@@ -8,7 +8,7 @@
     // Aucune donnée n'est envoyée à un serveur dans cette version.
     // -------------------------------------------------------------------------
 
-    type GameState = 'MENU' | 'PLAYING' | 'SUMMARY' | 'GAMEOVER';
+    type GameState = 'MENU' | 'PLAYING' | 'PAUSED_ERROR' | 'SUMMARY' | 'GAMEOVER';
     type GameMode = 'training' | 'arcade';
     type PracticeLevel = 'guided' | 'standard' | 'challenge';
     type Notion =
@@ -75,7 +75,7 @@
     const BASE_SESSION_QUESTIONS = 12;
     const MAX_SESSION_QUESTIONS = 15; // Quelques questions supplémentaires permettent de revoir des erreurs.
     const BASE_SPEED_MIN = 10.5; // Unités Three.js par seconde, pas par image.
-    const BASE_SPEED_MAX = 16.5;
+    const BASE_SPEED_MAX = 24; // En mode arcade, les réussites font vraiment monter le rythme.
 
     const notionGroups: { title: string; items: NotionOption[] }[] = [
         {
@@ -90,14 +90,14 @@
             ]
         },
         {
-            title: 'COMPLÉMENTS',
+            title: 'COMBIEN FAUT-IL AJOUTER ?',
             items: [
-                { id: 'complements10', label: 'Compléments à 10', help: 'Ex. : 7 + ? = 10' },
-                { id: 'complements100', label: 'Compléments à 100', help: 'Ex. : 63 + ? = 100' },
-                { id: 'complements1000', label: 'Compléments à 1 000', help: 'Ex. : 650 + ? = 1 000' },
-                { id: 'dizaineSuivante', label: 'Prochaine dizaine', help: 'Ex. : 47 → 50' },
-                { id: 'centaineSuivante', label: 'Prochaine centaine', help: 'Ex. : 368 → 400' },
-                { id: 'millierSuivant', label: 'Prochain millier', help: 'Ex. : 3 650 → 4 000' }
+                { id: 'complements10', label: 'Pour arriver à 10', help: 'Ex. : 7 + ? = 10' },
+                { id: 'complements100', label: 'Pour arriver à 100', help: 'Ex. : 63 + ? = 100' },
+                { id: 'complements1000', label: 'Pour arriver à 1 000', help: 'Ex. : 650 + ? = 1 000' },
+                { id: 'dizaineSuivante', label: 'Atteindre la dizaine suivante', help: 'Ex. : 47 → 50' },
+                { id: 'centaineSuivante', label: 'Atteindre la centaine suivante', help: 'Ex. : 368 → 400' },
+                { id: 'millierSuivant', label: 'Atteindre le millier suivant', help: 'Ex. : 3 650 → 4 000' }
             ]
         }
     ];
@@ -134,6 +134,8 @@
     let plannedQuestions = $state(BASE_SESSION_QUESTIONS);
     let sessionWrongFacts = $state<string[]>([]);
     let factStats = $state<Record<string, FactStat>>({});
+    // Le bilan final attend que l'élève ait lu la correction et appuyé sur BOOST.
+    let pendingPauseOutcome: 'SUMMARY' | 'GAMEOVER' | null = null;
 
     let isAccelerating = false;
     let isBraking = false;
@@ -164,6 +166,7 @@
     let retryQueue: RetryItem[] = [];
     let scheduledRetryKeys = new Set<string>();
     let feedbackTimer: ReturnType<typeof setTimeout> | null = null;
+    let tapBoostTimer: ReturnType<typeof setTimeout> | null = null;
     let audioEngine: ArcadeAudioEngine | null = null;
 
     // -------------------------------------------------------------------------
@@ -318,20 +321,20 @@
         } else if (notion === 'complements10') {
             const value = randomInt(1, 9);
             answer = 10 - value;
-            questionText = `Complément de ${value} à 10`;
+            questionText = `De ${value} à 10 : combien manque-t-il ?`;
             fullFormula = `${value} + ${answer} = 10`;
             factKey = `complement10:${value}`;
         } else if (notion === 'complements100') {
             // Au départ, on travaille des dizaines entières ; ensuite, tous les nombres sont possibles.
             const value = practiceLevel === 'guided' ? randomInt(1, 9) * 10 : randomInt(1, 99);
             answer = 100 - value;
-            questionText = `Complément de ${value} à 100`;
+            questionText = `De ${value} à 100 : combien manque-t-il ?`;
             fullFormula = `${value} + ${answer} = 100`;
             factKey = `complement100:${value}`;
         } else if (notion === 'complements1000') {
             const value = practiceLevel === 'guided' ? randomInt(1, 9) * 100 : randomInt(1, 999);
             answer = 1000 - value;
-            questionText = `Complément de ${formatNumber(value)} à 1 000`;
+            questionText = `De ${formatNumber(value)} à 1 000 : combien manque-t-il ?`;
             fullFormula = `${formatNumber(value)} + ${formatNumber(answer)} = ${formatNumber(1000)}`;
             factKey = `complement1000:${value}`;
         } else if (notion === 'dizaineSuivante') {
@@ -518,6 +521,85 @@
         showFeedbackBanner = false;
     }
 
+    function clearTapBoost() {
+        if (tapBoostTimer) clearTimeout(tapBoostTimer);
+        tapBoostTimer = null;
+    }
+
+    // Une erreur fige la course pour que l'élève puisse lire et comprendre la correction.
+    // Le bilan final, si la séance est terminée, attend le bouton BOOST / CONTINUER.
+    function pauseAfterError(title: string, formula: string, outcome: 'SUMMARY' | 'GAMEOVER' | null) {
+        clearFeedback();
+        clearTapBoost();
+        audioEngine?.stopMusic(); // Silence la musique pendant la lecture de la correction.
+        feedbackKind = 'error';
+        feedbackTitle = title;
+        feedbackBannerText = formula;
+        pendingPauseOutcome = outcome;
+        isAccelerating = false;
+        isBraking = false;
+        gameState = 'PAUSED_ERROR';
+    }
+
+    function resumeAfterError() {
+        if (gameState !== 'PAUSED_ERROR') return;
+
+        clearFeedback();
+        clearTapBoost();
+        isAccelerating = false;
+        isBraking = false;
+        const outcome = pendingPauseOutcome;
+        pendingPauseOutcome = null;
+
+        if (outcome) {
+            // La dernière erreur est corrigée avant l'affichage du bilan final.
+            gameState = outcome;
+            clearActiveGates();
+            return;
+        }
+
+        gameState = 'PLAYING';
+        audioEngine?.playStart();
+        if (musicEnabled) void audioEngine?.startMusic();
+        if (!animationFrameId) {
+            lastFrameTime = 0;
+            animationFrameId = requestAnimationFrame(animate);
+        }
+    }
+
+    // Au clic sur le bouton central, on repart avec une brève impulsion de boost.
+    // Le timer est annulé proprement si la course est interrompue entre-temps.
+    function resumeWithBoost() {
+        resumeAfterError();
+        if (gameState !== 'PLAYING') return;
+
+        isAccelerating = true;
+        clearTapBoost();
+        tapBoostTimer = setTimeout(() => {
+            isAccelerating = false;
+            tapBoostTimer = null;
+        }, 420);
+    }
+
+    // Pointer Events prennent en charge le doigt, le stylet et la souris.
+    function handleAcceleratorPointerDown(event: PointerEvent) {
+        event.preventDefault();
+        try { (event.currentTarget as HTMLButtonElement).setPointerCapture(event.pointerId); } catch { /* La commande reste utilisable sans capture. */ }
+        if (gameState === 'PAUSED_ERROR') resumeAfterError();
+        if (gameState === 'PLAYING') isAccelerating = true;
+    }
+
+    function handleBrakePointerDown(event: PointerEvent) {
+        event.preventDefault();
+        try { (event.currentTarget as HTMLButtonElement).setPointerCapture(event.pointerId); } catch { /* La commande reste utilisable sans capture. */ }
+        if (gameState === 'PLAYING') isBraking = true;
+    }
+
+    function handleSpeedPointerUp() {
+        isAccelerating = false;
+        isBraking = false;
+    }
+
     async function returnToOrbis() {
         stopRound();
         await goto(ORBIS_HOME);
@@ -525,8 +607,10 @@
 
     function stopRound() {
         clearFeedback();
+        clearTapBoost();
         isAccelerating = false;
         isBraking = false;
+        pendingPauseOutcome = null;
         gameState = 'MENU';
         targetQuestionText = 'À toi de jouer !';
         clearActiveGates();
@@ -541,14 +625,30 @@
     }
 
     function handleKeydown(event: KeyboardEvent) {
-        if (gameState !== 'PLAYING') return;
         const key = event.key.toLowerCase();
-        const gameKeys = ['arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'a', 'd', 'q', 'w', 'z', 's'];
+        const acceleratorKeys = ['arrowup', 'w', 'z'];
+        const gameKeys = ['arrowleft', 'arrowright', ...acceleratorKeys, 'arrowdown', 'a', 'd', 'q', 's'];
+
+        // Le menu garde son comportement normal : seules les courses capturent les flèches.
+        if (gameState !== 'PLAYING' && gameState !== 'PAUSED_ERROR') return;
         if (gameKeys.includes(key)) event.preventDefault();
+
+        // En pause, seul l'accélérateur relance la course après la correction.
+        if (gameState === 'PAUSED_ERROR') {
+            if (acceleratorKeys.includes(key)) {
+                // Mémoriser si la reprise doit relancer la course ou afficher le bilan.
+                // Cela évite une comparaison d'état que TypeScript considère impossible
+                // après le rétrécissement de type vers PAUSED_ERROR.
+                const shouldAccelerateAfterResume = pendingPauseOutcome === null;
+                resumeAfterError();
+                if (shouldAccelerateAfterResume) isAccelerating = true;
+            }
+            return;
+        }
 
         if (key === 'arrowleft' || key === 'a' || key === 'q') moveLeft();
         if (key === 'arrowright' || key === 'd') moveRight();
-        if (key === 'arrowup' || key === 'w' || key === 'z') isAccelerating = true;
+        if (acceleratorKeys.includes(key)) isAccelerating = true;
         if (key === 'arrowdown' || key === 's') isBraking = true;
     }
 
@@ -751,14 +851,14 @@
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font = 'bold 118px "Press Start 2P", monospace';
+        ctx.font = 'bold 118px "Oxanium", sans-serif';
         ctx.shadowColor = '#00eaff';
         ctx.shadowBlur = 12;
         // Les longues réponses restent dans le panneau sans être coupées.
         let fontSize = 118;
         while (ctx.measureText(text).width > 400 && fontSize > 56) {
             fontSize -= 6;
-            ctx.font = `bold ${fontSize}px "Press Start 2P", monospace`;
+            ctx.font = `bold ${fontSize}px "Oxanium", sans-serif`;
         }
         ctx.fillText(text, 256, 260, 410);
         ctx.shadowBlur = 0;
@@ -916,26 +1016,32 @@
             ]);
             displayFeedback('success', praise, base.fullFormula, 1050);
 
-            // La vitesse n'accélère que dans le mode arcade, jamais en entraînement.
-            if (gameMode === 'arcade') currentBaseSpeed = Math.min(BASE_SPEED_MAX, currentBaseSpeed + 0.22);
+            // En Arcade, chaque réussite augmente nettement la vitesse de base.
+            if (gameMode === 'arcade') currentBaseSpeed = Math.min(BASE_SPEED_MAX, currentBaseSpeed + 0.55);
         } else {
             combo = 0;
             audioEngine?.playWrong();
-            displayFeedback('error', choose(['Pas grave, on apprend !', 'Bien tenté !', 'On la retient pour la prochaine !']), base.fullFormula, 1850);
             if (!sessionWrongFacts.includes(base.fullFormula)) sessionWrongFacts = [...sessionWrongFacts, base.fullFormula];
             queueFailedFact(base);
 
-            if (gameMode === 'arcade') {
-                lives = Math.max(0, lives - 1);
-                if (lives <= 0) {
-                    gameState = 'GAMEOVER';
-                    isAccelerating = false;
-                    isBraking = false;
-                }
-            }
+            if (gameMode === 'arcade') lives = Math.max(0, lives - 1);
+
+            // Toute erreur fige le jeu : lire la réponse, puis appuyer sur BOOST pour continuer.
+            const outcome = gameMode === 'arcade' && lives <= 0
+                ? 'GAMEOVER'
+                : gameMode === 'training' && questionsAnswered >= plannedQuestions
+                    ? 'SUMMARY'
+                    : null;
+            pauseAfterError(
+                choose(['Pas grave, pilote !', 'Bien tenté ! On apprend aussi comme ça.', 'On regarde le calcul, puis on repart !']),
+                base.fullFormula,
+                outcome
+            );
         }
 
-        if (gameMode === 'training' && questionsAnswered >= plannedQuestions) {
+        // Si la dernière réponse est juste, le bilan peut apparaître immédiatement.
+        // Si elle est fausse, la pause pédagogique garde la priorité jusqu'à BOOST.
+        if (gameMode === 'training' && questionsAnswered >= plannedQuestions && gameState === 'PLAYING') {
             gameState = 'SUMMARY';
             isAccelerating = false;
             isBraking = false;
@@ -956,6 +1062,8 @@
         score = 0;
         lives = 3;
         combo = 0;
+        clearTapBoost();
+        pendingPauseOutcome = null;
         questionsAnswered = 0;
         correctAnswers = 0;
         plannedQuestions = BASE_SESSION_QUESTIONS;
@@ -1033,12 +1141,14 @@
         lastFrameTime = now;
 
         if (gameState === 'PLAYING') {
-            if (gameMode === 'training') {
-                speed = BASE_SPEED_MIN;
-            } else if (isAccelerating) {
-                speed = Math.min(currentBaseSpeed * 1.45, BASE_SPEED_MAX);
+            // La vitesse reste stable sans commande, même en entraînement.
+            // BOOST et FREIN fonctionnent dans les deux modes ; en Arcade, les bonnes
+            // réponses font en plus monter la vitesse de base et le plafond du boost.
+            if (isAccelerating) {
+                const boostCap = gameMode === 'arcade' ? BASE_SPEED_MAX * 1.25 : BASE_SPEED_MIN * 1.55;
+                speed = Math.min(currentBaseSpeed * 1.5, boostCap);
             } else if (isBraking) {
-                speed = Math.max(currentBaseSpeed * 0.48, 5.5);
+                speed = Math.max(currentBaseSpeed * 0.45, 5.0);
             } else {
                 speed = currentBaseSpeed;
             }
@@ -1084,9 +1194,10 @@
             if (gameState === 'PLAYING' && activeGates.length < 2) spawnGateSet();
         }
 
-        // Après la fin d'une séance, les portes encore loin sont retirées proprement.
-        if (gameState !== 'PLAYING' && activeGates.length > 0) clearActiveGates();
-        // En dehors d'une course, on ne dessine qu'une seule image et on arrête la boucle.
+        // Les portes restent en place pendant la pause, pour reprendre au même endroit.
+        if (gameState !== 'PLAYING' && gameState !== 'PAUSED_ERROR' && activeGates.length > 0) clearActiveGates();
+        // En pause, on dessine une dernière image puis on arrête l'animation : pas de GPU
+        // consommé inutilement pendant que l'élève lit le feedback. BOOST relance la boucle.
         renderer.render(scene, camera);
         if (gameState === 'PLAYING') {
             animationFrameId = requestAnimationFrame(animate);
@@ -1111,9 +1222,9 @@
             try {
                 THREE = await import('three');
                 if (disposed) return;
-                // Les nombres des portes sont dessinés sur un canvas : on attend la police pixelisée.
-                // Si Google Fonts est inaccessible, la police de remplacement reste utilisable.
-                try { await document.fonts.load('90px "Press Start 2P"'); } catch { /* Police de secours. */ }
+                // Les nombres des portes sont dessinés sur un canvas : attendre Oxanium évite
+                // que le premier rendu utilise une police de remplacement plus étroite.
+                try { await document.fonts.load('90px "Oxanium"'); } catch { /* Police de secours. */ }
                 if (disposed) return;
                 buildScene();
                 engineReady = true;
@@ -1132,6 +1243,7 @@
             window.removeEventListener('resize', handleResize);
             cancelAnimationFrame(animationFrameId);
             if (feedbackTimer) clearTimeout(feedbackTimer);
+            clearTapBoost();
             clearActiveGates();
             if (scene) disposeObjectResources(scene);
             if (renderer) {
@@ -1155,7 +1267,7 @@
     <meta name="theme-color" content="#080a18" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 </svelte:head>
 
 <svelte:window onkeydown={handleKeydown} onkeyup={handleKeyup} />
@@ -1165,7 +1277,7 @@
     <div class="vignette" aria-hidden="true"></div>
     <div class="scanlines" aria-hidden="true"></div>
 
-    {#if gameState === 'PLAYING'}
+    {#if gameState === 'PLAYING' || gameState === 'PAUSED_ERROR'}
         <header class="hud-top" aria-label="Informations de la course">
             <section class="hud-card compact-stat">
                 <span class="hud-label">{gameMode === 'training' ? 'SÉRIE' : 'VIES'}</span>
@@ -1195,16 +1307,14 @@
 
         <div class="keyboard-hint" aria-hidden="true">
             ← → / A D : CHANGER DE VOIE
-            {#if gameMode === 'arcade'}<span>↑ / ↓ : BOOST / FREIN</span>{/if}
+            <span>↑ / ↓ : ACCÉLÉRER / RALENTIR</span>
         </div>
 
         <nav class="touch-controls" aria-label="Commandes tactiles">
             <button type="button" class="touch-control lane-control" onclick={moveLeft} aria-label="Aller sur la voie de gauche">◀<span>GAUCHE</span></button>
             <button type="button" class="touch-control lane-control" onclick={moveRight} aria-label="Aller sur la voie de droite"><span>DROITE</span>▶</button>
-            {#if gameMode === 'arcade'}
-                <button type="button" class="touch-control speed-control brake-control" aria-label="Freiner" onpointerdown={(event) => { event.preventDefault(); isBraking = true; event.currentTarget.setPointerCapture(event.pointerId); }} onpointerup={() => isBraking = false} onpointercancel={() => isBraking = false} onlostpointercapture={() => isBraking = false}>−<span>FREIN</span></button>
-                <button type="button" class="touch-control speed-control boost-control" aria-label="Accélérer" onpointerdown={(event) => { event.preventDefault(); isAccelerating = true; event.currentTarget.setPointerCapture(event.pointerId); }} onpointerup={() => isAccelerating = false} onpointercancel={() => isAccelerating = false} onlostpointercapture={() => isAccelerating = false}>+<span>BOOST</span></button>
-            {/if}
+            <button type="button" class="touch-control speed-control brake-control" aria-label="Ralentir" onpointerdown={handleBrakePointerDown} onpointerup={handleSpeedPointerUp} onpointercancel={handleSpeedPointerUp} onlostpointercapture={handleSpeedPointerUp}>−<span>{gameMode === 'training' ? 'RALENTIR' : 'FREIN'}</span></button>
+            <button type="button" class="touch-control speed-control boost-control" aria-label={gameState === 'PAUSED_ERROR' ? 'Accélérer pour continuer' : 'Accélérer'} onpointerdown={handleAcceleratorPointerDown} onpointerup={handleSpeedPointerUp} onpointercancel={handleSpeedPointerUp} onlostpointercapture={handleSpeedPointerUp}>+<span>{gameState === 'PAUSED_ERROR' ? 'CONTINUER' : gameMode === 'training' ? 'ACCÉLÉRER' : 'BOOST'}</span></button>
         </nav>
     {/if}
 
@@ -1213,6 +1323,19 @@
             <strong>{feedbackTitle}</strong>
             <span>{feedbackBannerText}</span>
         </div>
+    {/if}
+
+    {#if gameState === 'PAUSED_ERROR'}
+        <section class="pause-overlay" aria-label="Pause après une erreur" aria-live="assertive">
+            <div class="pause-card">
+                <span class="pause-tag">CHECKPOINT</span>
+                <h2>{feedbackTitle}</h2>
+                <p>Voilà le calcul :</p>
+                <strong class="pause-formula">{feedbackBannerText}</strong>
+                <p>Prends le temps de le lire. Appuie sur BOOST pour reprendre la course.</p>
+                <button type="button" class="resume-boost" onclick={resumeWithBoost}>⚡ ACCÉLÉRER POUR CONTINUER</button>
+            </div>
+        </section>
     {/if}
 
     {#if gameState === 'MENU'}
@@ -1265,7 +1388,7 @@
                     <label class="mode-option" class:selected={gameMode === 'training'}>
                         <input type="radio" bind:group={gameMode} value="training" />
                         <span class="mode-icon">◆</span>
-                        <span><strong>ENTRAÎNEMENT</strong><small>Vitesse stable · 12 portes + rappels · les erreurs reviennent pour t’aider.</small></span>
+                        <span><strong>ENTRAÎNEMENT</strong><small>Rythme réglable · 12 portes + rappels · les erreurs reviennent pour t’aider.</small></span>
                     </label>
                     <label class="mode-option" class:selected={gameMode === 'arcade'}>
                         <input type="radio" bind:group={gameMode} value="arcade" />
@@ -1286,7 +1409,7 @@
                     {#if engineReady}▶ LANCER LA COURSE{:else if engineError}CIRCUIT INDISPONIBLE{:else}CHARGEMENT DU CIRCUIT…{/if}
                 </button>
                 <a class="orbis-link" href={ORBIS_HOME} onclick={(event) => { event.preventDefault(); void returnToOrbis(); }}>↩ RETOUR À ORBIS</a>
-                <div class="menu-footnote"><span>CLAVIER : ← → / A D</span><span>TACTILE : COMMANDES À L’ÉCRAN</span></div>
+                <div class="menu-footnote"><span>CLAVIER : ← → / A D · ↑ ↓ : VITESSE</span><span>TACTILE : COMMANDES À L’ÉCRAN</span></div>
             </div>
         </section>
     {/if}
@@ -1345,14 +1468,14 @@
         isolation: isolate;
         color: #f5f8ff;
         background: #080a18;
-        font-family: 'Press Start 2P', ui-monospace, monospace;
+        font-family: 'Oxanium', 'Trebuchet MS', sans-serif;
         user-select: none;
         -webkit-user-select: none;
         touch-action: manipulation;
     }
 
     #canvas-container { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-    #canvas-container canvas { display: block; width: 100%; height: 100%; }
+    #canvas-container :global(canvas) { display: block; width: 100%; height: 100%; }
 
     .vignette, .scanlines { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
     .vignette { background: radial-gradient(ellipse at 50% 45%, transparent 32%, rgb(3 4 16 / 42%) 100%); }
@@ -1383,7 +1506,7 @@
     .hud-label, .target-label { display: block; color: #00eaff; font-size: clamp(0.48rem, 1.1vw, 0.7rem); line-height: 1.7; }
     .hud-number { display: block; margin-top: 0.35rem; color: white; font-size: clamp(0.78rem, 2vw, 1.25rem); }
     .hud-number small { color: #8a9bb8; font-size: 0.55em; }
-    .micro-copy { display: block; margin-top: 0.45rem; color: #a7b4d0; font-family: ui-monospace, monospace; font-size: clamp(0.63rem, 1.15vw, 0.8rem); }
+    .micro-copy { display: block; margin-top: 0.45rem; color: #a7b4d0; font-family: 'Oxanium', 'Trebuchet MS', sans-serif; font-size: clamp(0.63rem, 1.15vw, 0.8rem); }
     .lives { display: block; margin-top: 0.45rem; color: #ff286d; font: 1.05rem/1.2 system-ui, sans-serif; letter-spacing: 0.08em; }
     .lives span { color: #7c4260; }
     .score-stat { border-color: rgb(240 43 255 / 70%); box-shadow: 0 0 16px rgb(240 43 255 / 12%); }
@@ -1391,7 +1514,7 @@
 
     .target-card { padding: 0.8rem clamp(0.35rem, 2vw, 1.2rem); border-width: 2px; border-radius: 7px; text-align: center; }
     .target-card strong { display: block; margin: 0.45rem auto 0.25rem; font-size: clamp(0.72rem, 2.15vw, 1.5rem); line-height: 1.7; overflow-wrap: anywhere; text-shadow: 0 0 10px rgb(0 234 255 / 38%); }
-    .target-hint { display: block; color: #a6bdd7; font: 0.78rem/1.5 ui-monospace, monospace; }
+    .target-hint { display: block; color: #a6bdd7; font: 0.78rem/1.5 'Oxanium', sans-serif; }
 
     .quit-run {
         position: absolute;
@@ -1409,12 +1532,12 @@
     }
     .quit-run:hover, .quit-run:focus-visible { background: #6e163d; outline: 2px solid #ff286d; outline-offset: 2px; }
 
-    .keyboard-hint { position: absolute; z-index: 5; bottom: 1.1rem; left: 50%; transform: translateX(-50%); width: max-content; max-width: 80vw; color: rgb(214 229 255 / 65%); text-align: center; font: 0.72rem/1.8 ui-monospace, monospace; pointer-events: none; }
+    .keyboard-hint { position: absolute; z-index: 5; bottom: 1.1rem; left: 50%; transform: translateX(-50%); width: max-content; max-width: 80vw; color: rgb(214 229 255 / 65%); text-align: center; font: 0.72rem/1.8 'Oxanium', sans-serif; pointer-events: none; }
     .keyboard-hint span { display: block; color: rgb(0 234 255 / 70%); }
 
     .touch-controls { display: none; }
     .touch-control { min-width: 58px; min-height: 58px; border: 2px solid #6b80a6; border-radius: 7px; background: rgb(8 12 33 / 88%); color: white; box-shadow: 0 5px 0 #15192e; font-size: 1rem; touch-action: none; }
-    .touch-control span { display: block; margin-top: 0.35rem; font: 0.62rem ui-monospace, monospace; }
+    .touch-control span { display: block; margin-top: 0.35rem; font: 0.62rem 'Oxanium', sans-serif; }
     .lane-control { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #bffaff; border-color: #00a9bd; }
     .speed-control { min-width: 62px; font-size: 1.45rem; }
     .brake-control { border-color: #ff286d; color: #ff8fb4; }
@@ -1441,11 +1564,38 @@
         animation: feedback-pop 0.16s ease-out;
     }
     .feedback-banner strong { font-size: clamp(0.72rem, 1.65vw, 1rem); line-height: 1.8; color: #79faff; }
-    .feedback-banner span { font: 700 clamp(1.1rem, 3vw, 2rem)/1.5 ui-monospace, monospace; color: white; }
+    .feedback-banner span { font: 700 clamp(1.1rem, 3vw, 2rem)/1.5 'Oxanium', sans-serif; color: white; }
     .feedback-banner.error { border-color: #ff286d; box-shadow: 0 0 28px rgb(255 40 109 / 25%); }
     .feedback-banner.error strong { color: #ff9abb; }
     .feedback-banner.success { border-color: #8cff6c; box-shadow: 0 0 28px rgb(140 255 108 / 18%); }
     .feedback-banner.success strong { color: #b6ff9c; }
+
+    .pause-overlay {
+        position: absolute;
+        z-index: 20;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+        background: rgb(3 5 18 / 76%);
+        pointer-events: none;
+    }
+    .pause-card {
+        width: min(100%, 540px);
+        padding: clamp(1rem, 3vw, 1.7rem);
+        border: 2px solid #ff286d;
+        border-radius: 9px;
+        background: linear-gradient(145deg, #17112d, #09142d);
+        box-shadow: 0 0 34px rgb(255 40 109 / 24%);
+        text-align: center;
+        pointer-events: auto;
+    }
+    .pause-tag { display: inline-block; padding: 0.35rem 0.55rem; border: 1px solid #ff6e9b; color: #ff9abb; font-size: 0.65rem; letter-spacing: 0.08em; }
+    .pause-card h2 { margin: 0.9rem 0 0.5rem; color: #ffb1cb; font-size: clamp(1rem, 3vw, 1.45rem); line-height: 1.5; }
+    .pause-card p { margin: 0.6rem 0; color: #e1e9fc; font: 1rem/1.5 'Oxanium', 'Trebuchet MS', sans-serif; }
+    .pause-formula { display: block; margin: 0.8rem 0; color: #ffffff; font-size: clamp(1.3rem, 4vw, 2.2rem); line-height: 1.45; }
+    .resume-boost { min-height: 52px; margin-top: 0.6rem; padding: 0.75rem 1rem; border: 2px solid #b8fbff; border-radius: 5px; color: #07101c; background: linear-gradient(110deg, #00eaff, #79faff); font: 800 0.9rem/1.4 'Oxanium', 'Trebuchet MS', sans-serif; cursor: pointer; touch-action: none; pointer-events: auto; }
+    .resume-boost:active { transform: translateY(2px); }
 
     .menu-screen, .summary-screen {
         position: absolute;
@@ -1476,7 +1626,7 @@
     h1 span { color: #00eaff; }
     h1 b { color: #ff4fab; font-size: 0.6em; vertical-align: top; }
     .tagline { margin: 0; color: #e1faff; font-size: clamp(0.48rem, 1vw, 0.68rem); line-height: 2; }
-    .encouragement { max-width: 690px; margin: 0.55rem 0 1.15rem; color: #a8bbd9; font: 0.93rem/1.65 ui-monospace, monospace; }
+    .encouragement { max-width: 690px; margin: 0.55rem 0 1.15rem; color: #a8bbd9; font: 0.93rem/1.65 'Oxanium', sans-serif; }
 
     .menu-section-title { display: flex; align-items: center; gap: 0.7rem; margin: 1.1rem 0 0.75rem; }
     .menu-section-title > span { display: grid; place-items: center; flex: 0 0 32px; height: 28px; border: 1px solid #f02bff; color: #ff9bef; font-size: 0.65rem; }
@@ -1488,19 +1638,19 @@
     .notion-option { position: relative; display: flex; align-items: flex-start; gap: 0.55rem; min-width: 0; min-height: 62px; padding: 0.65rem; border: 1px solid #253253; border-radius: 5px; background: rgb(4 8 23 / 65%); cursor: pointer; transition: border-color 0.12s, background 0.12s; }
     .notion-option.chosen { border-color: #00bcd1; background: rgb(0 234 255 / 7%); }
     .notion-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-    .checkmark { display: grid; place-items: center; flex: 0 0 18px; height: 18px; border: 1px solid #5d6d8f; border-radius: 3px; color: transparent; font: bold 0.75rem ui-monospace, monospace; }
+    .checkmark { display: grid; place-items: center; flex: 0 0 18px; height: 18px; border: 1px solid #5d6d8f; border-radius: 3px; color: transparent; font: bold 0.75rem 'Oxanium', sans-serif; }
     .chosen .checkmark { border-color: #00eaff; background: #00a8ba; color: #07101c; }
     .notion-option:focus-within { outline: 2px solid #f02bff; outline-offset: 2px; }
     .notion-copy { display: block; min-width: 0; }
     .notion-copy strong { display: block; color: #f5f8ff; font-size: clamp(0.45rem, 0.9vw, 0.58rem); line-height: 1.7; }
-    .notion-copy small { display: block; margin-top: 0.3rem; color: #91a2c3; font: 0.75rem/1.45 ui-monospace, monospace; }
+    .notion-copy small { display: block; margin-top: 0.3rem; color: #91a2c3; font: 0.75rem/1.45 'Oxanium', sans-serif; }
 
     .level-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.55rem; }
     .level-option { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; min-height: 95px; padding: 0.75rem; border: 1px solid #344365; border-radius: 5px; background: rgb(4 8 23 / 65%); cursor: pointer; }
     .level-option.selected { border-color: #00eaff; background: rgb(0 234 255 / 7%); }
     .level-option input { position: absolute; opacity: 0; }
     .level-option strong { color: #9cfaff; font-size: 0.53rem; line-height: 1.8; }
-    .level-option small { color: #a0b0cf; font: 0.78rem/1.5 ui-monospace, monospace; }
+    .level-option small { color: #a0b0cf; font: 0.78rem/1.5 'Oxanium', sans-serif; }
     .level-option:focus-within { outline: 2px solid #f02bff; outline-offset: 2px; }
     .mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
     .mode-option { display: flex; align-items: flex-start; gap: 0.7rem; padding: 0.9rem; border: 1px solid #344365; border-radius: 6px; background: rgb(4 8 23 / 65%); cursor: pointer; }
@@ -1509,14 +1659,14 @@
     .mode-option:focus-within { outline: 2px solid #00eaff; outline-offset: 2px; }
     .mode-icon { color: #f02bff; font-size: 1.1rem; line-height: 1.5; }
     .mode-option strong { display: block; font-size: 0.55rem; line-height: 1.8; }
-    .mode-option small { display: block; margin-top: 0.35rem; color: #a0b0cf; font: 0.8rem/1.5 ui-monospace, monospace; }
+    .mode-option small { display: block; margin-top: 0.35rem; color: #a0b0cf; font: 0.8rem/1.5 'Oxanium', sans-serif; }
 
     .sound-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
     .sound-toggle { flex: 1; min-height: 42px; padding: 0.55rem; border: 1px solid #475b7d; border-radius: 4px; background: #101832; color: #d7e5ff; font-size: clamp(0.45rem, 0.85vw, 0.57rem); cursor: pointer; }
     .sound-toggle[aria-pressed="true"] { border-color: #00eaff; color: #89faff; }
-    .sound-message, .notice { margin: 0.5rem 0 0; color: #9eefff; font: 0.8rem/1.5 ui-monospace, monospace; }
+    .sound-message, .notice { margin: 0.5rem 0 0; color: #9eefff; font: 0.8rem/1.5 'Oxanium', sans-serif; }
     .notice { color: #ffd98b; }
-    .engine-error { padding: 0.8rem; border: 1px solid #ff286d; background: rgb(255 40 109 / 8%); color: #ffafc6; font: 0.83rem/1.6 ui-monospace, monospace; }
+    .engine-error { padding: 0.8rem; border: 1px solid #ff286d; background: rgb(255 40 109 / 8%); color: #ffafc6; font: 0.83rem/1.6 'Oxanium', sans-serif; }
 
     .primary-button, .secondary-button, .orbis-link { display: flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 52px; border-radius: 5px; padding: 0.85rem 1rem; text-align: center; text-decoration: none; font-size: clamp(0.5rem, 1.15vw, 0.7rem); line-height: 1.8; cursor: pointer; touch-action: manipulation; }
     .primary-button { width: 100%; margin-top: 1rem; border: 2px solid #a5fbff; color: #06121e; background: linear-gradient(110deg, #00eaff, #79faff); box-shadow: 0 4px 0 #007a92, 0 0 20px rgb(0 234 255 / 17%); }
@@ -1526,27 +1676,27 @@
     .secondary-button { border: 1px solid #536789; color: #e5ecff; background: #151d38; }
     .orbis-link { margin-top: 0.65rem; border: 1px solid #3a2b66; color: #d6c4ff; background: rgb(72 37 125 / 13%); }
     .orbis-link:hover { border-color: #ad8aff; background: rgb(72 37 125 / 25%); }
-    .menu-footnote { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.55rem; margin-top: 1rem; color: #687b9e; font: 0.7rem/1.5 ui-monospace, monospace; }
+    .menu-footnote { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.55rem; margin-top: 1rem; color: #687b9e; font: 0.7rem/1.5 'Oxanium', sans-serif; }
 
     .summary-screen { z-index: 100; }
     .summary-panel { width: min(100%, 650px); padding: clamp(1.2rem, 4vw, 2rem); text-align: center; }
     .summary-badge { display: inline-block; padding: 0.5rem 0.7rem; border: 1px solid #f02bff; color: #ffb1f0; font-size: 0.55rem; line-height: 1.8; }
     .summary-panel h2 { margin: 1rem 0 0.5rem; color: #00eaff; font-size: clamp(0.9rem, 3vw, 1.4rem); line-height: 1.8; text-shadow: 3px 3px #171044; }
-    .summary-message { max-width: 520px; margin: 0 auto 1.2rem; color: #b6c5df; font: 0.95rem/1.65 ui-monospace, monospace; }
+    .summary-message { max-width: 520px; margin: 0 auto 1.2rem; color: #b6c5df; font: 0.95rem/1.65 'Oxanium', sans-serif; }
     .summary-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.55rem; }
     .summary-stats div { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.8rem 0.3rem; border: 1px solid #2b4168; background: #0a1027; }
     .summary-stats span { color: #8d9cba; font-size: 0.48rem; line-height: 1.6; }
     .summary-stats strong { color: white; font-size: clamp(0.8rem, 2.2vw, 1.3rem); }
     .review-box { margin-top: 1rem; padding: 0.9rem; border: 1px solid #a13a6f; background: rgb(255 40 109 / 5%); text-align: left; }
     .review-box strong { color: #ff9bbc; font-size: 0.53rem; line-height: 1.8; }
-    .review-box p { margin: 0.55rem 0 0; color: #f3d9e3; font: 0.94rem/1.6 ui-monospace, monospace; overflow-wrap: anywhere; }
+    .review-box p { margin: 0.55rem 0 0; color: #f3d9e3; font: 0.94rem/1.6 'Oxanium', sans-serif; overflow-wrap: anywhere; }
     .positive-review { border-color: #477e50; background: rgb(140 255 108 / 5%); }
     .positive-review strong { color: #b6ff9c; }
     .positive-review p { color: #c8e5c5; }
     .summary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-top: 1rem; }
     .summary-actions .primary-button { margin: 0; }
 
-    .ambient-footer { position: absolute; right: 1rem; bottom: 0.45rem; z-index: 3; display: flex; gap: 0.5rem; color: rgb(151 172 208 / 45%); font: 0.65rem/1.2 ui-monospace, monospace; pointer-events: none; }
+    .ambient-footer { position: absolute; right: 1rem; bottom: 0.45rem; z-index: 3; display: flex; gap: 0.5rem; color: rgb(151 172 208 / 45%); font: 0.65rem/1.2 'Oxanium', sans-serif; pointer-events: none; }
 
     @keyframes feedback-pop { from { opacity: 0; transform: translate(-50%, -46%) scale(0.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
