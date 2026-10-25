@@ -4,7 +4,7 @@ export type WorldId =
   | 'calculs'
   | 'numeria'
   | 'pcp'
-  | 'convertigo'
+  | 'mesurovia'
   | 'conju_lab'
   | 'race'
   | 'shift'
@@ -83,7 +83,7 @@ export const worlds: World[] = [
     emoji: '📜',
     color: 'purple',
     subject: 'MATHS',
-    status: 'prototype'
+    status: 'development'
   },
   {
     id: 'pcp',
@@ -96,14 +96,14 @@ export const worlds: World[] = [
     status: 'prototype'
   },
   {
-    id: 'convertigo',
-    title: 'Convertigo',
+    id: 'mesurovia',
+    title: 'Mesurovia',
     subtitle: 'Les nombres ont différents noms, arriveras-tu à les décoder ?',
-    route: '/convertigo',
+    route: '/mesurovia',
     emoji: '🔄',
     color: 'blue',
     subject: 'MATHS',
-    status: 'prototype'
+    status: 'development'
   },
   {
     id: 'conju_lab',
@@ -153,7 +153,7 @@ export const worldLabels: Record<WorldId, string> = {
   calculs: 'Le Calcul Décimal',
   numeria: 'Les Royaumes de Numéria',
   pcp: 'Espace PCP / Orientation',
-  convertigo: 'Convertigo',
+  mesurovia: 'Mesurovia',
   conju_lab: 'conju_lab',
   race: 'race',
   shift: 'shift',

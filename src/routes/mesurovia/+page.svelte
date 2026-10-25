@@ -1,0 +1,1273 @@
+<script lang="ts">
+  /**
+   * MESUROVIA V3 — page de jeu intégrable dans ORBIS / SvelteKit.
+   *
+   * Choix de conception :
+   * - une seule diapositive visible à la fois pour limiter la recherche d'information ;
+   * - la théorie est divisée en 4 explications, chacune suivie d'une question obligatoire ;
+   * - les maisons et villages restent tous accessibles dans ce prototype ;
+   * - la carte utilise le point-and-click : aucun déplacement au clavier n'est enregistré ;
+   * - profil et progression sont stockés dans une clé V2 dédiée, sans modifier les anciennes sauvegardes.
+   */
+  import { onMount } from 'svelte';
+  import { base } from '$app/paths';
+  import engine from '$lib/mesurovia/engine-v3-adapter';
+
+  type View = 'welcome' | 'character' | 'villages' | 'village' | 'room' | 'pretest' | 'howto';
+  type SessionMode = 'practice' | 'battle' | 'table' | 'detective' | 'clock' | 'builder' | 'exam' | 'boss' | 'pretest';
+  type Feedback = { kind: 'success' | 'hint' | 'worked' | 'notice'; title: string; text: string } | null;
+  type HouseProgress = { theoryDone: boolean; trainingDone: boolean; examPassed: boolean; bestScore: number };
+  type Profile = {
+    name: string;
+    avatar: string;
+    xp: number;
+    badges: string[];
+    lastVillage: string;
+    pretest?: { total: number; correct: number; byFamily: Record<string, { total: number; correct: number }>; recommended: string };
+    houses: Record<string, Record<string, HouseProgress>>;
+    skills: Record<string, any>;
+    preferences: { reducedMotion: boolean; largeText: boolean; highContrast: boolean };
+  };
+  type Session = {
+    mode: SessionMode;
+    questions: any[];
+    index: number;
+    correct: number;
+    firstTryCorrect: number;
+    wrong: number;
+    attempts: number;
+    helped: boolean;
+    answerStatus: 'correct' | 'wrong' | null;
+    selected: string;
+    typed: string;
+    selectedMany: string[];
+    matches: Record<string, string>;
+    matchingLeft: string;
+    orderedItems: string[];
+    gameEvent: 'player-attack' | 'enemy-attack' | 'success' | 'miss' | null;
+    playerHp: number;
+    enemyHp: number;
+    familyResults: Record<string, { total: number; correct: number }>;
+  };
+
+  const STORAGE_KEY = 'mesurovia-orbis-v2';
+  const avatars = ['🧑‍🎒', '🧙🏽‍♀️', '🧑🏻‍🔬', '🧝🏾', '🧑🏼‍🚀', '🦊'];
+  const buildingLayout: Array<{ x: number; y: number; roof: string }> = [
+    { x: 150, y: 130, roof: '#cf7656' },
+    { x: 365, y: 86, roof: '#d69e51' },
+    { x: 665, y: 93, roof: '#7299ba' },
+    { x: 795, y: 280, roof: '#9c82bd' },
+    { x: 230, y: 300, roof: '#599d86' }
+  ];
+  const familyOrder = ['length', 'mass', 'capacity', 'duration', 'area', 'volume'];
+  const familyEmoji: Record<string, string> = { length: '📏', mass: '⚖️', capacity: '🫗', duration: '⏱️', area: '🟩', volume: '🧊' };
+  const jokes = [
+    'Pourquoi le mètre est-il toujours calme ? Parce qu’il garde ses distances.',
+    'Pourquoi la règle ne raconte-t-elle jamais de mensonges ? Parce qu’elle est droite.',
+    'Mon horloge a quitté son travail. Elle en avait assez de faire des heures supplémentaires.',
+    'Pourquoi la balance est-elle une bonne amie ? Elle prend toujours les choses avec équilibre.',
+    'J’ai voulu faire une blague sur les litres… mais elle était trop pleine.',
+    'Mon ruban mesure tout. C’est quelqu’un qui voit grand, mais centimètre par centimètre.'
+  ];
+
+  let ready = false;
+  let view: View = 'welcome';
+  let profiles: Record<string, Profile> = {};
+  let activeProfileKey = '';
+  let profile: Profile | null = null;
+  let saveMessage = '';
+  let newName = '';
+  let chosenAvatar = avatars[0];
+  let currentVillageId = engine.VILLAGES[0].id;
+  let currentHouseId = '';
+  let house: any = null;
+  let lessons: any[] = [];
+  let lessonIndex = 0;
+  let theoryPhase: 'explain' | 'checkpoint' = 'explain';
+  let lessonChoice = '';
+  let lessonFeedback: Feedback = null;
+  let trainingFeedback: Feedback = null;
+  let session: Session | null = null;
+  let activeQuestion: any = null;
+  let currentFeedback: Feedback = null;
+  let sessionResult: { passed: boolean; score: number; total: number; title: string; detail: string; mode?: SessionMode } | null = null;
+  let selectedMenu = false;
+  let modalMessage = '';
+  let mapPlayer = { x: 500, y: 305 };
+  let npcBubble: { x: number; y: number; text: string } | null = null;
+  let currentHowToSlide = 0;
+  let reduceMotion = false;
+  let largeText = false;
+  let highContrast = false;
+  let pretestRecommendationName = '';
+  let pretestAfterCharacterCreation = false;
+  let useOnscreenKeyboard = false;
+
+  const howToSlides = [
+    { title: '1. Explore le village', text: 'Clique sur le sol : ton personnage court jusque-là. Clique sur une maison pour entrer. Tous les villages et toutes les maisons sont accessibles dans cette version.' },
+    { title: '2. Écoute le maître', text: 'Chaque maison propose quatre petites explications. Après chacune, réponds à une question pour passer à la diapositive suivante.' },
+    { title: '3. Entraîne-toi en jouant', text: 'Choisis un jeu : duel de cartes, tableau magique, enquête ou défi de construction. Tu peux toucher les éléments à l’écran ; le jeu t’aide sans chronomètre.' },
+    { title: '4. Valide ton blason', text: 'L’épreuve comporte dix questions. Il faut au moins 8 réponses justes sur 10. En cas d’échec, révise et recommence : aucun point ni badge ne sera retiré.' }
+  ];
+
+  $: currentVillage = engine.VILLAGES.find((v: any) => v.id === currentVillageId) ?? engine.VILLAGES[0];
+  $: villageHouses = engine.listHouses(currentVillageId);
+  $: currentLesson = lessons[lessonIndex] ?? null;
+  $: houseProgress = getHouseProgress(currentVillageId, currentHouseId);
+  $: hasProfile = !!profile;
+  $: profileLabel = profile ? `${profile.avatar} ${profile.name}` : 'Aventurier';
+  $: mapProgress = villageHouses.filter((h: any) => getHouseProgress(currentVillageId, h.id).examPassed).length;
+  $: lessonSlideNumber = lessonIndex * 2 + (theoryPhase === 'explain' ? 1 : 2);
+  $: lessonProgress = Math.round((lessonSlideNumber / Math.max(1, lessons.length * 2)) * 100);
+  $: currentFamilyLabel = activeQuestion ? (engine.FAMILIES[activeQuestion.family]?.label ?? 'Mesures') : '';
+  $: tableGameAvailable = !!house?.families?.some((family: string) => ['length', 'mass', 'capacity'].includes(family));
+  $: builderGameAvailable = !!house?.families?.some((family: string) => ['area', 'volume'].includes(family));
+  $: clockGameAvailable = house?.id === 'durées';
+
+  onMount(() => {
+    useOnscreenKeyboard = (typeof window !== 'undefined' && (window.matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints ?? 0) > 1));
+    let migratedLegacy = false;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.profiles && typeof parsed.profiles === 'object') {
+          profiles = Object.fromEntries(Object.entries(parsed.profiles).map(([key, value]) => [key, normalizeProfile(value, key)]));
+          activeProfileKey = typeof parsed.active === 'string' ? parsed.active : Object.keys(profiles)[0] ?? '';
+          profile = profiles[activeProfileKey] ?? null;
+        }
+      } else {
+        // Migration non destructive : l'ancienne clé reste intacte jusqu'à ce que l'enseignant la supprime lui-même.
+        const oldRaw = localStorage.getItem('mesurovia-rpg-v1');
+        if (oldRaw) {
+          const oldSave = JSON.parse(oldRaw);
+          if (oldSave?.profiles && typeof oldSave.profiles === 'object') {
+            profiles = Object.fromEntries(Object.entries(oldSave.profiles).map(([key, value]) => [key, normalizeProfile(value, key)]));
+            activeProfileKey = typeof oldSave.active === 'string' && profiles[oldSave.active] ? oldSave.active : Object.keys(profiles)[0] ?? '';
+            profile = profiles[activeProfileKey] ?? null;
+            if (profile) {
+              migratedLegacy = true;
+            }
+          }
+        }
+      }
+      if (profile) {
+        newName = profile.name;
+        chosenAvatar = profile.avatar;
+        currentVillageId = profile.lastVillage || engine.VILLAGES[0].id;
+        reduceMotion = !!profile.preferences?.reducedMotion;
+        largeText = !!profile.preferences?.largeText;
+        highContrast = !!profile.preferences?.highContrast;
+      }
+      if (migratedLegacy && profile) {
+        persist();
+        saveMessage = 'Ta progression précédente a été reprise dans Mesurovia V3. L’ancienne sauvegarde est conservée.';
+      }
+    } catch {
+      // Si une sauvegarde est illisible, la page reste jouable et n'efface rien automatiquement.
+      saveMessage = 'La sauvegarde existante n’a pas pu être lue. Tu peux créer un nouveau profil.';
+    }
+    ready = true;
+  });
+
+  function blankProfile(name: string, avatar: string): Profile {
+    return {
+      name, avatar, xp: 0, badges: [], lastVillage: engine.VILLAGES[0].id,
+      houses: {}, skills: {},
+      preferences: { reducedMotion: false, largeText: false, highContrast: false }
+    };
+  }
+
+  function normalizeProfile(rawProfile: any, fallbackName: string): Profile {
+    // Compatibilité avec le profil Mesurovia v1 et les JSON exportés auparavant.
+    const raw = rawProfile && typeof rawProfile === 'object' ? rawProfile : {};
+    const base = blankProfile(String(raw.name || fallbackName || 'Aventurier'), String(raw.avatar || avatars[0]));
+    const convertedHouses: Record<string, Record<string, HouseProgress>> = {};
+    if (raw.houses && typeof raw.houses === 'object') {
+      Object.assign(convertedHouses, raw.houses);
+    } else if (raw.villages && typeof raw.villages === 'object') {
+      for (const [villageId, villageData] of Object.entries(raw.villages) as Array<[string, any]>) {
+        convertedHouses[villageId] = {};
+        for (const [houseId, progress] of Object.entries(villageData?.houses ?? {}) as Array<[string, any]>) {
+          convertedHouses[villageId][houseId] = {
+            theoryDone: !!progress.theoryDone,
+            trainingDone: !!progress.trainingDone,
+            examPassed: !!progress.examPassed,
+            bestScore: Number(progress.bestScore ?? progress.examBest ?? 0) || 0
+          };
+        }
+      }
+    }
+    const oldPretest = Array.isArray(raw.pretests) ? raw.pretests[0] : null;
+    const pretest = raw.pretest ?? (oldPretest ? {
+      total: Number(oldPretest.total) || 0,
+      correct: Number(oldPretest.correct) || 0,
+      byFamily: oldPretest.byFamily ?? {},
+      recommended: oldPretest.recommended ?? raw.recommended ?? base.lastVillage
+    } : undefined);
+    const oldOptions = raw.options ?? {};
+    const result: Profile = {
+      ...base,
+      ...raw,
+      name: String(raw.name || fallbackName || base.name),
+      avatar: String(raw.avatar || base.avatar),
+      xp: Number(raw.xp) || 0,
+      badges: Array.isArray(raw.badges) ? raw.badges.map((badge: any) => typeof badge === 'string' ? badge : String(badge?.text ?? 'Blason acquis')) : [],
+      lastVillage: engine.VILLAGES.some((v: any) => v.id === raw.lastVillage) ? raw.lastVillage : (engine.VILLAGES.some((v: any) => v.id === raw.recommended) ? raw.recommended : base.lastVillage),
+      houses: convertedHouses,
+      skills: raw.skills ?? raw.adaptive ?? {},
+      pretest,
+      preferences: {
+        reducedMotion: !!(raw.preferences?.reducedMotion ?? oldOptions.motion),
+        largeText: !!raw.preferences?.largeText,
+        highContrast: !!(raw.preferences?.highContrast ?? oldOptions.contrast)
+      }
+    };
+    return result;
+  }
+
+  function persist() {
+    if (!profile) return;
+    // Valeurs par défaut explicites : un vieux profil importé reste exploitable.
+    profile.houses ??= {};
+    profile.skills ??= {};
+    profile.badges ??= [];
+    profile.preferences = { reducedMotion: reduceMotion, largeText, highContrast };
+    profiles[activeProfileKey] = profile;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, active: activeProfileKey, profiles }));
+      saveMessage = 'Progression sauvegardée sur cet appareil.';
+    } catch {
+      saveMessage = 'La sauvegarde locale est indisponible dans ce contexte de navigateur.';
+    }
+  }
+
+  function getHouseProgress(villageId: string, houseId: string): HouseProgress {
+    const stored = profile?.houses?.[villageId]?.[houseId];
+    return stored ? stored : { theoryDone: false, trainingDone: false, examPassed: false, bestScore: 0 };
+  }
+
+  function setHouseProgress(villageId: string, houseId: string, patch: Partial<HouseProgress>) {
+    if (!profile) return;
+    profile.houses[villageId] ??= {};
+    const old = getHouseProgress(villageId, houseId);
+    profile.houses[villageId][houseId] = { ...old, ...patch };
+    persist();
+  }
+
+  function addXP(amount: number, reason: string) {
+    if (!profile) return;
+    profile.xp += amount;
+    modalMessage = `+${amount} XP · ${reason}`;
+    persist();
+  }
+
+  function awardBadge(name: string) {
+    if (!profile || profile.badges.includes(name)) return;
+    profile.badges = [...profile.badges, name];
+    persist();
+  }
+
+  function createCharacter() {
+    const name = newName.trim();
+    if (name.length < 2) {
+      saveMessage = 'Écris un prénom ou un pseudo d’au moins deux caractères.';
+      return;
+    }
+    const key = name.toLocaleLowerCase('fr-CH');
+    if (profiles[key]) {
+      // Un profil existant est repris pour éviter la création de doublons accidentels.
+      profile = profiles[key];
+      profile.name = name;
+      profile.avatar = chosenAvatar;
+    } else {
+      profile = blankProfile(name, chosenAvatar);
+      profiles[key] = profile;
+    }
+    activeProfileKey = key;
+    persist();
+    if (pretestAfterCharacterCreation) {
+      pretestAfterCharacterCreation = false;
+      beginPretest();
+    } else {
+      view = 'villages';
+    }
+  }
+
+  function resumeAdventure() {
+    if (!profile) {
+      view = 'character';
+      return;
+    }
+    currentVillageId = profile.lastVillage || engine.VILLAGES[0].id;
+    mapPlayer = { x: 500, y: 305 };
+    view = 'village';
+  }
+
+  function selectVillage(villageId: string) {
+    // Les quatre régions restent ouvertes en V2, indépendamment du nombre de blasons.
+    currentVillageId = villageId;
+    if (profile) {
+      profile.lastVillage = villageId;
+      persist();
+    }
+    mapPlayer = { x: 500, y: 305 };
+    npcBubble = null;
+    view = 'village';
+  }
+
+  function beginPretest() {
+    if (!profile) {
+      saveMessage = 'Crée ton personnage avant de commencer le bilan.';
+      pretestAfterCharacterCreation = true;
+      view = 'character';
+      return;
+    }
+    startSession('pretest');
+    view = 'pretest';
+  }
+
+  function startHowTo() {
+    currentHowToSlide = 0;
+    view = 'howto';
+  }
+
+  function goHome() {
+    view = 'welcome';
+    session = null;
+    currentFeedback = null;
+    sessionResult = null;
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  }
+
+  function speakText(text: string) {
+    // Lecture vocale facultative ; elle dépend des voix installées dans le navigateur/appareil.
+    if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+      saveMessage = 'La lecture vocale n’est pas disponible dans ce navigateur. Le texte reste affiché.';
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text.replace(/<[^>]*>/g, ' '));
+    utterance.lang = 'fr-CH';
+    utterance.rate = 0.88;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function stopSpeech() {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  }
+
+  function openHouse(h: any) {
+    if (!profile) {
+      view = 'character';
+      saveMessage = 'Crée ton personnage avant d’entrer dans une maison.';
+      return;
+    }
+    house = h;
+    currentHouseId = h.id;
+    profile.lastVillage = currentVillageId;
+    lessons = engine.lessonForHouse(h.id, currentVillageId);
+    lessonIndex = 0;
+    theoryPhase = 'explain';
+    lessonChoice = '';
+    lessonFeedback = null;
+    trainingFeedback = null;
+    currentFeedback = null;
+    sessionResult = null;
+    session = null;
+    const progress = getHouseProgress(currentVillageId, h.id);
+    // Une maison déjà étudiée revient directement au choix des activités.
+    view = progress.theoryDone ? 'room' : 'room';
+    persist();
+  }
+
+  function closeHouse() {
+    view = 'village';
+    session = null;
+    activeQuestion = null;
+    sessionResult = null;
+    currentFeedback = null;
+  }
+
+  function chooseNpcJoke(npc: { x: number; y: number; label: string }) {
+    const text = jokes[Math.floor(Math.random() * jokes.length)];
+    npcBubble = { x: npc.x, y: npc.y, text: `${npc.label} : ${text}` };
+    mapPlayer = { ...mapPlayer, x: Math.max(72, Math.min(925, npc.x - 38)), y: Math.min(548, npc.y + 34) };
+  }
+
+  function handleMapClick(event: MouseEvent) {
+    const svg = event.currentTarget as SVGSVGElement;
+    const rect = svg.getBoundingClientRect();
+    // Coordonnées du pointeur transformées vers le viewBox 1000 × 620.
+    mapPlayer = {
+      x: Math.max(38, Math.min(962, ((event.clientX - rect.left) / rect.width) * 1000)),
+      y: Math.max(55, Math.min(565, ((event.clientY - rect.top) / rect.height) * 620))
+    };
+    npcBubble = null;
+  }
+
+  function visitHouse(h: any, event?: Event) {
+    event?.stopPropagation();
+    // Les cinq points de marche suivent la position réelle des bâtiments sur la carte.
+    const positions = [
+      { x: 205, y: 190 }, { x: 420, y: 145 }, { x: 720, y: 150 },
+      { x: 850, y: 330 }, { x: 285, y: 350 }
+    ];
+    mapPlayer = positions[h.index] ?? { x: 520, y: 305 };
+    // La courte pause montre le déplacement du personnage avant la transition de salle.
+    window.setTimeout(() => openHouse(h), reduceMotion ? 0 : 340);
+  }
+
+  function getActiveQuestion() {
+    if (!session) return null;
+    return session.questions[session.index] ?? null;
+  }
+
+  function createQuestionList(mode: SessionMode, total: number): any[] {
+    // Le moteur génère chaque question à la demande à partir de la famille,
+    // du niveau et du format. Aucun catalogue énorme n'est nécessaire.
+    let allowedFamilies = house?.families?.length ? [...house.families] : [...familyOrder];
+    if (mode === 'pretest' || mode === 'boss') allowedFamilies = [...familyOrder];
+    if (mode === 'table') {
+      const suitable = allowedFamilies.filter((family: string) => ['length', 'mass', 'capacity'].includes(family));
+      allowedFamilies = suitable.length ? suitable : ['length'];
+    }
+    if (mode === 'clock') allowedFamilies = ['duration'];
+    if (mode === 'builder') {
+      const suitable = allowedFamilies.filter((family: string) => ['area', 'volume'].includes(family));
+      allowedFamilies = suitable.length ? suitable : ['area'];
+    }
+
+    const list: any[] = [];
+    const standardFormats = ['choice', 'number', 'unit', 'match', 'order', 'table', 'error', 'multi'];
+    for (let i = 0; i < total; i += 1) {
+      const family = mode === 'pretest' ? familyOrder[i % familyOrder.length] : allowedFamilies[i % allowedFamilies.length];
+      // Nouvelle clé propre au village : l'adaptation d'une compétence dans un village
+      // ne remplace pas celle d'un autre village. Les anciennes clés familiales restent
+      // lues comme solution de compatibilité, sans les supprimer ni les réécrire.
+      const savedAdaptive = profile?.skills?.[`${currentVillageId}:${family}`] ?? profile?.skills?.[family];
+      const pretest = profile?.pretest ? { byFamily: profile.pretest.byFamily } : null;
+      const difficulty = savedAdaptive?.difficulty ?? engine.startingDifficulty(currentVillageId, family, pretest);
+      let format: string;
+      if (mode === 'battle') format = 'choice';
+      else if (mode === 'table') format = 'table';
+      else if (mode === 'detective') format = 'error';
+      else if (mode === 'clock') format = i % 2 === 0 ? 'match' : 'order';
+      else if (mode === 'builder') format = i % 2 === 0 ? 'number' : 'choice';
+      else if (mode === 'pretest') format = i % 2 === 0 ? 'choice' : 'number';
+      else {
+        const available = engine.availableFormats(family).filter((f: string) => f !== 'table' || ['length', 'mass', 'capacity'].includes(family));
+        format = available.includes(standardFormats[i % standardFormats.length])
+          ? standardFormats[i % standardFormats.length]
+          : available[(i + 1) % available.length];
+      }
+      list.push(engine.makeQuestion(family, difficulty, { format }));
+    }
+    return list;
+  }
+
+  function startSession(mode: SessionMode) {
+    const total = mode === 'pretest' ? 18 : mode === 'practice' ? 8 : mode === 'battle' || mode === 'table' || mode === 'detective' ? 5 : mode === 'clock' || mode === 'builder' ? 4 : mode === 'exam' ? 10 : 12;
+    session = {
+      mode, questions: createQuestionList(mode, total), index: 0, correct: 0, firstTryCorrect: 0,
+      wrong: 0, attempts: 0, helped: false, answerStatus: null, selected: '', typed: '',
+      selectedMany: [], matches: {}, matchingLeft: '', orderedItems: [], gameEvent: null,
+      playerHp: 3, enemyHp: 3, familyResults: {}
+    };
+    activeQuestion = session.questions[0];
+    if (activeQuestion?.type === 'order') session.orderedItems = [...activeQuestion.items];
+    currentFeedback = null;
+    sessionResult = null;
+    view = mode === 'pretest' ? 'pretest' : 'room';
+  }
+
+  function asChoiceQuestion(q: any): any {
+    // Conservée pour les questions historiques déjà au format QCM.
+    if (q.type === 'choice') return q;
+    const value = Number(q.answer);
+    const unit = q.to ?? '';
+    const fmt = (n: number) => engine.fmt(n);
+    const correct = `${fmt(value)}${unit ? ` ${unit}` : ''}`;
+    const candidates = [correct, `${fmt(value * 10)}${unit ? ` ${unit}` : ''}`, `${fmt(value / 10)}${unit ? ` ${unit}` : ''}`];
+    const unique = [...new Set(candidates)];
+    while (unique.length < 3) unique.push(`${fmt(value + unique.length + 1)}${unit ? ` ${unit}` : ''}`);
+    return { ...q, type: 'choice', answer: correct, answerLabel: correct, options: unique.sort(() => Math.random() - 0.5) };
+  }
+
+  // Met à jour la réponse choisie seulement si une session est encore active.
+  // Le contrôle évite les accès potentiels à null dans les callbacks de boutons.
+  function selectSessionOption(option: string) {
+    if (!session || session.answerStatus) return;
+    session.selected = option;
+  }
+
+  function readSessionAnswer() {
+    if (!session || !activeQuestion) return '';
+    if (activeQuestion.type === 'choice' || activeQuestion.type === 'unit' || activeQuestion.type === 'error') return session.selected;
+    if (activeQuestion.type === 'match') {
+      if (Object.keys(session.matches).length !== activeQuestion.leftItems.length) return '';
+      return JSON.stringify(session.matches);
+    }
+    if (activeQuestion.type === 'order') return session.orderedItems.length ? JSON.stringify(session.orderedItems) : '';
+    if (activeQuestion.type === 'multi') return session.selectedMany.length ? JSON.stringify(session.selectedMany) : '';
+    return session.typed;
+  }
+
+  function appendNumberKey(key: string) {
+    if (!session || session.answerStatus) return;
+    if (key === 'clear') session.typed = '';
+    else if (key === 'backspace') session.typed = session.typed.slice(0, -1);
+    else if (key === 'decimal') {
+      if (!session.typed.includes(',') && !session.typed.includes('.')) session.typed += ',';
+    } else if (session.typed.length < 12) session.typed += key;
+  }
+
+  function selectMatchLeft(id: string) {
+    if (!session || session.answerStatus) return;
+    session.matchingLeft = id;
+  }
+
+  function selectMatchRight(id: string) {
+    if (!session || session.answerStatus || !session.matchingLeft) return;
+    const next = { ...session.matches };
+    // Une mesure à droite ne peut servir qu'une fois.
+    for (const key of Object.keys(next)) if (next[key] === id) delete next[key];
+    next[session.matchingLeft] = id;
+    session.matches = next;
+    session.matchingLeft = '';
+  }
+
+  function moveOrderedItem(index: number, delta: number) {
+    if (!session || session.answerStatus) return;
+    const nextIndex = index + delta;
+    if (nextIndex < 0 || nextIndex >= session.orderedItems.length) return;
+    const next = [...session.orderedItems];
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    session.orderedItems = next;
+  }
+
+  function toggleMultiOption(option: string) {
+    if (!session || session.answerStatus) return;
+    session.selectedMany = session.selectedMany.includes(option)
+      ? session.selectedMany.filter((item: string) => item !== option)
+      : [...session.selectedMany, option];
+  }
+
+  function saveAdaptive(correct: boolean, helped: boolean) {
+    if (!profile || !activeQuestion) return;
+    const family = activeQuestion.family;
+    const skillKey = `${currentVillageId}:${family}`;
+    const old = profile.skills[skillKey] ?? profile.skills[family] ?? engine.createAdaptiveState(engine.startingDifficulty(currentVillageId, family, profile.pretest ? { byFamily: profile.pretest.byFamily } : null));
+    // On ajoute une entrée par village et famille ; les anciennes entrées globales
+    // restent intactes pour préserver les profils créés avec les versions précédentes.
+    profile.skills[skillKey] = engine.updateAdaptive(old, correct, helped);
+    persist();
+  }
+
+  function submitSessionAnswer() {
+    if (!session || !activeQuestion || session.answerStatus) return;
+    const raw = readSessionAnswer();
+    if (!String(raw).trim()) {
+      currentFeedback = { kind: 'notice', title: 'Choisis ou écris une réponse', text: 'Tu peux prendre ton temps. Regarde les unités dans la consigne.' };
+      return;
+    }
+    const correct = engine.checkAnswer(activeQuestion, raw);
+    const family = activeQuestion.family;
+    session.familyResults[family] ??= { total: 0, correct: 0 };
+    session.familyResults[family].total += 1;
+    if (session.mode === 'pretest') {
+      if (correct) {
+        session.correct += 1;
+        session.familyResults[family].correct += 1;
+      }
+      session.answerStatus = correct ? 'correct' : 'wrong';
+      currentFeedback = { kind: correct ? 'success' : 'notice', title: correct ? 'Bien vu !' : 'Réponse enregistrée', text: correct ? 'Le bilan continue.' : 'Ce bilan sert à conseiller un point de départ : ce n’est pas une note.' };
+      return;
+    }
+    if (session.mode === 'exam' || session.mode === 'boss') {
+      if (correct) {
+        session.correct += 1;
+        session.familyResults[family].correct += 1;
+      } else {
+        session.wrong += 1;
+      }
+      session.answerStatus = correct ? 'correct' : 'wrong';
+      currentFeedback = { kind: correct ? 'success' : 'notice', title: correct ? 'Réponse enregistrée' : 'Réponse enregistrée', text: 'Passe à la question suivante ; le détail des réponses sera présenté à la fin.' };
+      return;
+    }
+
+    if (correct) {
+      session.correct += 1;
+      if (session.attempts === 0) session.firstTryCorrect += 1;
+      session.familyResults[family].correct += 1;
+      if (session.mode === 'battle') { session.gameEvent = 'player-attack'; session.enemyHp = Math.max(0, session.enemyHp - 1); }
+      else if (['table', 'detective', 'clock', 'builder'].includes(session.mode)) session.gameEvent = 'success';
+      saveAdaptive(true, session.helped);
+      session.answerStatus = 'correct';
+      currentFeedback = { kind: 'success', title: 'Bien joué !', text: session.helped ? 'Tu as utilisé une aide : c’est une bonne stratégie d’apprentissage.' : 'Tu as trouvé la réponse. Continue !' };
+      if (session.mode === 'battle') addXP(5, 'Carte gagnée');
+      else addXP(session.helped ? 3 : 5, session.helped ? 'Exercice guidé' : 'Exercice réussi');
+    } else {
+      session.wrong += 1;
+      session.attempts += 1;
+      if (session.mode === 'battle') { session.gameEvent = 'enemy-attack'; session.playerHp = Math.max(0, session.playerHp - 1); }
+      else if (['table', 'detective', 'clock', 'builder'].includes(session.mode)) session.gameEvent = 'miss';
+      saveAdaptive(false, true);
+      session.helped = true;
+      currentFeedback = session.attempts === 1
+        ? { kind: 'hint', title: 'Pas encore — regarde cet indice', text: activeQuestion.hint || 'Repère d’abord la grandeur, puis les unités de départ et d’arrivée. Utilise le tableau pour placer les chiffres.' }
+        : { kind: 'worked', title: 'Voyons les étapes ensemble', text: activeQuestion.worked || activeQuestion.explain || 'Repère la grandeur, place le nombre dans le tableau, lis la colonne demandée, puis vérifie le sens du résultat.' };
+    }
+  }
+
+  function continueSession() {
+    if (!session) return;
+    if (!session.answerStatus) {
+      if (session.mode !== 'pretest' && session.mode !== 'exam' && session.mode !== 'boss') {
+        // Le bouton « passer après l'exemple » permet d'éviter qu'un exercice difficile bloque le parcours.
+        session.wrong += 1;
+      } else {
+        currentFeedback = { kind: 'notice', title: 'Réponds d’abord', text: 'Choisis une réponse puis valide-la.' };
+        return;
+      }
+    }
+    session.index += 1;
+    session.attempts = 0;
+    session.helped = false;
+    session.answerStatus = null;
+    session.selected = '';
+    session.typed = '';
+    session.selectedMany = [];
+    session.matches = {};
+    session.matchingLeft = '';
+    session.gameEvent = null;
+    currentFeedback = null;
+    activeQuestion = session.questions[session.index] ?? null;
+    session.orderedItems = activeQuestion?.type === 'order' ? [...activeQuestion.items] : [];
+    if (session.index >= session.questions.length) finishSession();
+  }
+
+  function finishSession() {
+    if (!session || !profile) return;
+    const mode = session.mode;
+    const total = session.questions.length;
+    const score = session.correct;
+    const percent = Math.round((score / total) * 100);
+    if (mode === 'pretest') {
+      const recommendation = engine.pretestRecommendation({ total, correct: score, byFamily: session.familyResults });
+      profile.pretest = { total, correct: score, byFamily: session.familyResults, recommended: recommendation.villageId };
+      pretestRecommendationName = engine.VILLAGES.find((v: any) => v.id === recommendation.villageId)?.name ?? engine.VILLAGES[0].name;
+      persist();
+      sessionResult = { mode, passed: true, score, total, title: 'Ton bilan de départ est prêt', detail: `Conseil : commence par ${pretestRecommendationName}. Les résultats par compétence t’aident à choisir ; tu peux visiter les quatre régions quand tu veux.` };
+      return;
+    }
+    if (mode === 'practice' || ['battle', 'table', 'detective', 'clock', 'builder'].includes(mode)) {
+      const threshold = mode === 'practice' ? 6 : Math.ceil(total * 0.6);
+      const passed = score >= threshold;
+      if (passed) {
+        setHouseProgress(currentVillageId, currentHouseId, { theoryDone: true, trainingDone: true, bestScore: Math.max(score, houseProgress.bestScore) });
+        awardBadge(`${currentVillageId}:${currentHouseId}:training`);
+        const rewardLabels: Record<string, string> = { battle: 'Duel des unités terminé', table: 'Coffre du tableau magique ouvert', detective: 'Enquête des unités terminée', clock: 'Horloge réparée', builder: 'Chantier terminé' };
+        addXP(mode === 'practice' ? 15 : 20, mode === 'practice' ? 'Pupitre réussi' : (rewardLabels[mode] ?? 'Mission terminée'));
+      }
+      const gameTitle: Record<string, string> = { practice: 'Entraînement réussi !', battle: 'Duel terminé !', table: 'Coffre ouvert !', detective: 'Enquête terminée !', clock: 'Horloge réparée !', builder: 'Chantier terminé !' };
+      const gameDetail: Record<string, string> = { practice: 'La table d’examen est prête. Tu peux aussi rejouer pour t’entraîner.', battle: 'Tes cartes ont fait avancer le duel. Rejoue pour tenter un meilleur score.', table: 'Tu as utilisé le tableau de conversion pour ouvrir le coffre.', detective: 'Tu as examiné les indices et cherché les bonnes conversions.', clock: 'Tu as remis les mesures de temps dans le bon ordre.', builder: 'Chaque réponse juste a ajouté une pièce au chantier.' };
+      sessionResult = { mode, passed, score, total, title: passed ? (gameTitle[mode] || 'Activité réussie !') : 'Encore un peu de pratique', detail: passed ? (gameDetail[mode] || 'Tu peux continuer ton aventure.') : 'Tu peux recommencer sans perdre de points. Regarde les aides, puis essaie une nouvelle série.' };
+      session = null;
+      activeQuestion = null;
+      return;
+    }
+    if (mode === 'exam') {
+      const passed = score >= 8;
+      if (passed) {
+        const wasPassed = houseProgress.examPassed;
+        setHouseProgress(currentVillageId, currentHouseId, { theoryDone: true, trainingDone: true, examPassed: true, bestScore: Math.max(score, houseProgress.bestScore) });
+        awardBadge(`${currentVillageId}:${currentHouseId}:mastery`);
+        if (!wasPassed) addXP(40, 'Blason de la maison');
+      }
+      sessionResult = { mode, passed, score, total, title: passed ? 'Blason obtenu !' : 'Tu peux retenter l’épreuve', detail: passed ? 'Ton blason reste acquis. Toutes les maisons restent accessibles.' : 'Relis une explication ou refais des exercices, puis recommence avec de nouvelles questions. Aucun point n’est retiré.' };
+      session = null;
+      activeQuestion = null;
+      return;
+    }
+    if (mode === 'boss') {
+      const passed = score / total >= 0.8;
+      if (passed) {
+        awardBadge(`${currentVillageId}:chateau`);
+        addXP(50, 'Défi du village');
+      }
+      sessionResult = { mode, passed, score, total, title: passed ? 'Le blason du village brille !' : 'Le château attend une nouvelle tentative', detail: passed ? 'Bravo ! Tu peux continuer à explorer les autres villages.' : 'Revois les compétences utiles puis recommence. Tous les villages restent accessibles.' };
+      session = null;
+      activeQuestion = null;
+    }
+  }
+
+  function showExampleAgain() {
+    if (!activeQuestion || !session) return;
+    session.helped = true;
+    currentFeedback = { kind: 'worked', title: 'Exemple pas à pas', text: activeQuestion.worked || activeQuestion.explain || activeQuestion.hint || '1. Repère la grandeur. 2. Place les chiffres dans le tableau. 3. Lis l’unité demandée. 4. Vérifie ton résultat.' };
+  }
+
+  function beginExam() {
+    if (!getHouseProgress(currentVillageId, currentHouseId).trainingDone) {
+      trainingFeedback = { kind: 'notice', title: 'Il reste une étape', text: 'Réussis d’abord un entraînement de base ou la Bataille des unités.' };
+      return;
+    }
+    startSession('exam');
+  }
+
+  function beginBoss() {
+    // Le défi du château est indépendant des maisons : aucune maison ne verrouille le village.
+    house = null;
+    currentHouseId = '';
+    startSession('boss');
+  }
+
+  function closeResult() {
+    // Le défi du château est lancé depuis la carte : son retour doit donc revenir au village.
+    const wasVillageBoss = sessionResult?.mode === 'boss';
+    sessionResult = null;
+    session = null;
+    activeQuestion = null;
+    currentFeedback = null;
+    view = wasVillageBoss ? 'village' : profile ? 'room' : 'welcome';
+  }
+
+  function exportSave() {
+    if (!profile) return;
+    const blob = new Blob([JSON.stringify({ version: 2, active: activeProfileKey, profiles }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mesurovia-${profile.name.replace(/[^a-z0-9_-]/gi, '-').toLowerCase()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importSave(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        if (!parsed.profiles || typeof parsed.profiles !== 'object') throw new Error('Format inconnu');
+        profiles = Object.fromEntries(Object.entries(parsed.profiles).map(([key, value]) => [key, normalizeProfile(value, key)]));
+        activeProfileKey = parsed.active && profiles[parsed.active] ? parsed.active : Object.keys(profiles)[0];
+        profile = profiles[activeProfileKey];
+        if (!profile) throw new Error('Profil absent');
+        persist();
+        view = 'villages';
+        saveMessage = 'Sauvegarde importée.';
+      } catch {
+        saveMessage = 'Fichier non reconnu. La sauvegarde actuelle n’a pas été remplacée.';
+      }
+    };
+    reader.readAsText(file);
+    input.value = '';
+  }
+
+  function downloadCourse(villageId: string) {
+    // Les cahiers restent séparés et peuvent aussi être ouverts manuellement depuis le dossier cours/.
+    const fileMap: Record<string, string> = {
+      'sentiers-moulin': 'cahier-sentiers-moulin.html',
+      'clairieres-compas': 'cahier-clairieres-compas.html',
+      'canaux-artisans': 'cahier-canaux-artisans.html',
+      'hautes-terres': 'cahier-hautes-terres.html'
+    };
+    window.open(`${base}/cours/${fileMap[villageId]}`, '_blank', 'noopener,noreferrer');
+  }
+</script>
+
+<svelte:head>
+  <title>Mesurovia — La quête des mesures</title>
+  <meta name="description" content="Explore un village rétro, apprends les conversions de mesures et gagne des blasons de maîtrise." />
+</svelte:head>
+
+{#if !ready}
+  <main class="loading-screen"><p>Préparation du village…</p></main>
+{:else}
+  <main class:large-text={largeText} class:high-contrast={highContrast} class:reduced-motion={reduceMotion} class="mesurovia-shell">
+    <header class="game-header">
+      <button class="brand-button" onclick={goHome} aria-label="Retour à l'accueil de Mesurovia">
+        <span class="brand-icon">✦</span><span><strong>MESUROVIA</strong><small>La quête des mesures</small></span>
+      </button>
+      <div class="header-player" aria-live="polite">
+        <span class="player-chip">{profileLabel}</span>
+        <span class="xp-chip">⭐ {profile?.xp ?? 0} XP</span>
+        <span class="crest-chip">🏅 {profile?.badges.length ?? 0} blasons</span>
+      </div>
+      <div class="header-menu-wrap">
+        <button class="menu-toggle" onclick={() => (selectedMenu = !selectedMenu)} aria-expanded={selectedMenu}>☰ Menu</button>
+        {#if selectedMenu}
+          <nav class="menu-popover" aria-label="Menu de l'aventure">
+            <button onclick={() => { view = 'character'; newName = profile?.name ?? newName; chosenAvatar = profile?.avatar ?? chosenAvatar; selectedMenu = false; }}>🧑 Créer mon personnage</button>
+            <button onclick={() => { selectedMenu = false; resumeAdventure(); }}>▶ Reprendre l’aventure</button>
+            <button onclick={() => { selectedMenu = false; startHowTo(); }}>📖 Comment jouer ?</button>
+            <button onclick={exportSave} disabled={!profile}>⬇ Exporter ma sauvegarde</button>
+            <label class="file-import">⬆ Importer une sauvegarde<input type="file" accept="application/json,.json" onchange={importSave} /></label>
+          </nav>
+        {/if}
+      </div>
+    </header>
+
+    {#if saveMessage}
+      <div class="save-message" role="status">{saveMessage}<button onclick={() => (saveMessage = '')} aria-label="Fermer le message">×</button></div>
+    {/if}
+
+    {#if view === 'welcome'}
+      <section class="welcome-layout">
+        <div class="welcome-art" aria-hidden="true">
+          <div class="moon">✦</div>
+          <div class="storybook-landscape">
+            <div class="sky-orb orb-one"></div><div class="sky-orb orb-two"></div>
+            <div class="hill hill-back"></div><div class="hill hill-front"></div>
+            <div class="welcome-tower"><div class="tower-roof"></div><div class="tower-window"></div></div>
+            <div class="welcome-house welcome-house-one"><i></i><b></b></div>
+            <div class="welcome-house welcome-house-two"><i></i><b></b></div>
+            <div class="welcome-path"></div>
+            <span class="spark spark-a">✧</span><span class="spark spark-b">✦</span><span class="spark spark-c">✧</span>
+          </div>
+          <div class="floating-label">Un monde à réparer, mesure après mesure.</div>
+        </div>
+        <div class="welcome-copy">
+          <p class="eyebrow">UNE AVENTURE DE MESURE</p>
+          <h1>Les mesures ont perdu leur magie.</h1>
+          <p class="lead">Les chemins sont confus, les ateliers sont à l’arrêt et le château a perdu ses blasons. Explore les villages, écoute les maîtres et redonne leur pouvoir aux unités.</p>
+          <div class="welcome-actions">
+            <button class="primary-button large-button" onclick={() => { view = 'character'; selectedMenu = false; }}>✨ Créer mon personnage</button>
+            <button class="secondary-button large-button" onclick={resumeAdventure}>▶ Reprendre l’aventure</button>
+          </div>
+          <div class="welcome-side-actions">
+            <button class="text-button" onclick={startHowTo}>Comment jouer ? <span>→</span></button>
+            <button class="text-button" onclick={beginPretest}>🧭 Faire le bilan de départ <span>→</span></button>
+          </div>
+          <p class="welcome-note">Pas de chronomètre. Tu peux demander de l’aide et recommencer sans perdre tes récompenses.</p>
+        </div>
+      </section>
+
+    {:else if view === 'character'}
+      <section class="slide-stage character-stage">
+        <div class="stage-topline"><span class="step-counter">ÉTAPE 1 / 1</span><button class="text-button" onclick={goHome}>← Retour à l’accueil</button></div>
+        <article class="slide-card character-slide">
+          <div class="slide-illustration avatar-big">{chosenAvatar}</div>
+          <div class="slide-main">
+            <p class="eyebrow">CRÉATION DU PERSONNAGE</p>
+            <h1>Ton personnage</h1>
+            <p class="slide-lead">Choisis un prénom ou un pseudo et une apparence. Quand tu valides, tu entres directement dans le monde de Mesurovia.</p>
+            <label class="field-label" for="character-name">Comment t’appelles-tu dans l’aventure ?</label>
+            <input id="character-name" class="name-input" maxlength="24" bind:value={newName} placeholder="Prénom ou pseudo" onkeydown={(event) => { if (event.key === 'Enter') createCharacter(); }} />
+            <span class="field-help">Deux caractères minimum. Ton prénom ne sera pas publié sur un classement.</span>
+            <p class="field-label">Choisis ton avatar</p>
+            <div class="avatar-picker" aria-label="Choix de l'avatar">
+              {#each avatars as avatar}
+                <button class:chosen-avatar={chosenAvatar === avatar} class="avatar-choice" aria-pressed={chosenAvatar === avatar} onclick={() => (chosenAvatar = avatar)}>{avatar}</button>
+              {/each}
+            </div>
+            <button class="primary-button large-button" onclick={createCharacter}>Créer et entrer dans l’aventure →</button>
+          </div>
+        </article>
+      </section>
+
+    {:else if view === 'villages'}
+      <section class="villages-page">
+        <div class="page-heading">
+          <p class="eyebrow">CHOISIS TON EXPÉDITION</p>
+          <h1>Quel village veux-tu explorer ?</h1>
+          <p>Les quatre régions sont ouvertes. Tu peux commencer ici, revenir plus tard ou découvrir un autre village.</p>
+        </div>
+        <div class="village-selection-grid">
+          {#each engine.VILLAGES as village, i}
+            <button class="village-choice-card" style={`--village-accent:${village.palette[1]}`} onclick={() => selectVillage(village.id)}>
+              <span class="village-card-art" aria-hidden="true"><span>{['🌾','🌳','🌊','🏔️'][i]}</span><i></i><b></b><em></em></span>
+              <span class="region-number">RÉGION {i + 1} · OUVERTE</span>
+              <strong>{village.name}</strong>
+              <span>{village.subtitle}</span>
+              <span class="village-card-footer">Explorer le village <b>→</b></span>
+            </button>
+          {/each}
+        </div>
+        {#if profile?.pretest}
+          <p class="recommendation-note">🧭 Ton dernier bilan te conseille de commencer par <strong>{engine.VILLAGES.find((v: any) => v.id === profile?.pretest?.recommended)?.name ?? 'la première région'}</strong>. C’est un conseil, pas une restriction.</p>
+        {/if}
+      </section>
+
+    {:else if view === 'village'}
+      <section class="village-page">
+        <div class="village-topbar">
+          <div><button class="text-button" onclick={() => (view = 'villages')}>← Choisir une autre région</button><p class="eyebrow">RÉGION OUVERTE · {currentVillage.name}</p><h1>{currentVillage.name}</h1><p>{currentVillage.story}</p></div>
+          <div class="village-side-panel"><span>🏠 {mapProgress}/5 maisons validées</span><span>✨ {profile?.xp ?? 0} XP</span><button class="secondary-button" onclick={() => downloadCourse(currentVillageId)}>📖 Cahier à imprimer</button><button class="primary-button" onclick={beginBoss}>🏰 Défi du village</button></div>
+        </div>
+        <div class="map-instructions"><span class="map-pointer-icon">↗</span><span><strong>Point-and-click :</strong> clique sur le sol pour faire courir ton personnage. Clique sur une maison pour entrer. Les habitants ont parfois une blague à raconter.</span><button class="text-button" onclick={() => (npcBubble = null)}>Masquer les bulles</button></div>
+        <div class="pixel-map-frame">
+          <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_noninteractive_element_interactions -->
+          <svg class="pixel-map" viewBox="0 0 1000 620" role="application" aria-label={`Carte interactive de ${currentVillage.name}`} onclick={handleMapClick}>
+            <defs>
+              <pattern id="grass-grid" width="28" height="28" patternUnits="userSpaceOnUse"><rect width="28" height="28" fill="#a9cf89"/><rect x="3" y="3" width="3" height="3" fill="#91bb74"/><rect x="19" y="16" width="4" height="3" fill="#b9d99b"/></pattern>
+              <pattern id="stone-grid" width="42" height="30" patternUnits="userSpaceOnUse"><rect width="42" height="30" fill="#e6cf9e"/><path d="M0 1H42 M0 15H42 M20 1V15 M8 15V30 M34 15V30" stroke="#cfb886" stroke-width="2"/></pattern>
+              <pattern id="water-grid" width="42" height="30" patternUnits="userSpaceOnUse"><rect width="42" height="30" fill="#70c4d4"/><path d="M3 8h13m9 10h12M5 25h12" stroke="#9fe1e4" stroke-width="3" stroke-linecap="square"/></pattern>
+              <filter id="map-shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="0" flood-color="#476449" flood-opacity=".35"/></filter>
+            </defs>
+            <rect width="1000" height="620" fill="url(#grass-grid)"/>
+            <!-- Quartier du moulin, petit marché, place centrale et bord de rivière : la carte n'est plus une bande verticale. -->
+            <path d="M0 370 Q155 330 245 405 T480 438 Q660 500 760 442 T1000 440 L1000 510 Q830 520 745 560 T470 500 Q250 480 190 440 T0 430Z" fill="url(#water-grid)" stroke="#4b9ba8" stroke-width="6"/>
+            <path d="M0 370 Q155 330 245 405 T480 438 Q660 500 760 442 T1000 440" fill="none" stroke="#d3f2e6" stroke-width="6" stroke-dasharray="22 20"/>
+            <path d="M118 176 Q250 208 380 170 T635 230 Q680 330 600 380 T420 380 Q350 300 285 285 T125 420" fill="none" stroke="#d4b985" stroke-width="72" stroke-linecap="round"/>
+            <path d="M118 176 Q250 208 380 170 T635 230 Q680 330 600 380 T420 380 Q350 300 285 285 T125 420" fill="none" stroke="#f0dfb9" stroke-width="58" stroke-linecap="round"/>
+            <path d="M130 200 Q280 245 424 210 T760 255 Q795 315 850 345" fill="none" stroke="#c9a875" stroke-width="34" stroke-linecap="round"/>
+            <path d="M130 200 Q280 245 424 210 T760 255 Q795 315 850 345" fill="none" stroke="#f5e7c5" stroke-width="25" stroke-linecap="round"/>
+            <!-- Place du village -->
+            <ellipse cx="505" cy="320" rx="154" ry="97" fill="url(#stone-grid)" stroke="#c3a774" stroke-width="5"/>
+            <ellipse cx="505" cy="320" rx="108" ry="61" fill="#d4c19a" stroke="#b79a68" stroke-width="4"/>
+            <g filter="url(#map-shadow)"><rect x="470" y="281" width="70" height="64" rx="7" fill="#9b6d46" stroke="#694e39" stroke-width="4"/><path d="M458 290L505 255L552 290Z" fill="#c76d4e" stroke="#8e4d3a" stroke-width="4"/><rect x="494" y="305" width="22" height="40" fill="#694b37"/><rect x="477" y="295" width="12" height="13" fill="#9edfe5"/><rect x="521" y="295" width="12" height="13" fill="#9edfe5"/></g>
+            <text x="505" y="367" text-anchor="middle" class="map-label">PLACE DES UNITÉS</text>
+            <!-- Échoppes et repères -->
+            <g class="market-stall"><rect x="400" y="386" width="66" height="34" rx="3" fill="#f6d589" stroke="#9c7148" stroke-width="3"/><path d="M394 390L432 365L472 390Z" fill="#d66b57" stroke="#9c5144" stroke-width="3"/><path d="M411 389v30m15-30v30m16-30v30m15-30v30" stroke="#fff0c6" stroke-width="4"/><text x="432" y="438" text-anchor="middle" class="tiny-label">MARCHÉ</text></g>
+            <!-- Arbres variés en grappes, fleurs, banc et mobilier -->
+            {#each [{x:65,y:78},{x:90,y:295},{x:250,y:95},{x:320,y:520},{x:440,y:90},{x:600,y:70},{x:910,y:84},{x:935,y:222},{x:905,y:372},{x:760,y:535},{x:115,y:525},{x:205,y:470}] as tree, i}
+              <g transform={`translate(${tree.x} ${tree.y})`} class="tree-cluster" aria-hidden="true"><rect x="-5" y="15" width="10" height="23" fill="#8e6444"/><rect x="-20" y="-3" width="40" height="31" rx="7" fill={i % 3 === 0 ? '#397e55' : i % 3 === 1 ? '#4c965b' : '#5a9e64'} stroke="#2d6847" stroke-width="4"/><rect x="-11" y="-14" width="22" height="24" rx="5" fill="#72b86b" stroke="#397e55" stroke-width="3"/><rect x="-13" y="3" width="7" height="6" fill="#cbe78d"/></g>
+            {/each}
+            {#each [{x:355,y:271},{x:371,y:278},{x:639,y:333},{x:658,y:345},{x:448,y:467},{x:475,y:470},{x:745,y:190},{x:768,y:197}] as flower}
+              <g transform={`translate(${flower.x} ${flower.y})`} aria-hidden="true"><rect x="0" y="0" width="6" height="7" fill="#f8e69a"/><rect x="-4" y="3" width="4" height="4" fill="#e98ba7"/><rect x="6" y="3" width="4" height="4" fill="#e98ba7"/></g>
+            {/each}
+            <g aria-hidden="true"><rect x="705" y="387" width="60" height="10" rx="2" fill="#996a43"/><rect x="711" y="397" width="7" height="18" fill="#75513a"/><rect x="750" y="397" width="7" height="18" fill="#75513a"/><rect x="280" y="320" width="46" height="8" fill="#8d6845"/><rect x="285" y="328" width="5" height="12" fill="#78563b"/><rect x="315" y="328" width="5" height="12" fill="#78563b"/></g>
+
+            <!-- Maisons en grappes autour de la place. Chaque bâtiment reste un bouton distinct. -->
+            {#each villageHouses as h, i}
+              {@const building = buildingLayout[i]}
+              <g transform={`translate(${building.x} ${building.y})`} class="map-house" role="button" tabindex="0" aria-label={`Entrer dans ${h.title}`} onclick={(event) => visitHouse(h, event)} onkeydown={(event) => { if (event.key === 'Enter' || event.key === ' ') visitHouse(h, event); }}>
+                <rect x="-8" y="61" width="126" height="18" rx="5" fill="#7d9f6e" opacity=".55"/>
+                <rect x="0" y="25" width="110" height="62" rx="3" fill="#f2d8a7" stroke="#8d6446" stroke-width="5"/>
+                <path d="M-10 30L55 -13L120 30Z" fill={building.roof} stroke="#754f3a" stroke-width="5" stroke-linejoin="round"/>
+                <rect x="43" y="49" width="24" height="38" rx="2" fill="#825a3f" stroke="#68452f" stroke-width="3"/>
+                <rect x="13" y="43" width="20" height="20" rx="2" fill="#83c7d1" stroke="#fff0c7" stroke-width="4"/><path d="M23 43v20m-10-10h20" stroke="#fff0c7" stroke-width="3"/>
+                <rect x="77" y="43" width="20" height="20" rx="2" fill="#83c7d1" stroke="#fff0c7" stroke-width="4"/><path d="M87 43v20m-10-10h20" stroke="#fff0c7" stroke-width="3"/>
+                <rect x="24" y="-10" width="62" height="20" rx="4" fill="#fff6dc" stroke="#8e6748" stroke-width="3"/><text x="55" y="5" text-anchor="middle" class="building-number">{i + 1}</text>
+                <text x="55" y="106" text-anchor="middle" class="building-label">{h.title.replace('La Maison des ', '').replace('L’Atelier des ', '').replace('La Halle des ', '').replace('Le Bureau des ', '').replace('La Cour des ', '').replace('L’Horloge du ', '')}</text>
+                {#if getHouseProgress(currentVillageId, h.id).examPassed}<g transform="translate(96 -7)"><circle r="13" fill="#f6d575" stroke="#fff3bb" stroke-width="3"/><text x="0" y="5" text-anchor="middle" class="badge-mark">✓</text></g>{/if}
+              </g>
+            {/each}
+
+            <!-- Personnages non-joueurs : cliquer déclenche une courte blague de papa. -->
+            {#each [{x:310,y:250,emoji:'🧑🏻‍🌾',label:'Milo'},{x:615,y:265,emoji:'👩🏽‍🍳',label:'Lina'},{x:745,y:440,emoji:'🧓🏼',label:'Papi'},{x:385,y:453,emoji:'🧒🏾',label:'Noé'}] as npc}
+              <g transform={`translate(${npc.x} ${npc.y})`} class="npc-sprite" role="button" tabindex="0" aria-label={`Parler à ${npc.label}`} onclick={(event) => { event.stopPropagation(); chooseNpcJoke(npc); }} onkeydown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.stopPropagation(); chooseNpcJoke(npc); } }}>
+                <ellipse cx="0" cy="20" rx="20" ry="7" fill="#52774d" opacity=".4"/><rect x="-12" y="-2" width="24" height="24" rx="5" fill={npc.label === 'Lina' ? '#d86e75' : npc.label === 'Papi' ? '#648fc4' : '#e4a44e'} stroke="#704d38" stroke-width="3"/><rect x="-15" y="-19" width="30" height="25" rx="7" fill="#f2caa0" stroke="#704d38" stroke-width="3"/><rect x="-14" y="-23" width="28" height="9" rx="4" fill={npc.label === 'Papi' ? '#e8e4d9' : '#6b8551'} stroke="#704d38" stroke-width="3"/><circle cx="-5" cy="-8" r="2" fill="#563d30"/><circle cx="5" cy="-8" r="2" fill="#563d30"/><path d="M-4 -1q4 4 8 0" fill="none" stroke="#8f5146" stroke-width="2"/><text x="0" y="42" text-anchor="middle" class="npc-label">{npc.label}</text>
+              </g>
+            {/each}
+            <!-- Personnage principal ; l'attribut transform anime la course au clic, sans clavier directionnel. -->
+            <g transform={`translate(${mapPlayer.x} ${mapPlayer.y})`} class="player-sprite" aria-label="Ton personnage">
+              <ellipse cy="21" rx="18" ry="7" fill="#53764b" opacity=".5"/><rect x="-11" y="-1" width="22" height="24" rx="5" fill="#6c88cc" stroke="#354e8b" stroke-width="3"/><rect x="-14" y="-20" width="28" height="25" rx="8" fill="#f0c49a" stroke="#674a3b" stroke-width="3"/><rect x="-13" y="-25" width="26" height="10" rx="4" fill="#bd764b" stroke="#674a3b" stroke-width="3"/><circle cx="-5" cy="-9" r="2" fill="#3f3029"/><circle cx="5" cy="-9" r="2" fill="#3f3029"/><rect x="-15" y="18" width="11" height="8" rx="2" fill="#5d4839"/><rect x="4" y="18" width="11" height="8" rx="2" fill="#5d4839"/>
+            </g>
+            {#if npcBubble}
+              <g transform={`translate(${Math.min(730, Math.max(5, npcBubble.x - 120))} ${Math.max(55, npcBubble.y - 62)})`} pointer-events="none"><rect width="260" height="58" rx="8" fill="#fff8e9" stroke="#7a5a3c" stroke-width="4"/><path d="M100 58l14 12 8-12" fill="#fff8e9" stroke="#7a5a3c" stroke-width="3"/><foreignObject x="10" y="6" width="240" height="48"><div xmlns="http://www.w3.org/1999/xhtml" class="joke-text">{npcBubble.text}</div></foreignObject></g>
+            {/if}
+          </svg>
+        </div>
+        <div class="map-footer"><span>🪙 Ton sac : {profile?.xp ?? 0} XP</span><span>🏅 {profile?.badges.length ?? 0} blasons obtenus</span><button class="secondary-button" onclick={exportSave}>Exporter la sauvegarde</button></div>
+      </section>
+
+    {:else if view === 'room'}
+      <section class="classroom-page">
+        <div class="room-header"><div><button class="text-button" onclick={closeHouse}>← Retour au village</button><p class="eyebrow">{currentVillage.name} · {house ? `MAISON ${house.index + 1}` : 'DÉFI DU CHÂTEAU'}</p><h1>{house?.title ?? 'Défi du village'}</h1><p>{house?.subtitle ?? 'Une grande épreuve de mesures à l’échelle du village.'}</p></div><div class="room-header-actions"><button class="secondary-button" onclick={() => downloadCourse(currentVillageId)}>📖 Cahier élève</button><button class="secondary-button" onclick={exportSave}>💾 Sauvegarder</button></div></div>
+        <div class="classroom-scene">
+          <div class="classroom-wall"><div class="classroom-clock">10:10</div><div class="classroom-window"><span></span><span></span><span></span><span></span></div><div class="chalkboard"><div class="chalkboard-heading">{session ? (session.mode === 'exam' ? 'TABLE D’EXAMEN' : session.mode === 'boss' ? 'DÉFI DU VILLAGE' : session.mode === 'battle' ? 'DUEL DES UNITÉS' : session.mode === 'table' ? 'TABLEAU MAGIQUE' : session.mode === 'detective' ? 'ENQUÊTE DES UNITÉS' : session.mode === 'clock' ? 'HORLOGE DU MOULIN' : session.mode === 'builder' ? 'CHANTIER DES FORMES' : session.mode === 'pretest' ? 'BILAN DE DÉPART' : 'PUPITRE D’ENTRAÎNEMENT') : sessionResult ? 'BILAN DE LA MISSION' : houseProgress.theoryDone ? 'CHOISIS TON ACTIVITÉ' : `LEÇON ${lessonIndex + 1} · ${currentLesson?.title ?? ''}`}</div><div class="chalkboard-small">1 grandeur · 1 méthode · 1 étape à la fois</div><div class="chalk-marks"><span></span><span></span><span></span><span></span></div></div><div class="teacher-desk"></div></div>
+          <div class="teacher-character"><div class="teacher-hair"></div><div class="teacher-head"><i></i><i></i><b></b></div><div class="teacher-body"><span>✦</span></div><div class="teacher-label">Maître Mesuro</div></div>
+          <div class="classroom-students" aria-hidden="true"><div class="student student-one"><i></i><b></b></div><div class="student student-two"><i></i><b></b></div><div class="student student-three"><i></i><b></b></div></div>
+        </div>
+
+        {#if sessionResult}
+          <article class="slide-card result-slide" role="status"><div class="result-icon">{sessionResult.passed ? '🏅' : '📘'}</div><div><p class="eyebrow">BILAN DE L’ACTIVITÉ</p><h2>{sessionResult.title}</h2><p class="score-line">Résultat : <strong>{sessionResult.score}/{sessionResult.total}</strong></p><p>{sessionResult.detail}</p><div class="slide-actions"><button class="primary-button" onclick={closeResult}>Continuer</button>{#if sessionResult.total === 10 && !sessionResult.passed}<button class="secondary-button" onclick={() => startSession('exam')}>Réessayer avec de nouvelles questions</button>{/if}{#if sessionResult.total === 8 && !sessionResult.passed}<button class="secondary-button" onclick={() => startSession('practice')}>Recommencer l’entraînement</button>{/if}{#if ['battle', 'table', 'detective', 'clock', 'builder'].includes(sessionResult.mode ?? '')}<button class="secondary-button" onclick={() => startSession(sessionResult?.mode as SessionMode)}>Rejouer avec de nouvelles questions</button>{/if}</div></div></article>
+
+        {:else if session && activeQuestion}
+          <div class="session-progress"><span>{session.mode === 'practice' ? 'PUPITRE' : session.mode === 'battle' ? 'DUEL DES UNITÉS' : session.mode === 'table' ? 'TABLEAU MAGIQUE' : session.mode === 'detective' ? 'ENQUÊTE DES UNITÉS' : session.mode === 'clock' ? 'HORLOGE DU MOULIN' : session.mode === 'builder' ? 'CHANTIER DES FORMES' : session.mode === 'exam' ? 'ÉPREUVE DE MAÎTRISE' : session.mode === 'boss' ? 'CHÂTEAU DU VILLAGE' : 'BILAN DE DÉPART'}</span><strong>Question {session.index + 1} / {session.questions.length}</strong><div class="progress-track"><i style={`width:${((session.index + (session.answerStatus ? 1 : 0)) / session.questions.length) * 100}%`}></i></div></div>
+          <article class="slide-card question-slide">
+            <div class="slide-topline"><span class="step-counter">{currentFamilyLabel}</span><span class="step-counter">{session.mode === 'exam' || session.mode === 'boss' ? 'Sans indice' : 'À ton rythme'}</span></div>
+            {#if session.mode === 'battle'}
+              <div class:player-attack={session.gameEvent === 'player-attack'} class:enemy-attack={session.gameEvent === 'enemy-attack'} class="mini-game-stage battle-stage">
+                <div class="fighter player-fighter"><span class="fighter-sprite">{profile?.avatar ?? '🧙'}</span><strong>{profile?.name ?? 'Toi'}</strong><div class="health-track"><i style={`width:${Math.max(0, session.playerHp) / 3 * 100}%`}></i></div><small>Énergie</small></div>
+                <div class="battle-middle"><span class="battle-spark">{session.gameEvent === 'player-attack' ? '💥' : session.gameEvent === 'enemy-attack' ? '⚡' : '⚔️'}</span><strong>Manche {session.index + 1} / {session.questions.length}</strong><small>{session.gameEvent === 'player-attack' ? 'Coup réussi !' : session.gameEvent === 'enemy-attack' ? 'Le gardien riposte !' : 'Choisis une carte pour jouer.'}</small></div>
+                <div class="fighter enemy-fighter"><span class="fighter-sprite">{session.enemyHp === 0 ? '💫' : '🪨'}</span><strong>{session.enemyHp === 0 ? 'Gardien vaincu' : 'Gardien des unités'}</strong><div class="health-track enemy-health"><i style={`width:${Math.max(0, session.enemyHp) / 3 * 100}%`}></i></div><small>Armure</small></div>
+              </div>
+              <p class="eyebrow">CARTE DÉFI</p><h2>{activeQuestion.prompt}</h2>
+            {:else if session.mode === 'table'}
+              <div class:game-success={session.gameEvent === 'success'} class:game-miss={session.gameEvent === 'miss'} class="mini-game-stage table-game-stage"><div class="treasure-chest" aria-hidden="true">{session.gameEvent === 'success' ? '🔓✨' : '🧰'}</div><div><strong>Coffre magique · clé {session.index + 1}/{session.questions.length}</strong><p>Place la mesure dans la colonne de départ, puis lis la colonne demandée.</p></div></div>
+              <h2>{activeQuestion.prompt}</h2>
+              <div class="conversion-table-card interactive-table-card"><table class="unit-table"><thead><tr>{#each engine.tableUnitsFor(activeQuestion.family) as unit}<th class:source-unit={unit === activeQuestion.from} class:target-unit={unit === activeQuestion.to}>{unit}</th>{/each}</tr></thead><tbody><tr>{#each engine.tableUnitsFor(activeQuestion.family) as unit}<td class:source-cell={unit === activeQuestion.from} class:target-cell={unit === activeQuestion.to}>{#if unit === activeQuestion.from}{activeQuestion.value}{:else if unit === activeQuestion.to}<input id="mesurovia-answer" class="table-cell-input" aria-label={`Résultat en ${activeQuestion.to}`} inputmode="none" autocomplete="off" placeholder="?" bind:value={session.typed} readonly disabled={!!session.answerStatus} />{:else}·{/if}</td>{/each}</tr></tbody></table><p>Départ : <strong>{activeQuestion.from}</strong> · Arrivée : <strong>{activeQuestion.to}</strong></p></div>
+            {:else if session.mode === 'detective'}
+              <div class:game-success={session.gameEvent === 'success'} class:game-miss={session.gameEvent === 'miss'} class="mini-game-stage detective-stage"><div class="detective-character">🕵️</div><div><strong>Indice {session.index + 1} / {session.questions.length}</strong><p>Le témoignage contient peut-être une erreur. Compare les unités avant d’accuser Léo.</p></div><div class="evidence-stamp">{session.gameEvent === 'success' ? '✓' : '!'}</div></div>
+              <h2>{activeQuestion.prompt}</h2>
+            {:else if session.mode === 'clock'}
+              <div class:game-success={session.gameEvent === 'success'} class="mini-game-stage clock-game-stage"><span class="clock-face">🕰️</span><div><strong>Le moulin attend !</strong><p>Défi {session.index + 1}/{session.questions.length}. Relie les durées ou range-les pour remettre l’horloge en marche.</p></div><span class="clock-gear">⚙️</span></div>
+              <h2>{activeQuestion.prompt}</h2>
+            {:else if session.mode === 'builder'}
+              <div class:game-success={session.gameEvent === 'success'} class="mini-game-stage builder-game-stage"><div class="building-progress" aria-label={`${session.correct} pièces posées`}>{#each Array.from({length: session.questions.length}) as _, i}<span class:piece-built={i < session.correct}>{i < session.correct ? '🧱' : '▫️'}</span>{/each}</div><div><strong>Chantier du village</strong><p>Chaque défi réussi ajoute une pièce à la construction.</p></div></div>
+              <h2>{activeQuestion.prompt}</h2>
+            {:else}
+              <p class="eyebrow">{session.mode === 'pretest' ? 'BILAN DE DÉPART' : session.mode === 'exam' ? 'ÉPREUVE DE MAÎTRISE' : session.mode === 'boss' ? 'DÉFI DU VILLAGE' : 'ENTRAÎNEMENT GUIDÉ'}</p><h2>{activeQuestion.prompt}</h2>
+            {/if}
+
+            {#if activeQuestion.type === 'choice' || activeQuestion.type === 'unit' || activeQuestion.type === 'error'}
+              <div class:answer-cards={session.mode === 'battle'} class:game-answer-cards={['battle','detective','clock','builder'].includes(session.mode)} class="answer-options">
+                {#each activeQuestion.options as option, optionIndex}
+                  <button class:option-selected={session.selected === option} class="answer-option" disabled={!!session.answerStatus} aria-pressed={session.selected === option} onclick={() => selectSessionOption(option)}><span class="option-mark">{session.mode === 'battle' ? ['⚔️','🛡️','✨','🪄'][optionIndex % 4] : session.mode === 'detective' ? ['🔍','🧾','🧩','📜'][optionIndex % 4] : ''}</span>{option}</button>
+                {/each}
+              </div>
+            {:else if activeQuestion.type === 'match'}
+              <div class="matching-game"><div class="matching-column"><h3>Mesures de départ</h3>{#each activeQuestion.leftItems as item}<button class:match-picked={session.matchingLeft === item.id} class:match-filled={session.matches[item.id]} class="match-tile" disabled={!!session.answerStatus} onclick={() => selectMatchLeft(item.id)}>{item.label}<small>{session.matches[item.id] ? 'Associé ✓' : 'Choisir'}</small></button>{/each}</div><div class="matching-column"><h3>Mesures équivalentes</h3>{#each activeQuestion.rightItems as item}<button class:match-used={Object.values(session.matches).includes(item.id)} class="match-tile right-match-tile" disabled={!!session.answerStatus || !session.matchingLeft} onclick={() => selectMatchRight(item.id)}>{item.label}<small>{Object.values(session.matches).includes(item.id) ? 'Utilisé ✓' : session.matchingLeft ? 'Relier ici' : 'Choisis une mesure à gauche'}</small></button>{/each}</div></div>
+            {:else if activeQuestion.type === 'order'}
+              <div class="order-game-list">{#each session.orderedItems as item, itemIndex}<div class="order-item"><span class="order-position">{itemIndex + 1}</span><strong>{item}</strong><div><button class="order-move" aria-label={`Monter ${item}`} disabled={!!session.answerStatus || itemIndex === 0} onclick={() => moveOrderedItem(itemIndex, -1)}>↑</button><button class="order-move" aria-label={`Descendre ${item}`} disabled={!!session.answerStatus || itemIndex === session.orderedItems.length - 1} onclick={() => moveOrderedItem(itemIndex, 1)}>↓</button></div></div>{/each}</div>
+            {:else if activeQuestion.type === 'multi'}
+              <p class="field-help">Plusieurs réponses peuvent être justes. Coche tout ce qui convient.</p><div class="answer-options multi-answer-options">{#each activeQuestion.options as option}<button class:option-selected={session.selectedMany.includes(option)} class="answer-option" aria-pressed={session.selectedMany.includes(option)} disabled={!!session.answerStatus} onclick={() => toggleMultiOption(option)}><span class="multi-check">{session.selectedMany.includes(option) ? '☑' : '□'}</span>{option}</button>{/each}</div>
+            {:else if activeQuestion.type === 'table'}
+              <p class="field-help">Écris le résultat directement dans la case jaune. Le clavier Mesurovia évite d’ouvrir le clavier de la tablette.</p>
+              <div class="number-pad" aria-label="Clavier numérique Mesurovia">{#each ['7','8','9','4','5','6','1','2','3','clear','0','decimal','backspace'] as key}<button type="button" class:utility-key={['clear','decimal','backspace'].includes(key)} disabled={!!session.answerStatus} onclick={() => appendNumberKey(key)} aria-label={key === 'clear' ? 'Effacer tout' : key === 'backspace' ? 'Effacer le dernier chiffre' : key === 'decimal' ? 'Virgule' : key}>{key === 'clear' ? 'C' : key === 'backspace' ? '⌫' : key === 'decimal' ? ',' : key}</button>{/each}</div>
+            {:else}
+              <label for="mesurovia-answer" class="field-label">Ta réponse</label>
+              <input id="mesurovia-answer" class="answer-input" inputmode={useOnscreenKeyboard ? 'none' : 'decimal'} autocomplete="off" placeholder="Écris un nombre (virgule acceptée)" bind:value={session.typed} readonly={useOnscreenKeyboard} disabled={!!session.answerStatus} onkeydown={(event) => { if (event.key === 'Enter') submitSessionAnswer(); }} />
+              <p class="field-help">La virgule et le point sont acceptés. Sur tablette, utilise le clavier Mesurovia pour garder tout l’écran visible.</p>
+              {#if useOnscreenKeyboard}<div class="number-pad" aria-label="Clavier numérique Mesurovia">{#each ['7','8','9','4','5','6','1','2','3','clear','0','decimal','backspace'] as key}<button type="button" class:utility-key={['clear','decimal','backspace'].includes(key)} disabled={!!session.answerStatus} onclick={() => appendNumberKey(key)} aria-label={key === 'clear' ? 'Effacer tout' : key === 'backspace' ? 'Effacer le dernier chiffre' : key === 'decimal' ? 'Virgule' : key}>{key === 'clear' ? 'C' : key === 'backspace' ? '⌫' : key === 'decimal' ? ',' : key}</button>{/each}</div>{/if}
+            {/if}
+            {#if !['exam', 'boss', 'pretest'].includes(session.mode)}
+              <div class="question-tools"><button class="secondary-button" onclick={showExampleAgain} disabled={!!session.answerStatus}>💡 Voir la méthode</button><button class="secondary-button" onclick={() => speakText(activeQuestion.prompt || activeQuestion.context || '')}>🔊 Lire la consigne</button><button class="text-button" onclick={stopSpeech}>Arrêter la lecture</button><span>Une erreur est une occasion de réessayer.</span></div>
+            {/if}
+            {#if currentFeedback}
+              <div class={`feedback-box ${currentFeedback.kind}`} role="status"><strong>{currentFeedback.title}</strong><p>{currentFeedback.text}</p></div>
+            {/if}
+            <div class="slide-actions">
+              {#if session.answerStatus}<button class="primary-button" onclick={continueSession}>{session.index + 1 === session.questions.length ? 'Voir le résultat' : 'Question suivante →'}</button>
+              {:else}<button class="primary-button" onclick={submitSessionAnswer}>{session.attempts > 0 && session.mode !== 'exam' && session.mode !== 'boss' ? 'Réessayer' : 'Valider ma réponse'}</button>{/if}
+              {#if session.mode !== 'exam' && session.mode !== 'boss' && session.mode !== 'pretest' && currentFeedback?.kind === 'worked' && !session.answerStatus}<button class="secondary-button" onclick={continueSession}>J’ai compris, passer à la suivante</button>{/if}
+              {#if session.mode === 'pretest'}<button class="text-button" onclick={continueSession} disabled={!session.answerStatus}>Passer au bilan suivant</button>{/if}
+            </div>
+          </article>
+
+        {:else if !houseProgress.theoryDone}
+          <div class="theory-progress"><div><span class="eyebrow">COURS GUIDÉ · {house?.title}</span><strong>Diapositive {lessonSlideNumber} sur {lessons.length * 2}</strong></div><div class="progress-track"><i style={`width:${lessonProgress}%`}></i></div></div>
+          <article class="slide-card lesson-slide">
+            <div class="slide-topline"><span class="step-counter">{theoryPhase === 'explain' ? `PARTIE ${lessonIndex + 1} / ${lessons.length}` : `QUESTION ${lessonIndex + 1} / ${lessons.length}`}</span><span class="step-counter">{familyEmoji[house?.families?.[lessonIndex % (house?.families?.length || 1)]] ?? '📐'} Une seule idée à la fois</span></div>
+            {#if theoryPhase === 'explain'}
+              <div class="lesson-copy"><p class="eyebrow">LE MAÎTRE EXPLIQUE</p><h2>{currentLesson?.title}</h2><div class="voice-controls"><button class="secondary-button" onclick={() => speakText(`${currentLesson?.title ?? ''}. ${currentLesson?.body ?? ''}`)}>🔊 Lire cette diapositive</button><button class="text-button" onclick={stopSpeech}>Arrêter la lecture</button></div><p class="lesson-body">{currentLesson?.body}</p>
+                {#if currentLesson?.visual === 'TABLE' || currentLesson?.visual === 'TABLE_EXAMPLE'}
+                  <div class="conversion-table-card"><h3>Le tableau des longueurs</h3><p>Lis de gauche à droite : chaque colonne est une unité. Place le chiffre des unités de départ dans la colonne de cette unité, puis garde chaque chiffre dans sa colonne.</p><table class="unit-table"><thead><tr><th>km</th><th>hm</th><th>dam</th><th>m</th><th>dm</th><th>cm</th><th>mm</th></tr></thead><tbody><tr>{#each ['','', '', '2', '4', '', ''] as digit, i}<td class:highlight-unit={i === 3 || (currentLesson?.visual === 'TABLE_EXAMPLE' && i === 4)}>{digit || (currentLesson?.visual === 'TABLE_EXAMPLE' && i === 4 ? '4' : '·')}</td>{/each}</tr></tbody></table><div class="table-steps"><span><b>1</b> Repère l’unité donnée.</span><span><b>2</b> Place le chiffre des unités dans sa colonne.</span><span><b>3</b> Lis la colonne demandée.</span><span><b>4</b> Vérifie si le nombre doit augmenter ou diminuer.</span></div></div>
+                {:else if currentLesson?.visual}
+                  <!-- Les visuels sont des fragments statiques définis dans le moteur du cours, jamais du HTML saisi par l'élève. -->
+                  <div class="lesson-visual">{@html currentLesson.visual}</div>
+                {/if}
+                <div class="concrete-example"><span class="example-icon">🧩</span><div><strong>Un repère concret</strong><p>Observe le schéma et les repères ci-dessus. Puis essaie avec une nouvelle mesure : tu pourras vérifier ta réponse juste après.</p></div></div>
+              </div>
+              <aside class="teacher-speech"><div class="teacher-portrait">🧙🏻‍🏫</div><strong>Maître Mesuro</strong><p>Lis cette diapositive, regarde l’exemple, puis passe à ma question. Tu peux utiliser la lecture vocale du navigateur si elle t’aide.</p><button class="primary-button" onclick={() => { theoryPhase = 'checkpoint'; lessonChoice = ''; lessonFeedback = null; }}>J’ai compris, poser la question →</button></aside>
+            {:else}
+              <div class="checkpoint-copy"><p class="eyebrow">VALIDATION DE L’ÉTAPE {lessonIndex + 1}</p><h2>{currentLesson?.ask}</h2><div class="voice-controls"><button class="secondary-button" onclick={() => speakText(currentLesson?.ask ?? '')}>🔊 Lire la question</button><button class="text-button" onclick={stopSpeech}>Arrêter la lecture</button></div><p>Choisis ta réponse. Si tu te trompes, le maître te donnera une aide et tu pourras recommencer cette question.</p>
+                <div class="answer-options lesson-options">{#each currentLesson?.options ?? [] as option}<button class:option-selected={lessonChoice === option} class="answer-option" aria-pressed={lessonChoice === option} onclick={() => (lessonChoice = option)}>{option}</button>{/each}</div>
+                {#if lessonFeedback}<div class={`feedback-box ${lessonFeedback.kind}`} role="status"><strong>{lessonFeedback.title}</strong><p>{lessonFeedback.text}</p></div>{/if}
+                <div class="slide-actions"><button class="secondary-button" onclick={() => { theoryPhase = 'explain'; lessonFeedback = null; }}>← Revoir l’explication</button><button class="primary-button" onclick={() => {
+                  if (!lessonChoice) { lessonFeedback = { kind: 'notice', title: 'Choisis une réponse', text: 'Prends le temps de relire l’explication ; tu peux revenir à la diapositive précédente.' }; return;
+                  }
+                  if (engine.normalizeAnswer(lessonChoice) === engine.normalizeAnswer(currentLesson?.answer)) {
+                    lessonFeedback = { kind: 'success', title: 'Exact !', text: currentLesson?.explain || 'Tu as compris cette étape.' };
+                    if (lessonIndex + 1 >= lessons.length) {
+                      setHouseProgress(currentVillageId, currentHouseId, { theoryDone: true });
+                      addXP(10, 'Théorie terminée');
+                      theoryPhase = 'explain';
+                    } else {
+                      lessonIndex += 1;
+                      theoryPhase = 'explain';
+                    }
+                    lessonChoice = '';
+                  } else {
+                    lessonFeedback = { kind: 'hint', title: 'Pas encore : relis le repère', text: currentLesson?.explain || 'Repère l’unité et reviens à l’étape décrite dans la diapositive.' };
+                  }
+                }}>{lessonIndex + 1 === lessons.length ? 'Valider la théorie' : 'Valider et continuer →'}</button></div>
+              </div>
+            {/if}
+          </article>
+
+        {:else}
+          <div class="room-dashboard">
+            <div class="room-dashboard-heading"><p class="eyebrow">THÉORIE VALIDÉE</p><h2>À toi de choisir la prochaine mission.</h2><p>Tu peux t’entraîner tranquillement ou apprendre en jouant avec les cartes. L’examen devient disponible après un entraînement réussi.</p></div>
+            <div class="activity-choice-grid">
+              <article class="activity-choice"><div class="activity-art desk-art"><span>✏️</span><span>📄</span><span>📐</span></div><p class="eyebrow">MODE APPRENTISSAGE</p><h3>Le pupitre d’exercices</h3><p>Huit questions générées à la volée : QCM, saisie, associations, classement et autres formats selon la compétence.</p><button class="primary-button" onclick={() => startSession('practice')}>S’entraîner au pupitre →</button></article>
+              <article class="activity-choice"><div class="activity-art battle-art"><span>⚔️</span><span>🃏</span><span>🛡️</span></div><p class="eyebrow">VRAI MINI-JEU · 5 MANCHES</p><h3>Bataille des unités</h3><p>Choisis une carte-mesure pour attaquer le gardien. Une bonne réponse déclenche ton attaque ; une erreur déclenche sa riposte. Sans chronomètre.</p><button class="primary-button" onclick={() => startSession('battle')}>Lancer le duel →</button></article>
+              {#if tableGameAvailable}<article class="activity-choice"><div class="activity-art table-art"><span>🧩</span><span>📊</span><span>🔓</span></div><p class="eyebrow">MANIPULATION</p><h3>Le Tableau magique</h3><p>Le coffre s’ouvre quand tu utilises le tableau des unités et saisis le résultat avec le clavier intégré.</p><button class="primary-button" onclick={() => startSession('table')}>Ouvrir le coffre →</button></article>{/if}
+              <article class="activity-choice"><div class="activity-art detective-art"><span>🕵️</span><span>🔎</span><span>🗒️</span></div><p class="eyebrow">ENQUÊTE</p><h3>Qui a fait l’erreur ?</h3><p>Un personnage a mal converti une mesure. Examine son affirmation et choisis la correction.</p><button class="primary-button" onclick={() => startSession('detective')}>Chercher les indices →</button></article>
+              {#if clockGameAvailable}<article class="activity-choice"><div class="activity-art clock-art"><span>🕰️</span><span>⚙️</span><span>✨</span></div><p class="eyebrow">JEU DE TEMPS</p><h3>Répare l’horloge</h3><p>Relie les durées équivalentes ou range-les dans le bon ordre pour relancer le moulin.</p><button class="primary-button" onclick={() => startSession('clock')}>Réparer l’horloge →</button></article>{/if}
+              {#if builderGameAvailable}<article class="activity-choice"><div class="activity-art builder-art"><span>🧱</span><span>🏗️</span><span>⭐</span></div><p class="eyebrow">MISSION EN ÉTAPES</p><h3>Le chantier des formes</h3><p>Chaque défi résolu ajoute une pièce au bâtiment. Les mesures d’aire ou de volume servent à terminer le chantier.</p><button class="primary-button" onclick={() => startSession('builder')}>Construire →</button></article>{/if}
+              <article class="activity-choice exam-choice"><div class="activity-art crest-art"><span>🏅</span></div><p class="eyebrow">MODE MAÎTRISE</p><h3>L’épreuve du blason</h3><p>{houseProgress.trainingDone ? 'Tu as validé un entraînement. Passe à dix questions variées sans indice.' : 'Réussis un entraînement ou un mini-jeu pour déverrouiller cette épreuve.'}</p><button class="primary-button" disabled={!houseProgress.trainingDone} onclick={beginExam}>{houseProgress.examPassed ? 'Repasser l’épreuve' : 'Préparer le blason →'}</button>{#if houseProgress.examPassed}<span class="status-pill success-pill">✓ Blason déjà obtenu</span>{/if}</article>
+            </div>
+            {#if trainingFeedback}<div class={`feedback-box ${trainingFeedback.kind}`}><strong>{trainingFeedback.title}</strong><p>{trainingFeedback.text}</p></div>{/if}
+            <div class="room-bottom-actions"><button class="secondary-button" onclick={() => { lessons = engine.lessonForHouse(house.id, currentVillageId); lessonIndex = 0; theoryPhase = 'explain'; setHouseProgress(currentVillageId, currentHouseId, { theoryDone: false }); }}>Revoir toute la théorie</button><button class="secondary-button" onclick={() => downloadCourse(currentVillageId)}>Ouvrir le cahier imprimable</button><button class="text-button" onclick={closeHouse}>Retourner dans le village</button></div>
+          </div>
+        {/if}
+      </section>
+
+    {:else if view === 'pretest'}
+      <section class="standalone-session-page"><div class="page-heading"><p class="eyebrow">AVANT L’AVENTURE</p><h1>Bilan de départ</h1><p>Ce bilan aide à choisir un point de départ. Ce n’est ni une note ni un diagnostic.</p><button class="text-button" onclick={goHome}>← Retour à l’accueil</button></div>
+        {#if sessionResult}
+          <article class="slide-card result-slide"><div class="result-icon">🧭</div><div><h2>{sessionResult.title}</h2><p class="score-line">{sessionResult.score} réponses justes sur {sessionResult.total}</p><p>{sessionResult.detail}</p><h3>Conseil par compétence</h3><div class="family-result-grid">{#each familyOrder as family}<div><span>{familyEmoji[family]} {engine.FAMILIES[family].label}</span><strong>{sessionResult ? (sessionResult.total ? `${session?.familyResults?.[family]?.correct ?? profile?.pretest?.byFamily?.[family]?.correct ?? 0}/${session?.familyResults?.[family]?.total ?? profile?.pretest?.byFamily?.[family]?.total ?? 0}` : '—') : ''}</strong></div>{/each}</div><button class="primary-button" onclick={() => { sessionResult = null; session = null; view = 'villages'; }}>Choisir mon village →</button></div></article>
+        {:else if session && activeQuestion}
+          <div class="session-progress"><strong>Question {session.index + 1} / {session.questions.length}</strong><div class="progress-track"><i style={`width:${(session.index / session.questions.length) * 100}%`}></i></div></div>
+          <article class="slide-card question-slide"><p class="eyebrow">{currentFamilyLabel}</p><h2>{activeQuestion.prompt}</h2>{#if activeQuestion.type === 'choice'}<div class="answer-options">{#each activeQuestion.options as option}<button class:option-selected={session.selected === option} class="answer-option" disabled={!!session.answerStatus} onclick={() => selectSessionOption(option)}>{option}</button>{/each}</div>{:else}<input class="answer-input" bind:value={session.typed} placeholder="Écris ta réponse" disabled={!!session.answerStatus} />{/if}{#if currentFeedback}<div class={`feedback-box ${currentFeedback.kind}`} role="status" aria-live="polite"><strong>{currentFeedback.title}</strong><p>{currentFeedback.text}</p></div>{/if}<div class="slide-actions">{#if session.answerStatus}<button class="primary-button" onclick={continueSession}>{session.index + 1 === session.questions.length ? 'Voir mon bilan' : 'Question suivante →'}</button>{:else}<button class="primary-button" onclick={submitSessionAnswer}>Valider ma réponse</button>{/if}</div></article>
+        {/if}
+      </section>
+
+    {:else if view === 'howto'}
+      <section class="slide-stage howto-stage"><div class="stage-topline"><button class="text-button" onclick={goHome}>← Accueil</button><span class="step-counter">DIAPOSITIVE {currentHowToSlide + 1} / {howToSlides.length}</span></div><article class="slide-card howto-slide"><div class="howto-number">{String(currentHowToSlide + 1).padStart(2, '0')}</div><div><p class="eyebrow">COMMENT JOUER</p><h1>{howToSlides[currentHowToSlide].title}</h1><p class="slide-lead">{howToSlides[currentHowToSlide].text}</p><div class="slide-actions">{#if currentHowToSlide > 0}<button class="secondary-button" onclick={() => (currentHowToSlide -= 1)}>← Précédent</button>{/if}{#if currentHowToSlide < howToSlides.length - 1}<button class="primary-button" onclick={() => (currentHowToSlide += 1)}>Suivant →</button>{:else}<button class="primary-button" onclick={() => { view = profile ? 'villages' : 'character'; }}>C’est parti !</button>{/if}</div></div></article></section>
+    {/if}
+
+    {#if modalMessage}
+      <div class="xp-toast" role="status">{modalMessage}<button onclick={() => (modalMessage = '')} aria-label="Fermer">×</button></div>
+    {/if}
+    <footer class="game-footer"><span>MESUROVIA · Prototype V3</span><div class="display-tools"><label><input type="checkbox" bind:checked={largeText} onchange={persist} /> Texte plus grand</label><label><input type="checkbox" bind:checked={highContrast} onchange={persist} /> Contraste renforcé</label><label><input type="checkbox" bind:checked={reduceMotion} onchange={persist} /> Réduire les animations</label></div><span>💾 Sauvegarde locale par profil</span></footer>
+  </main>
+{/if}
+
+<style>
+  :global(html) { background: #f5f1e5; }
+  :global(body) { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #2e3c35; }
+  :global(button), :global(input) { font: inherit; }
+  :global(button) { cursor: pointer; }
+  :global(button:disabled) { cursor: not-allowed; opacity: .48; }
+  .mesurovia-shell { --ink: #2e3c35; --muted: #637267; --paper: #fbf8ee; --line: #d8d0b9; --green: #367958; --green-dark: #23563f; --gold: #f1c66a; --terracotta: #c76d4e; --sky: #a9d9dd; min-height: 100vh; background: radial-gradient(circle at 20% 0%, #fffdf5 0, #f5f1e5 48%, #e8e8d5 100%); color: var(--ink); padding: 0 0 28px; box-sizing: border-box; }
+  .mesurovia-shell.large-text { font-size: 1.12rem; }
+  .mesurovia-shell.high-contrast { --ink: #12251a; --muted: #293d31; --paper: #fff; --line: #645c49; --green: #125832; --green-dark: #0b3a22; }
+  .mesurovia-shell.reduced-motion *, .mesurovia-shell.reduced-motion *::before, .mesurovia-shell.reduced-motion *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  .game-header { position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: 1fr auto auto; gap: 18px; align-items: center; background: rgba(251,248,238,.94); border-bottom: 2px solid #d7cfb7; box-shadow: 0 4px 14px #756d4c16; padding: 12px clamp(14px, 3vw, 40px); backdrop-filter: blur(10px); }
+  .brand-button { border: 0; background: transparent; display: flex; gap: 11px; align-items: center; color: var(--ink); text-align: left; padding: 0; }
+  .brand-icon { display: grid; place-items: center; width: 44px; height: 44px; background: #f1ce78; border: 3px solid #9f733c; box-shadow: 0 4px 0 #c5a65d; border-radius: 10px; font-size: 26px; }
+  .brand-button strong { display: block; font-size: 1.05rem; letter-spacing: .12em; }
+  .brand-button small { display: block; color: var(--muted); font-size: .76rem; margin-top: 2px; }
+  .header-player { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; align-items: center; }
+  .player-chip, .xp-chip, .crest-chip { border: 2px solid #ded5ba; border-radius: 999px; background: #fffdf5; padding: 8px 11px; font-weight: 750; font-size: .82rem; white-space: nowrap; }
+  .xp-chip { background: #fff1bf; border-color: #e0be60; }
+  .crest-chip { background: #e0eee0; border-color: #b4d1b4; }
+  .header-menu-wrap { position: relative; }
+  .menu-toggle { border: 2px solid #27583f; background: #356f50; color: #fff9e6; border-radius: 10px; font-weight: 800; padding: 11px 15px; }
+  .menu-popover { position: absolute; top: calc(100% + 10px); right: 0; width: min(270px, 80vw); padding: 8px; border: 2px solid #a99d7d; border-radius: 13px; background: #fffdf4; box-shadow: 0 12px 30px #314a3533; display: grid; gap: 5px; z-index: 40; }
+  .menu-popover button, .file-import { background: transparent; border: 0; color: var(--ink); text-align: left; padding: 11px; border-radius: 8px; font-weight: 700; }
+  .menu-popover button:hover, .file-import:hover { background: #edf2dd; }
+  .file-import { cursor: pointer; position: relative; }
+  .file-import input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+  .save-message { margin: 10px auto 0; max-width: 1100px; background: #e4f1df; border: 1px solid #a1c59e; padding: 8px 13px; border-radius: 9px; color: #245738; display: flex; justify-content: space-between; gap: 10px; }
+  .save-message button, .xp-toast button { background: transparent; border: 0; font-weight: 900; font-size: 1.2rem; }
+  .welcome-layout { max-width: 1240px; padding: clamp(24px, 5vw, 64px) 24px 50px; margin: auto; display: grid; grid-template-columns: minmax(0, 1.03fr) minmax(350px, .97fr); gap: clamp(25px, 5vw, 72px); align-items: center; }
+  .welcome-art { min-height: 490px; position: relative; border: 3px solid #b0ae82; border-radius: 24px; background: #d7e8bf; overflow: hidden; box-shadow: 0 12px 0 #b1b58e, 0 20px 30px #506d3d1c; }
+  .moon { position: absolute; z-index: 3; top: 24px; right: 31px; color: #fff4bd; font-size: 52px; text-shadow: 0 3px #e7b96a; }
+  .storybook-landscape { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(#b5dfde 0 55%, #b5d78f 55%); }
+  .sky-orb { position: absolute; border-radius: 50%; background: #ecf3cf; opacity: .9; }
+  .orb-one { top: 70px; left: 72px; width: 70px; height: 22px; box-shadow: 16px -9px 0 2px #ecf3cf, 36px 2px 0 -2px #ecf3cf; }
+  .orb-two { top: 135px; right: 93px; width: 55px; height: 18px; box-shadow: 14px -8px 0 2px #ecf3cf, 29px 1px 0 -3px #ecf3cf; }
+  .hill { position: absolute; width: 120%; left: -10%; border-radius: 50% 50% 0 0; }
+  .hill-back { top: 270px; height: 300px; background: #7fbb77; transform: rotate(-8deg); }
+  .hill-front { top: 340px; height: 280px; background: #4c9664; transform: rotate(7deg); }
+  .welcome-tower { position: absolute; z-index: 2; bottom: 155px; left: 41%; width: 102px; height: 170px; background: #eacb92; border: 5px solid #8e6547; border-bottom-width: 8px; box-shadow: 7px 7px 0 #487855; }
+  .tower-roof { position: absolute; width: 135px; height: 72px; top: -68px; left: -21px; background: #b65f4d; border: 5px solid #754b3c; clip-path: polygon(50% 0,100% 100%,0 100%); }
+  .tower-window { position: absolute; top: 48px; left: 30px; width: 30px; height: 54px; border: 4px solid #74533b; background: #8ec8d6; border-radius: 16px 16px 0 0; }
+  .welcome-house { position: absolute; z-index: 2; bottom: 100px; width: 115px; height: 82px; background: #f5d8a4; border: 4px solid #926448; box-shadow: 6px 6px 0 #427654; }
+  .welcome-house::before { content: ''; position: absolute; top: -51px; left: -10px; width: 130px; height: 55px; background: #cd7853; border: 4px solid #7c4d39; clip-path: polygon(50% 0,100% 100%,0 100%); }
+  .welcome-house i { position: absolute; left: 13px; top: 19px; width: 22px; height: 22px; background: #8ecbd2; border: 3px solid #fff0c8; }
+  .welcome-house b { position: absolute; right: 15px; top: 28px; width: 24px; height: 50px; background: #815b41; border: 3px solid #6e4b35; }
+  .welcome-house-one { left: 50px; bottom: 92px; transform: scale(.86); }
+  .welcome-house-two { right: 48px; bottom: 78px; transform: scale(1.08); }
+  .welcome-house-two::before { background: #d4a04d; }
+  .welcome-path { position: absolute; z-index: 1; bottom: -90px; left: 34%; width: 260px; height: 280px; background: #ecd5a3; border: 4px solid #c4a878; transform: perspective(160px) rotateX(16deg); border-radius: 50% 50% 0 0; }
+  .spark { position: absolute; z-index: 3; color: #fff4b8; font-size: 30px; text-shadow: 0 2px #d7a85f; }
+  .spark-a { top: 210px; left: 30%; }.spark-b { top: 300px; right: 20%; }.spark-c { top: 120px; left: 52%; }
+  .floating-label { position: absolute; bottom: 18px; left: 20px; right: 20px; border: 2px solid #3d7653; border-radius: 12px; padding: 11px; background: #f8f5deec; text-align: center; color: #2e573e; font-weight: 800; }
+  .welcome-copy { max-width: 610px; }
+  .eyebrow { color: #557d5a; text-transform: uppercase; letter-spacing: .12em; font-size: .74rem; font-weight: 900; margin: 0 0 12px; }
+  h1, h2, h3, p { margin-top: 0; }
+  h1 { font-family: Georgia, 'Times New Roman', serif; color: #2a4937; font-size: clamp(2.25rem, 4vw, 3.65rem); line-height: 1.04; letter-spacing: -.035em; margin-bottom: 20px; }
+  h2 { font-size: clamp(1.5rem, 2.4vw, 2.25rem); line-height: 1.15; color: #294a36; margin-bottom: 14px; }
+  h3 { color: #294a36; }
+  .lead { font-size: clamp(1.05rem, 1.5vw, 1.22rem); line-height: 1.7; color: #4d5c4d; margin-bottom: 25px; }
+  .welcome-actions { display: grid; gap: 10px; max-width: 400px; }
+  .welcome-side-actions { display: flex; flex-wrap: wrap; gap: 19px; margin-top: 20px; }
+  .welcome-note { margin-top: 25px; max-width: 430px; font-size: .9rem; line-height: 1.5; color: #6c796c; border-left: 3px solid #d4b85c; padding-left: 12px; }
+  .primary-button, .secondary-button, .gold-button { border: 2px solid #24563e; border-radius: 10px; background: #367958; color: #fffced; padding: 11px 16px; font-weight: 850; box-shadow: 0 3px 0 #24563e; transition: transform .12s, box-shadow .12s, background .12s; }
+  .primary-button:hover:not(:disabled) { background: #2b694b; transform: translateY(-1px); box-shadow: 0 4px 0 #24563e; }
+  .secondary-button { background: #fff9e8; color: #36513c; border-color: #b7a986; box-shadow: 0 3px 0 #c9b997; }
+  .secondary-button:hover:not(:disabled) { background: #f3ebd4; }
+  .large-button { padding: 14px 18px; font-size: 1rem; }
+  .text-button { border: 0; background: transparent; color: #3b704d; font-weight: 800; padding: 5px 0; text-align: left; }
+  .text-button:hover { color: #234e35; text-decoration: underline; }
+  .loading-screen { min-height: 100vh; display: grid; place-items: center; font-weight: 800; color: #3b704d; }
+  .slide-stage { max-width: 1030px; padding: 28px 22px 65px; margin: auto; }
+  .stage-topline, .slide-topline, .page-heading, .village-topbar, .room-header, .slide-actions, .room-bottom-actions, .map-footer { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+  .step-counter { background: #e6eddb; border: 1px solid #c8d8bb; color: #416347; border-radius: 999px; padding: 7px 11px; font-size: .75rem; font-weight: 900; letter-spacing: .05em; }
+  .slide-card { background: var(--paper); border: 2px solid var(--line); border-radius: 20px; padding: clamp(20px, 4vw, 44px); box-shadow: 0 9px 0 #d2c9ad, 0 14px 30px #50604512; }
+  .character-slide { margin-top: 18px; display: grid; grid-template-columns: 180px 1fr; align-items: center; gap: clamp(20px, 4vw, 55px); }
+  .slide-illustration { min-height: 170px; display: grid; place-items: center; border: 3px solid #a9b994; background: linear-gradient(135deg, #d4e7c0, #f4e4a9); border-radius: 18px; box-shadow: inset 0 -10px #abc78c; }
+  .avatar-big { font-size: 6.5rem; }
+  .slide-lead { color: var(--muted); line-height: 1.65; max-width: 680px; font-size: 1.05rem; }
+  .field-label { display: block; color: #354e39; font-weight: 850; margin: 17px 0 8px; }
+  .name-input, .answer-input { box-sizing: border-box; width: 100%; max-width: 560px; border: 2px solid #bfb69b; border-radius: 10px; background: #fffef8; padding: 13px 14px; font-size: 1.06rem; color: #293c31; }
+  .name-input:focus, .answer-input:focus { outline: 3px solid #87ba90; outline-offset: 2px; border-color: #387a51; }
+  .voice-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0; }
+  .field-help { display: block; margin-top: 7px; font-size: .86rem; color: var(--muted); }
+  .avatar-picker { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 22px; }
+  .avatar-choice { width: 58px; height: 58px; border: 2px solid #cdc4ab; border-radius: 12px; background: #fff9e8; font-size: 1.9rem; }
+  .chosen-avatar { outline: 3px solid #4b8d60; background: #dff0d7; border-color: #31734b; }
+  .villages-page, .village-page, .classroom-page, .standalone-session-page { max-width: 1260px; padding: 35px clamp(14px, 3vw, 38px) 55px; margin: 0 auto; }
+  .page-heading { align-items: flex-start; display: block; max-width: 840px; margin-bottom: 25px; }
+  .page-heading p:not(.eyebrow) { color: var(--muted); line-height: 1.6; }
+  .village-selection-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .village-choice-card { --village-accent: #4e976c; min-height: 315px; padding: 14px; border: 2px solid #c7c2a8; border-radius: 16px; background: #fffbed; box-shadow: 0 5px 0 #d6c9a7; text-align: left; color: #2e4535; display: flex; flex-direction: column; gap: 11px; transition: transform .15s; }
+  .village-choice-card:hover { transform: translateY(-4px); border-color: var(--village-accent); }
+  .village-card-art { position: relative; display: grid; place-items: center; height: 110px; border: 2px solid #b5cba2; border-radius: 10px; background: linear-gradient(#bce2df 0 57%, #8fc77e 57%); overflow: hidden; }
+  .village-card-art span { position: relative; z-index: 2; font-size: 3rem; filter: drop-shadow(2px 3px #49774f); }
+  .village-card-art i, .village-card-art b, .village-card-art em { position: absolute; bottom: -15px; width: 170px; height: 70px; border-radius: 50% 50% 0 0; background: var(--village-accent); }
+  .village-card-art b { bottom: -27px; left: -20px; background: #529f6a; }.village-card-art em { bottom: -32px; right: -20px; background: #b7d58a; }
+  .region-number { color: #537753; font-size: .68rem; font-weight: 950; letter-spacing: .1em; }
+  .village-choice-card strong { font-family: Georgia, serif; font-size: 1.22rem; line-height: 1.16; }
+  .village-choice-card > span:not(.village-card-art):not(.region-number):not(.village-card-footer) { color: #637363; font-size: .87rem; line-height: 1.4; }
+  .village-card-footer { border-top: 1px solid #ded6c0; padding-top: 10px; display: flex; justify-content: space-between; margin-top: auto; font-weight: 800; color: var(--village-accent); }
+  .recommendation-note { margin-top: 22px; padding: 13px 15px; border-radius: 10px; border: 1px solid #d4c58b; background: #fff5cc; color: #5c5532; }
+  .village-topbar { align-items: flex-start; margin-bottom: 18px; }
+  .village-topbar h1 { font-size: clamp(2rem, 3.4vw, 3rem); margin-bottom: 9px; }
+  .village-topbar p:not(.eyebrow) { max-width: 740px; line-height: 1.55; color: var(--muted); }
+  .village-side-panel { border: 2px solid #d2c6a4; border-radius: 14px; padding: 13px; min-width: 190px; background: #fff9e9; display: grid; gap: 10px; font-weight: 800; }
+  .map-instructions { display: flex; align-items: center; gap: 12px; border-radius: 12px; background: #e6efda; border: 1px solid #bfd4b2; color: #34563d; padding: 11px 14px; margin-bottom: 14px; }
+  .map-instructions span:nth-child(2) { flex: 1; line-height: 1.4; }
+  .map-pointer-icon { border: 2px solid #55835e; background: #fff9e5; border-radius: 8px; padding: 4px 8px; font-size: 1.4rem; }
+  .pixel-map-frame { background: #8fbe7d; border: 5px solid #6f8f60; border-radius: 18px; overflow: hidden; box-shadow: 0 8px 0 #bcc59e, 0 15px 24px #4b604026; }
+  .pixel-map { display: block; width: 100%; height: auto; aspect-ratio: 1000 / 620; cursor: crosshair; image-rendering: pixelated; }
+  .map-label { font: 900 13px ui-monospace, monospace; fill: #634c34; letter-spacing: 1px; }.tiny-label { font: 900 10px ui-monospace, monospace; fill: #5a4531; }.building-number { font: 900 15px ui-monospace, monospace; fill: #5c452f; }.building-label { font: 900 11px ui-monospace, monospace; fill: #2f5138; paint-order: stroke; stroke: #f6edcf; stroke-width: 4px; stroke-linejoin: round; }.badge-mark { font: 900 16px sans-serif; fill: #4b733d; }.npc-label { font: 900 11px ui-monospace, monospace; fill: #244832; paint-order: stroke; stroke: #f8edc9; stroke-width: 4px; stroke-linejoin: round; }
+  .map-house, .npc-sprite { cursor: pointer; outline: none; }.map-house:hover { filter: brightness(1.08) drop-shadow(0 0 3px #fff5bd); }.map-house:focus, .npc-sprite:focus { filter: brightness(1.12) drop-shadow(0 0 4px #fff5bd); }.npc-sprite:hover { filter: brightness(1.08) drop-shadow(0 0 4px #fff6c4); }.player-sprite { pointer-events: none; transition: transform .36s cubic-bezier(.22,.74,.22,1); }.joke-text { font: 800 12px/1.25 system-ui, sans-serif; color: #4e4030; display: flex; align-items: center; height: 100%; }
+  .map-footer { padding: 15px 3px 0; color: #61715d; font-size: .9rem; font-weight: 800; flex-wrap: wrap; }
+  .room-header { align-items: flex-start; margin-bottom: 20px; }.room-header h1 { font-size: clamp(2rem, 3vw, 2.8rem); margin-bottom: 8px; }.room-header p:not(.eyebrow) { color: var(--muted); }.room-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .classroom-scene { min-height: 235px; display: grid; grid-template-columns: 1fr auto; position: relative; overflow: hidden; border: 3px solid #9f957a; border-radius: 16px; background: #eadab4; box-shadow: 0 6px 0 #d4c39c; margin-bottom: 22px; }
+  .classroom-wall { position: relative; min-height: 235px; background: repeating-linear-gradient(0deg, #ebddbd 0 40px, #e0d0ae 41px 43px); padding: 24px; }
+  .chalkboard { position: absolute; top: 25px; left: 25%; width: 52%; height: 145px; box-sizing: border-box; background: #35624c; border: 9px solid #9b6c45; border-radius: 5px; box-shadow: inset 0 0 0 2px #234a38; color: #f4edcf; padding: 17px; }
+  .chalkboard-heading { font: 900 clamp(.8rem, 1.4vw, 1.1rem) ui-monospace, monospace; text-align: center; letter-spacing: .08em; }.chalkboard-small { color: #cce3c0; font-size: .78rem; text-align: center; margin-top: 12px; }.chalk-marks { display: flex; gap: 10px; margin-top: 18px; }.chalk-marks span { height: 4px; background: #d2e3c8; border-radius: 9px; flex: 1; opacity: .7; }.teacher-desk { position: absolute; bottom: 13px; left: 20%; width: 66%; height: 21px; background: #a36f46; border: 4px solid #805838; border-radius: 4px; }
+  .classroom-clock { position: absolute; left: 34px; top: 20px; border: 3px solid #9b8056; background: #fff6df; border-radius: 50%; width: 48px; height: 48px; display: grid; place-items: center; font-size: .74rem; font-weight: 900; }.classroom-window { position: absolute; right: 15px; top: 24px; width: 82px; height: 88px; border: 6px solid #986f4e; background: #a8d9db; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }.classroom-window span { border: 2px solid #fff0ca; }
+  .teacher-character { position: relative; z-index: 2; width: 148px; display: flex; align-items: center; justify-content: center; flex-direction: column; background: #dfc99f; border-left: 3px solid #aa9a77; padding-top: 20px; }.teacher-head { position: relative; width: 52px; height: 55px; border-radius: 42% 42% 45% 45%; border: 3px solid #71513b; background: #efc69b; margin-top: 13px; }.teacher-head i { position: absolute; top: 21px; left: 10px; background: #5b4131; width: 5px; height: 5px; border-radius: 50%; }.teacher-head i:nth-child(2) { left: 32px; }.teacher-head b { position: absolute; bottom: 9px; left: 20px; width: 11px; height: 5px; border-bottom: 3px solid #9b5448; border-radius: 50%; }.teacher-hair { position: absolute; top: 18px; width: 59px; height: 27px; border-radius: 50% 50% 20% 20%; background: #ede2c2; border: 3px solid #71513b; }.teacher-body { width: 73px; height: 79px; border: 3px solid #71513b; border-radius: 15px 15px 4px 4px; background: #56856a; display: grid; place-items: center; color: #f7d87d; font-size: 1.6rem; margin-top: -1px; }.teacher-label { background: #fff7dd; border: 1px solid #c9b88f; border-radius: 8px; padding: 5px 8px; font-size: .75rem; font-weight: 900; margin-top: 6px; }.classroom-students { position: absolute; bottom: 0; left: 10px; display: flex; gap: 45px; opacity: .8; }.student { width: 30px; height: 43px; background: #be7659; border: 3px solid #79523b; border-radius: 50% 50% 4px 4px; position: relative; }.student i { position: absolute; top: -18px; left: 3px; width: 22px; height: 23px; border-radius: 50%; background: #e9be90; border: 3px solid #79523b; }.student b { position: absolute; top: -21px; left: 1px; width: 26px; height: 9px; background: #634b3a; border-radius: 50% 50% 0 0; }.student-two { background: #7893b6; }.student-three { background: #d8af63; }
+  .theory-progress, .session-progress { display: flex; align-items: center; gap: 15px; justify-content: space-between; background: #e8eddd; padding: 11px 14px; border: 1px solid #c8d7bc; border-radius: 11px; margin-bottom: 15px; }.theory-progress > div:first-child { display: grid; gap: 4px; }.theory-progress .eyebrow { margin: 0; }.theory-progress strong, .session-progress strong { white-space: nowrap; font-size: .88rem; }.progress-track { flex: 1; height: 10px; overflow: hidden; border-radius: 99px; background: #d3d9c8; border: 1px solid #bdc7b2; }.progress-track i { display: block; height: 100%; background: linear-gradient(90deg, #5a9a67, #dfbf63); border-radius: inherit; transition: width .2s ease; }
+  .lesson-slide { min-height: 390px; }.slide-topline { margin-bottom: 23px; }.lesson-copy { max-width: 920px; }.lesson-copy h2 { font-family: Georgia, serif; }.lesson-body { color: #46594a; font-size: 1.1rem; line-height: 1.8; white-space: pre-line; max-width: 870px; }.lesson-visual { background: #eef2df; border: 1px solid #ccd8b7; padding: 18px; border-radius: 12px; margin: 18px 0; overflow-x: auto; }.lesson-visual :global(.measure-cards), .lesson-visual :global(.example-strip), .lesson-visual :global(.example-strip), .lesson-visual :global(.measure-cards) { display: flex; flex-wrap: wrap; gap: 10px; }.lesson-visual :global(.measure-cards span), .lesson-visual :global(.example-strip span) { background: #fffdf0; border: 1px solid #c9d1b8; border-radius: 8px; padding: 12px; font-weight: 800; }.lesson-visual :global(.measure-cards b) { display: block; margin-top: 5px; }.lesson-visual :global(.conversion-equation), .lesson-visual :global(.equal-visual), .lesson-visual :global(.direction-visual) { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: center; font-size: 1.3rem; }.lesson-visual :global(.number-line) { display: flex; gap: 6px; flex-wrap: wrap; }.lesson-visual :global(.number-line span) { padding: 10px 13px; border-radius: 7px; background: white; border: 1px solid #c3cdb6; font-weight: 900; }.lesson-visual :global(.number-line .active) { background: #f3d67e; border-color: #b99542; }.lesson-visual :global(.time-blocks) { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 13px; font-size: 1.15rem; }.lesson-visual :global(.time-blocks span), .lesson-visual :global(.time-blocks strong) { padding: 10px 14px; background: #fffef5; border: 1px solid #d2c39d; border-radius: 8px; }.conversion-table-card { padding: 16px; background: #f1f2df; border: 1px solid #c9d5b5; border-radius: 12px; margin: 20px 0; }.conversion-table-card h3 { margin-bottom: 6px; }.conversion-table-card > p { line-height: 1.6; color: #50604f; }.unit-table { border-collapse: collapse; width: 100%; margin: 14px 0; table-layout: fixed; }.unit-table th, .unit-table td { border: 2px solid #b4bd9f; text-align: center; padding: 11px 2px; }.unit-table th { background: #dce8c8; }.unit-table td { background: #fffdf0; font-weight: 900; font-size: 1.25rem; }.unit-table td.highlight-unit { background: #f4d984; border-color: #bd9947; }.table-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }.table-steps span { display: flex; align-items: center; gap: 9px; padding: 9px; border-radius: 8px; background: #fffdf2; line-height: 1.4; }.table-steps b { display: inline-grid; min-width: 26px; height: 26px; place-items: center; background: #477b52; color: white; border-radius: 50%; }
+  .concrete-example { display: flex; align-items: flex-start; gap: 13px; margin-top: 19px; padding: 13px 15px; border: 1px dashed #d3ba75; border-radius: 10px; background: #fff5d4; color: #51492d; }.example-icon { font-size: 1.6rem; }.concrete-example strong { color: #6a5527; }.concrete-example p { margin: 4px 0 0; line-height: 1.55; }
+  .teacher-speech { margin-top: 22px; display: grid; grid-template-columns: auto 1fr; gap: 7px 13px; padding: 14px; border-radius: 12px; border: 1px solid #c5d4be; background: #e9f0df; align-items: center; }.teacher-portrait { grid-row: span 2; display: grid; place-items: center; width: 56px; height: 56px; border: 2px solid #b6c8a8; border-radius: 12px; background: #fff9e8; font-size: 2rem; }.teacher-speech strong { align-self: end; color: #315b3d; }.teacher-speech p { align-self: start; margin: 0; color: #566a56; line-height: 1.5; }.teacher-speech button { grid-column: 2; justify-self: start; margin-top: 6px; }.checkpoint-copy { max-width: 820px; margin: auto; padding: 15px 0; }.checkpoint-copy h2 { font-family: Georgia, serif; margin-bottom: 20px; }.checkpoint-copy > p:not(.eyebrow) { color: var(--muted); line-height: 1.6; }.answer-options { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin: 20px 0; }.answer-option { min-height: 62px; padding: 12px; border: 2px solid #c5b99c; border-radius: 12px; background: #fffdf4; color: #354c39; font-weight: 850; text-align: center; line-height: 1.4; }.answer-option:hover:not(:disabled) { border-color: #6b9e72; background: #f1f6e4; }.option-selected { border-color: #3a7e52 !important; background: #ddefd5 !important; box-shadow: inset 0 0 0 1px #3a7e52; }.feedback-box { margin: 16px 0; border: 1px solid #cbbd98; border-radius: 11px; padding: 13px 15px; background: #fff6d9; color: #51452b; }.feedback-box strong { display: block; margin-bottom: 4px; }.feedback-box p { margin: 0; line-height: 1.65; white-space: pre-line; }.feedback-box.success { background: #e4f2df; border-color: #b3d3aa; color: #2b613d; }.feedback-box.hint { background: #e9f1e0; border-color: #b8ceab; color: #3d5c3f; }.feedback-box.worked { background: #f3e6d4; border-color: #d2b288; color: #634a2b; }.feedback-box.notice { background: #fff3ce; border-color: #dfca7a; color: #665323; }.slide-actions { justify-content: flex-start; flex-wrap: wrap; margin-top: 19px; }.slide-actions .text-button { margin-left: auto; }
+  .room-dashboard { background: #fbf8ee; border: 2px solid #d8d0b9; border-radius: 20px; padding: clamp(18px, 3vw, 34px); box-shadow: 0 8px 0 #d2c9ad; }.room-dashboard-heading { max-width: 830px; }.room-dashboard-heading h2 { font-family: Georgia, serif; }.room-dashboard-heading p:not(.eyebrow) { line-height: 1.65; color: var(--muted); }.activity-choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 25px; }.activity-choice { display: flex; flex-direction: column; align-items: flex-start; background: #fffdf4; border: 2px solid #d8ceaf; border-radius: 15px; padding: 15px; box-shadow: 0 4px 0 #d5c8a8; }.activity-choice h3 { font-family: Georgia, serif; font-size: 1.3rem; margin-bottom: 10px; }.activity-choice p:not(.eyebrow) { color: #5d6a5b; font-size: .92rem; line-height: 1.6; }.activity-choice .primary-button { width: 100%; margin-top: auto; }.activity-choice .eyebrow { margin-top: 17px; margin-bottom: 8px; }.activity-art { width: 100%; height: 105px; border-radius: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; background: #e6edd7; overflow: hidden; }.desk-art span { display: grid; place-items: center; width: 52px; height: 67px; border-radius: 5px; background: #fffaf0; border: 2px solid #b4c4a5; font-size: 1.8rem; transform: rotate(-4deg); box-shadow: 0 3px #bbc9ad; }.desk-art span:nth-child(2) { transform: translateY(-5px) rotate(2deg); }.battle-art { background: #e5e7ce; }.battle-art span { width: 57px; height: 78px; border: 2px solid #9d8663; background: #fff7e3; border-radius: 7px; display: grid; place-items: center; font-size: 2.6rem; color: #a9544d; box-shadow: 0 3px #b6a17b; }.battle-art span:first-child { transform: rotate(-12deg) translateY(7px); }.battle-art span:last-child { transform: rotate(12deg) translateY(5px); }.crest-art { background: #f4e2a4; }.crest-art span { font-size: 3.9rem; filter: drop-shadow(2px 4px #c5a34d); }.exam-choice { border-color: #d1b465; background: #fffbeb; }.status-pill { display: inline-block; margin-top: 10px; border-radius: 999px; padding: 5px 8px; background: #e2f0dd; color: #366b42; font-size: .77rem; font-weight: 900; }.room-bottom-actions { margin-top: 24px; flex-wrap: wrap; justify-content: flex-start; }.result-slide { display: grid; grid-template-columns: 90px 1fr; gap: 24px; align-items: start; }.result-icon { display: grid; place-items: center; width: 88px; height: 88px; background: #f7e4a8; border: 2px solid #d7bd69; border-radius: 18px; font-size: 3rem; }.score-line { font-size: 1.15rem; }.score-line strong { font-size: 1.5rem; color: #34734c; }
+  .battle-card-prompt { background: #eef1de; border: 1px solid #c8d3b8; border-radius: 12px; padding: 14px; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; }.card-symbol { grid-row: span 2; font-size: 2.4rem; }.answer-cards .answer-option { min-height: 115px; background: #fffdf1; border: 3px solid #c4af7e; box-shadow: 0 5px #d8c59b; font-family: Georgia, serif; font-size: 1.15rem; }.answer-cards .answer-option:nth-child(2) { transform: translateY(-7px); }.answer-cards .answer-option:nth-child(3) { transform: rotate(1deg); }.answer-cards .option-selected { transform: translateY(-8px); }
+  .question-slide h2 { max-width: 900px; }.question-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; color: var(--muted); font-size: .86rem; }.question-tools span { line-height: 1.4; }.session-progress { margin-bottom: 14px; }.standalone-session-page .slide-card { max-width: 950px; margin: 0 auto; }.standalone-session-page .session-progress { max-width: 950px; margin: 20px auto 14px; }.standalone-session-page .answer-input { margin: 12px 0; }.family-result-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 15px 0 22px; }.family-result-grid > div { background: #eef1de; border: 1px solid #d0d8be; border-radius: 8px; padding: 11px; display: flex; justify-content: space-between; gap: 8px; }.howto-slide { min-height: 310px; display: grid; grid-template-columns: 130px 1fr; gap: 35px; align-items: center; margin-top: 20px; }.howto-number { display: grid; place-items: center; width: 130px; height: 130px; border-radius: 24px; background: #e2eaca; border: 3px solid #b3c79f; color: #4a7e55; font: 900 3.6rem Georgia, serif; box-shadow: 0 6px 0 #c4d1b0; }.howto-slide .slide-actions { margin-top: 25px; }.game-footer { max-width: 1250px; padding: 24px 22px 0; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; color: #79816f; font-size: .78rem; }.display-tools { display: flex; flex-wrap: wrap; gap: 12px; }.display-tools label { display: inline-flex; gap: 5px; align-items: center; }.xp-toast { position: fixed; z-index: 80; right: 18px; bottom: 18px; display: flex; gap: 14px; align-items: center; padding: 14px 16px; border: 2px solid #1b6040; border-radius: 12px; background: #347c54; color: white; font-weight: 850; box-shadow: 0 7px 0 #214e37; max-width: min(520px, calc(100vw - 36px)); }
+  @media (max-width: 1050px) { .village-selection-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }.welcome-layout { grid-template-columns: 1fr; }.welcome-art { min-height: 390px; }.welcome-copy { max-width: 800px; }.activity-choice-grid { grid-template-columns: 1fr 1fr; }.game-header { grid-template-columns: 1fr auto; }.header-player { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }.header-menu-wrap { grid-column: 2; grid-row: 1; } }
+  @media (max-width: 680px) { .game-header { padding: 9px 12px; gap: 8px; }.brand-button strong { font-size: .92rem; }.brand-icon { width: 37px; height: 37px; }.player-chip, .xp-chip, .crest-chip { font-size: .72rem; padding: 6px 8px; }.menu-toggle { padding: 9px 10px; }.welcome-layout { padding: 22px 14px 40px; }.welcome-art { min-height: 300px; }.welcome-tower { transform: scale(.78); transform-origin: bottom center; bottom: 120px; }.welcome-house-one { left: 5px; bottom: 70px; transform: scale(.62); transform-origin: bottom left; }.welcome-house-two { right: 0; bottom: 70px; transform: scale(.7); transform-origin: bottom right; }.welcome-path { left: 20%; width: 220px; }.welcome-copy h1 { font-size: 2.4rem; }.character-slide { grid-template-columns: 1fr; }.slide-illustration { min-height: 110px; }.avatar-big { font-size: 4.5rem; }.village-selection-grid { grid-template-columns: 1fr; }.village-choice-card { min-height: auto; }.village-card-art { height: 75px; }.village-topbar, .room-header { display: block; }.village-side-panel { margin-top: 15px; grid-template-columns: 1fr 1fr; }.village-side-panel button { grid-column: span 2; }.map-instructions { align-items: flex-start; flex-wrap: wrap; }.map-instructions .text-button { margin-left: 41px; }.pixel-map-frame { border-width: 3px; border-radius: 10px; }.building-label { font-size: 13px; }.building-number { font-size: 17px; }.classroom-scene { min-height: 160px; grid-template-columns: 1fr 90px; }.classroom-wall { min-height: 160px; padding: 10px; }.chalkboard { left: 20%; top: 20px; width: 62%; height: 105px; border-width: 6px; padding: 10px 4px; }.chalkboard-small { font-size: .6rem; margin-top: 7px; }.chalk-marks { margin-top: 12px; }.classroom-clock { display: none; }.classroom-window { width: 43px; height: 53px; right: 2px; top: 10px; border-width: 3px; }.teacher-character { width: 90px; }.teacher-head { transform: scale(.8); }.teacher-body { transform: scale(.8); margin-top: -7px; }.teacher-label { font-size: .58rem; padding: 4px; }.classroom-students { gap: 23px; transform: scale(.7); transform-origin: bottom left; }.theory-progress, .session-progress { flex-wrap: wrap; gap: 9px; }.theory-progress .progress-track, .session-progress .progress-track { flex-basis: 100%; }.slide-card { padding: 19px; border-radius: 14px; }.slide-topline { align-items: flex-start; flex-wrap: wrap; }.answer-options { grid-template-columns: 1fr; gap: 8px; }.answer-option { min-height: 50px; }.table-steps { grid-template-columns: 1fr; }.unit-table th, .unit-table td { font-size: .77rem; padding: 8px 1px; }.activity-choice-grid { grid-template-columns: 1fr; }.result-slide { grid-template-columns: 1fr; }.result-icon { width: 62px; height: 62px; font-size: 2.2rem; }.howto-slide { grid-template-columns: 1fr; gap: 20px; }.howto-number { width: 75px; height: 75px; font-size: 2.3rem; }.family-result-grid { grid-template-columns: 1fr; }.display-tools { width: 100%; }.game-footer { padding-left: 14px; padding-right: 14px; }.room-header-actions { margin-top: 10px; }.slide-actions .text-button { margin-left: 0; } }
+
+  /* V3 — mini-jeux animés, interactifs et sobres en ressources. */
+  .mini-game-stage { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:16px; margin:8px 0 22px; padding:15px; min-height:108px; border:3px solid #334d3d; border-radius:12px; background:linear-gradient(135deg,#dceac8,#f5e9ba); box-shadow:inset 0 -5px #c6d4b6, 0 4px #b2b99a; }
+  .mini-game-stage strong { font-weight:950; }.mini-game-stage p { margin:5px 0 0; line-height:1.45; color:#415847; }.fighter { display:flex; min-width:100px; flex-direction:column; align-items:center; gap:3px; text-align:center; }.fighter-sprite { display:grid; place-items:center; width:68px; height:68px; border:3px solid #475f45; border-radius:10px; background:#fff8e3; font-size:2.6rem; image-rendering:pixelated; }.player-fighter .fighter-sprite { box-shadow:inset 0 -5px #d4e7c4, 0 4px #a6b794; }.enemy-fighter .fighter-sprite { background:#f1d7bd; border-color:#84594b; box-shadow:inset 0 -5px #d9ae91, 0 4px #b98568; }.health-track { width:88px; height:10px; margin-top:3px; overflow:hidden; border:2px solid #38463d; border-radius:2px; background:#f0ebe0; }.health-track i { display:block; height:100%; background:#57a85d; transition:width .3s ease; }.enemy-health i { background:#cc6555; }.fighter small { font-size:.74rem; color:#4d604f; }.battle-middle { display:flex; flex-direction:column; align-items:center; gap:5px; text-align:center; }.battle-spark { font-size:2.4rem; filter:drop-shadow(2px 3px #d3b477); }.battle-middle small { font-size:.85rem; }.battle-stage.player-attack .player-fighter .fighter-sprite { animation:v3-hero-strike .48s ease-in-out; }.battle-stage.player-attack .enemy-fighter .fighter-sprite { animation:v3-enemy-hit .42s ease-in-out; }.battle-stage.enemy-attack .enemy-fighter .fighter-sprite { animation:v3-enemy-strike .42s ease-in-out; }.battle-stage.enemy-attack .player-fighter .fighter-sprite { animation:v3-hero-hit .42s ease-in-out; }.battle-stage.player-attack .battle-spark { animation:v3-spark .45s ease-out; }.game-success { animation:v3-success-pulse .45s ease-out; }.game-miss { animation:v3-nudge .22s ease-in-out; }.battle-card-prompt { display:flex; align-items:center; gap:12px; background:#f7ecd1; border:2px dashed #b4a477; padding:12px; margin:12px 0; border-radius:10px; }.card-symbol { font-size:2rem; }.battle-card-prompt strong { display:block; }.answer-options.answer-cards .answer-option { min-height:104px; border-width:3px; box-shadow:0 5px #c9bd9e; font-size:1.1rem; }.answer-options.answer-cards .answer-option:active:not(:disabled) { transform:translateY(3px); box-shadow:0 2px #c9bd9e; }.game-answer-cards .answer-option { position:relative; }.option-mark { display:block; margin-bottom:5px; font-size:1.35rem; }.table-game-stage { background:linear-gradient(120deg,#e1f2ce,#f8edc8); }.treasure-chest { font-size:3.1rem; filter:drop-shadow(2px 4px #baa06c); }.interactive-table-card { margin:15px 0; padding:15px; border:3px solid #829875; border-radius:12px; background:#f8f5e8; }.interactive-table-card .unit-table { min-width: min(600px,100%); }.table-cell-input { box-sizing:border-box; width:100%; min-width:38px; padding:6px 1px; border:0; border-radius:5px; background:transparent; color:#76531b; text-align:center; font-weight:950; outline-offset:2px; }.table-cell-input::placeholder { color:#8b6b35; opacity:1; }.unit-table th.source-unit { background:#d8e5b6; border-color:#72905e; }.unit-table th.target-unit { background:#f6d98d; border-color:#b48537; }.unit-table td.source-cell { background:#e7efd0; color:#294c2b; font-weight:950; }.unit-table td.target-cell { background:#ffe8a8; color:#76531b; font-weight:950; outline:2px solid #c08c36; outline-offset:-3px; }.interactive-table-card p { margin:10px 0 0; text-align:center; }.detective-stage { background:linear-gradient(120deg,#dce8f1,#f5e6c5); }.detective-character { font-size:3.2rem; filter:drop-shadow(2px 3px #b3b7a3); }.evidence-stamp { display:grid; place-items:center; width:40px; height:40px; border:3px solid #a6634e; border-radius:50%; color:#a6634e; font-size:1.7rem; font-weight:950; transform:rotate(10deg); }.game-success .evidence-stamp { border-color:#2d8750; color:#2d8750; animation:v3-stamp .4s ease-out; }.clock-face { font-size:3rem; }.clock-gear { font-size:2.6rem; animation:v3-gear-spin 5s linear infinite; }.builder-progress { display:flex; flex-wrap:wrap; gap:4px; }.building-progress { display:grid; grid-template-columns:repeat(2,38px); gap:3px; font-size:1.7rem; }.building-progress span { display:grid; place-items:center; width:37px; height:34px; border-radius:4px; background:#e5e6d7; }.building-progress .piece-built { background:#f2d48d; animation:v3-block-pop .35s ease-out; }.number-pad { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; width:min(360px,100%); margin:12px auto 4px; }.number-pad button { min-height:48px; border:2px solid #9cae91; border-radius:8px; background:#fffdf2; color:#28442e; box-shadow:0 3px #c4ceb9; font-weight:950; font-size:1.12rem; touch-action:manipulation; }.number-pad button:active:not(:disabled) { transform:translateY(2px); box-shadow:0 1px #c4ceb9; }.number-pad .utility-key { background:#e1ead5; }.matching-game { display:grid; grid-template-columns:1fr 1fr; gap:13px; margin:17px 0; }.matching-column { display:flex; flex-direction:column; gap:8px; min-width:0; }.matching-column h3 { margin:0 0 3px; font-size:1rem; }.match-tile { display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:56px; padding:9px 11px; border:2px solid #b7c6a8; border-radius:9px; background:#f9f5e6; text-align:left; font-weight:900; }.match-tile small { color:#657361; font-size:.7rem; }.match-tile.match-picked { outline:3px solid #d2a447; background:#fff0bd; }.match-tile.match-filled,.match-tile.match-used { background:#dcebd2; border-color:#6c9d67; }.right-match-tile:disabled { opacity:.7; }.order-game-list { display:grid; gap:9px; margin:17px auto; max-width:540px; }.order-item { display:grid; grid-template-columns:35px 1fr auto; align-items:center; gap:10px; padding:9px; border:2px solid #d0c5a8; border-radius:10px; background:#fff9e9; animation:v3-float-in .18s ease-out; }.order-position { display:grid; place-items:center; width:30px; height:30px; border-radius:7px; background:#e2ecd2; font-weight:950; }.order-item strong { font-size:1.1rem; }.order-item > div { display:flex; gap:5px; }.order-move { width:38px; height:38px; border:2px solid #a9b99d; border-radius:8px; background:#f2f5e8; font-size:1.25rem; font-weight:950; }.multi-check { margin-right:9px; font-size:1.25rem; }.multi-answer-options { grid-template-columns:repeat(2,minmax(0,1fr)); }.table-art,.detective-art,.clock-art,.builder-art { background:#e4ebd5; }.table-art span,.detective-art span,.clock-art span,.builder-art span { font-size:2.5rem; filter:drop-shadow(1px 3px #c0c8aa); animation:v3-float-in .45s ease-out; }.table-art span:nth-child(2),.detective-art span:nth-child(2),.clock-art span:nth-child(2),.builder-art span:nth-child(2) { animation-delay:.08s; }.table-art span:nth-child(3),.detective-art span:nth-child(3),.clock-art span:nth-child(3),.builder-art span:nth-child(3) { animation-delay:.16s; }
+  @keyframes v3-hero-strike { 0%,100% { transform:translateX(0) rotate(0); } 45% { transform:translateX(24px) rotate(9deg); } }
+  @keyframes v3-enemy-hit { 0%,100% { transform:translateX(0); } 35% { transform:translateX(12px) rotate(8deg); } 70% { transform:translateX(-5px) rotate(-5deg); } }
+  @keyframes v3-enemy-strike { 0%,100% { transform:translateX(0); } 45% { transform:translateX(-18px) rotate(-7deg); } }
+  @keyframes v3-hero-hit { 0%,100% { transform:translateX(0); } 40% { transform:translateX(-10px); filter:grayscale(.6); } }
+  @keyframes v3-spark { 0% { transform:scale(.2) rotate(-15deg); opacity:0; } 70% { transform:scale(1.5) rotate(8deg); opacity:1; } 100% { transform:scale(1); opacity:1; } }
+  @keyframes v3-success-pulse { 0% { transform:scale(.99); } 45% { transform:scale(1.015); } 100% { transform:scale(1); } }
+  @keyframes v3-nudge { 0%,100% { transform:translateX(0); } 30%,70% { transform:translateX(-3px); } 50% { transform:translateX(3px); } }
+  @keyframes v3-stamp { from { transform:scale(1.4) rotate(-12deg); opacity:.3; } to { transform:scale(1) rotate(10deg); opacity:1; } }
+  @keyframes v3-gear-spin { to { transform:rotate(360deg); } }
+  @keyframes v3-block-pop { from { transform:translateY(-8px) scale(.75); opacity:.2; } to { transform:translateY(0) scale(1); opacity:1; } }
+  @keyframes v3-float-in { from { transform:translateY(4px); opacity:.4; } to { transform:translateY(0); opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { .mesurovia-shell *, .mesurovia-shell *::before, .mesurovia-shell *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+
+  @media (max-width: 680px) { .mini-game-stage { grid-template-columns:1fr; justify-items:center; text-align:center; gap:8px; }.matching-game { grid-template-columns:1fr; }.matching-column { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }.matching-column h3 { grid-column:1/-1; }.multi-answer-options { grid-template-columns:1fr; }.table-cell-input { min-width:30px; font-size:.82rem; } }
+  @media print { .game-header, .game-footer, .room-header-actions, .slide-actions, .question-tools, .map-footer, .map-instructions { display: none !important; }.mesurovia-shell { background: white; }.slide-card { box-shadow: none; border: 1px solid #999; break-inside: avoid; } }
+</style>
