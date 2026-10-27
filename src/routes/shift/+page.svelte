@@ -1,6 +1,13 @@
 <script>
   import { base } from '$app/paths';
+  import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { onDestroy } from 'svelte';
+  import {
+    PLACE_VALUES, PLACE_BY_KEY, TICK_WEIGHT, LINE_TICKS, TEN_BLOCKS, HUNDRED_BLOCKS,
+    emptyCounts, getRanksForMission, valueFromCounts, decomposeTicks, formatTicks,
+    formatValue, randomInt, makeTargetTicks, numberToSwissText, normalizeWords, parseNumberInput
+  } from '$lib/games/shift/number-engine';
+  import { DIFFICULTIES, MEASURE_UNITS, MISSIONS } from '$lib/games/shift/config';
 
   /*
    * SHIFT — Atelier des quantités
@@ -11,123 +18,6 @@
    * Les interactions se font avec des boutons et des champs natifs, adaptés à
    * la souris, au clavier et au tactile. Aucun glisser-déposer n'est requis.
    */
-
-  const PLACE_VALUES = [
-    { key: 'hundredBillion', label: 'Centaines de milliards', short: 'C Md', exp: 11, symbol: '▦' },
-    { key: 'tenBillion', label: 'Dizaines de milliards', short: 'D Md', exp: 10, symbol: '▦' },
-    { key: 'billion', label: 'Milliards', short: 'Md', exp: 9, symbol: '▦' },
-    { key: 'hundredMillion', label: 'Centaines de millions', short: 'C Mio', exp: 8, symbol: '▦' },
-    { key: 'tenMillion', label: 'Dizaines de millions', short: 'D Mio', exp: 7, symbol: '▦' },
-    { key: 'million', label: 'Millions', short: 'Mio', exp: 6, symbol: '▦' },
-    { key: 'hundredThousand', label: 'Centaines de milliers', short: 'C milliers', exp: 5, symbol: '▦' },
-    { key: 'tenThousand', label: 'Dizaines de milliers', short: 'D milliers', exp: 4, symbol: '▦' },
-    { key: 'thousand', label: 'Milliers', short: 'M', exp: 3, symbol: '▦' },
-    { key: 'hundred', label: 'Centaines', short: 'C', exp: 2, symbol: '▦' },
-    { key: 'ten', label: 'Dizaines', short: 'D', exp: 1, symbol: '▦' },
-    { key: 'unit', label: 'Unités', short: 'U', exp: 0, symbol: '▪' },
-    { key: 'tenth', label: 'Dixièmes', short: 'dixièmes', exp: -1, symbol: '◌' },
-    { key: 'hundredth', label: 'Centièmes', short: 'centièmes', exp: -2, symbol: '◌' },
-    { key: 'thousandth', label: 'Millièmes', short: 'millièmes', exp: -3, symbol: '◌' }
-  ];
-  const TICK_WEIGHT = Object.fromEntries(PLACE_VALUES.map((place) => [place.key, Math.pow(10, place.exp + 3)]));
-  const PLACE_BY_KEY = Object.fromEntries(PLACE_VALUES.map((place) => [place.key, place]));
-  const LINE_TICKS = Array.from({ length: 21 }, (_, index) => index * 5);
-  // Petits tableaux réutilisés par les représentations en base 10 du tapis.
-  // Dix cases représentent un groupe de dix ; cent cases représentent une centaine.
-  const TEN_BLOCKS = Array.from({ length: 10 }, (_, index) => index);
-  const HUNDRED_BLOCKS = Array.from({ length: 100 }, (_, index) => index);
-
-  const DIFFICULTIES = [
-    { id: 'starter', name: 'Réactivation', range: 'Jusqu’à 999', maxInteger: 999, minTicks: 1000, maxTicks: 999000 },
-    { id: 'workshop', name: 'Atelier', range: 'Jusqu’à 9’999', maxInteger: 9999, minTicks: 1000, maxTicks: 9999000 },
-    { id: 'decimal', name: 'Décimaux', range: 'Jusqu’à 9’999,999', maxInteger: 9999, minTicks: 1, maxTicks: 9999999 },
-    { id: 'expedition', name: 'Grande expédition', range: 'Jusqu’à 999’999’999’999', maxInteger: 999999999999, minTicks: 1, maxTicks: 999999999999999 }
-  ];
-
-  const MISSIONS = [
-    {
-      id: 'factory', number: '01', section: 'Les fondamentaux', icon: '▦', title: 'La fabrique des nombres',
-      subtitle: 'Récupère, échange et livre la bonne quantité.',
-      description: 'Comprendre pourquoi 10 unités font 1 dizaine, et pourquoi la valeur reste la même après un échange.',
-      skills: 'Composer · Décomposer · Échanger par 10', theme: 'mint'
-    },
-    {
-      id: 'measure', number: '02', section: 'Dans la vraie vie', icon: '↔', title: 'Le convertisseur',
-      subtitle: 'Fais passer les mesures d’une unité à l’autre.',
-      description: 'Longueurs, masses, capacités, surfaces, volumes et durées : choisis la bonne unité et le bon facteur.',
-      skills: 'Longueur · masse · capacité · surface · volume · durée · équivalences m³/L', theme: 'blue'
-    },
-    {
-      id: 'words', number: '03', section: 'Le scanner', icon: 'Aa', title: 'Le scanner de nombres',
-      subtitle: 'Passe de l’écriture en chiffres aux mots-nombres.',
-      description: 'Lis, écris et vérifie des nombres, du nombre familier aux très grandes quantités.',
-      skills: 'Écriture chiffrée ↔ mot-nombre', theme: 'amber'
-    },
-    {
-      id: 'decompose', number: '04', section: 'Le labo', icon: '▤', title: 'Le labo des rangs',
-      subtitle: 'Découpe un nombre rang par rang.',
-      description: 'Repère le chiffre des milliards, des unités, des dixièmes ou des millièmes.',
-      skills: 'Valeur de position · Zéros · Décomposition', theme: 'violet'
-    },
-    {
-      id: 'sort', number: '05', section: 'Le centre de tri', icon: '⇅', title: 'Le centre de tri',
-      subtitle: 'Range les colis du plus petit au plus grand.',
-      description: 'Compare, ordonne et repère les nombres qui se ressemblent sans avoir la même valeur.',
-      skills: '< · > · Ordre croissant', theme: 'pink'
-    },
-    {
-      id: 'line', number: '06', section: 'Le rail', icon: '⌁', title: 'La ligne de précision',
-      subtitle: 'Place le nombre à la bonne position.',
-      description: 'Lis une droite graduée et utilise les repères pour situer une quantité.',
-      skills: 'Droite graduée · Repères · Encadrement', theme: 'blue'
-    },
-    {
-      id: 'rank', number: '07', section: 'Le scanner', icon: '⌕', title: 'Le compteur de rangs',
-      subtitle: 'Compte les dizaines, les centaines ou les millièmes entiers.',
-      description: 'Distingue le chiffre d’un rang du nombre entier de groupes de ce rang.',
-      skills: 'Dizaines entières · Centièmes entiers · Millièmes', theme: 'amber'
-    },
-    {
-      id: 'build', number: '08', section: 'Les défis', icon: '↗', title: 'Crée un nombre',
-      subtitle: 'Construis un nombre plus grand ou plus petit.',
-      description: 'Choisis une valeur qui respecte une contrainte, puis vérifie ta stratégie.',
-      skills: 'Plus grand · Plus petit · Encadrement', theme: 'mint'
-    }
-  ];
-
-  const MEASURE_UNITS = {
-    Longueur: [
-      { name: 'mm', exp: -3 }, { name: 'cm', exp: -2 }, { name: 'dm', exp: -1 },
-      { name: 'm', exp: 0 }, { name: 'dam', exp: 1 }, { name: 'hm', exp: 2 }, { name: 'km', exp: 3 }
-    ],
-    Masse: [
-      { name: 'mg', exp: -3 }, { name: 'cg', exp: -2 }, { name: 'dg', exp: -1 },
-      { name: 'g', exp: 0 }, { name: 'dag', exp: 1 }, { name: 'hg', exp: 2 }, { name: 'kg', exp: 3 }
-    ],
-    Capacité: [
-      { name: 'mL', exp: -3 }, { name: 'cL', exp: -2 }, { name: 'dL', exp: -1 },
-      { name: 'L', exp: 0 }, { name: 'daL', exp: 1 }, { name: 'hL', exp: 2 }, { name: 'kL', exp: 3 }
-    ],
-    Surface: [
-      { name: 'mm²', exp: -6 }, { name: 'cm²', exp: -4 }, { name: 'dm²', exp: -2 },
-      { name: 'm²', exp: 0 }, { name: 'dam²', exp: 2 }, { name: 'hm²', exp: 4 }, { name: 'km²', exp: 6 }
-    ],
-    Volume: [
-      { name: 'mm³', exp: -9 }, { name: 'cm³', exp: -6 }, { name: 'dm³', exp: -3 },
-      { name: 'm³', exp: 0 }, { name: 'dam³', exp: 3 }, { name: 'hm³', exp: 6 }, { name: 'km³', exp: 9 }
-    ],
-    // Correspondances utiles entre volume et capacité : 1 cm³ = 1 mL,
-    // 1 dm³ = 1 L et 1 m³ = 1'000 L. Le facteur est exprimé en litres.
-    'Volume et capacité': [
-      { name: 'cm³', factor: 0.001 }, { name: 'mL', factor: 0.001 },
-      { name: 'dm³', factor: 1 }, { name: 'L', factor: 1 },
-      { name: 'm³', factor: 1000 }, { name: 'kL', factor: 1000 }
-    ],
-    Temps: [
-      { name: 's', factor: 1 }, { name: 'min', factor: 60 },
-      { name: 'h', factor: 3600 }, { name: 'j', factor: 86400 }
-    ]
-  };
 
   let view = 'menu';
   let activeMissionId = 'factory';
@@ -157,158 +47,11 @@
   let gameOver = false;
   let announceText = 'Choisis une mission pour commencer.';
 
-  // Fabrique un objet de compteurs indépendant : il n’y a pas de persistance.
-  function emptyCounts() {
-    return Object.fromEntries(PLACE_VALUES.map((place) => [place.key, 0]));
-  }
-
   $: activeMission = MISSIONS.find((mission) => mission.id === activeMissionId) || MISSIONS[0];
   $: difficulty = DIFFICULTIES.find((item) => item.id === selectedDifficulty) || DIFFICULTIES[1];
   $: activeRanks = getRanksForMission(activeMissionId, selectedDifficulty);
   $: shipmentTicks = valueFromCounts(shipment);
   $: workbenchTicks = valueFromCounts(workbench);
-
-  function getRanksForMission(missionId, difficultyId) {
-    if (missionId === 'factory') {
-      if (difficultyId === 'starter') return PLACE_VALUES.filter((p) => p.exp >= 0 && p.exp <= 2);
-      if (difficultyId === 'decimal') return PLACE_VALUES.filter((p) => p.exp <= 3 && p.exp >= -3);
-      if (difficultyId === 'expedition') return PLACE_VALUES.filter((p) => p.exp >= 0);
-      return PLACE_VALUES.filter((p) => p.exp >= 0 && p.exp <= 3);
-    }
-    if (missionId === 'decompose') {
-      if (difficultyId === 'starter') return PLACE_VALUES.filter((p) => p.exp >= 0 && p.exp <= 2);
-      if (difficultyId === 'workshop') return PLACE_VALUES.filter((p) => p.exp >= 0 && p.exp <= 3);
-      if (difficultyId === 'decimal') return PLACE_VALUES.filter((p) => p.exp <= 3 && p.exp >= -3);
-      return PLACE_VALUES;
-    }
-    if (missionId === 'factory' && difficultyId === 'expedition') return PLACE_VALUES.filter((p) => p.exp >= 0);
-    return PLACE_VALUES.filter((p) => p.exp >= 0 && p.exp <= 3);
-  }
-
-  // Toutes les valeurs du jeu sont ramenées à des millièmes entiers (ticks).
-  function valueFromCounts(counts) {
-    return PLACE_VALUES.reduce((sum, place) => sum + (Number(counts[place.key]) || 0) * TICK_WEIGHT[place.key], 0);
-  }
-
-  function decomposeTicks(ticks, ranks = PLACE_VALUES) {
-    const safeTicks = Math.max(0, Math.round(ticks));
-    const result = {};
-    for (const place of ranks) {
-      const weight = TICK_WEIGHT[place.key];
-      result[place.key] = Math.floor(safeTicks / weight + 1e-8) % 10;
-    }
-    return result;
-  }
-
-  function formatTicks(ticks, maxDecimals = 3) {
-    const value = Math.max(0, Math.round(ticks)) / 1000;
-    const hasDecimal = Math.round(ticks) % 1000 !== 0;
-    return new Intl.NumberFormat('fr-CH', {
-      maximumFractionDigits: hasDecimal ? maxDecimals : 0,
-      minimumFractionDigits: 0
-    }).format(value);
-  }
-
-  function formatValue(value, maxDecimals = 3) {
-    return new Intl.NumberFormat('fr-CH', { maximumFractionDigits: maxDecimals }).format(value);
-  }
-
-  function randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
-
-  function makeTargetTicks(missionId = activeMissionId) {
-    if (selectedDifficulty === 'starter') return randomInt(1, 999) * 1000;
-    if (selectedDifficulty === 'workshop') return randomInt(1, 9999) * 1000;
-    if (selectedDifficulty === 'decimal') return randomInt(1, 9999999);
-    return randomInt(1, 999999999999) * 1000;
-  }
-
-  function numberToSwissText(value) {
-    // Conversion des nombres naturels jusqu’à 999'999'999'999.
-    const n = Math.floor(Math.abs(value));
-    if (n === 0) return 'zéro';
-    const groups = [
-      { base: 1_000_000_000, singular: 'milliard', plural: 'milliards', type: 'named' },
-      { base: 1_000_000, singular: 'million', plural: 'millions', type: 'named' },
-      { base: 1000, singular: 'mille', plural: 'mille', type: 'thousand' },
-      { base: 1, singular: '', plural: '', type: 'units' }
-    ];
-    let remaining = n;
-    const parts = [];
-    for (const group of groups) {
-      const amount = Math.floor(remaining / group.base);
-      remaining %= group.base;
-      if (!amount) continue;
-      if (group.type === 'named') {
-        parts.push(`${underThousandSwiss(amount)} ${amount === 1 ? group.singular : group.plural}`);
-      } else if (group.type === 'thousand') {
-        // Devant « mille », « cent » ne prend jamais de s : deux cent mille.
-        const amountText = underThousandSwiss(amount).replace(/cents$/, 'cent');
-        parts.push(amount === 1 ? 'mille' : `${amountText} mille`);
-      } else {
-        parts.push(underThousandSwiss(amount));
-      }
-    }
-    return parts.join(' ').replace(/\s+/g, ' ').trim();
-  }
-
-  function underThousandSwiss(n) {
-    if (n === 0) return '';
-    const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
-    const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
-    // L’index correspond au chiffre des dizaines : 6 = soixante, 7 = septante.
-    const tensWords = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'septante', 'huitante', 'nonante'];
-    const parts = [];
-    const hundreds = Math.floor(n / 100);
-    const rest = n % 100;
-    if (hundreds > 0) {
-      if (hundreds === 1) parts.push('cent');
-      else parts.push(`${units[hundreds]} cent${rest === 0 ? 's' : ''}`);
-    }
-    if (rest > 0) {
-      if (rest < 10) parts.push(units[rest]);
-      else if (rest < 20) parts.push(teens[rest - 10]);
-      else {
-        const tens = Math.floor(rest / 10);
-        const unit = rest % 10;
-        if (unit === 1) {
-          // En Suisse romande : vingt et un, soixante et un, septante et un, etc.
-          parts.push(`${tensWords[tens]} et un`);
-        } else if (unit > 1) {
-          parts.push(`${tensWords[tens]}-${units[unit]}`);
-        } else {
-          parts.push(tensWords[tens]);
-        }
-      }
-    }
-    return parts.join(' ');
-  }
-
-  function normalizeWords(text) {
-    // Ignore la casse, les accents, les traits d’union et la ponctuation superflue.
-    return String(text || '').toLocaleLowerCase('fr-CH')
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/[’']/g, ' ')
-      .replace(/[^a-z0-9\s-]/g, ' ')
-      .replace(/-/g, ' ')
-      .replace(/\s+/g, ' ').trim();
-  }
-
-  function parseNumberInput(text) {
-    // Accepte 1 234,5 ; 1'234.5 ; 1234,5 et 1234.5.
-    let cleaned = String(text ?? '').trim().replace(/[\s\u00a0\u202f'’]/g, '');
-    if (cleaned.includes(',') && cleaned.includes('.')) {
-      cleaned = cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')
-        ? cleaned.replace(/\./g, '').replace(',', '.')
-        : cleaned.replace(/,/g, '');
-    } else {
-      cleaned = cleaned.replace(',', '.');
-    }
-    if (!cleaned || !/^\d+(\.\d+)?$/.test(cleaned)) return null;
-    const value = Number(cleaned);
-    return Number.isFinite(value) ? value : null;
-  }
 
   function startMission(missionId) {
     activeMissionId = missionId;
@@ -347,7 +90,7 @@
     decompositionInputs = emptyCounts();
 
     if (activeMissionId === 'factory') {
-      const targetTicks = makeTargetTicks();
+      const targetTicks = makeTargetTicks(selectedDifficulty);
       activeTask = {
         type: 'factory', targetTicks,
         prompt: 'Prépare exactement la quantité demandée, puis expédie le colis.',
@@ -423,7 +166,7 @@
     }
 
     if (activeMissionId === 'decompose') {
-      const targetTicks = makeTargetTicks();
+      const targetTicks = makeTargetTicks(selectedDifficulty);
       // Pour une partie des nombres entiers, l'élève part d'un mot-nombre plutôt que de chiffres.
       const asWords = targetTicks % 1000 === 0 && Math.random() < 0.35;
       activeTask = {
@@ -860,7 +603,7 @@ const pixelsPerSecond = randomInt(180, 220);
         <button class="quiet-button back-button" type="button" onclick={goToMenu}>← Missions</button>
       </div>
     {:else}
-      <a class="quiet-button top-return" href={`${base}/`}>← Retour à Orbis</a>
+      <a class="quiet-button top-return" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>← Retour aux jeux</a>
     {/if}
   </header>
 
@@ -1163,7 +906,7 @@ const pixelsPerSecond = randomInt(180, 220);
   {/if}
 
   <div class="sr-only" aria-live="polite" aria-atomic="true">{announceText}</div>
-  <footer class="site-footer"><span>SHIFT<span class="brand-dot">.</span> — Atelier des quantités</span><span>Unité · échange · valeur</span><a href={`${base}/`}>Retour à Orbis ↗</a></footer>
+  <footer class="site-footer"><span>SHIFT<span class="brand-dot">.</span> — Atelier des quantités</span><span>Unité · échange · valeur</span><a href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>Retour aux jeux ↗</a></footer>
 </div>
 
 <style>

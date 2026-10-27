@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module — Construire un Croquis</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #151d30;
+      --accent: #8b5cf6;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+
+    .course-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .course-header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 1.5rem;
+    }
+
+    .course-tag {
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+    }
+
+    h1 { margin: 0.5rem 0; font-size: 2.2rem; }
+    .subtitle { color: var(--text-muted); margin: 0; }
+
+    section {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 1.75rem;
+    }
+
+    h2 { margin-top: 0; color: #38bdf8; font-size: 1.3rem; }
+
+    .box-info {
+      background: rgba(56, 189, 248, 0.1);
+      border-left: 4px solid #38bdf8;
+      padding: 1rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1rem 0;
+    }
+
+    /* Zone de dessin Canvas tactile pour iPad */
+    .canvas-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      background: #090d16;
+      padding: 1rem;
+      border-radius: 10px;
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+    }
+
+    canvas {
+      background: #111827;
+      border-radius: 8px;
+      touch-action: none; /* Indispensable sur iPad pour le dessin tactile */
+      cursor: crosshair;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .correction-box {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 8px;
+    }
+
+    .btn-back-hub {
+      display: inline-block;
+      color: #94a3b8;
+      text-decoration: none;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+  </style>
+<script src="../../../orbis/catalog-return.js" defer></script></head>
+<body>
+
+  <div class="course-container">
+    <a href="../../../?vue=cours" data-orbis-catalog-return class="btn-back-hub">← Retour aux cours</a>
+
+    <header class="course-header">
+      <span class="course-tag">MATHÉMATIQUES • ESPACE (8H)</span>
+      <h1>Construire un croquis de solide</h1>
+      <p class="subtitle">Méthode et règles de représentation en perspective cavalière.</p>
+    </header>
+
+    <!-- SECTION 1 : THÉORIE -->
+    <section>
+      <h2>1. À retenir</h2>
+      <p>Pour représenter un solide en 3D sur une feuille plate (2D), on utilise la <strong>perspective cavalière</strong> :</p>
+      <ul>
+        <li>Les faces avants sont dessinées en vraie grandeur.</li>
+        <li>Les arêtes cachées se dessinent en <strong>pointillés</strong>.</li>
+        <li>Les arêtes fuyantes sont parallèles entre elles.</li>
+      </ul>
+      <div class="box-info">
+        💡 <strong>Règle d'or :</strong> Toujours utiliser la règle pour tracer les arêtes et ne jamais oublier de basculer en pointillés pour les éléments à l'arrière !
+      </div>
+    </section>
+
+    <!-- SECTION 2 : MANIPULATION INTERACTIVE / CANVAS -->
+    <section>
+      <h2>2. Zone de manipulation</h2>
+      <p>Entraîne-toi à dessiner un pavé droit ci-dessous. Utilise ton doigt (iPad) ou ta souris pour tracer les arêtes cachées en pointillés.</p>
+
+      <div class="canvas-container">
+        <canvas id="drawCanvas" width="600" height="300"></canvas>
+        <button class="btn btn-secondary" onclick="clearCanvas()">🗑️ Effacer le dessin</button>
+      </div>
+    </section>
+
+    <!-- SECTION 3 : EXERCICE & CORRIGÉ INTEGRÉ -->
+    <section>
+      <h2>3. Exercice d'application</h2>
+      <p>Combien de sommets, d'arêtes et de faces possède un prisme droit à base triangulaire ?</p>
+      
+      <button class="btn" onclick="toggleCorrection()">👁️ RÉVÉLER LE CORRIGÉ</button>
+
+      <div id="correction" class="correction-box">
+        <h3>Corrigé :</h3>
+        <p>Un prisme droit à base triangulaire possède :</p>
+        <ul>
+          <li><strong>6 sommets</strong></li>
+          <li><strong>9 arêtes</strong></li>
+          <li><strong>5 faces</strong> (2 bases triangulaires et 3 faces latérales rectangulaires)</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Gestion Canvas Tactile iPad / Souris
+    const canvas = document.getElementById('drawCanvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function startDraw(e) { drawing = true; draw(e); }
+    function stopDraw() { drawing = false; ctx.beginPath(); }
+
+    function draw(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      const pos = getPos(e);
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('touchstart', startDraw);
+    canvas.addEventListener('touchend', stopDraw);
+    canvas.addEventListener('touchmove', draw);
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function toggleCorrection() {
+      const box = document.getElementById('correction');
+      box.style.display = box.style.display === 'block' ? 'none' : 'block';
+    }
+  </script>
+</body>
+</html>

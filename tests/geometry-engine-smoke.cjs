@@ -22,9 +22,9 @@ const compile = spawnSync(compiler, [
   '--moduleResolution', 'node',
   '--strict',
   '--skipLibCheck',
-  'src/lib/geometry/types.ts',
-  'src/lib/geometry/figures.ts',
-  'src/lib/geometry/question-engine.ts'
+  'src/lib/games/geometrie/types.ts',
+  'src/lib/games/geometrie/figures.ts',
+  'src/lib/games/geometrie/question-engine.ts'
 ], { cwd: root, encoding: 'utf8' });
 
 if (compile.status !== 0) {

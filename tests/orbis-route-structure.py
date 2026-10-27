@@ -1,6 +1,7 @@
 """Contrôles structurels de la page Mesurovia V3 destinée à ORBIS/SvelteKit.
 Ces vérifications complètent les tests du moteur : elles ne remplacent pas un test navigateur.
 """
+# Les assertions ci-dessous protègent les fonctions et éléments attendus dans l’interface.
 from pathlib import Path
 
 root = Path(__file__).parents[1]
@@ -37,7 +38,7 @@ required = {
     'lecture vocale facultative': 'function speakText(text: string)',
     'respect de la réduction d’animations': 'prefers-reduced-motion: reduce',
     'migration non destructive': "localStorage.getItem('mesurovia-rpg-v1')",
-    'cahiers depuis le chemin de base': 'window.open(`${base}/cours/${fileMap[villageId]'
+    'cahiers depuis le chemin de base': 'window.open(`${base}${courseUrl}`'
 }
 missing = [name for name, snippet in required.items() if snippet not in source]
 assert not missing, f'Fonctions V3 manquantes dans +page.svelte : {missing}'

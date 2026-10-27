@@ -11,7 +11,9 @@ const config = {
             fallback: '404.html'
         }),
         paths: {
-            base: process.env.NODE_ENV === 'production' ? '/ma-classeV3' : ''
+            // GitHub Pages publie ce dépôt sous https://sitefan117.github.io/Orbis/.
+            // ORBIS_BASE_PATH permet de conserver une prévisualisation flexible si besoin.
+            base: process.env.NODE_ENV === 'production' ? (process.env.ORBIS_BASE_PATH ?? '/Orbis') : ''
         },
         prerender: {
             handleHttpError: ({ path, referrer, message }) => {

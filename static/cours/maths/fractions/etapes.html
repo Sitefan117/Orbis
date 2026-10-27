@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Choisir une étape du parcours de fractions ou ouvrir le cahier complet.">
+  <title>Fractions — cours par étapes</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #26352d; background: #f4f6ef; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; }
+    main { width: min(880px, 100%); margin: 0 auto; }
+    nav { display: flex; justify-content: space-between; gap: 16px; margin: 8px 0 24px; }
+    a { color: #285c42; font-weight: 700; }
+    header, .step, .complete { border: 1px solid #d4ddce; border-radius: 14px; background: #fff; box-shadow: 0 3px 0 #dfe6d8; }
+    header { padding: clamp(20px, 5vw, 36px); margin-bottom: 22px; background: linear-gradient(140deg, #e3f0d8, #fff5d6); }
+    .tag { color: #537158; font-size: .78rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    h1 { margin: 8px 0; font-size: clamp(1.8rem, 5vw, 2.6rem); }
+    header p { max-width: 60ch; line-height: 1.6; }
+    .complete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 20px; margin-bottom: 22px; border-color: #b8c99f; background: #f1f7e8; }
+    .complete p { margin: 4px 0; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)); gap: 12px; }
+    .step { display: flex; align-items: center; gap: 14px; min-height: 82px; padding: 14px; color: inherit; text-decoration: none; transition: transform .15s ease, border-color .15s ease; }
+    .step:hover, .step:focus-visible { transform: translateY(-2px); border-color: #83a77f; outline: 3px solid #d6e7c9; }
+    .number { display: grid; flex: 0 0 42px; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: #e8efd9; color: #285c42; font-weight: 900; }
+    .step small { display: block; margin-top: 4px; color: #657367; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
+  </style>
+<script src="../../../orbis/catalog-return.js" defer></script></head>
+<body>
+  <main>
+    <nav aria-label="Navigation"><a href="../../../?vue=cours" data-orbis-catalog-return>← Retour aux cours</a><a href="complet.html">Ouvrir le cahier complet</a></nav>
+    <header>
+      <span class="tag">Mathématiques · Fractions</span>
+      <h1>Le parcours par étapes</h1>
+      <p>Avance notion après notion. Tu peux ouvrir une étape précise ou utiliser le cahier complet, qui rassemble tout le parcours.</p>
+    </header>
+    <section class="complete" aria-label="Cahier complet">
+      <div><strong>Tout le parcours dans un cahier</strong><p>Les neuf étapes réunies dans un document interactif.</p></div>
+      <a href="complet.html">Ouvrir le cours complet →</a>
+    </section>
+    <section class="steps" aria-label="Étapes du parcours">
+      <a class="step" href="etape-1.html"><span class="number">1</span><span><strong>Le partage équitable</strong><small>Comprendre ce que représente une fraction</small></span></a>
+      <a class="step" href="etape-2.html"><span class="number">2</span><span><strong>Lire et représenter</strong><small>Nommer et dessiner des fractions</small></span></a>
+      <a class="step" href="etape-3.html"><span class="number">3</span><span><strong>La droite graduée</strong><small>Placer une fraction sur une ligne</small></span></a>
+      <a class="step" href="etape-4.html"><span class="number">4</span><span><strong>Équivalences et simplification</strong><small>Reconnaître des fractions égales</small></span></a>
+      <a class="step" href="etape-5.html"><span class="number">5</span><span><strong>Comparer et ordonner</strong><small>Dire quelle fraction est plus grande</small></span></a>
+      <a class="step" href="etape-6.html"><span class="number">6</span><span><strong>Fractions décimales</strong><small>Faire le lien avec les nombres décimaux</small></span></a>
+      <a class="step" href="etape-7.html"><span class="number">7</span><span><strong>Addition et soustraction</strong><small>Calculer avec le même dénominateur</small></span></a>
+      <a class="step" href="etape-8.html"><span class="number">8</span><span><strong>Dénominateurs différents</strong><small>Mettre les fractions au même dénominateur</small></span></a>
+      <a class="step" href="etape-9.html"><span class="number">9</span><span><strong>Multiplier et diviser</strong><small>Utiliser les opérations sur les fractions</small></span></a>
+    </section>
+  </main>
+</body>
+</html>

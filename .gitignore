@@ -14,5 +14,5 @@ build/
 
 .pi/memory/
 .workflow/
-migrations/
+/migrations/
 /*.html

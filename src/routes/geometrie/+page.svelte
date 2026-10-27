@@ -1,11 +1,14 @@
 <script lang="ts">
+  // L’écran règle la mission et le feedback ; questions et figures viennent des modules géométrie.
   import { base } from '$app/paths';
+  import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { onDestroy, onMount, tick } from 'svelte';
-  import { getStudentName, submitActivityResult } from '$lib/client/activity';
-  import { GEOMETRY_FIGURES, getFiguresForLevel } from '$lib/geometry/figures';
-  import FigureDrawing from '$lib/geometry/FigureDrawing.svelte';
-  import { generateQuestion } from '$lib/geometry/question-engine';
-  import type { ErrorFamily, GeometryFigure, Level, Mode, PlayMode, Question } from '$lib/geometry/types';
+  import { getStudentName } from '$lib/orbis/identity/local-student';
+  import { submitActivityResult } from '$lib/orbis/results/client';
+  import { GEOMETRY_FIGURES, getFiguresForLevel } from '$lib/games/geometrie/figures';
+  import FigureDrawing from '$lib/games/geometrie/FigureDrawing.svelte';
+  import { generateQuestion } from '$lib/games/geometrie/question-engine';
+  import type { ErrorFamily, GeometryFigure, Level, Mode, PlayMode, Question } from '$lib/games/geometrie/types';
 
   type Phase = 'config' | 'play' | 'done';
   type FeedbackKind = 'success' | 'retry' | 'solution' | '';
@@ -76,6 +79,7 @@
     }
   });
 
+  // Prépare une série, charge les questions puis termine avec un bilan facultatif.
   function startMission(): void {
     if (!level || !mode) return;
     phase = 'play';
@@ -290,6 +294,7 @@
   }
 </script>
 
+<!-- Les vues de configuration, de jeu, d’aide et de bilan suivent la phase active. -->
 <svelte:window on:keydown={onWindowKeydown} />
 <svelte:head>
   <title>NEXUS — Division Géométrie</title>
@@ -299,7 +304,7 @@
 
 <div class="nexus-page">
   <header class="site-header">
-    <a class="brand" href={homeHref} aria-label="Retour au QG ORBIS">
+    <a class="brand" href={homeHref} aria-label="Retour à l'accueil ORBIS">
       <span class="brand-mark" aria-hidden="true">N</span>
       <span class="brand-copy">
         <span class="brand-title">NEXUS <span> / DIVISION GÉOMÉTRIE</span></span>
@@ -310,7 +315,7 @@
       {#if phase === 'play'}
         <button class="button button-quiet" type="button" on:click={backToSelection}>Quitter le dossier</button>
       {/if}
-      <a class="button button-quiet" href={homeHref}>Retour à ORBIS</a>
+      <a class="button button-quiet" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>Retour aux jeux</a>
     </div>
   </header>
 
@@ -490,7 +495,7 @@
         <div class="result-actions">
           <button class="button button-primary button-large" type="button" on:click={startMission}>Rejouer ce dossier</button>
           <button class="button button-quiet" type="button" on:click={backToSelection}>Changer de niveau ou d’activité</button>
-          <a class="button button-quiet" href={homeHref}>Retour à ORBIS</a>
+          <a class="button button-quiet" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>Retour aux jeux</a>
         </div>
       </section>
     {/if}
@@ -526,6 +531,7 @@
 
 
 <style>
+  /* Styles isolés à l’expérience de géométrie. */
   :global(html) { background: #0a0f18; }
   :global(body) { margin: 0; background: #0a0f18; color: #edf3fa; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   :global(button), :global(a) { -webkit-tap-highlight-color: transparent; }

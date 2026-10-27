@@ -1,3 +1,4 @@
+/* Couleurs et apparence partagées par l’ensemble des pages Orbis. */
 :root {
   color-scheme: light;
   --bg: #f8fafc;
@@ -13,9 +14,21 @@
   --amber: #f59e0b;
   --emerald: #10b981;
   --rose: #f43f5e;
+  /* Palette commune des activités de Fraction Tower. */
+  --fraction-paper: #fff9ec;
+  --fraction-parchment: #f4ead5;
+  --fraction-ink: #3f3529;
+  --fraction-forest: #31544f;
+  --fraction-teal: #547d72;
+  --fraction-gold: #c79845;
+  --fraction-line: #d9c8a5;
+  --fraction-theory: #497d96;
+  --fraction-training: #55865d;
+  --fraction-boss: #aa6550;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+/* Normalise les éléments HTML pour que les pages partent des mêmes règles. */
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); }
 a { color: inherit; }
@@ -23,6 +36,7 @@ button, input, select, textarea { font: inherit; }
 button { cursor: pointer; color: inherit; text-align: inherit; }
 button:disabled { cursor: not-allowed; opacity: 0.5; }
 
+/* Blocs de mise en page et composants réutilisés par les différentes pages. */
 .page { min-height: 100vh; display: flex; flex-direction: column; }
 .header { background: #312e81; color: white; border-bottom: 1px solid rgba(255,255,255,0.12); }
 .header-inner { max-width: 72rem; margin: 0 auto; padding: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }

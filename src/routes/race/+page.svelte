@@ -1,7 +1,23 @@
 <script lang="ts">
+    // Course en 3D avec entraînement, arcade, corrections et suivi local des faits fragiles.
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { base } from '$app/paths';
+    import { catalogHref, catalogReturnHref, restoreCatalogReturn } from '$lib/orbis/navigation';
+    import { RaceAudioEngine } from '$lib/games/race/audio';
+    import { createGatePanel, createRaceCar } from '$lib/games/race/scene-tools';
+    import {
+        buildChoices,
+        choose,
+        makeQuestionBase,
+        type FactStat,
+        type GateOption,
+        type GateQuestion,
+        type Notion,
+        type PracticeLevel,
+        type QuestionBase
+    } from '$lib/games/race/engine';
+    import { loadFactStats, saveFactStats } from '$lib/games/race/progress';
     // -------------------------------------------------------------------------
     // MATH RACER — prototype amélioré
     // Le jeu reste indépendant du portail, mais conserve un petit bilan local.
@@ -10,58 +26,10 @@
 
     type GameState = 'MENU' | 'PLAYING' | 'PAUSED_ERROR' | 'SUMMARY' | 'GAMEOVER';
     type GameMode = 'training' | 'arcade';
-    type PracticeLevel = 'guided' | 'standard' | 'challenge';
-    type Notion =
-        | 'livrets'
-        | 'doubles'
-        | 'triples'
-        | 'quadruples'
-        | 'complements10'
-        | 'complements100'
-        | 'complements1000'
-        | 'dizaineSuivante'
-        | 'centaineSuivante'
-        | 'millierSuivant'
-        | 'trous'
-        | 'divisions';
-
     interface NotionOption {
         id: Notion;
         label: string;
         help: string;
-    }
-
-    interface QuestionBase {
-        notion: Notion;
-        notionLabel: string;
-        questionText: string;
-        fullFormula: string;
-        answer: number;
-        factKey: string;
-    }
-
-    interface GateOption {
-        text: string;
-        isCorrect: boolean;
-        lane: number;
-    }
-
-    interface GateQuestion {
-        base: QuestionBase;
-        questionText: string;
-        fullFormula: string;
-        gates: GateOption[];
-    }
-
-    interface FactStat {
-        attempts: number;
-        correct: number;
-        streak: number;
-        lastSeen: number;
-        formula: string;
-        level: PracticeLevel;
-        // La question d'origine permet de reproposer précisément un fait fragile à la séance suivante.
-        base: QuestionBase;
     }
 
     interface RetryItem {
@@ -70,8 +38,7 @@
     }
 
     // Retour à la racine du site, y compris sur GitHub Pages.
-const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis utilise une autre route.
-    const STORAGE_KEY = 'orbis:math-racer:fact-stats:v1';
+const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'accueil d'Orbis utilise une autre route.
     const LANES = [-3.5, 0, 3.5];
     const BASE_SESSION_QUESTIONS = 12;
     const MAX_SESSION_QUESTIONS = 15; // Quelques questions supplémentaires permettent de revoir des erreurs.
@@ -168,7 +135,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
     let scheduledRetryKeys = new Set<string>();
     let feedbackTimer: ReturnType<typeof setTimeout> | null = null;
     let tapBoostTimer: ReturnType<typeof setTimeout> | null = null;
-    let audioEngine: ArcadeAudioEngine | null = null;
+    let audioEngine: RaceAudioEngine | null = null;
 
     // -------------------------------------------------------------------------
     // Musique 8-bit et effets sonores générés par Web Audio.
@@ -176,285 +143,14 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
     // Le navigateur autorise l'audio après une interaction de l'utilisateur.
     // -------------------------------------------------------------------------
 
-    class ArcadeAudioEngine {
-        private context: AudioContext | null = null;
-        private musicTimer: number | null = null;
-        private step = 0;
-        private closed = false;
 
-        async unlock() {
-            if (this.closed) return;
-            try {
-                if (!this.context) {
-                    const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-                    if (AudioContextClass) this.context = new AudioContextClass();
-                }
-                if (this.context?.state === 'suspended') await this.context.resume();
-            } catch (error) {
-                console.warn('Audio non disponible :', error);
-            }
-        }
 
-        private tone(frequency: number, duration: number, type: OscillatorType, volume: number, when = 0) {
-            if (!this.context || this.context.state !== 'running' || frequency <= 0) return;
-            const start = this.context.currentTime + when;
-            const oscillator = this.context.createOscillator();
-            const gain = this.context.createGain();
-            oscillator.type = type;
-            oscillator.frequency.setValueAtTime(frequency, start);
-            gain.gain.setValueAtTime(Math.max(0.001, volume), start);
-            gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
-            oscillator.connect(gain);
-            gain.connect(this.context.destination);
-            oscillator.start(start);
-            oscillator.stop(start + duration + 0.01);
-        }
-
-        async startMusic() {
-            if (this.closed) return;
-            await this.unlock();
-            if (!musicEnabled || !this.context || this.musicTimer !== null) return;
-
-            // Petite boucle originale de notes carrées, avec une basse tous les quatre temps.
-            const melody = [523, 659, 784, 659, 587, 659, 784, 1047, 784, 659, 587, 523, 392, 523, 659, 587];
-            const bass = [131, 147, 165, 196];
-            this.step = 0;
-            this.musicTimer = window.setInterval(() => {
-                if (!musicEnabled || !this.context || this.context.state !== 'running') return;
-                const note = melody[this.step % melody.length];
-                this.tone(note, 0.105, 'square', 0.035);
-                if (this.step % 4 === 0) {
-                    this.tone(bass[Math.floor(this.step / 4) % bass.length], 0.22, 'triangle', 0.045);
-                }
-                this.step++;
-            }, 145);
-        }
-
-        stopMusic() {
-            if (this.musicTimer !== null) window.clearInterval(this.musicTimer);
-            this.musicTimer = null;
-        }
-
-        playCorrect() {
-            if (!sfxEnabled) return;
-            this.tone(784, 0.08, 'square', 0.07);
-            this.tone(1047, 0.10, 'square', 0.06, 0.075);
-        }
-
-        playWrong() {
-            if (!sfxEnabled) return;
-            this.tone(220, 0.12, 'triangle', 0.065);
-            this.tone(165, 0.16, 'triangle', 0.05, 0.10);
-        }
-
-        playStart() {
-            if (!sfxEnabled) return;
-            this.tone(523, 0.07, 'square', 0.05);
-            this.tone(659, 0.07, 'square', 0.05, 0.07);
-            this.tone(784, 0.13, 'square', 0.055, 0.14);
-        }
-
-        destroy() {
-            this.closed = true;
-            this.stopMusic();
-            if (this.context && this.context.state !== 'closed') void this.context.close();
-            this.context = null;
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Outils mathématiques : création du calcul et distracteurs contrôlés.
-    // Chaque exercice possède une formule de correction et une clé de suivi.
-    // -------------------------------------------------------------------------
-
-    function randomInt(min: number, max: number) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    function choose<T>(items: T[]): T {
-        return items[Math.floor(Math.random() * items.length)];
-    }
-
-    // Affiche les grands nombres avec un séparateur lisible en français suisse.
-    function formatNumber(value: number) {
-        return new Intl.NumberFormat('fr-CH', { maximumFractionDigits: 0 }).format(value);
-    }
-
-    function makeQuestionBase(notion: Notion): QuestionBase {
-        let questionText = '';
-        let fullFormula = '';
-        let answer = 0;
-        let factKey = '';
-
-        if (notion === 'livrets') {
-            // La gamme limite d'abord la charge de calcul, sans enfermer l'élève dans ce niveau.
-            const minFactor = practiceLevel === 'guided' ? 2 : 1;
-            const maxFactor = practiceLevel === 'guided' ? 6 : 12;
-            const a = randomInt(minFactor, maxFactor);
-            const b = randomInt(minFactor, maxFactor);
-            answer = a * b;
-            questionText = `${a} × ${b}`;
-            fullFormula = `${a} × ${b} = ${answer}`;
-            // 4 × 7 et 7 × 4 sont le même fait pour le suivi de la mémorisation.
-            factKey = `livrets:${Math.min(a, b)}x${Math.max(a, b)}`;
-        } else if (notion === 'doubles') {
-            const range = practiceLevel === 'guided' ? 12 : practiceLevel === 'standard' ? 50 : 100;
-            const value = randomInt(2, range);
-            const isDouble = Math.random() < 0.65;
-            answer = isDouble ? value * 2 : value;
-            questionText = isDouble ? `Double de ${value}` : `Moitié de ${value * 2}`;
-            fullFormula = isDouble ? `${value} × 2 = ${answer}` : `${value * 2} ÷ 2 = ${answer}`;
-            factKey = isDouble ? `double:${value}` : `moitie:${value * 2}`;
-        } else if (notion === 'triples') {
-            const range = practiceLevel === 'guided' ? 10 : practiceLevel === 'standard' ? 30 : 60;
-            const value = randomInt(2, range);
-            answer = value * 3;
-            questionText = `Triple de ${value}`;
-            fullFormula = `${value} × 3 = ${answer}`;
-            factKey = `triple:${value}`;
-        } else if (notion === 'quadruples') {
-            const range = practiceLevel === 'guided' ? 8 : practiceLevel === 'standard' ? 25 : 50;
-            const value = randomInt(2, range);
-            answer = value * 4;
-            questionText = `Quadruple de ${value}`;
-            fullFormula = `${value} × 4 = ${answer}`;
-            factKey = `quadruple:${value}`;
-        } else if (notion === 'complements10') {
-            const value = randomInt(1, 9);
-            answer = 10 - value;
-            questionText = `De ${value} à 10 : combien manque-t-il ?`;
-            fullFormula = `${value} + ${answer} = 10`;
-            factKey = `complement10:${value}`;
-        } else if (notion === 'complements100') {
-            // Au départ, on travaille des dizaines entières ; ensuite, tous les nombres sont possibles.
-            const value = practiceLevel === 'guided' ? randomInt(1, 9) * 10 : randomInt(1, 99);
-            answer = 100 - value;
-            questionText = `De ${value} à 100 : combien manque-t-il ?`;
-            fullFormula = `${value} + ${answer} = 100`;
-            factKey = `complement100:${value}`;
-        } else if (notion === 'complements1000') {
-            const value = practiceLevel === 'guided' ? randomInt(1, 9) * 100 : randomInt(1, 999);
-            answer = 1000 - value;
-            questionText = `De ${formatNumber(value)} à 1 000 : combien manque-t-il ?`;
-            fullFormula = `${formatNumber(value)} + ${formatNumber(answer)} = ${formatNumber(1000)}`;
-            factKey = `complement1000:${value}`;
-        } else if (notion === 'dizaineSuivante') {
-            const minValue = practiceLevel === 'challenge' ? 101 : 11;
-            const maxValue = practiceLevel === 'guided' ? 89 : practiceLevel === 'standard' ? 99 : 999;
-            const value = randomInt(minValue, maxValue);
-            const target = (Math.floor(value / 10) + 1) * 10;
-            answer = target - value;
-            questionText = `Ajoute combien : ${formatNumber(value)} → ${formatNumber(target)} ?`;
-            fullFormula = `${formatNumber(value)} + ${formatNumber(answer)} = ${formatNumber(target)}`;
-            factKey = `dizaineSuivante:${value}`;
-        } else if (notion === 'centaineSuivante') {
-            const minValue = practiceLevel === 'challenge' ? 1001 : 101;
-            const maxValue = practiceLevel === 'guided' ? 599 : practiceLevel === 'standard' ? 999 : 9899;
-            const value = randomInt(minValue, maxValue);
-            const target = (Math.floor(value / 100) + 1) * 100;
-            answer = target - value;
-            questionText = `Ajoute combien : ${formatNumber(value)} → ${formatNumber(target)} ?`;
-            fullFormula = `${formatNumber(value)} + ${formatNumber(answer)} = ${formatNumber(target)}`;
-            factKey = `centaineSuivante:${value}`;
-        } else if (notion === 'millierSuivant') {
-            const minValue = practiceLevel === 'challenge' ? 10001 : 1001;
-            const maxValue = practiceLevel === 'guided' ? 4999 : practiceLevel === 'standard' ? 9999 : 98999;
-            const value = randomInt(minValue, maxValue);
-            const target = (Math.floor(value / 1000) + 1) * 1000;
-            answer = target - value;
-            questionText = `Ajoute combien : ${formatNumber(value)} → ${formatNumber(target)} ?`;
-            fullFormula = `${formatNumber(value)} + ${formatNumber(answer)} = ${formatNumber(target)}`;
-            factKey = `millierSuivant:${value}`;
-        } else if (notion === 'trous') {
-            const maxFactor = practiceLevel === 'guided' ? 6 : 12;
-            const a = randomInt(2, maxFactor);
-            const b = randomInt(2, maxFactor);
-            const product = a * b;
-            const hideA = Math.random() < 0.5;
-            answer = hideA ? a : b;
-            questionText = hideA ? `? × ${b} = ${product}` : `${a} × ? = ${product}`;
-            fullFormula = `${a} × ${b} = ${product}`;
-            factKey = `trou:${Math.min(a, b)}x${Math.max(a, b)}`;
-        } else {
-            const maxFactor = practiceLevel === 'guided' ? 6 : 12;
-            const a = randomInt(2, maxFactor);
-            const b = randomInt(2, maxFactor);
-            const product = a * b;
-            const divisor = Math.random() < 0.5 ? a : b;
-            answer = product / divisor;
-            questionText = `${product} ÷ ${divisor}`;
-            fullFormula = `${divisor} × ${answer} = ${product}`;
-            factKey = `division:${product}div${divisor}`;
-        }
-
-        return {
-            notion,
-            notionLabel: notionLabels[notion],
-            questionText,
-            fullFormula,
-            answer,
-            factKey
-        };
-    }
-
-    function buildChoices(base: QuestionBase): GateOption[] {
-        // Les distracteurs sont différents de la bonne réponse et entre eux.
-        // On privilégie les erreurs proches, fréquentes en calcul mental.
-        const answer = base.answer;
-        const candidates = [
-            answer + 1, answer - 1, answer + 2, answer - 2,
-            answer + 5, answer - 5, answer + 10, answer - 10,
-            answer * 2, Math.floor(answer / 2), answer + 3, answer + 4,
-            answer + 7, answer + 9, answer + 20
-        ];
-        const uniqueWrong = [...new Set(candidates.filter((value) => Number.isInteger(value) && value > 0 && value !== answer))];
-
-        // Garde-fou : toujours fournir deux distracteurs, même pour les très petits résultats.
-        let offset = 3;
-        while (uniqueWrong.length < 2) {
-            const candidate = answer + offset;
-            if (candidate > 0 && candidate !== answer && !uniqueWrong.includes(candidate)) uniqueWrong.push(candidate);
-            offset++;
-        }
-
-        const values = [answer, uniqueWrong[0], uniqueWrong[1]];
-        for (let index = values.length - 1; index > 0; index--) {
-            const swapIndex = randomInt(0, index);
-            [values[index], values[swapIndex]] = [values[swapIndex], values[index]];
-        }
-
-        return values.map((value, lane) => ({
-            text: String(value),
-            isCorrect: value === answer,
-            lane
-        }));
-    }
+    // La génération des questions et des choix est isolée dans le moteur Race.
 
     // -------------------------------------------------------------------------
     // Suivi local des faits numériques : utile pour revoir les fragilités.
     // Il s'agit d'un indicateur de pratique, pas d'un diagnostic scolaire.
     // -------------------------------------------------------------------------
-
-    function getStudentStorageKey() {
-        // Si Orbis transmet ?eleve=..., chaque élève conserve son propre suivi sur l'appareil.
-        // Sans identifiant, les données restent dans un espace local générique.
-        const studentName = new URLSearchParams(window.location.search).get('eleve')?.trim().toLocaleLowerCase();
-        const studentScope = studentName
-            ? studentName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9_-]/g, '_')
-            : 'local';
-        return `${STORAGE_KEY}:${studentScope || 'local'}`;
-    }
-
-    function loadFactStats(): Record<string, FactStat> {
-        try {
-            const raw = localStorage.getItem(getStudentStorageKey());
-            if (!raw) return {};
-            const parsed = JSON.parse(raw);
-            return parsed && typeof parsed === 'object' ? parsed : {};
-        } catch {
-            return {};
-        }
-    }
 
     function recordFactResult(base: QuestionBase, wasCorrect: boolean) {
         const previous = factStats[base.factKey] ?? {
@@ -477,11 +173,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
 
         factStats = { ...factStats, [base.factKey]: updated };
 
-        try {
-            localStorage.setItem(getStudentStorageKey(), JSON.stringify(factStats));
-        } catch (error) {
-            console.warn('Le suivi local ne peut pas être enregistré :', error);
-        }
+        saveFactStats(factStats);
     }
 
     // -------------------------------------------------------------------------
@@ -603,7 +295,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
 
     async function returnToOrbis() {
         stopRound();
-        await goto(ORBIS_HOME);
+        await goto(catalogReturnHref(base, 'jeux'), { replaceState: true });
     }
 
     function stopRound() {
@@ -663,76 +355,6 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
     // Construire une voiture arcade plus lisible : carrosserie, cockpit, roues,
     // phares, feux arrière et lignes néon. Les géométries sont réutilisées.
     // -------------------------------------------------------------------------
-
-    function addBox(parent: any, geometry: any, material: any, position: [number, number, number], rotation: [number, number, number] = [0, 0, 0]) {
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(position[0], position[1], position[2]);
-        mesh.rotation.set(rotation[0], rotation[1], rotation[2]);
-        mesh.castShadow = false;
-        mesh.receiveShadow = false;
-        parent.add(mesh);
-        return mesh;
-    }
-
-    function createCar() {
-        carGroup = new THREE.Group();
-
-        const bodyRed = new THREE.MeshStandardMaterial({ color: 0xff185d, emissive: 0x4a0019, emissiveIntensity: 0.5, metalness: 0.55, roughness: 0.25 });
-        const bodyDark = new THREE.MeshStandardMaterial({ color: 0x17172a, metalness: 0.35, roughness: 0.45 });
-        const glass = new THREE.MeshStandardMaterial({ color: 0x10eaff, emissive: 0x007b91, emissiveIntensity: 0.65, metalness: 0.3, roughness: 0.18 });
-        const neon = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00b6cc, emissiveIntensity: 1.2, metalness: 0.1, roughness: 0.25 });
-        const headlight = new THREE.MeshBasicMaterial({ color: 0xfff2ad });
-        const tailLight = new THREE.MeshBasicMaterial({ color: 0xff0050 });
-        const tireMat = new THREE.MeshStandardMaterial({ color: 0x080a12, roughness: 0.9 });
-        const hubMat = new THREE.MeshStandardMaterial({ color: 0x8cfaff, emissive: 0x00f0ff, emissiveIntensity: 0.4, metalness: 0.8, roughness: 0.25 });
-
-        // Châssis et carrosserie : la face avant de la voiture regarde vers -Z.
-        addBox(carGroup, new THREE.BoxGeometry(1.55, 0.28, 2.85), bodyDark, [0, 0.28, 0.02]);
-        addBox(carGroup, new THREE.BoxGeometry(1.45, 0.48, 1.35), bodyRed, [0, 0.52, -0.62]);
-        addBox(carGroup, new THREE.BoxGeometry(1.52, 0.38, 0.86), bodyRed, [0, 0.47, 0.83]);
-        addBox(carGroup, new THREE.BoxGeometry(1.28, 0.12, 0.82), bodyRed, [0, 0.80, -0.67]);
-
-        // Cockpit vitré et pare-brise incliné.
-        addBox(carGroup, new THREE.BoxGeometry(1.08, 0.48, 1.12), glass, [0, 0.88, 0.02], [-0.05, 0, 0]);
-        addBox(carGroup, new THREE.BoxGeometry(1.0, 0.07, 0.08), neon, [0, 1.13, -0.48], [-0.18, 0, 0]);
-        addBox(carGroup, new THREE.BoxGeometry(0.9, 0.07, 0.08), neon, [0, 1.12, 0.52], [0.18, 0, 0]);
-
-        // Aileron arrière et éléments lumineux latéraux.
-        addBox(carGroup, new THREE.BoxGeometry(0.12, 0.27, 0.12), bodyDark, [-0.52, 0.77, 1.22]);
-        addBox(carGroup, new THREE.BoxGeometry(0.12, 0.27, 0.12), bodyDark, [0.52, 0.77, 1.22]);
-        addBox(carGroup, new THREE.BoxGeometry(1.72, 0.10, 0.24), bodyDark, [0, 0.91, 1.22]);
-        addBox(carGroup, new THREE.BoxGeometry(0.05, 0.06, 1.65), neon, [-0.77, 0.43, 0.03]);
-        addBox(carGroup, new THREE.BoxGeometry(0.05, 0.06, 1.65), neon, [0.77, 0.43, 0.03]);
-
-        // Phares à l'avant et feux rouges à l'arrière.
-        addBox(carGroup, new THREE.BoxGeometry(0.30, 0.12, 0.06), headlight, [-0.48, 0.58, -1.31]);
-        addBox(carGroup, new THREE.BoxGeometry(0.30, 0.12, 0.06), headlight, [0.48, 0.58, -1.31]);
-        addBox(carGroup, new THREE.BoxGeometry(0.33, 0.12, 0.06), tailLight, [-0.48, 0.54, 1.27]);
-        addBox(carGroup, new THREE.BoxGeometry(0.33, 0.12, 0.06), tailLight, [0.48, 0.54, 1.27]);
-
-        // Quatre pneus et moyeux bien contrastés, visibles même sur petit écran.
-        const tireGeometry = new THREE.CylinderGeometry(0.31, 0.31, 0.24, 10);
-        const hubGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.255, 8);
-        for (const x of [-0.82, 0.82]) {
-            for (const z of [-0.83, 0.83]) {
-                const wheel = new THREE.Mesh(tireGeometry, tireMat);
-                wheel.rotation.z = Math.PI / 2;
-                wheel.position.set(x, 0.30, z);
-                wheel.castShadow = false;
-                carGroup.add(wheel);
-                const hub = new THREE.Mesh(hubGeometry, hubMat);
-                hub.rotation.z = Math.PI / 2;
-                hub.position.set(x * 1.015, 0.30, z);
-                carGroup.add(hub);
-            }
-        }
-
-        carGroup.position.set(LANES[currentLane], 0, 0);
-        carGroup.traverse((child: any) => {
-            if (child.isMesh) child.frustumCulled = false;
-        });
-        scene.add(carGroup);
-    }
 
     function buildScene() {
         scene = new THREE.Scene();
@@ -810,7 +432,8 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
             }
         }
 
-        createCar();
+        carGroup = createRaceCar(THREE, LANES[currentLane]);
+        scene.add(carGroup);
         resizeRenderer();
         // Le décor reste dessiné derrière le menu, sans boucle GPU active au repos.
         renderer.render(scene, camera);
@@ -824,72 +447,6 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
         camera.updateProjectionMatrix();
         renderer.setSize(width, height, false);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-    }
-
-    function createGateTexture(text: string) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('Impossible de créer le panneau de réponse.');
-
-        ctx.fillStyle = '#090d22';
-        ctx.fillRect(0, 0, 512, 512);
-        ctx.fillStyle = '#111b38';
-        ctx.fillRect(28, 28, 456, 456);
-
-        // Cadre pixelisé et petites marques décoratives pour une lecture immédiate.
-        ctx.lineWidth = 18;
-        ctx.strokeStyle = '#00eaff';
-        ctx.shadowColor = '#00eaff';
-        ctx.shadowBlur = 22;
-        ctx.strokeRect(18, 18, 476, 476);
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = '#f02bff';
-        ctx.fillRect(38, 40, 44, 8);
-        ctx.fillRect(430, 464, 44, 8);
-
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.font = 'bold 118px "Oxanium", sans-serif';
-        ctx.shadowColor = '#00eaff';
-        ctx.shadowBlur = 12;
-        // Les longues réponses restent dans le panneau sans être coupées.
-        let fontSize = 118;
-        while (ctx.measureText(text).width > 400 && fontSize > 56) {
-            fontSize -= 6;
-            ctx.font = `bold ${fontSize}px "Oxanium", sans-serif`;
-        }
-        ctx.fillText(text, 256, 260, 410);
-        ctx.shadowBlur = 0;
-
-        const texture = new THREE.CanvasTexture(canvas);
-        if ('colorSpace' in texture && THREE.SRGBColorSpace) texture.colorSpace = THREE.SRGBColorSpace;
-        texture.needsUpdate = true;
-        return texture;
-    }
-
-    function createGatePanel(gateGroup: any, lane: number, option: GateOption) {
-        const laneColor = lane === 1 ? 0x00eaff : lane === 0 ? 0xf02bff : 0xffc857;
-        const frameMaterial = new THREE.MeshBasicMaterial({ color: laneColor });
-        const postGeometry = new THREE.BoxGeometry(0.13, 3.18, 0.16);
-        const topGeometry = new THREE.BoxGeometry(2.72, 0.14, 0.16);
-        const panelGeometry = new THREE.PlaneGeometry(2.42, 2.52);
-        const left = new THREE.Mesh(postGeometry, frameMaterial);
-        left.position.set(LANES[lane] - 1.31, 1.62, 0);
-        const right = new THREE.Mesh(postGeometry, frameMaterial);
-        right.position.set(LANES[lane] + 1.31, 1.62, 0);
-        const top = new THREE.Mesh(topGeometry, frameMaterial);
-        top.position.set(LANES[lane], 3.20, 0);
-
-        const texture = createGateTexture(option.text);
-        const panelMaterial = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-        const panel = new THREE.Mesh(panelGeometry, panelMaterial);
-        panel.position.set(LANES[lane], 1.68, 0.09);
-        panel.userData = { isQuestionPanel: true, isCorrect: option.isCorrect, lane };
-
-        gateGroup.add(left, right, top, panel);
     }
 
     function spawnGateSet() {
@@ -918,7 +475,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
             base = retry.base;
         } else {
             const activeNotions: Notion[] = selectedNotions.length > 0 ? selectedNotions : ['livrets'];
-            base = makeQuestionBase(choose(activeNotions));
+            base = makeQuestionBase(choose(activeNotions), practiceLevel, notionLabels);
             if (gameMode === 'training') normalQuestionsGenerated++;
         }
         generatedQuestions++;
@@ -935,7 +492,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
         gateGroup.position.z = lastGate ? lastGate.position.z - 58 : -58;
         gateGroup.userData = { questionData: question, passed: false };
 
-        for (const option of question.gates) createGatePanel(gateGroup, option.lane, option);
+        for (const option of question.gates) createGatePanel(THREE, gateGroup, option.lane, option, LANES);
         scene.add(gateGroup);
         activeGates.push(gateGroup);
     }
@@ -1213,7 +770,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
 
     onMount(() => {
         let disposed = false;
-        audioEngine = new ArcadeAudioEngine();
+        audioEngine = new RaceAudioEngine(() => musicEnabled, () => sfxEnabled);
         factStats = loadFactStats();
 
         const handleResize = () => resizeRenderer();
@@ -1280,6 +837,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
 
     {#if gameState === 'PLAYING' || gameState === 'PAUSED_ERROR'}
         <header class="hud-top" aria-label="Informations de la course">
+            <a class="hud-orbis-link" href={ORBIS_HOME} use:restoreCatalogReturn={base} onclick={(event) => { event.preventDefault(); void returnToOrbis(); }}>↩ ORBIS</a>
             <section class="hud-card compact-stat">
                 <span class="hud-label">{gameMode === 'training' ? 'SÉRIE' : 'VIES'}</span>
                 {#if gameMode === 'training'}
@@ -1409,7 +967,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
                 <button type="button" class="primary-button" disabled={!engineReady || Boolean(engineError)} onclick={startGame}>
                     {#if engineReady}▶ LANCER LA COURSE{:else if engineError}CIRCUIT INDISPONIBLE{:else}CHARGEMENT DU CIRCUIT…{/if}
                 </button>
-                <a class="orbis-link" href={ORBIS_HOME} onclick={(event) => { event.preventDefault(); void returnToOrbis(); }}>↩ RETOUR À ORBIS</a>
+                <a class="orbis-link" href={ORBIS_HOME} use:restoreCatalogReturn={base} onclick={(event) => { event.preventDefault(); void returnToOrbis(); }}>↩ RETOUR AUX JEUX</a>
                 <div class="menu-footnote"><span>CLAVIER : ← → / A D · ↑ ↓ : VITESSE</span><span>TACTILE : COMMANDES À L’ÉCRAN</span></div>
             </div>
         </section>
@@ -1445,6 +1003,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
                 <div class="summary-actions">
                     <button type="button" class="primary-button" onclick={startGame}>↻ REJOUER</button>
                     <button type="button" class="secondary-button" onclick={showStartMenu}>⌂ MENU PRINCIPAL</button>
+                    <a class="orbis-link summary-orbis-link" href={ORBIS_HOME} use:restoreCatalogReturn={base} onclick={(event) => { event.preventDefault(); void returnToOrbis(); }}>↩ RETOUR AUX JEUX</a>
                 </div>
             </div>
         </section>
@@ -1494,6 +1053,23 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
         gap: clamp(0.4rem, 1.5vw, 1rem);
         pointer-events: none;
     }
+
+    .hud-orbis-link {
+        position: absolute;
+        top: calc(100% + 0.45rem);
+        right: 0;
+        z-index: 20;
+        padding: 0.45rem 0.65rem;
+        border: 1px solid #3a2b66;
+        border-radius: 4px;
+        color: #d6c4ff;
+        background: rgb(26 18 49 / 92%);
+        font-size: clamp(0.45rem, 0.9vw, 0.62rem);
+        line-height: 1.5;
+        text-decoration: none;
+        pointer-events: auto;
+    }
+    .hud-orbis-link:hover, .hud-orbis-link:focus-visible { border-color: #ad8aff; background: #31234f; }
 
     .hud-card, .target-card {
         border: 2px solid rgb(0 234 255 / 68%);
@@ -1696,6 +1272,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
     .positive-review p { color: #c8e5c5; }
     .summary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-top: 1rem; }
     .summary-actions .primary-button { margin: 0; }
+    .summary-orbis-link { grid-column: 1 / -1; margin-top: 0; }
 
     .ambient-footer { position: absolute; right: 1rem; bottom: 0.45rem; z-index: 3; display: flex; gap: 0.5rem; color: rgb(151 172 208 / 45%); font: 0.65rem/1.2 'Oxanium', sans-serif; pointer-events: none; }
 

@@ -19,9 +19,9 @@ npx tsc \
   --moduleResolution node \
   --esModuleInterop \
   --outDir "$BUILD_DIR" \
-  src/lib/conju-lab/types.ts \
-  src/lib/conju-lab/verbs.ts \
-  src/lib/conju-lab/curriculum.ts \
-  src/lib/conju-lab/question-engine.ts
+  src/lib/games/conju-lab/types.ts \
+  src/lib/games/conju-lab/verbs.ts \
+  src/lib/games/conju-lab/curriculum.ts \
+  src/lib/games/conju-lab/question-engine.ts
 
 CONJULAB_BUILD_DIR="$BUILD_DIR" node tests/conju-lab-engine-smoke.cjs

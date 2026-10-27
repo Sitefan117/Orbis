@@ -1,3 +1,4 @@
+/** Services serveur de suivi : relie un nom local aux résultats et au tableau enseignant. */
 import { and, desc, eq } from 'drizzle-orm';
 import { getDb } from './db/client';
 import { activityResults, students, teacherNotes, worldProgress } from './db/schema';
@@ -12,8 +13,8 @@ export type ActivityResultInput = {
   total: number;
   scoreBasis?: ScoreBasis;
   errorCount?: number;
-  errorFamilies?: unknown;
-  metadata?: unknown;
+  errorFamilies?: Array<string | object>;
+  metadata?: Record<string, unknown>;
 };
 
 export type TeacherDashboardData = {
@@ -56,6 +57,7 @@ export type TeacherDashboardData = {
   }>;
 };
 
+// Normalise le prénom pour retrouver le même profil malgré les accents ou espaces.
 export function normalizeStudentName(name: string): string {
   const normalized = name
     .trim()
@@ -77,6 +79,7 @@ function clampScore(value: number, min = 0): number {
   return Math.max(min, Math.round(value));
 }
 
+// Enregistre l’élève, l’événement de résultat et le résumé de progression de la mission.
 export function recordActivityResult(input: ActivityResultInput) {
   const db = getDb();
   const now = Date.now();
@@ -157,6 +160,7 @@ export function recordActivityResult(input: ActivityResultInput) {
   return { result, student };
 }
 
+// Prépare une vue bornée aux informations utiles au tableau enseignant.
 export function getTeacherDashboardData(): TeacherDashboardData {
   const db = getDb();
 
@@ -226,6 +230,7 @@ export function getTeacherDashboardData(): TeacherDashboardData {
   };
 }
 
+// Ajoute une note courte, éventuellement rattachée à un élève et à un jeu.
 export function addTeacherNote(input: { studentId?: number; world?: string; body: string }): void {
   const body = input.body.trim();
   if (!body) return;

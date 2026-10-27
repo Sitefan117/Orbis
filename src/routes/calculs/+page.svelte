@@ -1,11 +1,13 @@
 <script lang="ts">
+  // L’écran gère la séance et le brouillon ; les règles des questions sont dans le moteur dédié.
   import { onMount } from 'svelte';
   import { base } from '$app/paths';
-  import { getStudentName, submitActivityResult } from '$lib/client/activity';
+  import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
+  import { getStudentName } from '$lib/orbis/identity/local-student';
+  import { submitActivityResult } from '$lib/orbis/results/client';
+  import { generateDecimalQuestion, type DecimalQuestion } from '$lib/games/calculs/question-engine';
 
   type Phase = 'setup' | 'play' | 'done';
-  type DecimalQuestion = { left: string; right: string; operation: '+' | '-'; answer: number; level: number };
-
   let studentName = 'Explorateur';
   let phase: Phase = 'setup';
   let activeLevels: number[] = [1];
@@ -21,6 +23,7 @@
   let ctx: CanvasRenderingContext2D | null = null;
   let drawing = false;
 
+  // Prépare le profil et le canvas quand le navigateur rend la page.
   onMount(() => {
     studentName = getStudentName();
     setupCanvas();
@@ -28,6 +31,7 @@
     return () => window.removeEventListener('resize', setupCanvas);
   });
 
+  // Le canvas sert de feuille de brouillon et conserve ses traits au redimensionnement.
   function setupCanvas() {
     if (!canvas) return;
     const previous = document.createElement('canvas');
@@ -76,6 +80,7 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
+  // Le parcours alterne génération de questions, validation et bilan de séance.
   function startMission() {
     if (activeLevels.length === 0) {
       feedback = 'Activation impossible : choisis au moins un niveau.';
@@ -89,10 +94,7 @@
     nextQuestion();
   }
 
-  function decimal(min: number, max: number, digits: number): string {
-    return (Math.random() * (max - min) + min).toFixed(digits);
-  }
-
+  // Demande une question au moteur et remet à zéro les champs de la question précédente.
   function nextQuestion() {
     if (question > 10) {
       finishMission();
@@ -102,32 +104,13 @@
     blocked = false;
     feedback = '';
     answerInput = '';
-    const level = activeLevels[Math.floor(Math.random() * activeLevels.length)];
-    const operation: '+' | '-' = Math.random() > 0.5 ? '+' : '-';
-    let left = '0';
-    let right = '0';
-
-    if (level === 1) {
-      left = Math.random() > 0.5 ? decimal(10, 60, 1) : Math.floor(Math.random() * 80 + 20).toString();
-      right = Math.random() > 0.5 ? decimal(1, 20, 1) : Math.floor(Math.random() * 40 + 5).toString();
-    } else if (level === 2) {
-      left = decimal(10, 60, 1);
-      right = decimal(5, 45, 1);
-    } else {
-      left = decimal(10, 60, 2);
-      right = decimal(5, 45, 2);
-    }
-
-    if (operation === '-' && Number(left) < Number(right)) {
-      [left, right] = [right, left];
-    }
-
-    const precision = level === 3 ? 2 : 1;
-    const answer = operation === '+' ? Number(left) + Number(right) : Number(left) - Number(right);
-    current = { left, right, operation, answer: Number(answer.toFixed(precision)), level };
+    const next = generateDecimalQuestion(activeLevels);
+    if (!next) return;
+    current = next;
     clearCanvas();
   }
 
+  // Bloque les doubles clics, compare le résultat et ajoute une erreur au bilan si besoin.
   function validateAnswer() {
     if (blocked || answerInput.trim() === '') return;
     const value = Number(answerInput.replace(',', '.'));
@@ -146,6 +129,7 @@
     window.setTimeout(nextQuestion, 1700);
   }
 
+  // Termine la séance puis tente d’envoyer un bilan sans empêcher le jeu de fonctionner hors ligne.
   async function finishMission() {
     phase = 'done';
     const report = await submitActivityResult({
@@ -162,6 +146,7 @@
   }
 </script>
 
+<!-- Affiche le choix des niveaux, la question ou le bilan selon la phase de la séance. -->
 <svelte:head>
   <title>Le Calcul Décimal — Classe Numérique</title>
 </svelte:head>
@@ -170,7 +155,7 @@
   <header class="dark-header">
     <div class="header-inner">
       <div class="brand"><span class="brand-icon">⚡</span><div><h1 class="brand-title">Noyau : Calcul Décimal</h1><p class="brand-subtitle">Agent : {studentName}</p></div></div>
-      <a class="btn dark" href="{base}/">↩ QG</a>
+      <a class="btn dark" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>↩ Jeux</a>
     </div>
   </header>
 
@@ -215,7 +200,7 @@
           <p style="font-size: 3rem; font-weight: 1000; color: var(--amber);">{score} / 10</p>
           <p>{score >= 8 ? '🏆 Victoire éclatante ! Excellents calculs.' : '⚔️ Objectif incomplet. Poursuis l’entraînement.'}</p>
           <p class="muted small">{sentMessage}</p>
-          <div class="actions" style="justify-content: center;"><button class="btn primary" type="button" on:click={startMission}>Rejouer</button><a class="btn dark" href="{base}/">Retour au QG</a></div>
+          <div class="actions" style="justify-content: center;"><button class="btn primary" type="button" on:click={startMission}>Rejouer</button><a class="btn dark" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>Retour aux jeux</a></div>
         </div>
       {/if}
     </section>

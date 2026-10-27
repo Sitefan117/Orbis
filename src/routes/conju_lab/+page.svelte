@@ -1,15 +1,18 @@
 <script lang="ts">
+  // Réglages, minuterie et feedback de l’écran ; les règles de conjugaison sont dans lib/games/conju-lab.
   import { onMount, onDestroy } from 'svelte';
   import { base } from '$app/paths';
-  import { submitActivityResult } from '$lib/client/activity';
-  import { getTenseInfo, getTensesForGrade, RULE_CARDS } from '$lib/conju-lab/curriculum';
-  import { getGroupLabel, getVerbsForGrade } from '$lib/conju-lab/verbs';
+  import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
+import { getStudentName } from '$lib/orbis/identity/local-student';
+import { submitActivityResult } from '$lib/orbis/results/client';
+  import { getTenseInfo, getTensesForGrade, RULE_CARDS } from '$lib/games/conju-lab/curriculum';
+  import { getGroupLabel, getVerbsForGrade } from '$lib/games/conju-lab/verbs';
   import {
     analyseAnswer,
     generateQuestion,
     resolveAnswerStyle,
     validateQuestion
-  } from '$lib/conju-lab/question-engine';
+  } from '$lib/games/conju-lab/question-engine';
   import type {
     ActivityFocus,
     AnswerStyle,
@@ -18,7 +21,7 @@
     TenseId,
     VerbGroup,
     VerbQuestion
-  } from '$lib/conju-lab/types';
+  } from '$lib/games/conju-lab/types';
 
   type Screen = 'menu' | 'study' | 'game' | 'end';
   type FeedbackKind = 'none' | 'correct' | 'retry' | 'revealed' | 'timeout';
@@ -80,6 +83,7 @@
   $: progressPercent = Math.round((questionIndex / SESSION_LENGTH) * 100);
   $: currentHint = errorHint || currentQuestion?.hintSteps[Math.min(hintIndex, (currentQuestion?.hintSteps.length ?? 1) - 1)] || 'Repère le sujet, le temps et le verbe avant de répondre.';
 
+  // Ces gestionnaires configurent la session, affichent les exercices et expliquent les réponses.
   function chooseGrade(nextGrade: Grade) {
     grade = nextGrade;
     // Changer de niveau active les temps proposés pour ce niveau ; l’élève peut ensuite
@@ -279,18 +283,17 @@
     if (resultStatus === 'sent' || resultStatus === 'sending') return;
     resultStatus = 'sending';
     try {
-      // L’API ORBIS reste la seule destination des résultats. Aucun score n’est enregistré
-      // dans localStorage et aucune donnée de session n’est conservée par ConjuLab.
-      const send = submitActivityResult as unknown as (payload: Record<string, unknown>) => Promise<unknown>;
-      await send({
-        world: 'conjugaison',
+      // ConjuLab garde sa logique pédagogique et envoie seulement le bilan de session.
+      const report = await submitActivityResult({
+        studentName: getStudentName(),
+        world: 'conju_lab',
         mission: `${grade} · ${playPath === 'guide' ? 'parcours guidé' : 'parcours libre'} · ${selectedGradeFocus}`,
-        score,
-        totalQuestions: SESSION_LENGTH,
-        correctQuestions,
+        score: correctQuestions,
+        total: SESSION_LENGTH,
+        errorCount: totalErrors,
         metadata: { grade, playPath, selectedTenses, selectedGroups, answerStyle, retrySuccesses, totalErrors }
       });
-      resultStatus = 'sent';
+      resultStatus = report.ok ? 'sent' : 'unavailable';
     } catch (error) {
       console.warn('ConjuLab : transmission du bilan ORBIS indisponible.', error);
       resultStatus = 'unavailable';
@@ -390,18 +393,19 @@
   <meta name="description" content="Un laboratoire de conjugaison progressif pour apprendre les groupes de verbes, les radicaux et les temps de conjugaison." />
 </svelte:head>
 
+<!-- Les écrans menu, révision, activité et fin sont choisis selon `screen`. -->
 <div class:large-text={largeText} class:reduced-motion={reducedMotion} class="conjulab-shell">
   <div class="ambient ambient-one" aria-hidden="true"></div>
   <div class="ambient ambient-two" aria-hidden="true"></div>
 
   <header class="site-header">
-    <a class="brand" href={orbisHref} aria-label="Retour à ORBIS">
+    <a class="brand" href={orbisHref} aria-label="Retour à l'accueil ORBIS">
       <span class="brand-mark" aria-hidden="true">C<span>.</span></span>
       <span class="brand-text"><strong>CONJULAB</strong><small>LABORATOIRE DU LANGAGE</small></span>
     </a>
     <div class="header-right">
       <span class="header-tag">FRANÇAIS · 6H–9H</span>
-      <a class="top-link" href={orbisHref}>← Retour à ORBIS</a>
+      <a class="top-link" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>← Retour aux jeux</a>
     </div>
   </header>
 
@@ -617,7 +621,7 @@
         <div class="end-reflection"><h2>Pour la suite</h2><p>{correctQuestions >= 8 ? 'Tu sembles à l’aise avec ces questions. Essaie un temps plus difficile ou une activité de saisie libre.' : correctQuestions >= 5 ? 'Tu as déjà plusieurs repères. Revois les formes qui t’ont posé problème, puis recommence.' : 'Reprends les fiches sur les groupes et les terminaisons, puis choisis une session plus ciblée.'}</p><button type="button" class="secondary-button" onclick={openStudy}>Réviser les règles</button></div>
         <p class="result-status" aria-live="polite">{resultStatus === 'sending' ? 'Transmission du bilan à ORBIS…' : resultStatus === 'sent' ? 'Bilan transmis à ORBIS.' : resultStatus === 'unavailable' ? 'Le bilan n’a pas pu être transmis. La session reste consultable jusqu’à la sortie de la page.' : 'Le bilan sera transmis à ORBIS.'}</p>
         {#if resultStatus === 'unavailable'}<button type="button" class="secondary-button" onclick={() => void sendResult()}>Réessayer la transmission</button>{/if}
-        <div class="end-actions"><button type="button" class="primary-button" onclick={returnToMenu}>Retour au menu des niveaux</button><a class="secondary-button" href={orbisHref}>Retour à ORBIS</a></div>
+        <div class="end-actions"><button type="button" class="primary-button" onclick={returnToMenu}>Retour au menu des niveaux</button><a class="secondary-button" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>Retour aux jeux</a></div>
       {/if}
     </main>
   {/if}

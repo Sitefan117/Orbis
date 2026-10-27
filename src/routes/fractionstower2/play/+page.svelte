@@ -3,20 +3,22 @@
 </svelte:head>
 
 <script lang="ts">
+    // Relie l’état de Fraction Tower aux commandes, au décor et aux activités pédagogiques.
     import { onMount } from 'svelte';
     import { base } from '$app/paths';
-    import { createGameState } from '$lib/fractionstower2/game/GameState.svelte';
-    import { CollisionEngine } from '$lib/fractionstower2/game/CollisionEngine';
-    import { InteractionEngine } from '$lib/fractionstower2/game/InteractionEngine';
-    import { FloorManager } from '$lib/fractionstower2/game/FloorManager';
-    import ActivityModal from '$lib/fractionstower2/components/exercises/ActivityModal.svelte';
-    import BossBattle from '$lib/fractionstower2/components/exercises/BossBattle.svelte';
-    import BossFloor1 from '$lib/fractionstower2/components/exercises/BossFloor1.svelte';
-    import CourseViewer from '$lib/fractionstower2/components/course/CourseViewer.svelte';
-    import { languageState } from '$lib/fractionstower2/persistence/LanguageManager';
-    import { SaveManager } from '$lib/fractionstower2/persistence/SaveManager';
-    import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
-    import { ProgressManager } from '$lib/fractionstower2/persistence/ProgressManager';
+  import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
+    import { createGameState } from '$lib/games/fractionstower2/game/GameState.svelte';
+    import { CollisionEngine } from '$lib/games/fractionstower2/game/CollisionEngine';
+    import { InteractionEngine } from '$lib/games/fractionstower2/game/InteractionEngine';
+    import { FloorManager } from '$lib/games/fractionstower2/game/FloorManager';
+    import ActivityModal from '$lib/games/fractionstower2/components/exercises/ActivityModal.svelte';
+    import BossBattle from '$lib/games/fractionstower2/components/exercises/BossBattle.svelte';
+    import BossFloor1 from '$lib/games/fractionstower2/components/exercises/BossFloor1.svelte';
+    import CourseViewer from '$lib/games/fractionstower2/components/course/CourseViewer.svelte';
+    import { languageState } from '$lib/games/fractionstower2/persistence/LanguageManager';
+    import { SaveManager } from '$lib/games/fractionstower2/persistence/SaveManager';
+    import { AudioManager } from '$lib/games/fractionstower2/audio/AudioManager';
+    import { ProgressManager } from '$lib/games/fractionstower2/persistence/ProgressManager';
 
 
     const game = createGameState();
@@ -26,22 +28,21 @@
     let activeCourseFloorId = $state<string | null>(null);
     let keys = new Set<string>();
     let isWalking = $state(false);
+    let walkFrame = $state(false);
+    let guardMessage = $state<string | null>(null);
+    let guardMessageTimer: ReturnType<typeof setTimeout> | undefined;
 
     // ==========================================
     // ⚙️ TAILLES DES ÉLÉMENTS DU JEU
     // ==========================================
-    const heroSize = 100;          
-    const defaultNpcSize = 75;   
-    const topNpcSize = 75;       
-    const floorTileSize = 100;     
-    const wallTileSize = 50;      
-    const stairsSize = 75;        
-    const elevatorSize = 75;      
+    const heroWidth = 88;
+    const heroHeight = 116;
     // ==========================================
 
     let viewportContainer = $state<HTMLElement | null>(null);
     let mapScale = $state(1);
 
+    // Adapte le monde à la taille de l’écran sans modifier les coordonnées de jeu.
     function updateScale() {
         if (!viewportContainer || !floor) return;
         const availableWidth = viewportContainer.clientWidth;
@@ -51,23 +52,38 @@
         mapScale = Math.min(scaleX, scaleY);
     }
 
-    let walkFrame = $state(0); 
     let animTimer = 0;
 
-    const colMap: Record<string, number> = {
-        'down': 0,
-        'up': 1,
-        'left': 2,
-        'right': 3
+    const npcArtwork: Record<string, { src: string; alt: string; width: number; height: number }> = {
+        'course-intro': {
+            src: `${base}/fractionstower2/characters/guide-owl.png`,
+            alt: 'Astre, la chouette professeure', width: 94, height: 108
+        },
+        'classic-course-intro': {
+            src: `${base}/fractionstower2/characters/guide-classic.png`,
+            alt: 'La guide des cours classiques', width: 88, height: 116
+        },
+        'training-intro': {
+            src: `${base}/fractionstower2/characters/trainer-fox.png`,
+            alt: 'Renard, le coach d’entraînement', width: 100, height: 108
+        },
+        'boss-intro': {
+            src: `${base}/fractionstower2/characters/boss-dragon.png`,
+            alt: 'Le dragon gardien du défi', width: 112, height: 108
+        }
     };
 
-    let currentCol = $derived(colMap[game.player.direction] ?? 0);
-
-    const npcImages: Record<string, string> = {
-        'course-intro': `${base}/guide.png`,          
-        'classic-course-intro': `${base}/guide_classic.png`, 
-        'training-intro': `${base}/trainer.png`,      
-        'boss-intro': `${base}/boss.png`              
+    // Un décor local par compétence ; les coordonnées, collisions et interactions restent celles du moteur.
+    const floorArtwork: Record<string, string> = {
+        'floor-1': `${base}/fractionstower2/floors/01-partage.jpg`,
+        'floor-2': `${base}/fractionstower2/floors/02-representations.jpg`,
+        'floor-3': `${base}/fractionstower2/floors/03-droite-graduee.jpg`,
+        'floor-4': `${base}/fractionstower2/floors/04-equivalences.jpg`,
+        'floor-5': `${base}/fractionstower2/floors/05-comparer.jpg`,
+        'floor-6': `${base}/fractionstower2/floors/06-decimaux.jpg`,
+        'floor-7': `${base}/fractionstower2/floors/07-addition.jpg`,
+        'floor-8': `${base}/fractionstower2/floors/08-denominateurs.jpg`,
+        'floor-9': `${base}/fractionstower2/floors/09-multiplication.jpg`
     };
 
     function safePlayAudio(soundName: string) {
@@ -78,15 +94,54 @@
         }
     }
 
-    function getNpcImage(action?: string): string {
-        if (action && npcImages[action]) {
-            return npcImages[action];
-        }
-        return `${base}/guide.png`;
+    function getNpcArtwork(action?: string) {
+        return npcArtwork[action ?? ''] ?? npcArtwork['course-intro'];
     }
 
-    function getNpcSize(yPosition: number): number {
-        return yPosition < 200 ? topNpcSize : defaultNpcSize;
+    function getPortalLabel(type: 'stairs' | 'elevator', direction?: 'up' | 'down'): string {
+        if (languageState.current !== 'fr-FR') {
+            return type === 'elevator' ? 'Коды' : direction === 'up' ? 'Вверх' : 'Вниз';
+        }
+        return type === 'elevator' ? 'Codes des étages' : direction === 'up' ? 'Monter' : 'Descendre';
+    }
+
+    function getSectorInfo(action?: string) {
+        const isFrench = languageState.current === 'fr-FR';
+        const sectors: Record<string, { title: string; icon: string; theme: string }> = {
+            'course-intro': { title: isFrench ? 'THÉORIE' : 'ТЕОРИЯ', icon: '✦', theme: 'theory' },
+            'training-intro': { title: isFrench ? 'ENTRAÎNEMENT' : 'ТРЕНИРОВКА', icon: '◈', theme: 'training' },
+            'boss-intro': { title: isFrench ? 'DÉFI DU BOSS' : 'БОСС', icon: '♜', theme: 'boss' },
+            'classic-course-intro': { title: isFrench ? 'COURS PAPIER' : 'УЧЕБНИК', icon: '▤', theme: 'paper' }
+        };
+        return sectors[action ?? ''] ?? sectors['course-intro'];
+    }
+
+    function showGuardMessage(kind: 'locked' | 'top' | 'bottom' | 'ready' = 'locked') {
+        const messages = languageState.current === 'fr-FR'
+            ? {
+                locked: 'Halte ! Bats le boss de cet étage pour monter.',
+                top: 'Tu es au sommet de la tour : il n’y a pas d’étage au-dessus.',
+                bottom: 'Tu es au premier étage : il n’y a pas de niveau plus bas.',
+                ready: 'Le passage est ouvert. Tu peux monter.'
+            }
+            : {
+                locked: 'Стой! Победи босса этого этажа, чтобы подняться.',
+                top: 'Ты на вершине башни: выше этажей нет.',
+                bottom: 'Это первый этаж: этажей ниже нет.',
+                ready: 'Путь открыт. Можешь подняться.'
+            };
+        guardMessage = messages[kind];
+        if (guardMessageTimer) clearTimeout(guardMessageTimer);
+        guardMessageTimer = setTimeout(() => guardMessage = null, 3600);
+    }
+
+    function hasDefeatedCurrentBoss() {
+        const defeated = game.defeatedBosses;
+        return game.debugMode || Boolean(defeated && (
+            typeof defeated.has === 'function'
+                ? defeated.has(game.player.currentFloorId)
+                : (defeated as any)[game.player.currentFloorId]
+        ));
     }
 
     function changeLanguage() {
@@ -144,9 +199,11 @@
             });
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
+            if (guardMessageTimer) clearTimeout(guardMessageTimer);
         };
     });
 
+    // Les interactions ouvrent les escaliers, l’ascenseur ou l’activité sélectionnée.
     function handleInteraction() {
         if (!floor) return;
         
@@ -176,6 +233,12 @@
                 handleStairs(interaction);
             } else if (interaction.type === 'elevator') {
                 handleElevator();
+            } else if (interaction.type === 'object' && interaction.action === 'stair-guard') {
+                const currentNum = Number(game.player.currentFloorId.split('-')[1]);
+                showGuardMessage(
+                    !FloorManager.getFloor(`floor-${currentNum + 1}`) ? 'top' :
+                    hasDefeatedCurrentBoss() ? 'ready' : 'locked'
+                );
             } else if (interaction.destination) {
                 game.changeFloor(interaction.destination);
             }
@@ -188,22 +251,21 @@
         const destNum = parseInt(interaction.destination.split('-')[1]);
 
         if (destNum > currentNum) {
-            const hasDefeated = game.debugMode || 
-                (game.defeatedBosses && (
-                    typeof game.defeatedBosses.has === 'function' 
-                        ? game.defeatedBosses.has(game.player.currentFloorId) 
-                        : (game.defeatedBosses as any)[game.player.currentFloorId]
-                ));
-
-            if (hasDefeated) {
+            if (!FloorManager.getFloor(interaction.destination)) {
+                safePlayAudio('click');
+                showGuardMessage('top');
+                return;
+            }
+            if (hasDefeatedCurrentBoss()) {
                 safePlayAudio('stairs');
                 game.changeFloor(interaction.destination);
             } else {
                 safePlayAudio('click');
-                alert(languageState.current === 'fr-FR' 
-                    ? "L'escalier est bloqué ! Tu dois d'abord battre le Boss de cet étage pour monter." 
-                    : "Лестница заблокирована! Сначала вы должны победить Босса этого этажа, чтобы подняться.");
+                showGuardMessage('locked');
             }
+        } else if (currentNum === 1) {
+            safePlayAudio('click');
+            showGuardMessage('bottom');
         } else {
             safePlayAudio('stairs');
             game.changeFloor(interaction.destination);
@@ -212,11 +274,11 @@
 
     function handleElevator() {
         const target = prompt(languageState.current === 'fr-FR' 
-            ? "Vers quel étage souhaites-tu aller ? (1-8)" 
-            : "На какой этаж вы хотите отправиться? (1-8)");
+            ? "Vers quel étage souhaites-tu aller ? (1-9)"
+            : "На какой этаж вы хотите отправиться? (1-9)");
         if (!target) return;
         const floorNum = parseInt(target);
-        if (isNaN(floorNum) || floorNum < 1 || floorNum > 8) {
+        if (isNaN(floorNum) || floorNum < 1 || floorNum > 9) {
             alert(languageState.current === 'fr-FR' ? "Numéro d'étage invalide." : "Неверный номер этажа.");
             return;
         }
@@ -238,6 +300,7 @@
         }
     }
 
+    // La sauvegarde et le chargement délèguent au gestionnaire commun du jeu.
     function saveGame() {
         const studentId = prompt(languageState.current === 'fr-FR' 
             ? "Entre ton nom ou ID pour sauvegarder :" 
@@ -284,19 +347,14 @@
 
         if (isWalking) {
             animTimer += 1;
-            if (animTimer === 1) {
+            if (animTimer === 1 || animTimer > 14) {
                 safePlayAudio('step');
-            }
-            if (animTimer > 15) {
+                walkFrame = !walkFrame;
                 animTimer = 0;
             }
-
-            if (animTimer > 8) { 
-                walkFrame = (walkFrame === 1) ? 3 : 1; 
-            }
         } else {
-            walkFrame = 0; 
             animTimer = 0;
+            walkFrame = false;
         }
 
         if (dx !== 0) {
@@ -314,6 +372,7 @@
     }
 </script>
 
+<!-- Superpose les activités au jeu et dessine le monde courant avec ses zones interactives. -->
 {#if activeActivityId}
     <ActivityModal activityId={activeActivityId} onClose={() => activeActivityId = null} />
 {/if}
@@ -348,6 +407,7 @@
         </div>
         <div class="hud-right">
             <div class="tools-row">
+                <a class="tool-btn orbis-home-btn" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base} aria-label="Retour aux jeux">↩ Orbis</a>
                 <button class="tool-btn lang-btn" onclick={changeLanguage}>
                     {languageState.current === 'fr-FR' ? '🇷🇺 RU' : '🇫🇷 FR'}
                 </button>
@@ -368,102 +428,86 @@
     <!-- CANEVAS DE JEU PLEIN ÉCRAN -->
     <main class="game-viewport" bind:this={viewportContainer}>
         {#if floor}
+            {@const floorBackground = floorArtwork[floor.id]}
             <div 
-                class="world pixelated" 
+                class="world"
                 style="
                     width: {floor.width}px; 
                     height: {floor.height}px; 
                     transform: scale({mapScale});
                     transform-origin: center center;
-                    background-image: url('{base}/sol.png'); 
-                    background-repeat: repeat;
-                    background-size: {floorTileSize}px {floorTileSize}px;
+                    background-image: url('{floorBackground}');
+                    background-repeat: no-repeat;
+                    background-position: center center;
+                    background-size: cover;
                 "
             >
-                <!-- MURS -->
-                {#each floor.collisions as col}
-                    {@const isHorizontal = col.width > col.height}
-                    <div 
-                        class="wall-tile pixelated" 
-                        style="
-                            left: {col.x}px; 
-                            top: {col.y}px; 
-                            width: {col.width}px; 
-                            height: {col.height}px;
-                            background-image: url('{base}/{isHorizontal ? 'murs_h.png' : 'murs_v.png'}');
-                            background-repeat: repeat;
-                            background-size: {wallTileSize}px {wallTileSize}px;
-                            position: absolute;
-                            z-index: 2;
-                        "
-                    ></div>
-                {/each}
-
-                <!-- ESCALIERS ET ASCENSEUR SANS TEXTES S, A, P -->
+                <!-- Les repères suivent les escaliers et le parchemin dessinés dans le décor. -->
                 {#each floor.interactions as inter}
                     {#if inter.type === 'stairs'}
-                        {@const isAscending = inter.destination && parseInt(inter.destination.split('-')[1]) > parseInt(game.player.currentFloorId.split('-')[1])}
-                        <div 
-                            class="pixelated" 
-                            style="
-                                left: {inter.x}px; 
-                                top: {inter.y}px; 
-                                width: {stairsSize}px; 
-                                height: {stairsSize}px; 
-                                position: absolute; 
-                                z-index: 5; 
-                                background-image: url('{base}/{isAscending ? 'escalier_m.png' : 'escalier_d.png'}'); 
-                                background-size: 100% 100%;
-                                background-repeat: no-repeat;
-                            "
-                        ></div>
+                        {@const isAscending = Boolean(inter.destination && parseInt(inter.destination.split('-')[1]) > parseInt(game.player.currentFloorId.split('-')[1]))}
+                        {@const portalLabel = getPortalLabel('stairs', isAscending ? 'up' : 'down')}
+                        <div class="portal-marker stairs-marker" style="left: {inter.x}px; top: {isAscending ? inter.y + inter.height - 25 : inter.y + 4}px; width: {inter.width}px;" role="img" aria-label={portalLabel}>
+                            <span class="portal-symbol" aria-hidden="true">{isAscending ? '↑' : '↓'}</span>
+                            <span class="portal-label">{portalLabel}</span>
+                        </div>
                     {:else if inter.type === 'elevator'}
-                        <div 
-                            class="pixelated" 
-                            style="
-                                left: {inter.x}px; 
-                                top: {inter.y}px; 
-                                width: {elevatorSize}px; 
-                                height: {elevatorSize}px; 
-                                position: absolute; 
-                                z-index: 5; 
-                                background-image: url('{base}/ascenseur.png'); 
-                                background-size: 100% 100%;
-                                background-repeat: no-repeat;
-                            "
-                        ></div>
+                        {@const portalLabel = getPortalLabel('elevator')}
+                        <div class="portal-marker scroll-marker" style="left: {inter.x - 16}px; top: {inter.y + inter.height - 24}px; width: {inter.width + 32}px;" role="img" aria-label={portalLabel}>
+                            <span class="portal-symbol" aria-hidden="true">✦</span>
+                            <span class="portal-label">{portalLabel}</span>
+                        </div>
                     {/if}
 
                     {#if inter.type === 'pedagogical'}
-                        {@const currentNpcSize = getNpcSize(inter.y)}
-                        <div class="npc" style="left: {inter.x}px; top: {inter.y}px; width: {currentNpcSize}px; height: {currentNpcSize}px; position: absolute; z-index: 8;">
-                            <div 
-                                class="pixelated"
-                                style="
-                                    width: {currentNpcSize}px;
-                                    height: {currentNpcSize}px;
-                                    background-image: url('{getNpcImage(inter.action)}');
-                                    background-size: 400% 400%;
-                                    background-position: 0% 0%;
-                                "
-                            ></div>
+                        {@const npc = getNpcArtwork(inter.action)}
+                        {@const sector = getSectorInfo(inter.action)}
+                        <div class="npc-sector sector-{sector.theme}" style="left: {inter.x - 25}px; top: {inter.y - 34}px;">
+                            <span class="sector-name"><span aria-hidden="true">{sector.icon}</span>{sector.title}</span>
+                            <span class="sector-ground" aria-hidden="true"></span>
+                            <img
+                                class="character-art npc-art"
+                                src={npc.src}
+                                alt={npc.alt}
+                                draggable="false"
+                                style="left: {25 + (inter.width - npc.width) / 2}px; top: 38px; width: {npc.width}px; height: {npc.height}px;"
+                            />
+                        </div>
+                    {:else if inter.type === 'object' && inter.action === 'stair-guard'}
+                        <div class="guard-zone" style="left: {inter.x - 30}px; top: {inter.y - 20}px;">
+                            {#if guardMessage}
+                                <div class="guard-message" role="status">{guardMessage}</div>
+                            {/if}
+                            <img
+                                class="character-art guard-art"
+                                src={`${base}/fractionstower2/characters/stair-guardian.png`}
+                                alt="Gardien de l’escalier nord"
+                                draggable="false"
+                                style="left: 28px; top: 20px; width: 86px; height: 91px;"
+                            />
+                            <span class="guard-name">GARDIEN</span>
                         </div>
                     {/if}
                 {/each}
 
                 <!-- PERSONNAGE PRINCIPAL -->
-                <div class="player" style="left: {game.player.position.x}px; top: {game.player.position.y}px; width: {heroSize}px; height: {heroSize}px; position: absolute; z-index: 10;">
-                    <div 
-                        class="pixelated"
-                        style="
-                            width: {heroSize}px;
-                            height: {heroSize}px;
-                            background-image: url('{base}/Walk.png');
-                            background-size: 400% 400%;
-                            background-position: {(currentCol / 3) * 100}% {(walkFrame / 3) * 100}%;
-                        "
-                    ></div>
-                </div>
+                <img
+                    class="character-art player-art"
+                    class:walking={isWalking && !walkFrame}
+                    src={`${base}/fractionstower2/characters/hero.png`}
+                    alt="Héros de Fraction Tower"
+                    draggable="false"
+                    style="left: {game.player.position.x + 30 - heroWidth / 2}px; top: {game.player.position.y + 50 - heroHeight}px; --facing: {game.player.direction === 'left' ? -1 : 1}; width: {heroWidth}px; height: {heroHeight}px;"
+                />
+                <img
+                    class="character-art player-step-art"
+                    class:walking={isWalking && walkFrame}
+                    src={`${base}/fractionstower2/characters/hero-step.png`}
+                    alt=""
+                    aria-hidden="true"
+                    draggable="false"
+                    style="left: {game.player.position.x + 30 - heroWidth / 2}px; top: {game.player.position.y + 50 - heroHeight}px; --facing: {game.player.direction === 'left' ? -1 : 1}; width: {heroWidth}px; height: {heroHeight}px;"
+                />
 
                 {#if game.debugMode}
                     {#each floor.collisions as col}
@@ -516,6 +560,7 @@
 </div>
 
 <style>
+	/* Styles du plateau de jeu et de ses commandes tactiles. */
     .game-layout {
         display: flex;
         flex-direction: column;
@@ -582,6 +627,7 @@
         gap: 6px;
     }
     .tool-btn:hover { background-color: #334155; }
+    .orbis-home-btn { text-decoration: none; }
     .load-label input { display: none; }
 
     .game-viewport {
@@ -596,13 +642,178 @@
 
     .world {
         position: relative;
+        overflow: hidden;
         box-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
         transition: transform 0.1s ease-out;
     }
 
-    .pixelated {
-        image-rendering: pixelated;
-        image-rendering: crisp-edges;
+    .character-art {
+        position: absolute;
+        display: block;
+        object-fit: contain;
+        pointer-events: none;
+        user-select: none;
+        -webkit-user-drag: none;
+        transform-origin: center bottom;
+        transform: scaleX(var(--facing, 1));
+        filter: drop-shadow(0 4px 5px rgba(22, 16, 11, 0.38));
+    }
+    .npc-art {
+        z-index: 8;
+    }
+    .player-art {
+        z-index: 10;
+        opacity: 1;
+        transition: opacity 70ms linear;
+    }
+    .player-art.walking {
+        opacity: 0;
+    }
+    .player-step-art {
+        z-index: 10;
+        opacity: 0;
+        transition: opacity 70ms linear;
+    }
+    .player-step-art.walking {
+        opacity: 1;
+    }
+    .npc-sector {
+        position: absolute;
+        z-index: 7;
+        width: 125px;
+        height: 155px;
+        border: 1px solid color-mix(in srgb, var(--sector-tone) 46%, transparent);
+        border-radius: 64px 64px 20px 20px;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--sector-tone) 11%, transparent), transparent 78%);
+        pointer-events: none;
+    }
+    .sector-theory { --sector-tone: #497d96; }
+    .sector-training { --sector-tone: #55865d; }
+    .sector-boss { --sector-tone: #aa6550; }
+    .sector-paper { --sector-tone: #a17c43; }
+    .sector-name {
+        position: absolute;
+        z-index: 2;
+        top: 7px;
+        left: 50%;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 8px;
+        transform: translateX(-50%);
+        border: 1px solid color-mix(in srgb, var(--sector-tone) 45%, #fff8e8);
+        border-radius: 999px;
+        color: #392f26;
+        background: rgba(255, 249, 232, 0.94);
+        box-shadow: 0 2px 5px rgba(43, 31, 20, 0.2);
+        font-size: 0.57rem;
+        font-weight: 900;
+        letter-spacing: 0.045em;
+        white-space: nowrap;
+    }
+    .sector-name span {
+        color: var(--sector-tone);
+        font-size: 0.75rem;
+    }
+    .sector-ground {
+        position: absolute;
+        left: 50%;
+        bottom: 9px;
+        width: 92px;
+        height: 24px;
+        transform: translateX(-50%);
+        border: 1px solid color-mix(in srgb, var(--sector-tone) 52%, transparent);
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--sector-tone) 20%, rgba(255, 250, 232, 0.5));
+        box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.22), 0 2px 5px rgba(40, 30, 20, 0.14);
+    }
+    .guard-zone {
+        position: absolute;
+        z-index: 9;
+        width: 145px;
+        height: 135px;
+        pointer-events: none;
+    }
+    .guard-art { z-index: 9; }
+    .guard-name {
+        position: absolute;
+        left: 31px;
+        bottom: 0;
+        padding: 3px 7px;
+        border: 1px solid rgba(217, 174, 89, 0.7);
+        border-radius: 999px;
+        color: #fff5d9;
+        background: rgba(42, 51, 47, 0.9);
+        font-size: 0.53rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+    }
+    .guard-message {
+        position: absolute;
+        z-index: 20;
+        top: -22px;
+        left: -64px;
+        width: 245px;
+        box-sizing: border-box;
+        padding: 9px 12px;
+        border: 1px solid #e4c47b;
+        border-radius: 14px;
+        color: #392f26;
+        background: #fff7e5;
+        box-shadow: 0 6px 18px rgba(32, 24, 17, 0.3);
+        font-size: 0.76rem;
+        font-weight: 750;
+        line-height: 1.3;
+        text-align: center;
+    }
+    .portal-marker {
+        position: absolute;
+        z-index: 5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        box-sizing: border-box;
+        color: #fff8e9;
+        pointer-events: none;
+        text-align: center;
+    }
+    .stairs-marker {
+        flex-direction: row;
+        justify-content: center;
+        height: 24px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(42, 47, 41, 0.76);
+        box-shadow: 0 2px 6px rgba(32, 24, 17, 0.26);
+    }
+    .scroll-marker {
+        flex-direction: row;
+        justify-content: center;
+        height: 24px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(42, 47, 41, 0.74);
+        box-shadow: 0 2px 6px rgba(32, 24, 17, 0.25);
+    }
+    .portal-symbol {
+        color: #ffd477;
+        font-size: 0.7rem;
+        font-weight: 800;
+        line-height: 1;
+        text-shadow: 0 1px 3px rgba(255, 188, 61, 0.45);
+    }
+    .portal-label {
+        font-size: 0.57rem;
+        font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .player-art, .player-step-art { transition: none; }
+        .player-art.walking { opacity: 1; }
+        .player-step-art.walking { opacity: 0; }
     }
 
     .error {

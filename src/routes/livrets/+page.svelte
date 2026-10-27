@@ -1,7 +1,11 @@
 <script lang="ts">
+  // Gère une séance de multiplication et son bilan ; le moteur tire les questions.
   import { base } from '$app/paths';
+  import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { onMount } from 'svelte';
-  import { getStudentName, submitActivityResult } from '$lib/client/activity';
+  import { getStudentName } from '$lib/orbis/identity/local-student';
+  import { submitActivityResult } from '$lib/orbis/results/client';
+  import { generateMultiplicationQuestion } from '$lib/games/livrets/question-engine';
 
   type Phase = 'setup' | 'play' | 'done';
 
@@ -26,6 +30,7 @@
     studentName = getStudentName();
   });
 
+  // Le parcours démarre, valide dix questions puis transmet un bilan si le service répond.
   function startMission() {
     if (selectedTables.length === 0) {
       feedback = 'Choisis au moins un livret pour commencer la mission.';
@@ -52,9 +57,9 @@
     feedback = '';
     showDots = false;
     showTable = false;
-    factorA = selectedTables[Math.floor(Math.random() * selectedTables.length)];
-    factorB = Math.floor(Math.random() * 10) + 1;
-    expected = factorA * factorB;
+    const next = generateMultiplicationQuestion(selectedTables);
+    if (!next) return;
+    ({ factorA, factorB, expected } = next);
   }
 
   function pressKey(key: string) {
@@ -96,6 +101,7 @@
   }
 </script>
 
+<!-- La page alterne sélection des livrets, questions avec aides visuelles et résumé. -->
 <svelte:head>
   <title>L'Atelier des Livrets — Classe Numérique</title>
 </svelte:head>
@@ -110,7 +116,7 @@
           <p class="brand-subtitle">Agent : {studentName}</p>
         </div>
       </div>
-      <a class="btn dark" href="{base}/">↩ QG</a>
+      <a class="btn dark" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>↩ Jeux</a>
     </div>
   </header>
 
@@ -184,7 +190,7 @@
         <p class="muted small">{sentMessage}</p>
         <div class="actions" style="justify-content: center;">
           <button class="btn primary" type="button" on:click={startMission}>Rejouer</button>
-          <a class="btn dark" href="{base}/">Retour au QG</a>
+          <a class="btn dark" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>Retour aux jeux</a>
         </div>
       </section>
     {/if}

@@ -1,6 +1,7 @@
 // Tests des fonctions mathématiques et d'adaptation, sans navigateur ni dépendances.
 const assert = require('node:assert/strict');
-const E = require('../src/lib/mesurovia/engine-legacy.js');
+require('../src/lib/games/mesurovia/engine-legacy.js');
+const E = global.MesuEngine;
 
 assert.equal(E.convert(2, 'length', 'm', 'cm'), 200, '2 m = 200 cm');
 assert.equal(E.convert(350, 'mass', 'g', 'kg'), 0.35, '350 g = 0,35 kg');

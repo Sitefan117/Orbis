@@ -6,13 +6,13 @@
   "scripts": {
     "dev": "vite dev --host 0.0.0.0",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "test": "bash tests/run-smoke.sh",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "db:migrate": "tsx src/lib/server/db/migrate.ts",
     "teacher:hash": "tsx src/lib/server/auth/print-teacher-hash.ts"
   },
   "dependencies": {
-    "@sveltejs/adapter-node": "^5.2.0",
     "@sveltejs/kit": "^2.22.0",
     "better-sqlite3": "^11.10.0",
     "drizzle-orm": "^0.45.2",

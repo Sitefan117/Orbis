@@ -3,21 +3,22 @@
    * NUMÉRIA — Les Royaumes de la Numération
    * --------------------------------------------------------------
    * Écran Svelte du jeu. Le contenu des royaumes, la génération des
-   * exercices et la sauvegarde sont séparés dans src/lib/numeria/.
+   * exercices et la sauvegarde sont séparés dans src/lib/games/numeria/.
    * Les contrôles sont volontairement des boutons/champs natifs : ils
    * fonctionnent au toucher sur iPad et au clavier/souris sur ordinateur.
    */
   import { base } from '$app/paths';
+  import { catalogReturnHref } from '$lib/orbis/navigation';
   import { onDestroy, onMount } from 'svelte';
-  import { getStudentName, submitActivityResult } from '$lib/client/activity';
-  import { CODEX, GRADE_STORIES, REALMS, getRealm, realmsForGrade } from '$lib/numeria/curriculum';
-  import { answersEqual, generateQuestions, normalizeAnswer } from '$lib/numeria/question-engine';
-  import { clearProgress, createEmptySave, loadSave, saveProgress, TEACHER_ACCESS_CODE } from '$lib/numeria/progress';
-  import type { Grade, MissionMode, Question, Realm, SessionResult, StudentSave } from '$lib/numeria/types';
+  import { getStudentName } from '$lib/orbis/identity/local-student';
+  import { submitActivityResult } from '$lib/orbis/results/client';
+  import { CODEX, GRADE_STORIES, REALMS, getRealm, realmsForGrade } from '$lib/games/numeria/curriculum';
+  import { answersEqual, generateQuestions, normalizeAnswer } from '$lib/games/numeria/question-engine';
+  import { clearProgress, createEmptySave, loadSave, saveProgress, TEACHER_ACCESS_CODE } from '$lib/games/numeria/progress';
+  import type { ActiveMissionSave, Grade, MissionFeedback, MissionMode, Question, QuestionOutcome, Realm, SessionResult, StudentSave } from '$lib/games/numeria/types';
 
   type Screen = 'welcome' | 'hub' | 'realm' | 'game' | 'result' | 'codex';
-  type Feedback = 'none' | 'try-again' | 'success' | 'reveal';
-  type QuestionOutcome = { solved: boolean; firstTry: boolean; mistakes: number };
+  type Feedback = MissionFeedback;
 
   // Écran actuellement affiché. La valeur détermine quelle vue du jeu est rendue plus bas.
   let screen: Screen = 'welcome';
@@ -65,6 +66,59 @@
   let progressPercent = 0;
   let sortedNumberOptions: string[] = [];
 
+  /** Restaure une mission enregistrée, avec ses questions déjà générées. */
+  function resumeActiveMission(session: ActiveMissionSave | undefined = save.activeMission): boolean {
+    if (!session || !getRealm(session.realmId)) return false;
+    activeRealmId = session.realmId;
+    selectedGrade = session.grade;
+    missionMode = session.mode;
+    questions = session.questions;
+    questionIndex = session.questionIndex;
+    answer = session.answer;
+    attemptsForQuestion = session.attemptsForQuestion;
+    showHint = session.showHint;
+    feedback = session.feedback;
+    feedbackText = session.feedbackText;
+    questionFinished = session.questionFinished;
+    outcomes = session.outcomes;
+    result = null;
+    screen = 'game';
+    return true;
+  }
+
+  /** Enregistre l'état pédagogique de la mission sans changer son moteur ni ses règles. */
+  function persistActiveMission(): void {
+    const realm = getRealm(activeRealmId);
+    if (!studentName || !realm || screen !== 'game' || questions.length === 0) return;
+
+    save.activeMission = {
+      realmId: realm.id,
+      grade: selectedGrade,
+      mode: missionMode,
+      questions,
+      questionIndex,
+      answer,
+      attemptsForQuestion,
+      showHint,
+      feedback,
+      feedbackText,
+      questionFinished,
+      outcomes,
+      savedAt: new Date().toISOString()
+    };
+    saveProgress(save);
+  }
+
+  function revealHint(): void {
+    showHint = true;
+    persistActiveMission();
+  }
+
+  function updateAnswerFromInput(event: Event): void {
+    answer = (event.currentTarget as HTMLInputElement).value;
+    persistActiveMission();
+  }
+
   // Royaume, question, carte et progression visibles : valeurs dérivées de l'état du jeu.
   $: currentRealm = getRealm(activeRealmId);
   $: currentQuestion = questions[questionIndex] as Question | undefined;
@@ -86,7 +140,7 @@
       studentName = connectedName;
       save = loadSave(connectedName, '6H');
       selectedGrade = save.grade;
-      screen = 'hub';
+      if (!resumeActiveMission()) screen = 'hub';
     }
   });
 
@@ -104,7 +158,7 @@
     save = loadSave(chosenName, selectedGrade);
     save.grade = selectedGrade;
     saveProgress(save);
-    screen = 'hub';
+    if (!resumeActiveMission()) screen = 'hub';
     playTone(660, 0.08);
   }
 
@@ -170,6 +224,8 @@
   /** Initialise une nouvelle série de questions en mode entraînement ou gardien. */
   function startMission(mode: MissionMode): void {
     if (!currentRealm) return;
+    if (save.activeMission && typeof window !== 'undefined'
+      && !window.confirm('Une mission Numéria est déjà en cours. Commencer une nouvelle mission remplacera sa sauvegarde en cours. Continuer ?')) return;
     if (mode === 'guardian' && realmProgress(currentRealm.id).trainingBest < 3 && !realmProgress(currentRealm.id).guardianWon) {
       feedbackText = 'Termine d’abord l’entraînement avec au moins 3 réponses justes pour réveiller le gardien.';
       feedback = 'try-again';
@@ -187,12 +243,16 @@
     outcomes = questions.map(() => ({ solved: false, firstTry: false, mistakes: 0 }));
     result = null;
     screen = 'game';
+    persistActiveMission();
     playTone(mode === 'guardian' ? 740 : 600, 0.1);
   }
 
   /** Met à jour la réponse choisie tant que la question n'est pas terminée. */
   function selectAnswer(value: string): void {
-    if (!questionFinished) answer = value;
+    if (!questionFinished) {
+      answer = value;
+      persistActiveMission();
+    }
   }
 
   /** Compare la réponse, donne un indice après une erreur et révèle la correction au second échec. */
@@ -209,6 +269,7 @@
       feedbackText = attemptsForQuestion === 0
         ? 'Le sceau s’illumine ! Réponse exacte du premier coup.'
         : 'Bien joué : tu as corrigé ta réponse.';
+      persistActiveMission();
       playTone(880, 0.11);
       return;
     }
@@ -227,6 +288,7 @@
       feedback = 'reveal';
       feedbackText = `La réponse attendue était ${currentQuestion.expected}. Lis l’explication, puis continue.`;
     }
+    persistActiveMission();
   }
 
   /** Passe à la question suivante ou termine la mission après la dernière question. */
@@ -240,6 +302,7 @@
       feedback = 'none';
       feedbackText = '';
       questionFinished = false;
+      persistActiveMission();
       return;
     }
     finishMission();
@@ -277,6 +340,7 @@
     }
     save.xp += xpGained;
     save.grade = selectedGrade;
+    save.activeMission = undefined;
     saveProgress(save);
 
     // Prépare l'envoi vers le suivi ORBIS existant. La sauvegarde de secours reste locale.
@@ -365,7 +429,7 @@
 
   /** Retourne à la page d'accueil d'ORBIS en respectant le base path de l'application. */
   function returnToOrbis(): void {
-    window.location.href = `${base || ''}/`;
+    window.location.replace(catalogReturnHref(base, 'jeux', studentName));
   }
 
   /** Active ou désactive les bips synthétiques du jeu. */
@@ -432,6 +496,7 @@
       <span><strong>NUMÉRIA</strong><small>LES ROYAUMES DE LA NUMÉRATION</small></span>
     </button>
     <div class="top-actions">
+      <button class="quiet-button" onclick={returnToOrbis}>↩ ORBIS</button>
       {#if studentName}
         <span class="profile-chip"><span class="profile-dot"></span>{studentName}</span>
         <span class="xp-chip" aria-label={`${save.xp} points d'expérience`}>✧ {save.xp} XP</span>
@@ -487,6 +552,12 @@
             <strong>{progressCount}<small>/{coreRealms.length}</small></strong><span>sceaux</span>
           </div>
         </div>
+        {#if save.activeMission}
+          <div class="resume-mission-note" role="status">
+            <p class="small-note">Ta mission est sauvegardée à la question {save.activeMission.questionIndex + 1} sur {save.activeMission.questions.length}.</p>
+            <button class="secondary-button" onclick={() => resumeActiveMission()}>Reprendre la mission →</button>
+          </div>
+        {/if}
 
         <div class="map-toolbar">
           <div><h2>Carte des royaumes</h2><p>Entraîne-toi pour réveiller le gardien de chaque royaume.</p></div>
@@ -542,6 +613,12 @@
           <div class="realm-emblem" aria-hidden="true"><div class="emblem-ring"></div><span>{currentRealm.symbol}</span><i>✧</i></div>
           <div class="realm-hero-copy"><p class="eyebrow">ROYAUME {String(currentRealm.order).padStart(2, '0')} · {currentRealm.region.toLocaleUpperCase('fr-CH')}</p><h1>{currentRealm.name}</h1><p class="lead">{currentRealm.subtitle}</p><p>{currentRealm.story}</p><div class="skill-pill">✦ {currentRealm.learningGoal}</div></div>
         </div>
+        {#if save.activeMission?.realmId === currentRealm.id}
+          <div class="resume-mission-note" role="status">
+            <p class="small-note">Une mission est sauvegardée à la question {save.activeMission.questionIndex + 1} sur {save.activeMission.questions.length}.</p>
+            <button class="secondary-button" onclick={() => resumeActiveMission()}>Reprendre la mission →</button>
+          </div>
+        {/if}
         <div class="mission-grid">
           <article class="mission-card training-card"><div class="mission-icon" aria-hidden="true">✧</div><p class="eyebrow">ÉTAPE 1 · SANS PRESSION</p><h2>L’entraînement</h2><p>5 défis pour comprendre la compétence. Une erreur donne un indice ; tu peux réessayer.</p><div class="mission-meta"><span>5 questions</span><span>XP à gagner</span></div><button class="primary-button wide" onclick={() => startMission('training')}>Commencer l’entraînement →</button><p class="best-score">Meilleur score : {realmProgress(currentRealm.id).trainingBest}/5</p></article>
           <article class={`mission-card guardian-card ${realmProgress(currentRealm.id).trainingBest < 3 && !realmProgress(currentRealm.id).guardianWon ? 'mission-disabled' : ''}`}><div class="mission-icon" aria-hidden="true">♜</div><p class="eyebrow">ÉTAPE 2 · LE DÉFI</p><h2>{currentRealm.guardian}</h2><p>7 défis différents. Réussis au moins 5 réponses pour briser le sceau et révéler une page du Codex.</p><div class="mission-meta"><span>7 questions</span><span>+20 XP si victoire</span></div><button class="primary-button wide" disabled={realmProgress(currentRealm.id).trainingBest < 3 && !realmProgress(currentRealm.id).guardianWon} onclick={() => startMission('guardian')}>{realmProgress(currentRealm.id).guardianWon ? 'Rejouer le gardien ↻' : 'Défier le gardien →'}</button><p class="best-score">Meilleur score : {realmProgress(currentRealm.id).guardianBest}/7 {realmProgress(currentRealm.id).guardianWon ? '· Sceau brisé ✓' : ''}</p></article>
@@ -582,7 +659,7 @@
             {:else}
               <form class="answer-entry" onsubmit={(event) => { event.preventDefault(); validateAnswer(); }}>
                 <label for="question-answer">Ta réponse</label>
-                <input id="question-answer" bind:value={answer} disabled={questionFinished} autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="Écris ta réponse…" aria-describedby="answer-format" />
+                <input id="question-answer" value={answer} oninput={updateAnswerFromInput} disabled={questionFinished} autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="Écris ta réponse…" aria-describedby="answer-format" />
                 <p id="answer-format" class="input-help">Tu peux utiliser une virgule décimale. Les espaces et apostrophes des milliers sont acceptés.</p>
                 <button class="primary-button wide" type="submit" disabled={questionFinished || answer.trim() === ''}>Vérifier ma réponse <span>↗</span></button>
               </form>
@@ -590,11 +667,11 @@
 
             {#if currentQuestion.kind !== 'input'}
               <div class="answer-actions">
-                <button class="text-button" disabled={questionFinished || showHint} onclick={() => showHint = true}>Afficher un indice</button>
+                <button class="text-button" disabled={questionFinished || showHint} onclick={revealHint}>Afficher un indice</button>
                 <button class="primary-button" disabled={questionFinished || answer.trim() === ''} onclick={validateAnswer}>Valider <span>↗</span></button>
               </div>
             {:else}
-              <div class="hint-row"><button class="text-button" disabled={showHint || questionFinished} onclick={() => showHint = true}>Afficher un indice</button></div>
+              <div class="hint-row"><button class="text-button" disabled={showHint || questionFinished} onclick={revealHint}>Afficher un indice</button></div>
             {/if}
 
             {#if showHint}
@@ -644,7 +721,7 @@
     {/if}
   </main>
 
-  <footer class="site-footer"><span>NUMÉRIA <i>✦</i> APPRENDRE, EXPLORER, COMPRENDRE</span><button onclick={returnToOrbis}>Retour à ORBIS ↗</button></footer>
+  <footer class="site-footer"><span>NUMÉRIA <i>✦</i> APPRENDRE, EXPLORER, COMPRENDRE</span><button onclick={returnToOrbis}>Retour aux jeux ↗</button></footer>
 </div>
 
 {#if teacherPanelOpen}

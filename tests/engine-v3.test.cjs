@@ -5,8 +5,9 @@ const path = require('node:path');
 // Le test fonctionne dans l'archive complète (drop-in/) et dans le paquet de copie (src/).
 const enginePath = fs.existsSync(path.join(__dirname, '../drop-in/lib/mesurovia/engine-legacy.js'))
   ? '../drop-in/lib/mesurovia/engine-legacy.js'
-  : '../src/lib/mesurovia/engine-legacy.js';
-const E = require(enginePath);
+  : '../src/lib/games/mesurovia/engine-legacy.js';
+require(enginePath);
+const E = global.MesuEngine;
 
 const families = Object.keys(E.FAMILIES);
 const formats = ['choice', 'number', 'unit', 'match', 'order', 'table', 'error', 'multi'];
@@ -65,13 +66,13 @@ for (const family of families) {
         assert.equal(E.checkAnswer(q, JSON.stringify(q.answer.slice(1))), false, `${family}/${format}: réponse incomplète refusée`);
         assert.ok(q.answer.every(answer => q.options.includes(answer)), `${family}/${format}: toutes les bonnes réponses proposées`);
         assert.equal(new Set(q.options.map(E.normalizeAnswer)).size, q.options.length, `${family}/${format}: options multiples distinctes`);
-        const target = q.prompt.match(/équivalentes à ([0-9][0-9 ,.]*)\s*([a-z²³]+)/i);
+        const target = q.prompt.match(/équivalentes à ([0-9][0-9 ,.'’]*)\s*([a-z²³]+)/i);
         assert.ok(target, `${family}/${format}: mesure de départ claire dans la consigne`);
-        const targetValue = Number(target[1].replace(/ /g, '').replace(',', '.'));
+        const targetValue = Number(target[1].replace(/[\s'’]/g, '').replace(',', '.'));
         const targetUnit = target[2];
         const parseOption = (option) => {
-          const match = String(option).match(/^([0-9][0-9 ,.]*)\s*([a-z²³]+)$/i);
-          return match ? { value: Number(match[1].replace(/ /g, '').replace(',', '.')), unit: match[2] } : null;
+          const match = String(option).match(/^([0-9][0-9 ,.'’]*)\s*([a-z²³]+)$/i);
+          return match ? { value: Number(match[1].replace(/[\s'’]/g, '').replace(',', '.')), unit: match[2] } : null;
         };
         for (const correctOption of q.answer) {
           const option = parseOption(correctOption);
@@ -96,13 +97,13 @@ for (const family of families) {
       // On exige une limite après l'unité (m et m³ sont différents) pour éviter les faux positifs.
       if (['choice', 'number', 'table', 'error'].includes(q.type)) {
         const answerLabel = ['number', 'table'].includes(q.type) ? `${E.fmt(q.answer)} ${q.to}` : q.answer;
-        const answer = E.normalizeAnswer(answerLabel).replace(/\s/g, '').replace(',', '.');
+        const answer = E.normalizeAnswer(answerLabel).replace(/[\s'’]/g, '').replace(',', '.');
         const parts = answer.match(/^([0-9]+(?:\.[0-9]+)?)([a-z²³]+)$/);
         assert.ok(parts, `${family}/${format}: réponse de conversion au format nombre + unité`);
         const escapedNumber = parts[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const unitPattern = parts[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`(?<![0-9.,])${escapedNumber}(?![0-9.,])${unitPattern}(?![a-z²³])`, 'i');
-        const normalizedPrompt = q.prompt.toLowerCase().replace(/\s/g, '').replace(',', '.');
+        const normalizedPrompt = q.prompt.toLowerCase().replace(/[\s'’]/g, '').replace(',', '.');
         assert.equal(regex.test(normalizedPrompt), false, `${family}/${format}: résultat correct non révélé mot pour mot dans la consigne: ${q.prompt} => ${q.answer}`);
       }
     }

@@ -1,3 +1,4 @@
+/** Vérifie les accès et gère la durée de vie des sessions enseignant côté serveur. */
 import { eq, lt } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { getDb } from './db/client';
@@ -12,6 +13,7 @@ export type TeacherLoginResult =
   | { ok: true; sessionId: string; expiresAt: number }
   | { ok: false; reason: 'missing_configuration' | 'invalid_password' };
 
+// Préfère l’empreinte, tout en gardant l’ancien secret de configuration compatible.
 function verifyConfiguredTeacherPassword(password: string): TeacherLoginResult | null {
   const hash = process.env.TEACHER_PASSWORD_HASH;
   if (hash) {
@@ -26,6 +28,7 @@ function verifyConfiguredTeacherPassword(password: string): TeacherLoginResult |
   return { ok: false, reason: 'missing_configuration' };
 }
 
+// Crée une session aléatoire de huit heures uniquement après validation du secret.
 export function createTeacherSession(password: string): TeacherLoginResult {
   const failed = verifyConfiguredTeacherPassword(password);
   if (failed) return failed;

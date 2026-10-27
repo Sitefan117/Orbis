@@ -1,123 +1,111 @@
-# Classe Numérique locale
+# Orbis
 
-Application SvelteKit pour une classe. Les élèves ouvrent le QG, choisissent leur prénom, puis explorent cinq mondes de travail. Les résultats sont enregistrés dans une base SQLite locale. L'enseignant suit la progression depuis un tableau protégé par une session serveur. Tout fonctionne sur une seule machine, sans service externe.
+Orbis est un portail pédagogique construit avec SvelteKit, Svelte et TypeScript. Il regroupe des jeux indépendants et des ressources de cours. Les jeux gardent leurs propres règles et moteurs.
 
-## Prérequis
+## Où le site est hébergé
 
-* Node.js 20 ou plus récent
-* npm
+Le dépôt publie un site statique sur GitHub Pages. Le workflow `.github/workflows/main.yml` installe les dépendances, exécute les contrôles et tests, construit le site, puis publie le dossier `build/`. Aucun serveur ne tourne sur le Mac de l’enseignant.
 
-## Démarrage rapide
+Le dépôt contient aussi des routes API SvelteKit et un stockage SQLite côté serveur. GitHub Pages ne peut pas exécuter ces routes ni conserver ce fichier SQLite. L’envoi de résultats vers `/api/activity-results` et le chat serveur ne sont donc pas des fonctions disponibles sur le site GitHub Pages actuel. Un service en ligne séparé sera nécessaire pour le suivi enseignant et les comptes élèves.
 
-```bash
+## Démarrer en local
+
+Prérequis : Node.js 20 ou plus récent et npm.
+
+```sh
 npm install
-TEACHER_PASSWORD="test" npm run dev
+npm run dev
 ```
 
-L'application est disponible sur `http://localhost:5173`. Le serveur de développement écoute aussi sur le réseau local.
+Pour vérifier les types et composants Svelte :
 
-## Pages
-
-1. `/` : QG de la classe, choix du prénom et accès aux mondes
-2. `/livrets` : L'Atelier des Livrets, défis de tables de multiplication avec aides visuelles
-3. `/geometrie` : Le Défi des Formes, identification, intrus visuels et tri 2D/3D
-4. `/calculs` : Le Calcul Décimal, opérations décimales avec ardoise tactique
-5. `/numeria` : Les Royaumes de Numéria, quête de numération HarmoS, étoiles et codex
-6. `/pcp` : Espace PCP / Orientation, CV, lettre de motivation et projet professionnel
-7. `/teacher` : tableau enseignant protégé
-8. `/teacher/login` et `/teacher/logout` : connexion et déconnexion de l'enseignant
-
-Les anciennes adresses en `.html` (par exemple `/pcp.html`) sont redirigées automatiquement vers les nouvelles routes.
-
-## Base de données
-
-SQLite via Drizzle ORM. Le fichier est créé automatiquement au premier accès, par défaut ici.
-
-```bash
-data/classroom.sqlite
+```sh
+npm run check
 ```
 
-Pour choisir un autre fichier, définissez cette variable.
+Pour générer la version statique :
 
-```bash
-DATABASE_URL="file:./data/ma_classe.sqlite"
-```
-
-Le schéma est appliqué automatiquement au premier démarrage. Pour le créer ou le mettre à jour manuellement, lancez cette commande.
-
-```bash
-npm run db:migrate
-```
-
-La base utilise le mode WAL et active les clés étrangères. Tables : `students`, `activity_results`, `world_progress`, `teacher_notes`, `teacher_sessions`.
-
-## Accès enseignant
-
-Pour un essai local rapide, un mot de passe en clair suffit.
-
-```bash
-TEACHER_PASSWORD="test" npm run dev
-```
-
-Pour un usage de classe, générez plutôt un hash.
-
-```bash
-TEACHER_PASSWORD_INPUT="mot de passe long" npm run teacher:hash
-```
-
-Puis démarrez avec la valeur obtenue. `TEACHER_PASSWORD_HASH` a priorité sur `TEACHER_PASSWORD`.
-
-```bash
-TEACHER_PASSWORD_HASH="pbkdf2_sha256$..."
-```
-
-La session enseignant dure 8 heures et vit côté serveur dans la table `teacher_sessions`. Si aucune de ces variables n'est définie, la connexion est refusée.
-
-## Scripts
-
-* `npm run dev` : serveur de développement
-* `npm run check` : vérification des types Svelte et TypeScript
-* `npm run build` : construction de l'application
-* `npm run preview` : aperçu local du résultat du build
-* `npm run db:migrate` : création ou mise à jour du schéma SQLite
-* `npm run teacher:hash` : génération d'un hash de mot de passe enseignant
-
-## Serveur construit
-
-L'application est construite avec l'adaptateur Node de SvelteKit. Fixez `ORIGIN` avec la vraie adresse ouverte dans le navigateur : SvelteKit en a besoin pour accepter les formulaires protégés, dont la connexion enseignant.
-
-```bash
+```sh
 npm run build
-HOST=127.0.0.1 PORT=3000 ORIGIN=http://127.0.0.1:3000 node build
 ```
 
-Sur le réseau de classe.
+Pour afficher ce build localement :
 
-```bash
-HOST=0.0.0.0 PORT=3000 ORIGIN=http://ordinateurclasse.local:3000 node build
+```sh
+npm run preview
 ```
 
-## Variables d'environnement
+Le serveur de développement SvelteKit peut exécuter les routes serveur en local. La base SQLite locale est créée dans `data/classroom.sqlite` au premier accès à ces routes. Ce fonctionnement local n’est pas le backend du site publié sur GitHub Pages.
 
-* `DATABASE_URL` : chemin du fichier SQLite, défaut `file:./data/classroom.sqlite`
-* `TEACHER_PASSWORD` : mot de passe enseignant en clair, pour les essais uniquement
-* `TEACHER_PASSWORD_HASH` : hash du mot de passe, recommandé en classe
-* `TEACHER_PASSWORD_INPUT` : entrée du script `teacher:hash`
-* `HOST`, `PORT`, `ORIGIN` : configuration du serveur construit
+## Parcours et pages
 
-## Structure du projet
+- `/` : portail Arcade et Cours, alimenté par les catalogues dans `src/lib/orbis/catalog/`.
+- `/livrets`, `/geometrie`, `/calculs`, `/numeria`, `/mesurovia`, `/fractionstower2`, `/race`, `/mathhunt`, `/shift`, `/conju_lab` et `/pcp` : jeux et activités autonomes.
+- `/teacher` : page locale qui permet d’importer des fichiers de sauvegarde `.fracsave` de Fraction Tower. Ce n’est pas encore un tableau enseignant connecté aux résultats en ligne.
+- `static/cours/maths/` : cours HTML classés par thème et publiés comme fichiers statiques.
 
-* `src/routes` : pages des mondes, tableau enseignant et point d'API des résultats
-* `src/lib/worlds.ts` : définition des cinq mondes
-* `src/lib/server/db` : client, schéma et migration SQLite
-* `src/lib/server/auth` : hash et vérification du mot de passe enseignant
-* `src/lib/client/activity.ts` : envoi des résultats depuis les activités
-* `src/hooks.server.ts` : redirection des anciennes adresses `.html`
+Les anciennes adresses des cours déplacés contiennent de petites redirections vers les nouveaux fichiers.
 
-## Données enregistrées
+## Sauvegardes et résultats actuels
 
-Chaque activité enregistre le prénom de l'élève, le monde, la mission, le score, le nombre d'erreurs et la date. Le tableau enseignant lit ces données, montre la progression par monde et permet de noter une intervention.
+Les jeux n’utilisent pas tous le même format de sauvegarde :
 
-## Technologies
+- Numéria conserve une progression locale séparée par prénom, sait migrer un ancien format et reprend maintenant la mission active après rechargement sur le même appareil.
+- Mesurovia conserve plusieurs profils locaux.
+- Race conserve certaines statistiques dans `localStorage`.
+- Fraction Tower conserve une progression locale et propose un export/import `.fracsave`.
+- PCP conserve localement le CV et la lettre de motivation ; ces contenus peuvent inclure des renseignements personnels.
+- Certaines activités envoient des résultats à l’API SvelteKit. Cette API enregistre dans SQLite quand l’application est exécutée avec un serveur, mais elle n’est pas hébergée par GitHub Pages.
 
-SvelteKit 2, Svelte 5, TypeScript, Vite, Drizzle ORM et SQLite.
+Les clés et formats locaux doivent être préservés lors de toute future migration. La cible proposée est décrite dans `docs/ORBiS_ARCHITECTURE.md` ; elle est encore à valider avant l’implémentation du service distant.
+
+Un brouillon de tables et de règles d’accès Supabase Free se trouve dans `supabase/`. Il n’est appliqué à aucun projet et ne contient aucune donnée réelle ; ses règles devront être testées avec des comptes fictifs avant l’usage en classe.
+
+## Organisation du dépôt
+
+- `src/routes/` : pages et routes API SvelteKit ; les URLs publiques sont conservées.
+- `src/lib/orbis/` : catalogue du portail, profil local temporaire et contrats des services communs.
+- `src/lib/games/<jeu>/` : moteurs, types, données et sauvegardes propres à chaque jeu. Les sous-dossiers varient selon les besoins du jeu.
+- `src/lib/server/` : code Node/SQLite et services serveur locaux.
+- `static/` : images, sons, cours et autres fichiers servis tels quels.
+- `archives/` : fichiers de jeux conservés comme références, non publiés avec le site.
+- `tests/` : contrôles automatisés des moteurs, contenus et structure des routes.
+- `docs/` : cartographie, décisions, guide développeur et plan d’évolution.
+- `supabase/` : brouillon de schéma pour un futur pilote gratuit, pas encore connecté.
+
+### Exemples de séparation du code des jeux
+
+Les pages restent responsables de l’affichage et de la séance en cours. Les fichiers de `src/lib/games/` isolent les parties qui peuvent être comprises ou modifiées indépendamment :
+
+- **Shift** : `config.ts` contient les missions, niveaux et unités ; `number-engine.ts` contient les calculs et formats de nombres. La page orchestre l’interface.
+- **Racer** : `engine.ts` garde la création des questions ; `progress.ts` suit les faits travaillés ; `audio.ts` gère les sons ; `scene-tools.ts` construit la voiture et les panneaux Three.js.
+- **Mesurovia** : `engine-v3-adapter.ts` conserve l’accès au moteur du jeu ; `memory-game.ts` prépare les cartes ; `progress.ts` normalise les profils et anciennes sauvegardes. La page garde le déroulement des parties et l’interface.
+
+Ces modules restent propres à leur jeu. Ils ne créent pas un moteur pédagogique commun. Les détails et dépendances de chaque dossier sont documentés dans son `README.md`.
+
+### Classement des cours
+
+Les cours suivent le chemin court `static/cours/<matiere>/<theme>/<nom>.html` :
+
+- `maths/fractions/complet.html` pour le cahier complet ; `etape-1.html` à `etape-9.html` pour les étapes et `etapes.html` pour les choisir.
+- `maths/mesures/reference.html` pour le cours de référence et `maths/mesures/mesurovia/` pour les quatre cahiers.
+- `maths/mesures/mesurovia/enseignant/` pour les corrigés, séparés des ressources élèves.
+- `maths/geometrie/` pour le carnet et le croquis de solides.
+
+Pour ajouter un document, créer un fichier dans le bon dossier, déclarer son chemin dans `src/lib/orbis/catalog/course-paths.ts`, puis l’inscrire dans `src/lib/orbis/catalog/courses.ts`. Les jeux utilisent la même liste de chemins pour ouvrir leurs cahiers.
+
+## Scripts npm
+
+- `npm run dev` : serveur de développement local.
+- `npm run check` : vérification Svelte et TypeScript.
+- `npm test` : tests automatiques des moteurs, contenus, routes et sauvegardes locales.
+- `npm run build` : build statique publié sur GitHub Pages.
+- `npm run preview` : aperçu local du build.
+- `npm run db:migrate` : initialise le schéma SQLite local.
+- `npm run teacher:hash` : utilitaire de génération de hash de mot de passe enseignant.
+
+Les deux derniers scripts appartiennent au code serveur local ; ils ne créent pas de base ni de comptes sur GitHub Pages.
+
+## Tests
+
+Les commandes `npm run check`, `npm test` et `npm run build` sont décrites dans `tests/README-TESTS.md`. Le workflow GitHub les exécute avant la publication. Voir `docs/ORBiS_ARCHITECTURE.md` pour les limites encore connues.

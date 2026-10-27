@@ -6,8 +6,9 @@ const path = require('node:path');
 // Le test fonctionne dans l'archive complète (drop-in/) et dans le paquet de copie (src/).
 const enginePath = fs.existsSync(path.join(__dirname, '../drop-in/lib/mesurovia/engine-legacy.js'))
   ? '../drop-in/lib/mesurovia/engine-legacy.js'
-  : '../src/lib/mesurovia/engine-legacy.js';
-const E = require(enginePath);
+  : '../src/lib/games/mesurovia/engine-legacy.js';
+require(enginePath);
+const E = global.MesuEngine;
 
 const normalize = E.normalizeAnswer;
 const stripMarkup = (value) => String(value ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -20,7 +21,7 @@ const problems = [];
 // Réponse composée d'un nombre et d'une unité : contrôle exact avec une frontière d'unité.
 // La frontière évite par exemple de confondre m avec m³.
 function exactNumericUnitIn(text, answer) {
-  const compactAnswer = normalize(answer).replace(/\s/g, '').replace(',', '.');
+  const compactAnswer = normalize(answer).replace(/[\s'’]/g, '').replace(',', '.');
   const parts = compactAnswer.match(/^([0-9]+(?:\.[0-9]+)?)([a-z²³]+)$/i);
   if (!parts) return false;
   const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -77,8 +78,8 @@ assert.deepEqual(problems, [], problems.join('\n'));
 
 // Contrôle mathématique des paires d'associations : les deux étiquettes doivent vraiment être équivalentes.
 const numericLabel = (label) => {
-  const m = String(label).trim().match(/^([0-9][0-9 ]*(?:[.,][0-9]+)?)\s*([a-z²³]+)$/i);
-  return m ? { value: Number(m[1].replace(/ /g, '').replace(',', '.')), unit: m[2] } : null;
+  const m = String(label).trim().match(/^([0-9][0-9 '’]*(?:[.,][0-9]+)?)\s*([a-z²³]+)$/i);
+  return m ? { value: Number(m[1].replace(/[\s'’]/g, '').replace(',', '.')), unit: m[2] } : null;
 };
 function valueInBaseUnit(family, label) {
   const parsed = numericLabel(label);

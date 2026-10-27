@@ -1,3 +1,4 @@
+// Outil terminal : lit le secret fourni et n’affiche que son empreinte.
 import { hashTeacherPassword } from './password-hash';
 
 const password = process.env.TEACHER_PASSWORD_INPUT ?? process.argv.slice(2).join(' ');

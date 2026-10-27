@@ -5,10 +5,11 @@ catch { ts = require('/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescrip
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const sourceFiles = ['types.ts', 'curriculum.ts', 'question-engine.ts'].map((name) => path.join(root, 'src/lib/numeria', name));
+const sourceFiles = ['types.ts', 'curriculum.ts', 'question-engine.ts'].map((name) => path.join(root, 'src/lib/games/numeria', name));
 const tempDir = path.join(__dirname, '.compiled');
 fs.rmSync(tempDir, { recursive: true, force: true });
 fs.mkdirSync(tempDir, { recursive: true });
+fs.writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ type: 'commonjs' }));
 for (const file of sourceFiles) {
   const source = fs.readFileSync(file, 'utf8');
   const out = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;

@@ -1,9 +1,11 @@
+/** Ouvre SQLite et applique le schéma minimal requis par les services serveur. */
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import * as schema from './schema';
 
+// Tables créées au premier accès pour démarrer sans étape manuelle distincte.
 const FOUNDATION_SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS students (
   id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -76,9 +78,11 @@ INSERT OR IGNORE INTO classroom_schema_state (id, applied_at)
 VALUES ('foundation', strftime('%s', 'now') * 1000);
 `;
 
+// La connexion et l’état d’initialisation sont réutilisés par le processus serveur.
 let sqlite: Database.Database | undefined;
 let schemaReady = false;
 
+// DATABASE_URL peut remplacer le chemin SQLite local par défaut.
 export function getDatabasePath(): string {
   const configured = process.env.DATABASE_URL?.replace(/^file:/, '') ?? './data/classroom.sqlite';
   return resolve(process.cwd(), configured);

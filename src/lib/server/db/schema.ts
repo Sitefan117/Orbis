@@ -1,5 +1,7 @@
+/** Modèles Drizzle qui correspondent aux tables créées par le client SQLite. */
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
+// Élèves et résultats sont séparés afin qu’un bilan conserve son historique.
 export const students = sqliteTable(
   'students',
   {
@@ -63,6 +65,7 @@ export const worldProgress = sqliteTable(
   })
 );
 
+// Notes et sessions enseignant restent distinctes des résultats des jeux.
 export const teacherNotes = sqliteTable(
   'teacher_notes',
   {

@@ -1,35 +1,17 @@
 <script lang="ts">
+  // Gère les brouillons, exemples et aides à la rédaction du CV et des lettres.
   import { base } from '$app/paths';
+  import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { onMount } from 'svelte';
-  import { getStudentName, submitActivityResult } from '$lib/client/activity';
-
-  type Screen = 'home' | 'cv' | 'letter';
-  type CvFields = {
-    perso: string;
-    accroche: string;
-    ecole: string;
-    stages: string;
-    langues: string;
-    info: string;
-    hobbies: string;
-    references: string;
-  };
-  type LetterFields = {
-    exp: string;
-    dest: string;
-    date: string;
-    objet: string;
-    appel: string;
-    p1: string;
-    p2: string;
-    p3: string;
-    sig: string;
-  };
-
-  type ChatMessage = { role: 'user' | 'assistant'; content: string; context?: string };
+  import { getStudentName, studentStorageScope } from '$lib/orbis/identity/local-student';
+  import { submitActivityResult } from '$lib/orbis/results/client';
+  import type { ChatMessage, CvFields, LetterFields, PcpScreen } from '$lib/games/pcp/types';
 
   let studentName = 'Explorateur';
-  let screen: Screen = 'home';
+  let hasStudentProfile = false;
+  let legacyDraftAvailable = false;
+  let storageMessage = '';
+  let screen: PcpScreen = 'home';
   
   let letterTab: 'examples' | 'chatbot' = 'chatbot'; 
   let activeLetterExample: number | null = null;
@@ -84,12 +66,29 @@
     }
   ];
 
+  // Recharge le brouillon du profil actif sans mélanger les anciennes sauvegardes anonymes.
   onMount(() => {
-    studentName = getStudentName();
-    const savedCv = localStorage.getItem('pcp_cv_v1');
-    const savedLetter = localStorage.getItem('pcp_letter_v1');
-    if (savedCv) cv = { ...cv, ...(JSON.parse(savedCv) as Partial<CvFields>) };
-    if (savedLetter) letter = { ...letter, ...(JSON.parse(savedLetter) as Partial<LetterFields>) };
+    const activeName = getStudentName('');
+    hasStudentProfile = !!activeName;
+    studentName = activeName || 'Explorateur';
+
+    try {
+      const scope = studentStorageScope(activeName);
+      const cvKey = hasStudentProfile ? `pcp_cv_v2:${scope}` : 'pcp_cv_v1';
+      const letterKey = hasStudentProfile ? `pcp_letter_v2:${scope}` : 'pcp_letter_v1';
+      const savedCv = localStorage.getItem(cvKey);
+      const savedLetter = localStorage.getItem(letterKey);
+      if (savedCv) cv = { ...cv, ...(JSON.parse(savedCv) as Partial<CvFields>) };
+      if (savedLetter) letter = { ...letter, ...(JSON.parse(savedLetter) as Partial<LetterFields>) };
+
+      // Les anciennes sauvegardes n'indiquent pas leur propriétaire : ne pas
+      // les charger automatiquement dans le profil d'un élève.
+      legacyDraftAvailable = hasStudentProfile
+        && (localStorage.getItem('pcp_cv_v1') !== null || localStorage.getItem('pcp_letter_v1') !== null)
+        && !savedCv && !savedLetter;
+    } catch {
+      storageMessage = 'Un brouillon local n’a pas pu être lu. Il reste enregistré sur cet appareil.';
+    }
     
     setTimeout(() => {
       document.querySelectorAll('textarea').forEach(el => autoResize(el));
@@ -109,8 +108,30 @@
     element.style.height = element.scrollHeight + 'px';
   }
 
-  function saveCv() { localStorage.setItem('pcp_cv_v1', JSON.stringify(cv)); }
-  function saveLetter() { localStorage.setItem('pcp_letter_v1', JSON.stringify(letter)); }
+  // Les actions suivantes enregistrent localement, aident à rédiger ou exportent les documents.
+  function saveCv() {
+    try {
+      const key = hasStudentProfile
+        ? `pcp_cv_v2:${studentStorageScope(studentName)}`
+        : 'pcp_cv_v1';
+      localStorage.setItem(key, JSON.stringify(cv));
+      storageMessage = '';
+    } catch {
+      storageMessage = 'La sauvegarde locale du CV est indisponible.';
+    }
+  }
+
+  function saveLetter() {
+    try {
+      const key = hasStudentProfile
+        ? `pcp_letter_v2:${studentStorageScope(studentName)}`
+        : 'pcp_letter_v1';
+      localStorage.setItem(key, JSON.stringify(letter));
+      storageMessage = '';
+    } catch {
+      storageMessage = 'La sauvegarde locale de la lettre est indisponible.';
+    }
+  }
 
   function applySuggestion(text: string) {
     chatInput = text;
@@ -209,6 +230,7 @@ Consignes strictes :
   }
 </script>
 
+<!-- L’accueil choisit entre CV et lettre ; les vues suivantes affichent l’éditeur correspondant. -->
 <svelte:head>
   <title>Espace PCP / Orientation — Classe Numérique</title>
 </svelte:head>
@@ -223,11 +245,15 @@ Consignes strictes :
           <p class="brand-subtitle" style="margin: 0; font-size: 0.85rem; opacity: 0.8;">Dossier professionnel de {studentName}</p>
         </div>
       </div>
-      <a class="btn ghost" href="{base}/" style="color: white; border: 1px solid white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.25rem;">↩ QG</a>
+      <a class="btn ghost" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base} style="color: white; border: 1px solid white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.25rem;">↩ Jeux</a>
     </div>
   </header>
 
   <main class="main stack" style="max-width: 1200px; margin: 0 auto; padding: 1rem;">
+    {#if legacyDraftAvailable}
+      <p class="legacy-save-warning" role="status">Une ancienne sauvegarde PCP non attribuée est encore présente sur cet appareil. Elle n’est pas chargée dans ce profil pour éviter de montrer le travail d’un autre élève ; son contenu n’a pas été effacé.</p>
+    {/if}
+    {#if storageMessage}<p class="legacy-save-warning" role="status">{storageMessage}</p>{/if}
     {#if screen === 'home'}
       <section class="card stack center" style="max-width: 48rem; margin: 3rem auto; text-align: center; background: #f8fafc; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
         <h2>Préparation au Choix Professionnel</h2>
@@ -420,6 +446,17 @@ Consignes strictes :
 </div>
 
 <style>
+  .legacy-save-warning {
+    margin: 0.75rem auto;
+    max-width: 72rem;
+    padding: 0.85rem 1rem;
+    border: 2px solid #b45309;
+    border-radius: 0.5rem;
+    background: #fff7ed;
+    color: #713f12;
+    font-weight: 600;
+  }
+
   .pcp-field-clean {
     display: block;
     width: 100%;

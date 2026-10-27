@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { languageState } from '$lib/fractionstower2/persistence/LanguageManager';
-	import { SaveManager, type SaveData } from '$lib/fractionstower2/persistence/SaveManager';
+	// Tableau local historique : importe des sauvegardes Fraction Tower et produit un CSV.
+	import { languageState } from '$lib/games/fractionstower2/persistence/LanguageManager';
+	import { SaveManager, type SaveData } from '$lib/games/fractionstower2/persistence/SaveManager';
 
 	let isAuthenticated = $state(false);
 	let password = $state('');
@@ -8,6 +9,7 @@
 	
 	const TEACHER_PASSWORD = 'admin';
 
+	// Les actions importent des fichiers de sauvegarde, les regroupent et préparent l’export.
 	function login() {
 		if (password === TEACHER_PASSWORD) {
 			isAuthenticated = true;
@@ -82,6 +84,7 @@
 	}
 </script>
 
+<!-- Affiche la connexion puis les sauvegardes importées et leurs commandes d’export. -->
 {#if !isAuthenticated}
 	<div class="login-container">
 		<div class="login-card">
