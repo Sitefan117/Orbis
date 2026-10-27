@@ -30,7 +30,7 @@ Ce plan suit le dépôt audité le 25 octobre 2026. Les étapes qui touchent aux
 
 **Fait :** suppression des composants Fraction Tower vérifiés comme non référencés, d’un adaptateur Mesurovia inutilisé et d’une feuille de style racine non importée. L’archive Convertigo a été dédoublonnée : une copie reste dans `archives/`, hors du site publié. Les deux archives ZIP étaient identiques ; le fichier TAR ne contenait que des métadonnées AppleDouble.
 
-**À reprendre ensuite :** vérifier manuellement les parcours des activités sur les appareils de classe et découper, si utile, les écrans/styles encore longs de Race, Shift, Math Hunt, Numéria et Mesurovia.
+**Audit complémentaire :** les fichiers longs, leurs responsabilités et l’ordre conseillé de découpage sont consignés dans `ORBiS_AUDIT_FICHIERS_LONGS.md`. Le nouveau tableau enseignant a été extrait dans son propre composant. Les gros écrans de jeu seront découpés un par un, quand la séparation est utile et vérifiable.
 
 ### Refactor de l’arborescence et des moteurs
 
@@ -49,7 +49,7 @@ Les pages Calculs, Livrets, Race, Shift et Math Hunt appellent maintenant des mo
 - Proposition de connexion : l’enseignant crée les classes et comptes, remet un identifiant de classe et un code individuel, et peut réinitialiser les codes. Ce parcours doit être prototypé avant de fixer les détails techniques.
 - Le contrat documente les erreurs `offline`, `unauthorized`, `invalid-data`, `conflict`, `storage-unavailable` et `remote-unavailable`.
 
-**Résultat de l’étape :** proposition de données et contrat inscrits dans `ORBiS_ARCHITECTURE.md` et `ORBiS_DECISIONS_TECHNIQUES.md`. La création de comptes et le schéma SQL ne sont pas encore exécutés. Le pilote suivant doit vérifier le parcours de connexion et les permissions avec de faux comptes avant toute donnée réelle.
+**Résultat de l’étape :** proposition de données et contrat inscrits dans `ORBiS_ARCHITECTURE.md`, `ORBiS_DECISIONS_TECHNIQUES.md` et `ORBiS_SUIVI_PEDAGOGIQUE.md`. La création de comptes et le schéma SQL ne sont pas encore exécutés.
 
 ## 6. Préparer un pilote sans casser les jeux
 
@@ -57,6 +57,10 @@ Les pages Calculs, Livrets, Race, Shift et Math Hunt appellent maintenant des mo
 - Garder le format local comme source de secours et prévoir une migration qui copie et vérifie les données.
 - Séparer la sauvegarde d’état des résultats pédagogiques.
 - Vérifier les règles d’accès avec des comptes enseignant et élève de test avant de stocker des données réelles.
+
+**Réalisé localement :** les bilans compatibles sont conservés dans le navigateur et visibles sur `/teacher`, avec export CSV. Numéria et Fractions Tower continuent leurs sauvegardes historiques et déposent aussi une copie dans la file Orbis. Le client Supabase est prêt à vider cette file lorsqu’une vraie session sera fournie.
+
+**Uniformisation réalisée :** les jeux intégrés n’appellent plus directement les couches de stockage. Ils utilisent tous `recordGameActivity` et, lorsqu’ils ont une sauvegarde, `recordGameProgress`. Les noms des champs sont désormais identiques d’un jeu à l’autre ; seuls les détails réellement disponibles restent facultatifs.
 
 ## 7. Intégrer progressivement tous les jeux concernés
 

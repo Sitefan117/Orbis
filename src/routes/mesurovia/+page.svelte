@@ -17,9 +17,11 @@
   import { createBlankProfile, normalizeProfile, type HouseProgress, type Profile } from '$lib/games/mesurovia/progress';
   import ActivityIllustration from '$lib/games/mesurovia/ActivityIllustration.svelte';
   import GameObjectArt from '$lib/games/mesurovia/GameObjectArt.svelte';
+  import ConversionGuide from '$lib/games/mesurovia/ConversionGuide.svelte';
+  import { houseCurriculum, villageCurriculum } from '$lib/games/mesurovia/curriculum';
   import { coursePaths } from '$lib/orbis/catalog/course-paths';
 
-  type View = 'welcome' | 'character' | 'villages' | 'village' | 'room' | 'pretest' | 'howto';
+  type View = 'welcome' | 'games-catalog' | 'courses-catalog' | 'character' | 'villages' | 'village' | 'room' | 'pretest' | 'howto';
   type SessionMode = 'practice' | 'battle' | 'table' | 'detective' | 'clock' | 'builder' | 'memory' | 'race' | 'exam' | 'boss' | 'pretest';
   type Feedback = { kind: 'success' | 'hint' | 'worked' | 'notice'; title: string; text: string } | null;
   type Session = {
@@ -51,7 +53,29 @@
   };
 
   const STORAGE_KEY = 'mesurovia-orbis-v2';
-  const avatars = ['🧑‍🎒', '🧙🏽‍♀️', '🧑🏻‍🔬', '🧝🏾', '🧑🏼‍🚀', '🦊'];
+  const gameCatalog: Array<{ mode: SessionMode; title: string; description: string; image: string; target: [string, string] }> = [
+    { mode: 'practice', title: 'Le pupitre d’exercices', description: 'Des questions progressives sur les mesures travaillées dans la maison.', image: 'game-practice.png', target: ['sentiers-moulin', 'repères'] },
+    { mode: 'battle', title: 'Bataille des unités', description: 'Choisis la bonne carte pour faire avancer ton personnage.', image: 'game-battle.png', target: ['sentiers-moulin', 'repères'] },
+    { mode: 'memory', title: 'Associe les mesures', description: 'Toutes les cartes sont visibles : retrouve les écritures équivalentes.', image: 'game-pairs.png', target: ['sentiers-moulin', 'repères'] },
+    { mode: 'race', title: 'Course au trésor', description: 'Résous les défis et atteins le coffre avant le renard.', image: 'game-race.png', target: ['sentiers-moulin', 'repères'] },
+    { mode: 'table', title: 'Le Tableau magique', description: 'Place et lis les mesures dans le tableau de conversion.', image: 'game-table.png', target: ['sentiers-moulin', 'repères'] },
+    { mode: 'detective', title: 'Qui a raison ?', description: 'Quatre élèves répondent : vérifie les conversions et trouve la bonne proposition.', image: 'game-detective.png', target: ['clairieres-compas', 'repères'] },
+    { mode: 'clock', title: 'Répare l’horloge', description: 'Travaille les secondes, minutes, heures, jours et semaines.', image: 'game-clock.png', target: ['sentiers-moulin', 'durées'] },
+    { mode: 'builder', title: 'Le chantier des formes', description: 'Construis avec les aires, les capacités et les volumes.', image: 'game-builder.png', target: ['canaux-artisans', 'surfaces'] }
+  ];
+  const courseCatalog = [
+    { id: 'length', title: 'Longueurs', units: 'km · m · dm · cm · mm', description: 'Choisir, comparer et convertir des longueurs.', image: 'course-length.png', target: ['sentiers-moulin', 'longueurs'] },
+    { id: 'mass', title: 'Masses', units: 't · kg · g · mg', description: 'Peser, comparer et convertir les masses.', image: 'course-mass.png', target: ['sentiers-moulin', 'masses'] },
+    { id: 'capacity', title: 'Capacités', units: 'L · dL · cL · mL', description: 'Comprendre ce que contient un récipient et changer d’unité.', image: 'course-capacity.png', target: ['sentiers-moulin', 'masses'] },
+    { id: 'duration', title: 'Durées', units: 'h · min · s puis j · semaine · mois · année', description: 'Calculer des durées et utiliser les relations du calendrier.', image: 'course-duration.png', target: ['sentiers-moulin', 'durées'] },
+    { id: 'area', title: 'Aires', units: 'km² · ha · m² · cm² · mm²', description: 'Mesurer une surface et comprendre les facteurs au carré.', image: 'course-area.png', target: ['canaux-artisans', 'surfaces'] },
+    { id: 'volume', title: 'Volumes et litres', units: 'm³ · L (= dm³) · cm³ · mm³', description: 'Mesurer l’espace occupé et relier volume et capacité dans des situations guidées.', image: 'course-volume.png', target: ['hautes-terres', 'formes'] }
+  ];
+  const avatars = ['hero-1', 'hero-2', 'hero-3', 'hero-4', 'hero-5', 'hero-6'];
+  const legacyAvatars = ['🧑‍🎒', '🧙🏽‍♀️', '🧑🏻‍🔬', '🧝🏾', '🧑🏼‍🚀', '🦊'];
+  const avatarNames = ['Explorateur vert', 'Exploratrice bleue', 'Explorateur blond', 'Exploratrice rousse', 'Explorateur bleu', 'Exploratrice orange'];
+  function avatarIndex(avatar?: string): number { const modern = avatars.indexOf(avatar ?? ''); return modern >= 0 ? modern : Math.max(0, legacyAvatars.indexOf(avatar ?? '')); }
+  function avatarPosition(avatar?: string): number { return avatarIndex(avatar) * 20; }
   // Each illustrated map has its own hotspot positions so doors and residents remain clickable.
   const buildingLayouts: Record<string, Array<{ x: number; y: number }>> = {
     'sentiers-moulin': [{ x: 130, y: 72 }, { x: 375, y: 34 }, { x: 700, y: 68 }, { x: 815, y: 235 }, { x: 230, y: 235 }],
@@ -66,7 +90,6 @@
     'hautes-terres': [{ x: 320, y: 195, label: 'Elio' }, { x: 690, y: 215, label: 'Ariane' }, { x: 400, y: 435, label: 'Yann' }, { x: 810, y: 430, label: 'Nora' }]
   };
   const familyOrder = ['length', 'mass', 'capacity', 'duration', 'area', 'volume'];
-  const familyEmoji: Record<string, string> = { length: '📏', mass: '⚖️', capacity: '🫗', duration: '⏱️', area: '🟩', volume: '🧊' };
   const villageArtwork: Record<string, string> = {
     'sentiers-moulin': `${base}/images/mesurovia/village-hero.jpg`,
     'clairieres-compas': `${base}/images/mesurovia/regions/clairieres-compas.jpg`,
@@ -121,11 +144,14 @@
   let pretestAfterCharacterCreation = false;
   let useOnscreenKeyboard = false;
   let memoryFlipTimer: number | null = null;
+  let conversionGuideOpen = false;
+  let lastScrollY = 0;
+  let headerHidden = false;
 
   const howToSlides = [
     { title: '1. Explore le village', text: 'Clique sur le sol : ton personnage court jusque-là. Clique sur une maison pour entrer. Tous les villages et toutes les maisons sont accessibles dans cette version.' },
-    { title: '2. Écoute le maître', text: 'Chaque maison propose quatre petites explications. Après chacune, réponds à une question pour passer à la diapositive suivante.' },
-    { title: '3. Entraîne-toi en jouant', text: 'Choisis un jeu : Memory de mesures, course au trésor, duel de cartes, enquête ou défi de construction. Tu peux toucher les éléments à l’écran ; le jeu t’aide sans chronomètre.' },
+    { title: '2. Lis les explications', text: 'Chaque maison propose quatre petites explications. Après chacune, réponds à une question pour passer à la diapositive suivante.' },
+    { title: '3. Entraîne-toi en jouant', text: 'Choisis un jeu : appariement de mesures, course au trésor, duel de cartes, enquête ou défi de construction. Tu peux toucher les éléments à l’écran ; le jeu t’aide sans chronomètre.' },
     { title: '4. Valide ton blason', text: 'L’épreuve comporte dix questions. Il faut au moins 8 réponses justes sur 10. En cas d’échec, révise et recommence : aucun point ni badge ne sera retiré.' }
   ];
 
@@ -144,6 +170,8 @@
   $: clockGameAvailable = house?.id === 'durées';
 
   onMount(() => {
+    const onScroll = () => { const next = window.scrollY; headerHidden = view === 'room' && next > 100 && next > lastScrollY; lastScrollY = next; };
+    window.addEventListener('scroll', onScroll, { passive: true });
     useOnscreenKeyboard = (typeof window !== 'undefined' && (window.matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints ?? 0) > 1));
     let migratedLegacy = false;
     try {
@@ -187,6 +215,7 @@
       saveMessage = 'La sauvegarde existante n’a pas pu être lue. Tu peux créer un nouveau profil.';
     }
     ready = true;
+    return () => window.removeEventListener('scroll', onScroll);
   });
 
   function persist() {
@@ -212,9 +241,9 @@
 
   function setHouseProgress(villageId: string, houseId: string, patch: Partial<HouseProgress>) {
     if (!profile) return;
-    profile.houses[villageId] ??= {};
     const old = getHouseProgress(villageId, houseId);
-    profile.houses[villageId][houseId] = { ...old, ...patch };
+    profile = { ...profile, houses: { ...profile.houses, [villageId]: { ...(profile.houses[villageId] ?? {}), [houseId]: { ...old, ...patch } } } };
+    if (villageId === currentVillageId && houseId === currentHouseId) houseProgress = profile.houses[villageId][houseId];
     persist();
   }
 
@@ -301,24 +330,6 @@
     session = null;
     currentFeedback = null;
     sessionResult = null;
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-  }
-
-  function speakText(text: string) {
-    // Lecture vocale facultative ; elle dépend des voix installées dans le navigateur/appareil.
-    if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === 'undefined') {
-      saveMessage = 'La lecture vocale n’est pas disponible dans ce navigateur. Le texte reste affiché.';
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text.replace(/<[^>]*>/g, ' '));
-    utterance.lang = 'fr-CH';
-    utterance.rate = 0.88;
-    window.speechSynthesis.speak(utterance);
-  }
-
-  function stopSpeech() {
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }
 
   function openHouse(h: any) {
@@ -343,6 +354,32 @@
     // Une maison déjà étudiée revient directement au choix des activités.
     view = progress.theoryDone ? 'room' : 'room';
     persist();
+  }
+
+  function openCatalogGame(item: (typeof gameCatalog)[number]) {
+    if (!profile) {
+      saveMessage = 'Crée ton personnage avant de lancer un jeu Mesurovia.';
+      view = 'character';
+      return;
+    }
+    const [villageId, houseId] = item.target;
+    currentVillageId = villageId;
+    const targetHouse = engine.listHouses(villageId).find((candidate: any) => candidate.id === houseId);
+    if (!targetHouse) return;
+    openHouse(targetHouse);
+    startSession(item.mode);
+  }
+
+  function openCatalogCourse(item: (typeof courseCatalog)[number]) {
+    if (!profile) {
+      saveMessage = 'Crée ton personnage pour entrer dans la maison de ce cours.';
+      view = 'character';
+      return;
+    }
+    const [villageId, houseId] = item.target;
+    currentVillageId = villageId;
+    const targetHouse = engine.listHouses(villageId).find((candidate: any) => candidate.id === houseId);
+    if (targetHouse) openHouse(targetHouse);
   }
 
   function closeHouse() {
@@ -398,7 +435,7 @@
   function flipMemoryCard(cardId: string) {
     if (!session || session.mode !== 'memory' || session.memoryOpenIds.length >= 2) return;
     const chosen = session.memoryCards.find((card) => card.id === cardId);
-    if (!chosen || chosen.revealed || chosen.matched) return;
+    if (!chosen || chosen.matched || session.memoryOpenIds.includes(cardId)) return;
 
     clearMemoryFlipTimer();
     session.gameEvent = null;
@@ -438,7 +475,6 @@
         memoryFlipTimer = null;
         return;
       }
-      session.memoryCards = session.memoryCards.map((card) => session?.memoryOpenIds.includes(card.id) ? { ...card, revealed: false } : card);
       session.memoryOpenIds = [];
       session.gameEvent = null;
       memoryFlipTimer = null;
@@ -479,6 +515,7 @@
       else if (mode === 'clock') format = i % 2 === 0 ? 'match' : 'order';
       else if (mode === 'builder') format = i % 2 === 0 ? 'number' : 'choice';
       else if (mode === 'pretest') format = i % 2 === 0 ? 'choice' : 'number';
+      else if (mode === 'practice' && currentVillageId === 'sentiers-moulin' && i < 6 && ['length', 'mass', 'capacity'].includes(family)) format = 'table';
       else {
         const available = engine.availableFormats(family).filter((f: string) => f !== 'table' || ['length', 'mass', 'capacity'].includes(family));
         format = available.includes(standardFormats[i % standardFormats.length])
@@ -495,7 +532,7 @@
     const memoryPairs = mode === 'memory'
       ? createMemoryPairs(engine, { villageId: currentVillageId, familyOrder, houseFamilies: house?.families, profile })
       : [];
-    const total = mode === 'memory' ? memoryPairs.length : mode === 'race' ? 8 : mode === 'pretest' ? 18 : mode === 'practice' ? 8 : mode === 'battle' || mode === 'table' || mode === 'detective' ? 5 : mode === 'clock' || mode === 'builder' ? 4 : mode === 'exam' ? 10 : 12;
+    const total = mode === 'memory' ? memoryPairs.length : mode === 'race' ? 8 : mode === 'pretest' ? 18 : mode === 'practice' ? 10 : mode === 'table' ? 10 : mode === 'battle' || mode === 'detective' ? 5 : mode === 'clock' || mode === 'builder' ? 4 : mode === 'exam' ? 10 : 12;
     session = {
       mode, questions: mode === 'memory' ? memoryPairs : createQuestionList(mode, total), index: 0, correct: 0, firstTryCorrect: 0,
       wrong: 0, attempts: 0, helped: false, answerStatus: null, selected: '', typed: '',
@@ -706,11 +743,11 @@
       if (passed) {
         setHouseProgress(currentVillageId, currentHouseId, { theoryDone: true, trainingDone: true, bestScore: Math.max(score, houseProgress.bestScore) });
         awardBadge(`${currentVillageId}:${currentHouseId}:training`);
-        const rewardLabels: Record<string, string> = { battle: 'Duel des unités terminé', table: 'Coffre du tableau magique ouvert', detective: 'Enquête des unités terminée', clock: 'Horloge réparée', builder: 'Chantier terminé', memory: 'Trésor du Memory retrouvé', race: 'Course au trésor gagnée' };
+        const rewardLabels: Record<string, string> = { battle: 'Duel des unités terminé', table: 'Coffre du tableau magique ouvert', detective: 'Enquête des unités terminée', clock: 'Horloge réparée', builder: 'Chantier terminé', memory: 'Appariement réussi', race: 'Course au trésor gagnée' };
         addXP(mode === 'practice' ? 15 : 20, mode === 'practice' ? 'Pupitre réussi' : (rewardLabels[mode] ?? 'Mission terminée'));
       }
       const gameTitle: Record<string, string> = { practice: 'Entraînement réussi !', battle: 'Duel terminé !', table: 'Coffre ouvert !', detective: 'Enquête terminée !', clock: 'Horloge réparée !', builder: 'Chantier terminé !', memory: 'Trésor retrouvé !', race: 'Course au trésor terminée !' };
-      const gameDetail: Record<string, string> = { practice: 'La table d’examen est prête. Tu peux aussi rejouer pour t’entraîner.', battle: 'Tes cartes ont fait avancer le duel. Rejoue pour tenter un meilleur score.', table: 'Tu as utilisé le tableau de conversion pour ouvrir le coffre.', detective: 'Tu as examiné les indices et cherché les bonnes conversions.', clock: 'Tu as remis les mesures de temps dans le bon ordre.', builder: 'Chaque réponse juste a ajouté une pièce au chantier.', memory: `Tu as retrouvé ${score} paires en ${session.memoryMoves} coups. Tu peux rebattre les cartes et tenter de faire moins de coups.`, race: `Tu as avancé de ${session.raceSteps} cases contre ${session.rivalSteps} pour le renard. Tu as trouvé ${score} réponses justes sur ${total}.` };
+      const gameDetail: Record<string, string> = { practice: 'La table d’examen est prête. Tu peux aussi rejouer pour t’entraîner.', battle: 'Tes cartes ont fait avancer le duel. Rejoue pour tenter un meilleur score.', table: 'Tu as utilisé le tableau de conversion pour ouvrir le coffre.', detective: 'Tu as examiné les indices et cherché les bonnes conversions.', clock: 'Tu as remis les mesures de temps dans le bon ordre.', builder: 'Chaque réponse juste a ajouté une pièce au chantier.', memory: `Tu as associé ${score} paires en ${session.memoryMoves} essais. Tu peux recommencer avec de nouvelles mesures.`, race: `Tu as avancé de ${session.raceSteps} cases contre ${session.rivalSteps} pour le renard. Tu as trouvé ${score} réponses justes sur ${total}.` };
       const title = mode === 'race' && !passed ? 'Le renard a trouvé le trésor !' : passed ? (gameTitle[mode] || 'Activité réussie !') : 'Encore un peu de pratique';
       sessionResult = { mode, passed, score, total, title, detail: passed || mode === 'race' ? gameDetail[mode] : 'Tu peux recommencer sans perdre de points. Regarde les aides, puis essaie une nouvelle série.' };
       session = null;
@@ -824,22 +861,25 @@
   <main class="loading-screen"><p>Préparation du village…</p></main>
 {:else}
   <main class:large-text={largeText} class:high-contrast={highContrast} class:reduced-motion={reduceMotion} class="mesurovia-shell">
-    <header class="game-header">
+    <header class="game-header" class:header-hidden={headerHidden}>
       <button class="brand-button" onclick={goHome} aria-label="Retour à l'accueil de Mesurovia">
         <span class="brand-icon">✦</span><span><strong>MESUROVIA</strong><small>La quête des mesures</small></span>
       </button>
       <div class="header-player" aria-live="polite">
         <a class="orbis-return-link" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>↩ Retour aux jeux</a>
-        <span class="player-chip">{profileLabel}</span>
+        <span class="player-chip"><span class="avatar-portrait" style={`--avatar-pos:${avatarPosition(profile?.avatar)}%;background-image:url('${base}/images/mesurovia/hero-atlas.png')`} aria-hidden="true"></span>{profile?.name ?? 'Aventurier'}</span>
         <span class="xp-chip">⭐ {profile?.xp ?? 0} XP</span>
         <span class="crest-chip">🏅 {profile?.badges.length ?? 0} blasons</span>
       </div>
       <div class="header-menu-wrap">
+        <button class="secondary-button guide-toggle" onclick={() => (conversionGuideOpen = true)}>Tableau de conversion</button>
         <button class="menu-toggle" onclick={() => (selectedMenu = !selectedMenu)} aria-expanded={selectedMenu}>☰ Menu</button>
         {#if selectedMenu}
           <nav class="menu-popover" aria-label="Menu de l'aventure">
             <button onclick={() => { view = 'character'; newName = profile?.name ?? newName; chosenAvatar = profile?.avatar ?? chosenAvatar; selectedMenu = false; }}>🧑 Créer mon personnage</button>
             <button onclick={() => { selectedMenu = false; resumeAdventure(); }}>▶ Reprendre l’aventure</button>
+            <button onclick={() => { selectedMenu = false; view = 'games-catalog'; }}>Jeux de Mesurovia</button>
+            <button onclick={() => { selectedMenu = false; view = 'courses-catalog'; }}>Cours de Mesurovia</button>
             <button onclick={() => { selectedMenu = false; startHowTo(); }}>📖 Comment jouer ?</button>
             <button onclick={exportSave} disabled={!profile}>⬇ Exporter ma sauvegarde</button>
             <label class="file-import">⬆ Importer une sauvegarde<input type="file" accept="application/json,.json" onchange={importSave} /></label>
@@ -862,12 +902,14 @@
         <div class="welcome-copy">
           <p class="eyebrow">UNE AVENTURE DE MESURE</p>
           <h1>Les mesures ont perdu leur magie.</h1>
-          <p class="lead">Les chemins sont confus, les ateliers sont à l’arrêt et le château a perdu ses blasons. Explore les villages, écoute les maîtres et redonne leur pouvoir aux unités.</p>
+          <p class="lead">Les chemins sont confus, les ateliers sont à l’arrêt et le château a perdu ses blasons. Explore les villages, lis les conseils des maîtres et redonne leur pouvoir aux unités.</p>
           <div class="welcome-actions">
             <button class="primary-button large-button" onclick={() => { view = 'character'; selectedMenu = false; }}>✨ Créer mon personnage</button>
             <button class="secondary-button large-button" onclick={resumeAdventure}>▶ Reprendre l’aventure</button>
           </div>
           <div class="welcome-side-actions">
+            <button class="secondary-button orbis-shortcut" onclick={() => (view = 'games-catalog')}>Jeux de Mesurovia</button>
+            <button class="secondary-button orbis-shortcut" onclick={() => (view = 'courses-catalog')}>Cours de Mesurovia</button>
             <button class="text-button" onclick={startHowTo}>Comment jouer ? <span>→</span></button>
             <button class="text-button" onclick={beginPretest}>🧭 Faire le bilan de départ <span>→</span></button>
           </div>
@@ -875,11 +917,37 @@
         </div>
       </section>
 
+    {:else if view === 'games-catalog'}
+      <section class="mesurovia-catalog-page">
+        <div class="catalog-page-heading"><button class="text-button" onclick={goHome}>← Accueil de Mesurovia</button><p class="eyebrow">JEUX DE MESUROVIA</p><h1>Choisis une façon de t’entraîner</h1><p>Chaque jeu reprend les objectifs et les unités des maisons de Mesurovia. Le jeu t’emmène directement dans la maison adaptée.</p></div>
+        <div class="mesurovia-catalog-grid">
+          {#each gameCatalog as item}
+            <article class="mesurovia-catalog-card">
+              <button class="catalog-image-button" onclick={() => openCatalogGame(item)} aria-label={`Lancer ${item.title}`}><img src={`${base}/images/mesurovia/catalog/${item.image}`} alt="" loading="lazy" /></button>
+              <div><p class="eyebrow">JEU</p><h2>{item.title}</h2><p>{item.description}</p><button class="primary-button" onclick={() => openCatalogGame(item)}>Lancer le jeu →</button></div>
+            </article>
+          {/each}
+        </div>
+      </section>
+
+    {:else if view === 'courses-catalog'}
+      <section class="mesurovia-catalog-page">
+        <div class="catalog-page-heading"><button class="text-button" onclick={goHome}>← Accueil de Mesurovia</button><p class="eyebrow">COURS DE MESUROVIA</p><h1>Les grandeurs étudiées</h1><p>Cette zone rassemble les cours intégrés aux maisons. Elle est prête à recevoir ensuite des leçons autonomes pour chaque thème.</p></div>
+        <div class="mesurovia-catalog-grid course-catalog-grid">
+          {#each courseCatalog as item}
+            <article class="mesurovia-catalog-card course-catalog-card">
+              <button class="catalog-image-button" onclick={() => openCatalogCourse(item)} aria-label={`Ouvrir le cours ${item.title}`}><img src={`${base}/images/mesurovia/catalog/${item.image}`} alt="" loading="lazy" /></button>
+              <div><p class="eyebrow">COURS · GRANDEURS ET MESURES</p><h2>{item.title}</h2><p class="catalog-units">{item.units}</p><p>{item.description}</p><span class="course-zone-status">Cours intégré aux maisons · page autonome à venir</span><button class="primary-button" onclick={() => openCatalogCourse(item)}>Voir la maison associée →</button></div>
+            </article>
+          {/each}
+        </div>
+      </section>
+
     {:else if view === 'character'}
       <section class="slide-stage character-stage">
         <div class="stage-topline"><span class="step-counter">ÉTAPE 1 / 1</span><button class="text-button" onclick={goHome}>← Retour à l’accueil</button></div>
         <article class="slide-card character-slide">
-          <div class="slide-illustration avatar-big">{chosenAvatar}</div>
+          <div class="slide-illustration avatar-big"><span class="avatar-full" style={`--avatar-pos:${avatarPosition(chosenAvatar)}%;background-image:url('${base}/images/mesurovia/hero-atlas.png')`} aria-label={avatarNames[avatarIndex(chosenAvatar)]} role="img"></span></div>
           <div class="slide-main">
             <p class="eyebrow">CRÉATION DU PERSONNAGE</p>
             <h1>Ton personnage</h1>
@@ -890,7 +958,7 @@
             <p class="field-label">Choisis ton avatar</p>
             <div class="avatar-picker" aria-label="Choix de l'avatar">
               {#each avatars as avatar}
-                <button class:chosen-avatar={chosenAvatar === avatar} class="avatar-choice" aria-pressed={chosenAvatar === avatar} onclick={() => (chosenAvatar = avatar)}>{avatar}</button>
+                <button class:chosen-avatar={avatarIndex(chosenAvatar) === avatarIndex(avatar)} class="avatar-choice" aria-label={avatarNames[avatarIndex(avatar)]} aria-pressed={avatarIndex(chosenAvatar) === avatarIndex(avatar)} onclick={() => (chosenAvatar = avatar)}><span class="avatar-full" style={`--avatar-pos:${avatarPosition(avatar)}%;background-image:url('${base}/images/mesurovia/hero-atlas.png')`}></span></button>
               {/each}
             </div>
             <button class="primary-button large-button" onclick={createCharacter}>Créer et entrer dans l’aventure →</button>
@@ -912,6 +980,7 @@
               <span class="region-number">RÉGION {i + 1} · OUVERTE</span>
               <strong>{village.name}</strong>
               <span>{village.subtitle}</span>
+              <span class="village-objective"><b>Objectif :</b> {villageCurriculum[village.id]?.objective}</span>
               <span class="village-card-footer">Explorer le village <b>→</b></span>
             </button>
           {/each}
@@ -924,7 +993,7 @@
     {:else if view === 'village'}
       <section class="village-page">
         <div class="village-topbar">
-          <div><button class="text-button" onclick={() => (view = 'villages')}>← Choisir une autre région</button><p class="eyebrow">RÉGION OUVERTE · {currentVillage.name}</p><h1>{currentVillage.name}</h1><p>{currentVillage.story}</p></div>
+          <div><button class="text-button" onclick={() => (view = 'villages')}>← Choisir une autre région</button><p class="eyebrow">RÉGION OUVERTE · {currentVillage.name}</p><h1>{currentVillage.name}</h1><p>{currentVillage.story}</p><div class="village-objective-panel"><strong>{villageCurriculum[currentVillageId]?.code}</strong><span><b>Objectif du village :</b> {villageCurriculum[currentVillageId]?.objective}</span>{#each villageCurriculum[currentVillageId]?.priorities ?? [] as priority}<small>{priority}</small>{/each}</div></div>
           <img class="village-region-art" src={villageArtwork[currentVillageId] ?? villageArtwork['sentiers-moulin']} alt="" aria-hidden="true" loading="lazy" />
           <div class="village-side-panel"><span>🏠 {mapProgress}/5 maisons validées</span><span>✨ {profile?.xp ?? 0} XP</span><button class="secondary-button" onclick={() => downloadCourse(currentVillageId)}>📖 Cahier à imprimer</button><button class="primary-button" onclick={beginBoss}>🏰 Défi du village</button></div>
         </div>
@@ -980,7 +1049,7 @@
                 </g>
                 <rect class="house-hit-area" x="-8" y="-15" width="126" height="108" fill="transparent" pointer-events="all" />
                 <rect x="24" y="-10" width="62" height="20" rx="4" fill="#fff6dc" fill-opacity=".94" stroke="#8e6748" stroke-width="2"/><text x="55" y="5" text-anchor="middle" class="building-number">{i + 1}</text>
-                <text x="55" y="106" text-anchor="middle" class="building-label">{h.title.replace('La Maison des ', '').replace('L’Atelier des ', '').replace('La Halle des ', '').replace('Le Bureau des ', '').replace('La Cour des ', '').replace('L’Horloge du ', '')}</text>
+                <foreignObject x="-25" y="94" width="160" height="42"><div xmlns="http://www.w3.org/1999/xhtml" class="house-nameplate">{h.title}</div></foreignObject>
                 {#if getHouseProgress(currentVillageId, h.id).examPassed}<g transform="translate(96 -7)"><circle r="13" fill="#f6d575" stroke="#fff3bb" stroke-width="3"/><text x="0" y="5" text-anchor="middle" class="badge-mark">✓</text></g>{/if}
               </g>
             {/each}
@@ -988,14 +1057,15 @@
             <!-- Personnages non-joueurs : cliquer déclenche une courte blague de papa. -->
             {#each residentsByVillage[currentVillageId] ?? residentsByVillage['sentiers-moulin'] as npc, i}
               <g transform={`translate(${npc.x} ${npc.y})`} class="npc-sprite" style={`--idle-delay:${i * 220}ms`} role="button" tabindex="0" aria-label={`Parler à ${npc.label}`} onclick={(event) => { event.stopPropagation(); chooseNpcJoke(npc); }} onkeydown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.stopPropagation(); chooseNpcJoke(npc); } }}>
-                <g class="npc-idle" aria-hidden="true"><ellipse cx="0" cy="20" rx="20" ry="7" fill="#52774d" opacity=".4"/><rect x="-12" y="-2" width="24" height="24" rx="5" fill="#d86e75" stroke="#704d38" stroke-width="3"/><rect x="-15" y="-19" width="30" height="25" rx="7" fill="#f2caa0" stroke="#704d38" stroke-width="3"/><rect x="-14" y="-23" width="28" height="9" rx="4" fill="#6b8551" stroke="#704d38" stroke-width="3"/><circle cx="-5" cy="-8" r="2" fill="#563d30"/><circle cx="5" cy="-8" r="2" fill="#563d30"/><path d="M-4 -1q4 4 8 0" fill="none" stroke="#8f5146" stroke-width="2"/></g>
+                <g class="npc-idle" aria-hidden="true"><ellipse cy="24" rx="18" ry="6" fill="#52774d" opacity=".4"/><svg x="-20" y="-32" width="40" height="57" viewBox="0 0 362 724" overflow="hidden"><image href={`${base}/images/mesurovia/hero-atlas.png`} x={-(i % 6) * 362} y="0" width="2172" height="724" /></svg></g>
                 <circle class="npc-hit-area" cx="0" cy="0" r="30" fill="transparent" pointer-events="all" />
-                <text x="0" y="42" text-anchor="middle" class="npc-label">{npc.label}</text>
+                <rect x="-28" y="-49" width="56" height="17" rx="7" fill="#fff6dc" fill-opacity=".95" stroke="#8e6748" stroke-width="1.5" />
+                <text x="0" y="-37" text-anchor="middle" class="npc-label">{npc.label}</text>
               </g>
             {/each}
             <!-- Personnage principal ; l'attribut transform anime la course au clic, sans clavier directionnel. -->
             <g transform={`translate(${mapPlayer.x} ${mapPlayer.y})`} class="player-sprite" aria-label="Ton personnage">
-              <g class="player-idle"><ellipse cy="21" rx="18" ry="7" fill="#53764b" opacity=".5"/><rect x="-11" y="-1" width="22" height="24" rx="5" fill="#6c88cc" stroke="#354e8b" stroke-width="3"/><rect x="-14" y="-20" width="28" height="25" rx="8" fill="#f0c49a" stroke="#674a3b" stroke-width="3"/><rect x="-13" y="-25" width="26" height="10" rx="4" fill="#bd764b" stroke="#674a3b" stroke-width="3"/><circle cx="-5" cy="-9" r="2" fill="#3f3029"/><circle cx="5" cy="-9" r="2" fill="#3f3029"/><rect x="-15" y="18" width="11" height="8" rx="2" fill="#5d4839"/><rect x="4" y="18" width="11" height="8" rx="2" fill="#5d4839"/></g>
+              <g class="player-idle"><ellipse cy="25" rx="20" ry="7" fill="#53764b" opacity=".5"/><svg x="-24" y="-52" width="48" height="78" viewBox="0 0 362 724" overflow="hidden"><image href={`${base}/images/mesurovia/hero-atlas.png`} x={-avatarIndex(profile?.avatar) * 362} y="0" width="2172" height="724" /></svg></g>
             </g>
             {#if npcBubble}
               <g transform={`translate(${Math.min(730, Math.max(5, npcBubble.x - 120))} ${Math.max(55, npcBubble.y - 62)})`} pointer-events="none"><rect width="260" height="58" rx="8" fill="#fff8e9" stroke="#7a5a3c" stroke-width="4"/><path d="M100 58l14 12 8-12" fill="#fff8e9" stroke="#7a5a3c" stroke-width="3"/><foreignObject x="10" y="6" width="240" height="48"><div xmlns="http://www.w3.org/1999/xhtml" class="joke-text">{npcBubble.text}</div></foreignObject></g>
@@ -1007,33 +1077,33 @@
 
     {:else if view === 'room'}
       <section class="classroom-page">
-        <div class="room-header"><div><button class="text-button" onclick={closeHouse}>← Retour au village</button><p class="eyebrow">{currentVillage.name} · {house ? `MAISON ${house.index + 1}` : 'DÉFI DU CHÂTEAU'}</p><h1>{house?.title ?? 'Défi du village'}</h1><p>{house?.subtitle ?? 'Une grande épreuve de mesures à l’échelle du village.'}</p></div><div class="room-header-actions"><button class="secondary-button" onclick={() => downloadCourse(currentVillageId)}>📖 Cahier élève</button><button class="secondary-button" onclick={exportSave}>💾 Sauvegarder</button></div></div>
+        <div class="room-header"><div><button class="text-button" onclick={closeHouse}>← Retour au village</button><p class="eyebrow">{currentVillage.name} · {house ? `MAISON ${house.index + 1}` : 'DÉFI DU CHÂTEAU'}</p><h1>{house?.title ?? 'Défi du village'}</h1><p>{house?.subtitle ?? 'Une grande épreuve de mesures à l’échelle du village.'}</p>{#if house}<p class="curriculum-code">{houseCurriculum[currentVillageId]?.[house.id]?.code}</p><p class="house-objective"><strong>Objectif de la maison :</strong> {houseCurriculum[currentVillageId]?.[house.id]?.objective}</p>{/if}</div><div class="room-header-actions"><button class="secondary-button" onclick={() => downloadCourse(currentVillageId)}>Cahier élève</button><button class="secondary-button" onclick={exportSave}>Sauvegarder</button></div></div>
         <div class="classroom-scene">
-          <div class="classroom-wall"><div class="classroom-clock">10:10</div><div class="classroom-window"><span></span><span></span><span></span><span></span></div><div class="chalkboard"><div class="chalkboard-heading">{session ? (session.mode === 'exam' ? 'TABLE D’EXAMEN' : session.mode === 'boss' ? 'DÉFI DU VILLAGE' : session.mode === 'memory' ? 'MEMORY DES MESURES' : session.mode === 'race' ? 'COURSE AU TRÉSOR' : session.mode === 'battle' ? 'DUEL DES UNITÉS' : session.mode === 'table' ? 'TABLEAU MAGIQUE' : session.mode === 'detective' ? 'ENQUÊTE DES UNITÉS' : session.mode === 'clock' ? 'HORLOGE DU MOULIN' : session.mode === 'builder' ? 'CHANTIER DES FORMES' : session.mode === 'pretest' ? 'BILAN DE DÉPART' : 'PUPITRE D’ENTRAÎNEMENT') : sessionResult ? 'BILAN DE LA MISSION' : houseProgress.theoryDone ? 'CHOISIS TON ACTIVITÉ' : `LEÇON ${lessonIndex + 1} · ${currentLesson?.title ?? ''}`}</div><div class="chalkboard-small">1 grandeur · 1 méthode · 1 étape à la fois</div><div class="chalk-marks"><span></span><span></span><span></span><span></span></div></div><div class="teacher-desk"></div></div>
+          <div class="classroom-wall"><div class="classroom-clock">10:10</div><div class="classroom-window"><span></span><span></span><span></span><span></span></div><div class="chalkboard"><div class="chalkboard-heading">{session ? (session.mode === 'exam' ? 'TABLE D’EXAMEN' : session.mode === 'boss' ? 'DÉFI DU VILLAGE' : session.mode === 'memory' ? 'ASSOCIE LES MESURES' : session.mode === 'race' ? 'COURSE AU TRÉSOR' : session.mode === 'battle' ? 'DUEL DES UNITÉS' : session.mode === 'table' ? 'TABLEAU MAGIQUE' : session.mode === 'detective' ? 'ENQUÊTE DES UNITÉS' : session.mode === 'clock' ? 'HORLOGE DU MOULIN' : session.mode === 'builder' ? 'CHANTIER DES FORMES' : session.mode === 'pretest' ? 'BILAN DE DÉPART' : 'PUPITRE D’ENTRAÎNEMENT') : sessionResult ? 'BILAN DE LA MISSION' : houseProgress.theoryDone ? 'CHOISIS TON ACTIVITÉ' : `LEÇON ${lessonIndex + 1} · ${currentLesson?.title ?? ''}`}</div><div class="chalkboard-small">1 grandeur · 1 méthode · 1 étape à la fois</div><div class="chalk-marks"><span></span><span></span><span></span><span></span></div></div><div class="teacher-desk"></div></div>
           <div class="teacher-character"><img class="teacher-guide" src={`${base}/images/mesurovia/maitre-mesuro.png`} alt="" aria-hidden="true" /><span class="teacher-label">Maître Mesuro</span></div>
           <img class="classroom-students" src={`${base}/images/mesurovia/eleves.png`} alt="" aria-hidden="true" loading="lazy" />
         </div>
 
         {#if sessionResult}
-        <article class="slide-card result-slide" role="status"><div class="result-icon">{sessionResult.passed ? '🏅' : '📘'}</div><div><p class="eyebrow">BILAN DE L’ACTIVITÉ</p><h2>{sessionResult.title}</h2><p class="score-line">Résultat : <strong>{sessionResult.score}/{sessionResult.total}</strong></p><p>{sessionResult.detail}</p><div class="slide-actions"><button class="primary-button" onclick={closeResult}>Continuer</button>{#if sessionResult.total === 10 && !sessionResult.passed}<button class="secondary-button" onclick={() => startSession('exam')}>Réessayer avec de nouvelles questions</button>{/if}{#if sessionResult.total === 8 && !sessionResult.passed}<button class="secondary-button" onclick={() => startSession('practice')}>Recommencer l’entraînement</button>{/if}{#if ['battle', 'table', 'detective', 'clock', 'builder', 'memory', 'race'].includes(sessionResult.mode ?? '')}<button class="secondary-button" onclick={() => startSession(sessionResult?.mode as SessionMode)}>Rejouer</button>{/if}</div></div></article>
+        <article class="slide-card result-slide" role="status"><div class="result-icon">{sessionResult.passed ? '✓' : '↻'}</div><div><p class="eyebrow">BILAN DE L’ACTIVITÉ</p><h2>{sessionResult.title}</h2><p class="score-line">Résultat : <strong>{sessionResult.score}/{sessionResult.total}</strong></p><p>{sessionResult.detail}</p><div class="slide-actions"><button class="primary-button" onclick={closeResult}>Choisir une autre mission</button><button class="secondary-button" onclick={closeHouse}>Explorer le village</button>{#if !sessionResult.passed}<button class="secondary-button" onclick={() => startSession(sessionResult?.mode ?? 'practice')}>Réessayer</button>{/if}{#if ['battle', 'table', 'detective', 'clock', 'builder', 'memory', 'race'].includes(sessionResult.mode ?? '')}<button class="secondary-button" onclick={() => startSession(sessionResult?.mode as SessionMode)}>Rejouer</button>{/if}</div></div></article>
 
         {:else if session && activeQuestion}
           {#if session.mode === 'memory'}
             <section class="memory-game-panel" aria-labelledby="memory-title">
               <div class="memory-game-heading">
-                <div><p class="eyebrow">JEU DE CARTES · ÉQUIVALENCES</p><h2 id="memory-title">Memory des mesures</h2><p>Retourne deux cartes. Si elles disent la même mesure, elles restent face visible !</p></div>
-                <div class="memory-scoreboard" aria-live="polite"><span>✨ {session.correct}/{session.questions.length} paires</span><span>🔁 {session.memoryMoves} coups</span></div>
+                <div><p class="eyebrow">JEU DE CARTES · ÉQUIVALENCES</p><h2 id="memory-title">Associe les mesures</h2><p>Toutes les cartes sont visibles. Choisis les deux mesures équivalentes.</p></div>
+                <div class="memory-scoreboard" aria-live="polite"><span>{session.correct}/{session.questions.length} paires</span><span>{session.memoryMoves} essais</span></div>
               </div>
-              <div class="memory-board" aria-label="Cartes du Memory des mesures">
-                {#each session.memoryCards as card, cardIndex}
-                  <button type="button" class:face-up={card.revealed || card.matched} class:matched={card.matched} class:card-miss={session.gameEvent === 'miss' && session.memoryOpenIds.includes(card.id)} class="memory-card" aria-label={card.revealed || card.matched ? `${card.label}, ${engine.FAMILIES[card.family]?.label ?? 'mesure'}` : `Carte ${cardIndex + 1}, face cachée`} aria-pressed={card.revealed || card.matched} disabled={card.matched || session.memoryOpenIds.length >= 2} onclick={() => flipMemoryCard(card.id)}>
-                    <span class="memory-card-inner"><span class="memory-card-back"><b>✦</b><small>MESURO</small></span><span class="memory-card-front"><b>{card.label}</b><small>{familyEmoji[card.family] ?? '📏'} {engine.FAMILIES[card.family]?.label ?? 'Mesure'}</small></span></span>
+              <div class="memory-board" aria-label="Cartes de mesures visibles">
+                {#each session.memoryCards as card}
+                  <button type="button" class:face-up={true} class:matched={card.matched} class:card-miss={session.gameEvent === 'miss' && session.memoryOpenIds.includes(card.id)} class:card-picked={session.memoryOpenIds.includes(card.id)} class="memory-card" aria-label={`${card.label}, ${engine.FAMILIES[card.family]?.label ?? 'mesure'}`} aria-pressed={session.memoryOpenIds.includes(card.id) || card.matched} disabled={card.matched || session.memoryOpenIds.length >= 2} onclick={() => flipMemoryCard(card.id)}>
+                    <span class="memory-card-inner"><span class="memory-card-front"><b>{card.label}</b><small>{engine.FAMILIES[card.family]?.label ?? 'Mesure'}</small></span></span>
                   </button>
                 {/each}
               </div>
               <div class="memory-footer" role="status" aria-live="polite">
-                <span>{session.gameEvent === 'success' ? '✨ Paire trouvée !' : session.gameEvent === 'miss' ? 'Pas pareil… les cartes se recachent.' : 'Cherche les deux cartes qui vont ensemble.'}</span>
-                <button class="text-button" onclick={closeHouse}>Quitter le Memory</button>
+                <span>{session.gameEvent === 'success' ? 'Paire trouvée !' : session.gameEvent === 'miss' ? 'Ces deux mesures ne sont pas équivalentes. Essaie encore.' : 'Cherche les deux cartes qui vont ensemble.'}</span>
+                <button class="text-button" onclick={closeHouse}>Quitter l’appariement</button>
               </div>
             </section>
           {:else}
@@ -1043,25 +1113,25 @@
             {#if session.mode === 'race'}
               <div class:race-move={session.gameEvent === 'race-move'} class="mini-game-stage race-stage">
                 <div class="race-lanes" aria-label="Parcours jusqu’au trésor">
-                  <div class="race-lane"><strong>🧙 Toi</strong><div class="race-track"><i class="player-track-fill" style={`width:${session.raceSteps * 10}%`}></i><span class="race-runner player-runner" style={`left:${Math.max(4, Math.min(96, session.raceSteps * 10))}%`}>{profile?.avatar ?? '🧙'}</span></div><span aria-hidden="true">🏁</span></div>
-                  <div class="race-lane"><strong>🦊 Renard</strong><div class="race-track rival-track"><i class="rival-track-fill" style={`width:${session.rivalSteps * 10}%`}></i><span class="race-runner rival-runner" style={`left:${Math.max(4, Math.min(96, session.rivalSteps * 10))}%`}><GameObjectArt kind="fox" reduceMotion={reduceMotion} /></span></div><span aria-hidden="true">🏁</span></div>
+                  <div class="race-lane"><strong>Toi</strong><div class="race-track"><i class="player-track-fill" style={`width:${session.raceSteps * 10}%`}></i><span class="race-runner player-runner" style={`left:${Math.max(4, Math.min(96, session.raceSteps * 10))}%`}><span class="avatar-portrait" style={`--avatar-pos:${avatarPosition(profile?.avatar)}%;background-image:url('${base}/images/mesurovia/hero-atlas.png')`}></span></span></div><span aria-hidden="true">Arrivée</span></div>
+                  <div class="race-lane"><strong>Renard</strong><div class="race-track rival-track"><i class="rival-track-fill" style={`width:${session.rivalSteps * 10}%`}></i><span class="race-runner rival-runner" style={`left:${Math.max(4, Math.min(96, session.rivalSteps * 10))}%`}><GameObjectArt kind="fox" reduceMotion={reduceMotion} /></span></div><span aria-hidden="true">Arrivée</span></div>
                 </div>
-                <div class="race-turn-message"><strong>{session.gameEvent === 'race-move' ? `🎲 Tu avances de ${session.raceRoll} ${session.raceRoll > 1 ? 'cases' : 'case'} !` : session.gameEvent === 'miss' ? 'Le renard prend un petit pas d’avance…' : 'Résous le défi pour lancer le dé !'}</strong><small>Premier à 10 cases : le trésor est à lui.</small></div>
+                <div class="race-turn-message"><strong>{session.gameEvent === 'race-move' ? `Tu avances de ${session.raceRoll} ${session.raceRoll > 1 ? 'cases' : 'case'} !` : session.gameEvent === 'miss' ? 'Le renard prend un petit pas d’avance…' : 'Résous le défi pour avancer !'}</strong><small>Premier à 10 cases : le trésor est à lui.</small></div>
               </div>
               <p class="eyebrow">DÉFI DE LA COURSE · QUESTION {session.index + 1}</p><h2>{activeQuestion.prompt}</h2>
             {:else if session.mode === 'battle'}
               <div class:player-attack={session.gameEvent === 'player-attack'} class:enemy-attack={session.gameEvent === 'enemy-attack'} class="mini-game-stage battle-stage">
-                <div class="fighter player-fighter"><span class="fighter-sprite">{profile?.avatar ?? '🧙'}</span><strong>{profile?.name ?? 'Toi'}</strong><div class="health-track"><i style={`width:${Math.max(0, session.playerHp) / 3 * 100}%`}></i></div><small>Énergie</small></div>
+                <div class="fighter player-fighter"><span class="fighter-sprite"><span class="avatar-portrait" style={`--avatar-pos:${avatarPosition(profile?.avatar)}%;background-image:url('${base}/images/mesurovia/hero-atlas.png')`}></span></span><strong>{profile?.name ?? 'Toi'}</strong><div class="health-track"><i style={`width:${Math.max(0, session.playerHp) / 3 * 100}%`}></i></div><small>Énergie</small></div>
                 <div class="battle-middle"><span class="battle-spark">{session.gameEvent === 'player-attack' ? '💥' : session.gameEvent === 'enemy-attack' ? '⚡' : '⚔️'}</span><strong>Manche {session.index + 1} / {session.questions.length}</strong><small>{session.gameEvent === 'player-attack' ? 'Coup réussi !' : session.gameEvent === 'enemy-attack' ? 'Le gardien riposte !' : 'Choisis une carte pour jouer.'}</small></div>
                 <div class="fighter enemy-fighter"><span class="fighter-sprite">{#if session.enemyHp === 0}<span aria-hidden="true">💫</span>{:else}<GameObjectArt kind="guardian" reduceMotion={reduceMotion} />{/if}</span><strong>{session.enemyHp === 0 ? 'Gardien vaincu' : 'Gardien des unités'}</strong><div class="health-track enemy-health"><i style={`width:${Math.max(0, session.enemyHp) / 3 * 100}%`}></i></div><small>Armure</small></div>
               </div>
               <p class="eyebrow">CARTE DÉFI</p><h2>{activeQuestion.prompt}</h2>
-            {:else if session.mode === 'table'}
+            {:else if activeQuestion.type === 'table'}
               <div class:game-success={session.gameEvent === 'success'} class:game-miss={session.gameEvent === 'miss'} class="mini-game-stage table-game-stage"><div class="treasure-chest"><GameObjectArt kind="chest" open={session.gameEvent === 'success'} reduceMotion={reduceMotion} /></div><div><strong>Coffre magique · clé {session.index + 1}/{session.questions.length}</strong><p>Place la mesure dans la colonne de départ, puis lis la colonne demandée.</p></div></div>
               <h2>{activeQuestion.prompt}</h2>
-              <div class="conversion-table-card interactive-table-card"><table class="unit-table"><thead><tr>{#each engine.tableUnitsFor(activeQuestion.family) as unit}<th class:source-unit={unit === activeQuestion.from} class:target-unit={unit === activeQuestion.to}>{unit}</th>{/each}</tr></thead><tbody><tr>{#each engine.tableUnitsFor(activeQuestion.family) as unit}<td class:source-cell={unit === activeQuestion.from} class:target-cell={unit === activeQuestion.to}>{#if unit === activeQuestion.from}{activeQuestion.value}{:else if unit === activeQuestion.to}<input id="mesurovia-answer" class="table-cell-input" aria-label={`Résultat en ${activeQuestion.to}`} inputmode="none" autocomplete="off" placeholder="?" bind:value={session.typed} readonly disabled={!!session.answerStatus} />{:else}·{/if}</td>{/each}</tr></tbody></table><p>Départ : <strong>{activeQuestion.from}</strong> · Arrivée : <strong>{activeQuestion.to}</strong></p></div>
+              <div class="conversion-table-card interactive-table-card"><table class="unit-table"><thead><tr>{#each engine.tableUnitsFor(activeQuestion.family) as unit}<th class:source-unit={unit === activeQuestion.from} class:target-unit={unit === activeQuestion.to}>{unit}</th>{/each}</tr></thead><tbody><tr>{#each engine.tableUnitsFor(activeQuestion.family) as unit}<td class:source-cell={unit === activeQuestion.from} class:target-cell={unit === activeQuestion.to}>{#if unit === activeQuestion.from}{activeQuestion.value}{:else if unit === activeQuestion.to}<input id="mesurovia-answer" class="table-cell-input" aria-label={`Résultat en ${activeQuestion.to}`} inputmode="none" autocomplete="off" placeholder="?" bind:value={session.typed} readonly disabled={!!session.answerStatus} />{:else}–{/if}</td>{/each}</tr></tbody></table><p>Départ : <strong>{activeQuestion.from}</strong> · Arrivée : <strong>{activeQuestion.to}</strong></p></div>
             {:else if session.mode === 'detective'}
-              <div class:game-success={session.gameEvent === 'success'} class:game-miss={session.gameEvent === 'miss'} class="mini-game-stage detective-stage"><div class="detective-character"><GameObjectArt kind="detective" reduceMotion={reduceMotion} /></div><div><strong>Indice {session.index + 1} / {session.questions.length}</strong><p>Le témoignage contient peut-être une erreur. Compare les unités avant d’accuser Léo.</p></div><div class="evidence-stamp">{session.gameEvent === 'success' ? '✓' : '!'}</div></div>
+              <div class:game-success={session.gameEvent === 'success'} class:game-miss={session.gameEvent === 'miss'} class="mini-game-stage detective-stage"><div class="detective-character"><GameObjectArt kind="detective" reduceMotion={reduceMotion} /></div><div><strong>Indice {session.index + 1} / {session.questions.length}</strong><p>Quatre élèves proposent une conversion. Trouve qui a raison en vérifiant le facteur.</p></div><div class="evidence-stamp">{session.gameEvent === 'success' ? '✓' : '!'}</div></div>
               <h2>{activeQuestion.prompt}</h2>
             {:else if session.mode === 'clock'}
               <div class:game-success={session.gameEvent === 'success'} class="mini-game-stage clock-game-stage"><span class="clock-face"><GameObjectArt kind="clock" reduceMotion={reduceMotion} /></span><div><strong>Le moulin attend !</strong><p>Défi {session.index + 1}/{session.questions.length}. Relie les durées ou range-les pour remettre l’horloge en marche.</p></div></div>
@@ -1076,7 +1146,7 @@
             {#if activeQuestion.type === 'choice' || activeQuestion.type === 'unit' || activeQuestion.type === 'error'}
               <div class:answer-cards={['battle', 'race'].includes(session.mode)} class:game-answer-cards={['battle','detective','clock','builder','race'].includes(session.mode)} class="answer-options">
                 {#each activeQuestion.options as option, optionIndex}
-                  <button class:option-selected={session.selected === option} class="answer-option" disabled={!!session.answerStatus} aria-pressed={session.selected === option} onclick={() => selectSessionOption(option)}>{#if session.mode === 'battle'}<small class="card-type-label">CARTE {optionIndex + 1}</small>{/if}<span class="option-mark">{session.mode === 'battle' ? ['⚔️','🛡️','✨','🪄'][optionIndex % 4] : session.mode === 'race' ? ['🎲','🧭','🗺️','⭐'][optionIndex % 4] : session.mode === 'detective' ? ['🔍','🧾','🧩','📜'][optionIndex % 4] : ''}</span>{option}</button>
+                  <button class:option-selected={session.selected === option} class="answer-option" disabled={!!session.answerStatus} aria-pressed={session.selected === option} onclick={() => selectSessionOption(option)}>{#if session.mode === 'battle'}<small class="card-type-label">CARTE {optionIndex + 1}</small>{/if}{option}</button>
                 {/each}
               </div>
             {:else if activeQuestion.type === 'match'}
@@ -1095,14 +1165,14 @@
               {#if useOnscreenKeyboard}<div class="number-pad" aria-label="Clavier numérique Mesurovia">{#each ['7','8','9','4','5','6','1','2','3','clear','0','decimal','backspace'] as key}<button type="button" class:utility-key={['clear','decimal','backspace'].includes(key)} disabled={!!session.answerStatus} onclick={() => appendNumberKey(key)} aria-label={key === 'clear' ? 'Effacer tout' : key === 'backspace' ? 'Effacer le dernier chiffre' : key === 'decimal' ? 'Virgule' : key}>{key === 'clear' ? 'C' : key === 'backspace' ? '⌫' : key === 'decimal' ? ',' : key}</button>{/each}</div>{/if}
             {/if}
             {#if !['exam', 'boss', 'pretest'].includes(session.mode)}
-              <div class="question-tools"><button class="secondary-button" onclick={showExampleAgain} disabled={!!session.answerStatus}>💡 Voir la méthode</button><button class="secondary-button" onclick={() => speakText(activeQuestion.prompt || activeQuestion.context || '')}>🔊 Lire la consigne</button><button class="text-button" onclick={stopSpeech}>Arrêter la lecture</button><span>Une erreur est une occasion de réessayer.</span></div>
+              <div class="question-tools"><button class="secondary-button" onclick={showExampleAgain} disabled={!!session.answerStatus}>Voir la méthode</button><button class="secondary-button" onclick={() => (conversionGuideOpen = true)}>Ouvrir le tableau</button><span>Une erreur est une occasion de réessayer.</span></div>
             {/if}
             {#if currentFeedback}
               <div class={`feedback-box ${currentFeedback.kind}`} role="status"><strong>{currentFeedback.title}</strong><p>{currentFeedback.text}</p></div>
             {/if}
             <div class="slide-actions">
               {#if session.answerStatus}<button class="primary-button" onclick={continueSession}>{session.index + 1 === session.questions.length || (session.mode === 'race' && session.raceSteps >= 10) ? 'Voir le résultat' : 'Question suivante →'}</button>
-              {:else}<button class="primary-button" onclick={submitSessionAnswer}>{session.mode === 'battle' ? (session.attempts > 0 ? 'Rejouer cette carte ⚔️' : 'Jouer cette carte ⚔️') : session.mode === 'race' ? 'Valider et lancer le dé 🎲' : session.attempts > 0 && session.mode !== 'exam' && session.mode !== 'boss' ? 'Réessayer' : 'Valider ma réponse'}</button>{/if}
+              {:else}<button class="primary-button" onclick={submitSessionAnswer}>{session.mode === 'battle' ? (session.attempts > 0 ? 'Rejouer cette carte' : 'Jouer cette carte') : session.mode === 'race' ? 'Valider et avancer' : session.attempts > 0 && session.mode !== 'exam' && session.mode !== 'boss' ? 'Réessayer' : 'Valider ma réponse'}</button>{/if}
               {#if session.mode !== 'exam' && session.mode !== 'boss' && session.mode !== 'pretest' && currentFeedback?.kind === 'worked' && !session.answerStatus}<button class="secondary-button" onclick={continueSession}>J’ai compris, passer à la suivante</button>{/if}
               {#if session.mode === 'pretest'}<button class="text-button" onclick={continueSession} disabled={!session.answerStatus}>Passer au bilan suivant</button>{/if}
             </div>
@@ -1112,20 +1182,20 @@
         {:else if !houseProgress.theoryDone}
           <div class="theory-progress"><div><span class="eyebrow">COURS GUIDÉ · {house?.title}</span><strong>Diapositive {lessonSlideNumber} sur {lessons.length * 2}</strong></div><div class="progress-track"><i style={`width:${lessonProgress}%`}></i></div></div>
           <article class="slide-card lesson-slide">
-            <div class="slide-topline"><span class="step-counter">{theoryPhase === 'explain' ? `PARTIE ${lessonIndex + 1} / ${lessons.length}` : `QUESTION ${lessonIndex + 1} / ${lessons.length}`}</span><span class="step-counter">{familyEmoji[house?.families?.[lessonIndex % (house?.families?.length || 1)]] ?? '📐'} Une seule idée à la fois</span></div>
+            <div class="slide-topline"><span class="step-counter">{theoryPhase === 'explain' ? `PARTIE ${lessonIndex + 1} / ${lessons.length}` : `QUESTION ${lessonIndex + 1} / ${lessons.length}`}</span><span class="step-counter">Une seule idée à la fois</span></div>
             {#if theoryPhase === 'explain'}
-              <div class="lesson-copy"><p class="eyebrow">LE MAÎTRE EXPLIQUE</p><h2>{currentLesson?.title}</h2><div class="voice-controls"><button class="secondary-button" onclick={() => speakText(`${currentLesson?.title ?? ''}. ${currentLesson?.body ?? ''}`)}>🔊 Lire cette diapositive</button><button class="text-button" onclick={stopSpeech}>Arrêter la lecture</button></div><p class="lesson-body">{currentLesson?.body}</p>
+              <div class="lesson-copy"><p class="eyebrow">LE MAÎTRE EXPLIQUE</p><h2>{currentLesson?.title}</h2><p class="lesson-body">{currentLesson?.body}</p>
                 {#if currentLesson?.visual === 'TABLE' || currentLesson?.visual === 'TABLE_EXAMPLE'}
-                  <div class="conversion-table-card"><h3>Le tableau des longueurs</h3><p>Lis de gauche à droite : chaque colonne est une unité. Place le chiffre des unités de départ dans la colonne de cette unité, puis garde chaque chiffre dans sa colonne.</p><table class="unit-table"><thead><tr><th>km</th><th>hm</th><th>dam</th><th>m</th><th>dm</th><th>cm</th><th>mm</th></tr></thead><tbody><tr>{#each ['','', '', '2', '4', '', ''] as digit, i}<td class:highlight-unit={i === 3 || (currentLesson?.visual === 'TABLE_EXAMPLE' && i === 4)}>{digit || (currentLesson?.visual === 'TABLE_EXAMPLE' && i === 4 ? '4' : '·')}</td>{/each}</tr></tbody></table><div class="table-steps"><span><b>1</b> Repère l’unité donnée.</span><span><b>2</b> Place le chiffre des unités dans sa colonne.</span><span><b>3</b> Lis la colonne demandée.</span><span><b>4</b> Vérifie si le nombre doit augmenter ou diminuer.</span></div></div>
+                  <div class="conversion-table-card"><h3>Le tableau des longueurs</h3><p>Les grandes unités sont à gauche et les petites à droite. Pour 2,4 m, place 2 dans la colonne m et 4 dans dm : 2,4 m = 24 dm = 240 cm.</p><table class="unit-table"><thead><tr><th>km</th><th>hm</th><th>dam</th><th>m</th><th>dm</th><th>cm</th><th>mm</th></tr></thead><tbody><tr>{#each ['–','–','–','2','4','–','–'] as digit, i}<td class:highlight-unit={i === 3 || i === 4}>{digit}</td>{/each}</tr></tbody></table><div class="table-steps"><span><b>1</b> Repère l’unité donnée.</span><span><b>2</b> Place le chiffre des unités dans sa colonne.</span><span><b>3</b> Lis la colonne demandée.</span><span><b>4</b> Vérifie si le nombre doit augmenter ou diminuer.</span></div><button class="secondary-button" onclick={() => (conversionGuideOpen = true)}>Essayer avec mon nombre</button></div>
                 {:else if currentLesson?.visual}
                   <!-- Les visuels sont des fragments statiques définis dans le moteur du cours, jamais du HTML saisi par l'élève. -->
                   <div class="lesson-visual">{@html currentLesson.visual}</div>
                 {/if}
-                <div class="concrete-example"><span class="example-icon">🧩</span><div><strong>Un repère concret</strong><p>Observe le schéma et les repères ci-dessus. Puis essaie avec une nouvelle mesure : tu pourras vérifier ta réponse juste après.</p></div></div>
+                <div class="concrete-example"><div><strong>Un repère concret</strong><p>Observe le schéma et les repères ci-dessus. Puis essaie avec une nouvelle mesure : tu pourras vérifier ta réponse juste après.</p></div></div>
               </div>
-              <aside class="teacher-speech"><div class="teacher-portrait"><img src={`${base}/images/mesurovia/maitre-mesuro.png`} alt="" aria-hidden="true" /></div><strong>Maître Mesuro</strong><p>Lis cette diapositive, regarde l’exemple, puis passe à ma question. Tu peux utiliser la lecture vocale du navigateur si elle t’aide.</p><button class="primary-button" onclick={() => { theoryPhase = 'checkpoint'; lessonChoice = ''; lessonFeedback = null; }}>J’ai compris, poser la question →</button></aside>
+              <aside class="teacher-speech"><div class="teacher-portrait"><img src={`${base}/images/mesurovia/maitre-mesuro.png`} alt="" aria-hidden="true" /></div><strong>Maître Mesuro</strong><p>Lis cette diapositive, regarde l’exemple, puis passe à ma question. Le tableau de conversion reste accessible en haut.</p><button class="primary-button" onclick={() => { theoryPhase = 'checkpoint'; lessonChoice = ''; lessonFeedback = null; }}>J’ai compris, poser la question →</button></aside>
             {:else}
-              <div class="checkpoint-copy"><p class="eyebrow">VALIDATION DE L’ÉTAPE {lessonIndex + 1}</p><h2>{currentLesson?.ask}</h2><div class="voice-controls"><button class="secondary-button" onclick={() => speakText(currentLesson?.ask ?? '')}>🔊 Lire la question</button><button class="text-button" onclick={stopSpeech}>Arrêter la lecture</button></div><p>Choisis ta réponse. Si tu te trompes, le maître te donnera une aide et tu pourras recommencer cette question.</p>
+              <div class="checkpoint-copy"><p class="eyebrow">VALIDATION DE L’ÉTAPE {lessonIndex + 1}</p><h2>{currentLesson?.ask}</h2><p>Choisis ta réponse. Si tu te trompes, le maître te donnera une aide et tu pourras recommencer cette question.</p>
                 <div class="answer-options lesson-options">{#each currentLesson?.options ?? [] as option}<button class:option-selected={lessonChoice === option} class="answer-option" aria-pressed={lessonChoice === option} onclick={() => (lessonChoice = option)}>{option}</button>{/each}</div>
                 {#if lessonFeedback}<div class={`feedback-box ${lessonFeedback.kind}`} role="status"><strong>{lessonFeedback.title}</strong><p>{lessonFeedback.text}</p></div>{/if}
                 <div class="slide-actions"><button class="secondary-button" onclick={() => { theoryPhase = 'explain'; lessonFeedback = null; }}>← Revoir l’explication</button><button class="primary-button" onclick={() => {
@@ -1154,14 +1224,14 @@
           <div class="room-dashboard">
             <div class="room-dashboard-heading"><p class="eyebrow">THÉORIE VALIDÉE</p><h2>À toi de choisir la prochaine mission.</h2><p>Tu peux t’entraîner tranquillement ou apprendre en jouant avec les cartes. L’examen devient disponible après un entraînement réussi.</p></div>
             <div class="activity-choice-grid">
-              <article class="activity-choice"><div class="activity-art"><ActivityIllustration kind="practice" reduceMotion={reduceMotion} /></div><p class="eyebrow">MODE APPRENTISSAGE</p><h3>Le pupitre d’exercices</h3><p>Huit questions générées à la volée : QCM, saisie, associations, classement et autres formats selon la compétence.</p><button class="primary-button" onclick={() => startSession('practice')}>S’entraîner au pupitre →</button></article>
-              <article class="activity-choice"><div class="activity-art"><ActivityIllustration kind="battle" reduceMotion={reduceMotion} /></div><p class="eyebrow">VRAI MINI-JEU · 5 MANCHES</p><h3>Bataille des unités</h3><p>Choisis une carte-mesure pour attaquer le gardien. Une bonne réponse déclenche ton attaque ; une erreur déclenche sa riposte. Sans chronomètre.</p><button class="primary-button" onclick={() => startSession('battle')}>Lancer le duel →</button></article>
-              <article class="activity-choice"><div class="activity-art"><ActivityIllustration kind="memory" reduceMotion={reduceMotion} /></div><p class="eyebrow">VRAI JEU DE MÉMOIRE · 6 PAIRES</p><h3>Memory des mesures</h3><p>Retourne les cartes et retrouve les écritures qui représentent la même mesure. Pas de chrono : essaie de battre ton nombre de coups.</p><button class="primary-button" onclick={() => startSession('memory')}>Mélanger les cartes →</button></article>
-              <article class="activity-choice"><div class="activity-art"><ActivityIllustration kind="race" reduceMotion={reduceMotion} /></div><p class="eyebrow">JEU DE PLATEAU · VERSUS</p><h3>Course au trésor</h3><p>Résous un défi, lance le dé et fais avancer ton pion jusqu’au coffre avant le renard. Les erreurs n’enlèvent aucun point.</p><button class="primary-button" onclick={() => startSession('race')}>Courir vers le trésor →</button></article>
-              {#if tableGameAvailable}<article class="activity-choice"><div class="activity-art"><ActivityIllustration kind="table" reduceMotion={reduceMotion} /></div><p class="eyebrow">MANIPULATION</p><h3>Le Tableau magique</h3><p>Le coffre s’ouvre quand tu utilises le tableau des unités et saisis le résultat avec le clavier intégré.</p><button class="primary-button" onclick={() => startSession('table')}>Ouvrir le coffre →</button></article>{/if}
-              <article class="activity-choice"><div class="activity-art"><ActivityIllustration kind="detective" reduceMotion={reduceMotion} /></div><p class="eyebrow">ENQUÊTE</p><h3>Qui a fait l’erreur ?</h3><p>Un personnage a mal converti une mesure. Examine son affirmation et choisis la correction.</p><button class="primary-button" onclick={() => startSession('detective')}>Chercher les indices →</button></article>
-              {#if clockGameAvailable}<article class="activity-choice"><div class="activity-art"><ActivityIllustration kind="clock" reduceMotion={reduceMotion} /></div><p class="eyebrow">JEU DE TEMPS</p><h3>Répare l’horloge</h3><p>Relie les durées équivalentes ou range-les dans le bon ordre pour relancer le moulin.</p><button class="primary-button" onclick={() => startSession('clock')}>Réparer l’horloge →</button></article>{/if}
-              {#if builderGameAvailable}<article class="activity-choice"><div class="activity-art"><ActivityIllustration kind="builder" reduceMotion={reduceMotion} /></div><p class="eyebrow">MISSION EN ÉTAPES</p><h3>Le chantier des formes</h3><p>Chaque défi résolu ajoute une pièce au bâtiment. Les mesures d’aire ou de volume servent à terminer le chantier.</p><button class="primary-button" onclick={() => startSession('builder')}>Construire →</button></article>{/if}
+              <article class="activity-choice"><div class="activity-art"><img src={`${base}/images/mesurovia/catalog/game-practice.png`} alt="" /></div><p class="eyebrow">MODE APPRENTISSAGE</p><h3>Le pupitre d’exercices</h3><p>Dix questions progressives. Au premier village, le tableau de conversion revient plusieurs fois pour apprendre à le lire et le remplir.</p><button class="primary-button" onclick={() => startSession('practice')}>S’entraîner au pupitre →</button></article>
+              <article class="activity-choice"><div class="activity-art"><img src={`${base}/images/mesurovia/catalog/game-battle.png`} alt="" /></div><p class="eyebrow">VRAI MINI-JEU · 5 MANCHES</p><h3>Bataille des unités</h3><p>Choisis une carte-mesure pour attaquer le gardien. Une bonne réponse déclenche ton attaque ; une erreur déclenche sa riposte. Sans chronomètre.</p><button class="primary-button" onclick={() => startSession('battle')}>Lancer le duel →</button></article>
+              <article class="activity-choice"><div class="activity-art"><img src={`${base}/images/mesurovia/catalog/game-pairs.png`} alt="" /></div><p class="eyebrow">APPARIEMENT · 6 PAIRES</p><h3>Associe les mesures</h3><p>Toutes les cartes sont visibles. Trouve deux écritures équivalentes en comparant les unités.</p><button class="primary-button" onclick={() => startSession('memory')}>Voir les cartes →</button></article>
+              <article class="activity-choice"><div class="activity-art"><img src={`${base}/images/mesurovia/catalog/game-race.png`} alt="" /></div><p class="eyebrow">JEU DE PLATEAU · VERSUS</p><h3>Course au trésor</h3><p>Résous un défi, lance le dé et fais avancer ton pion jusqu’au coffre avant le renard. Les erreurs n’enlèvent aucun point.</p><button class="primary-button" onclick={() => startSession('race')}>Courir vers le trésor →</button></article>
+              {#if tableGameAvailable}<article class="activity-choice"><div class="activity-art"><img src={`${base}/images/mesurovia/catalog/game-table.png`} alt="" /></div><p class="eyebrow">MANIPULATION · 10 QUESTIONS</p><h3>Le Tableau magique</h3><p>Utilise le tableau des unités et saisis le résultat avec le clavier intégré. Tu peux ouvrir un exemple pas à pas à tout moment.</p><button class="primary-button" onclick={() => startSession('table')}>Ouvrir le coffre →</button></article>{/if}
+              <article class="activity-choice"><div class="activity-art"><img src={`${base}/images/mesurovia/catalog/game-detective.png`} alt="" /></div><p class="eyebrow">ENQUÊTE</p><h3>Qui a raison ?</h3><p>Quatre élèves proposent des réponses. Vérifie chaque conversion et trouve qui a raison.</p><button class="primary-button" onclick={() => startSession('detective')}>Chercher les indices →</button></article>
+              {#if clockGameAvailable}<article class="activity-choice"><div class="activity-art"><img src={`${base}/images/mesurovia/catalog/game-clock.png`} alt="" /></div><p class="eyebrow">JEU DE TEMPS</p><h3>Répare l’horloge</h3><p>Relie les durées équivalentes ou range-les dans le bon ordre pour relancer le moulin.</p><button class="primary-button" onclick={() => startSession('clock')}>Réparer l’horloge →</button></article>{/if}
+              {#if builderGameAvailable}<article class="activity-choice"><div class="activity-art"><img src={`${base}/images/mesurovia/catalog/game-builder.png`} alt="" /></div><p class="eyebrow">MISSION EN ÉTAPES</p><h3>Le chantier des formes</h3><p>Chaque défi résolu ajoute une pièce au bâtiment. Les mesures d’aire ou de volume servent à terminer le chantier.</p><button class="primary-button" onclick={() => startSession('builder')}>Construire →</button></article>{/if}
               <article class="activity-choice exam-choice"><div class="activity-art"><ActivityIllustration kind="crest" reduceMotion={reduceMotion} /></div><p class="eyebrow">MODE MAÎTRISE</p><h3>L’épreuve du blason</h3><p>{houseProgress.trainingDone ? 'Tu as validé un entraînement. Passe à dix questions variées sans indice.' : 'Réussis un entraînement ou un mini-jeu pour déverrouiller cette épreuve.'}</p><button class="primary-button" disabled={!houseProgress.trainingDone} onclick={beginExam}>{houseProgress.examPassed ? 'Repasser l’épreuve' : 'Préparer le blason →'}</button>{#if houseProgress.examPassed}<span class="status-pill success-pill">✓ Blason déjà obtenu</span>{/if}</article>
             </div>
             {#if trainingFeedback}<div class={`feedback-box ${trainingFeedback.kind}`}><strong>{trainingFeedback.title}</strong><p>{trainingFeedback.text}</p></div>{/if}
@@ -1173,7 +1243,7 @@
     {:else if view === 'pretest'}
       <section class="standalone-session-page"><div class="page-heading"><p class="eyebrow">AVANT L’AVENTURE</p><h1>Bilan de départ</h1><p>Ce bilan aide à choisir un point de départ. Ce n’est ni une note ni un diagnostic.</p><button class="text-button" onclick={goHome}>← Retour à l’accueil</button></div>
         {#if sessionResult}
-          <article class="slide-card result-slide"><div class="result-icon">🧭</div><div><h2>{sessionResult.title}</h2><p class="score-line">{sessionResult.score} réponses justes sur {sessionResult.total}</p><p>{sessionResult.detail}</p><h3>Conseil par compétence</h3><div class="family-result-grid">{#each familyOrder as family}<div><span>{familyEmoji[family]} {engine.FAMILIES[family].label}</span><strong>{sessionResult ? (sessionResult.total ? `${session?.familyResults?.[family]?.correct ?? profile?.pretest?.byFamily?.[family]?.correct ?? 0}/${session?.familyResults?.[family]?.total ?? profile?.pretest?.byFamily?.[family]?.total ?? 0}` : '—') : ''}</strong></div>{/each}</div><button class="primary-button" onclick={() => { sessionResult = null; session = null; view = 'villages'; }}>Choisir mon village →</button></div></article>
+          <article class="slide-card result-slide"><div class="result-icon">✓</div><div><h2>{sessionResult.title}</h2><p class="score-line">{sessionResult.score} réponses justes sur {sessionResult.total}</p><p>{sessionResult.detail}</p><h3>Conseil par compétence</h3><div class="family-result-grid">{#each familyOrder as family}<div><span>{engine.FAMILIES[family].label}</span><strong>{sessionResult ? (sessionResult.total ? `${session?.familyResults?.[family]?.correct ?? profile?.pretest?.byFamily?.[family]?.correct ?? 0}/${session?.familyResults?.[family]?.total ?? profile?.pretest?.byFamily?.[family]?.total ?? 0}` : '—') : ''}</strong></div>{/each}</div><button class="primary-button" onclick={() => { sessionResult = null; session = null; view = 'villages'; }}>Choisir mon village →</button></div></article>
         {:else if session && activeQuestion}
           <div class="session-progress"><strong>Question {session.index + 1} / {session.questions.length}</strong><div class="progress-track"><i style={`width:${(session.index / session.questions.length) * 100}%`}></i></div></div>
           <article class="slide-card question-slide"><p class="eyebrow">{currentFamilyLabel}</p><h2>{activeQuestion.prompt}</h2>{#if activeQuestion.type === 'choice'}<div class="answer-options">{#each activeQuestion.options as option}<button class:option-selected={session.selected === option} class="answer-option" disabled={!!session.answerStatus} onclick={() => selectSessionOption(option)}>{option}</button>{/each}</div>{:else}<input class="answer-input" bind:value={session.typed} placeholder="Écris ta réponse" disabled={!!session.answerStatus} />{/if}{#if currentFeedback}<div class={`feedback-box ${currentFeedback.kind}`} role="status" aria-live="polite"><strong>{currentFeedback.title}</strong><p>{currentFeedback.text}</p></div>{/if}<div class="slide-actions">{#if session.answerStatus}<button class="primary-button" onclick={continueSession}>{session.index + 1 === session.questions.length ? 'Voir mon bilan' : 'Question suivante →'}</button>{:else}<button class="primary-button" onclick={submitSessionAnswer}>Valider ma réponse</button>{/if}</div></article>
@@ -1187,11 +1257,51 @@
     {#if modalMessage}
       <div class="xp-toast" role="status">{modalMessage}<button onclick={() => (modalMessage = '')} aria-label="Fermer">×</button></div>
     {/if}
-    <footer class="game-footer"><span>MESUROVIA · Prototype V3</span><div class="display-tools"><label><input type="checkbox" bind:checked={largeText} onchange={persist} /> Texte plus grand</label><label><input type="checkbox" bind:checked={highContrast} onchange={persist} /> Contraste renforcé</label><label><input type="checkbox" bind:checked={reduceMotion} onchange={persist} /> Réduire les animations</label></div><span>💾 Sauvegarde locale par profil</span></footer>
+    <button class="guide-fab" onclick={() => (conversionGuideOpen = true)}>Tableau de conversion</button>
+    {#if conversionGuideOpen}<ConversionGuide onClose={() => (conversionGuideOpen = false)} />{/if}
+    <div class="portrait-notice" role="status"><strong>Tourne l’iPad en portrait</strong><span>Mesurovia est conçu pour être joué verticalement.</span></div>
+    <footer class="game-footer"><span>MESUROVIA · Prototype V3</span><div class="display-tools"><label><input type="checkbox" bind:checked={largeText} onchange={persist} /> Texte plus grand</label><label><input type="checkbox" bind:checked={highContrast} onchange={persist} /> Contraste renforcé</label><label><input type="checkbox" bind:checked={reduceMotion} onchange={persist} /> Réduire les animations</label></div><span>Sauvegarde locale par profil</span></footer>
   </main>
 {/if}
 
 <style>
+  .avatar-portrait, .avatar-full { display:inline-block; flex:none; background-image:url('/images/mesurovia/hero-atlas.png'); background-repeat:no-repeat; background-size:600% 100%; background-position:var(--avatar-pos,0%) center; }
+  .avatar-portrait { width:31px; height:34px; border-radius:50%; border:1px solid #a5b38e; background-color:#eef0dc; background-size:600% auto; background-position:var(--avatar-pos,0%) 4%; }
+  .avatar-full { width:100%; height:100%; min-height:85px; }
+  .avatar-big .avatar-full { width:150px; height:185px; }
+  .avatar-choice .avatar-full { width:56px; height:65px; min-height:0; }
+  .player-chip { display:inline-flex; align-items:center; gap:7px; }
+  .orbis-shortcut { display:inline-flex; align-items:center; text-decoration:none; }
+  .header-menu-wrap { display:flex; align-items:center; gap:7px; }
+  .game-header { transition:transform 180ms ease; }
+  .game-header.header-hidden { transform:translateY(-110%); }
+  .guide-fab { position:fixed; z-index:30; right:16px; bottom:16px; border:2px solid #24563e; border-radius:12px; padding:12px; background:#f4da90; color:#244b34; font-weight:900; box-shadow:0 4px 14px #1d3d3155; }
+  .portrait-notice { display:none; }
+  .house-nameplate { display:flex; align-items:center; justify-content:center; width:100%; height:100%; padding:3px 5px; box-sizing:border-box; border:2px solid #765c40; border-radius:7px; background:#fff9e9ee; color:#354d37; text-align:center; font:800 11px/1.1 Arial,sans-serif; overflow-wrap:anywhere; }
+  .curriculum-code { display:inline-block; padding:5px 9px; border-radius:7px; background:#e8efdc; color:#315840; font-size:.78rem; font-weight:850; }
+  .house-objective { max-width:760px; margin:8px 0 0; color:#42584a; line-height:1.5; }
+  .village-objective { display:block; margin-top:8px; color:#42584a; font-size:.8rem; line-height:1.45; }
+  .village-objective-panel { display:flex; flex-wrap:wrap; gap:7px; max-width:760px; margin-top:14px; padding:13px; border:2px solid #c8d2b7; border-radius:12px; background:#f5f4e7; }
+  .village-objective-panel strong, .village-objective-panel span { flex-basis:100%; }
+  .village-objective-panel small { padding:5px 8px; border-radius:999px; background:#e3ecd5; color:#3f5946; font-weight:800; }
+  .mesurovia-catalog-page { padding:clamp(22px,4vw,52px); }
+  .catalog-page-heading { max-width:850px; margin:0 auto 28px; }
+  .catalog-page-heading h1 { margin:8px 0 10px; font:700 clamp(2rem,5vw,3.4rem) Georgia,serif; }
+  .catalog-page-heading > p:not(.eyebrow) { color:var(--muted); font-size:1.05rem; line-height:1.65; }
+  .mesurovia-catalog-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px; max-width:1280px; margin:0 auto; }
+  .mesurovia-catalog-card { display:flex; flex-direction:column; min-width:0; overflow:hidden; border:2px solid #d2c9ae; border-radius:18px; background:#fffdf4; box-shadow:0 6px 0 #d4c7a5; }
+  .mesurovia-catalog-card > div { display:flex; flex:1; flex-direction:column; align-items:flex-start; padding:16px; }
+  .mesurovia-catalog-card h2 { margin:5px 0 8px; font:700 1.3rem Georgia,serif; }
+  .mesurovia-catalog-card p:not(.eyebrow) { color:#536354; line-height:1.55; }
+  .mesurovia-catalog-card .primary-button { width:100%; margin-top:auto; }
+  .catalog-image-button { display:block; width:100%; aspect-ratio:1.25; padding:0; overflow:hidden; border:0; border-bottom:2px solid #d2c9ae; background:#e8eddf; cursor:pointer; }
+  .catalog-image-button img { display:block; width:100%; height:100%; object-fit:cover; transition:transform .2s ease; }
+  .catalog-image-button:hover img, .catalog-image-button:focus-visible img { transform:scale(1.035); }
+  .catalog-units { margin:0 0 8px; color:#315f46 !important; font-weight:900; }
+  .course-zone-status { display:inline-block; margin:2px 0 14px; padding:6px 8px; border-radius:7px; background:#edf0df; color:#58634d; font-size:.74rem; font-weight:850; }
+  .memory-card.card-picked .memory-card-front { outline:4px solid #d3a33d; outline-offset:-4px; }
+  @media (pointer:coarse) and (orientation:landscape) and (min-width:700px) { .portrait-notice { position:fixed; inset:0; z-index:90; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; background:#f5f1e5; color:#2c593f; text-align:center; font-size:1.2rem; } .portrait-notice strong { font:700 2rem Georgia,serif; } }
+  @media (pointer:coarse) and (orientation:portrait) and (min-width:700px) and (max-width:950px) { .classroom-scene { display:none; } .room-header h1 { font-size:1.55rem; margin:3px 0; } .room-header p { margin:0; } .classroom-page { padding-top:8px; } .slide-card { padding:14px 18px; } .number-pad { margin:4px auto; gap:4px; } .number-pad button { min-height:37px; } .session-progress { margin:6px 0; } .question-tools { margin:6px 0; } .game-footer { display:none; } }
   :global(html) { background: #f5f1e5; }
   :global(body) { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #2e3c35; }
   :global(button), :global(input) { font: inherit; }
@@ -1315,11 +1425,11 @@
   .lesson-slide { min-height: 390px; }.slide-topline { margin-bottom: 23px; }.lesson-copy { max-width: 920px; }.lesson-copy h2 { font-family: Georgia, serif; }.lesson-body { color: #46594a; font-size: 1.1rem; line-height: 1.8; white-space: pre-line; max-width: 870px; }.lesson-visual { background: #eef2df; border: 1px solid #ccd8b7; padding: 18px; border-radius: 12px; margin: 18px 0; overflow-x: auto; }.lesson-visual :global(.measure-cards), .lesson-visual :global(.example-strip), .lesson-visual :global(.example-strip), .lesson-visual :global(.measure-cards) { display: flex; flex-wrap: wrap; gap: 10px; }.lesson-visual :global(.measure-cards span), .lesson-visual :global(.example-strip span) { background: #fffdf0; border: 1px solid #c9d1b8; border-radius: 8px; padding: 12px; font-weight: 800; }.lesson-visual :global(.measure-cards b) { display: block; margin-top: 5px; }.lesson-visual :global(.conversion-equation), .lesson-visual :global(.equal-visual), .lesson-visual :global(.direction-visual) { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: center; font-size: 1.3rem; }.lesson-visual :global(.number-line) { display: flex; gap: 6px; flex-wrap: wrap; }.lesson-visual :global(.number-line span) { padding: 10px 13px; border-radius: 7px; background: white; border: 1px solid #c3cdb6; font-weight: 900; }.lesson-visual :global(.number-line .active) { background: #f3d67e; border-color: #b99542; }.lesson-visual :global(.time-blocks) { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 13px; font-size: 1.15rem; }.lesson-visual :global(.time-blocks span), .lesson-visual :global(.time-blocks strong) { padding: 10px 14px; background: #fffef5; border: 1px solid #d2c39d; border-radius: 8px; }.conversion-table-card { padding: 16px; background: #f1f2df; border: 1px solid #c9d5b5; border-radius: 12px; margin: 20px 0; }.conversion-table-card h3 { margin-bottom: 6px; }.conversion-table-card > p { line-height: 1.6; color: #50604f; }.unit-table { border-collapse: collapse; width: 100%; margin: 14px 0; table-layout: fixed; }.unit-table th, .unit-table td { border: 2px solid #b4bd9f; text-align: center; padding: 11px 2px; }.unit-table th { background: #dce8c8; }.unit-table td { background: #fffdf0; font-weight: 900; font-size: 1.25rem; }.unit-table td.highlight-unit { background: #f4d984; border-color: #bd9947; }.table-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }.table-steps span { display: flex; align-items: center; gap: 9px; padding: 9px; border-radius: 8px; background: #fffdf2; line-height: 1.4; }.table-steps b { display: inline-grid; min-width: 26px; height: 26px; place-items: center; background: #477b52; color: white; border-radius: 50%; }
   .concrete-example { display: flex; align-items: flex-start; gap: 13px; margin-top: 19px; padding: 13px 15px; border: 1px dashed #d3ba75; border-radius: 10px; background: #fff5d4; color: #51492d; }.example-icon { font-size: 1.6rem; }.concrete-example strong { color: #6a5527; }.concrete-example p { margin: 4px 0 0; line-height: 1.55; }
   .teacher-speech { margin-top: 22px; display: grid; grid-template-columns: auto 1fr; gap: 7px 13px; padding: 14px; border-radius: 12px; border: 1px solid #c5d4be; background: #e9f0df; align-items: center; }.teacher-portrait { grid-row: span 2; display: grid; place-items: center; width: 56px; height: 56px; border: 2px solid #b6c8a8; border-radius: 12px; background: #fff9e8; font-size: 2rem; }.teacher-speech strong { align-self: end; color: #315b3d; }.teacher-speech p { align-self: start; margin: 0; color: #566a56; line-height: 1.5; }.teacher-speech button { grid-column: 2; justify-self: start; margin-top: 6px; }.checkpoint-copy { max-width: 820px; margin: auto; padding: 15px 0; }.checkpoint-copy h2 { font-family: Georgia, serif; margin-bottom: 20px; }.checkpoint-copy > p:not(.eyebrow) { color: var(--muted); line-height: 1.6; }.answer-options { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin: 20px 0; }.answer-option { min-height: 62px; padding: 12px; border: 2px solid #c5b99c; border-radius: 12px; background: #fffdf4; color: #354c39; font-weight: 850; text-align: center; line-height: 1.4; }.answer-option:hover:not(:disabled) { border-color: #6b9e72; background: #f1f6e4; }.option-selected { border-color: #3a7e52 !important; background: #ddefd5 !important; box-shadow: inset 0 0 0 1px #3a7e52; }.feedback-box { margin: 16px 0; border: 1px solid #cbbd98; border-radius: 11px; padding: 13px 15px; background: #fff6d9; color: #51452b; }.feedback-box strong { display: block; margin-bottom: 4px; }.feedback-box p { margin: 0; line-height: 1.65; white-space: pre-line; }.feedback-box.success { background: #e4f2df; border-color: #b3d3aa; color: #2b613d; }.feedback-box.hint { background: #e9f1e0; border-color: #b8ceab; color: #3d5c3f; }.feedback-box.worked { background: #f3e6d4; border-color: #d2b288; color: #634a2b; }.feedback-box.notice { background: #fff3ce; border-color: #dfca7a; color: #665323; }.slide-actions { justify-content: flex-start; flex-wrap: wrap; margin-top: 19px; }.slide-actions .text-button { margin-left: auto; }
-  .room-dashboard { background: #fbf8ee; border: 2px solid #d8d0b9; border-radius: 20px; padding: clamp(18px, 3vw, 34px); box-shadow: 0 8px 0 #d2c9ad; }.room-dashboard-heading { max-width: 830px; }.room-dashboard-heading h2 { font-family: Georgia, serif; }.room-dashboard-heading p:not(.eyebrow) { line-height: 1.65; color: var(--muted); }.activity-choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 25px; }.activity-choice { display: flex; flex-direction: column; align-items: flex-start; background: #fffdf4; border: 2px solid #d8ceaf; border-radius: 15px; padding: 15px; box-shadow: 0 4px 0 #d5c8a8; }.activity-choice h3 { font-family: Georgia, serif; font-size: 1.3rem; margin-bottom: 10px; }.activity-choice p:not(.eyebrow) { color: #5d6a5b; font-size: .92rem; line-height: 1.6; }.activity-choice .primary-button { width: 100%; margin-top: auto; }.activity-choice .eyebrow { margin-top: 17px; margin-bottom: 8px; }.activity-art { width: 100%; height: 105px; border-radius: 10px; overflow: hidden; background: #e6edd7; }.exam-choice { border-color: #d1b465; background: #fffbeb; }.status-pill { display: inline-block; margin-top: 10px; border-radius: 999px; padding: 5px 8px; background: #e2f0dd; color: #366b42; font-size: .77rem; font-weight: 900; }.room-bottom-actions { margin-top: 24px; flex-wrap: wrap; justify-content: flex-start; }.result-slide { display: grid; grid-template-columns: 90px 1fr; gap: 24px; align-items: start; }.result-icon { display: grid; place-items: center; width: 88px; height: 88px; background: #f7e4a8; border: 2px solid #d7bd69; border-radius: 18px; font-size: 3rem; }.score-line { font-size: 1.15rem; }.score-line strong { font-size: 1.5rem; color: #34734c; }
+  .room-dashboard { background: #fbf8ee; border: 2px solid #d8d0b9; border-radius: 20px; padding: clamp(18px, 3vw, 34px); box-shadow: 0 8px 0 #d2c9ad; }.room-dashboard-heading { max-width: 830px; }.room-dashboard-heading h2 { font-family: Georgia, serif; }.room-dashboard-heading p:not(.eyebrow) { line-height: 1.65; color: var(--muted); }.activity-choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 25px; }.activity-choice { display: flex; flex-direction: column; align-items: flex-start; background: #fffdf4; border: 2px solid #d8ceaf; border-radius: 15px; padding: 15px; box-shadow: 0 4px 0 #d5c8a8; }.activity-choice h3 { font-family: Georgia, serif; font-size: 1.3rem; margin-bottom: 10px; }.activity-choice p:not(.eyebrow) { color: #5d6a5b; font-size: .92rem; line-height: 1.6; }.activity-choice .primary-button { width: 100%; margin-top: auto; }.activity-choice .eyebrow { margin-top: 17px; margin-bottom: 8px; }.activity-art { width: 100%; height: 105px; border-radius: 10px; overflow: hidden; background: #e6edd7; }.activity-art > img { width: 100%; height: 100%; display: block; object-fit: cover; }.exam-choice { border-color: #d1b465; background: #fffbeb; }.status-pill { display: inline-block; margin-top: 10px; border-radius: 999px; padding: 5px 8px; background: #e2f0dd; color: #366b42; font-size: .77rem; font-weight: 900; }.room-bottom-actions { margin-top: 24px; flex-wrap: wrap; justify-content: flex-start; }.result-slide { display: grid; grid-template-columns: 90px 1fr; gap: 24px; align-items: start; }.result-icon { display: grid; place-items: center; width: 88px; height: 88px; background: #f7e4a8; border: 2px solid #d7bd69; border-radius: 18px; font-size: 3rem; }.score-line { font-size: 1.15rem; }.score-line strong { font-size: 1.5rem; color: #34734c; }
   .battle-card-prompt { background: #eef1de; border: 1px solid #c8d3b8; border-radius: 12px; padding: 14px; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; }.card-symbol { grid-row: span 2; font-size: 2.4rem; }.answer-cards .answer-option { min-height: 115px; background: #fffdf1; border: 3px solid #c4af7e; box-shadow: 0 5px #d8c59b; font-family: Georgia, serif; font-size: 1.15rem; }.answer-cards .answer-option:nth-child(2) { transform: translateY(-7px); }.answer-cards .answer-option:nth-child(3) { transform: rotate(1deg); }.answer-cards .option-selected { transform: translateY(-8px); }
   .question-slide h2 { max-width: 900px; }.question-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; color: var(--muted); font-size: .86rem; }.question-tools span { line-height: 1.4; }.session-progress { margin-bottom: 14px; }.standalone-session-page .slide-card { max-width: 950px; margin: 0 auto; }.standalone-session-page .session-progress { max-width: 950px; margin: 20px auto 14px; }.standalone-session-page .answer-input { margin: 12px 0; }.family-result-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 15px 0 22px; }.family-result-grid > div { background: #eef1de; border: 1px solid #d0d8be; border-radius: 8px; padding: 11px; display: flex; justify-content: space-between; gap: 8px; }.howto-slide { min-height: 310px; display: grid; grid-template-columns: 130px 1fr; gap: 35px; align-items: center; margin-top: 20px; }.howto-number { display: grid; place-items: center; width: 130px; height: 130px; border-radius: 24px; background: #e2eaca; border: 3px solid #b3c79f; color: #4a7e55; font: 900 3.6rem Georgia, serif; box-shadow: 0 6px 0 #c4d1b0; }.howto-slide .slide-actions { margin-top: 25px; }.game-footer { max-width: 1250px; padding: 24px 22px 0; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; color: #79816f; font-size: .78rem; }.display-tools { display: flex; flex-wrap: wrap; gap: 12px; }.display-tools label { display: inline-flex; gap: 5px; align-items: center; }.xp-toast { position: fixed; z-index: 80; right: 18px; bottom: 18px; display: flex; gap: 14px; align-items: center; padding: 14px 16px; border: 2px solid #1b6040; border-radius: 12px; background: #347c54; color: white; font-weight: 850; box-shadow: 0 7px 0 #214e37; max-width: min(520px, calc(100vw - 36px)); }
-  @media (max-width: 1050px) { .village-selection-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }.welcome-layout { grid-template-columns: 1fr; }.welcome-art { min-height: 390px; }.welcome-copy { max-width: 800px; }.activity-choice-grid { grid-template-columns: 1fr 1fr; }.game-header { grid-template-columns: 1fr auto; }.header-player { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }.header-menu-wrap { grid-column: 2; grid-row: 1; } }
-  @media (max-width: 680px) { .game-header { padding: 9px 12px; gap: 8px; }.brand-button strong { font-size: .92rem; }.brand-icon { width: 37px; height: 37px; }.player-chip, .xp-chip, .crest-chip { font-size: .72rem; padding: 6px 8px; }.menu-toggle { padding: 9px 10px; }.welcome-layout { padding: 22px 14px 40px; }.welcome-art { min-height: 300px; }.welcome-copy h1 { font-size: 2.4rem; }.character-slide { grid-template-columns: 1fr; }.slide-illustration { min-height: 110px; }.avatar-big { font-size: 4.5rem; }.village-selection-grid { grid-template-columns: 1fr; }.village-choice-card { min-height: auto; }.village-card-art { height: 75px; }.village-topbar, .room-header { display: block; }.village-side-panel { margin-top: 15px; grid-template-columns: 1fr 1fr; }.village-side-panel button { grid-column: span 2; }.map-instructions { align-items: flex-start; flex-wrap: wrap; }.map-instructions .text-button { margin-left: 41px; }.pixel-map-frame { border-width: 3px; border-radius: 10px; }.building-label { font-size: 13px; }.building-number { font-size: 17px; }.classroom-scene { min-height: 160px; grid-template-columns: 1fr 90px; }.classroom-wall { min-height: 160px; padding: 10px; }.chalkboard { left: 20%; top: 20px; width: 62%; height: 105px; border-width: 6px; padding: 10px 4px; }.chalkboard-small { font-size: .6rem; margin-top: 7px; }.chalk-marks { margin-top: 12px; }.classroom-clock { display: none; }.classroom-window { width: 43px; height: 53px; right: 2px; top: 10px; border-width: 3px; }.teacher-character { width: 90px; }.teacher-label { font-size: .58rem; padding: 4px; }.theory-progress, .session-progress { flex-wrap: wrap; gap: 9px; }.theory-progress .progress-track, .session-progress .progress-track { flex-basis: 100%; }.slide-card { padding: 19px; border-radius: 14px; }.slide-topline { align-items: flex-start; flex-wrap: wrap; }.answer-options { grid-template-columns: 1fr; gap: 8px; }.answer-option { min-height: 50px; }.table-steps { grid-template-columns: 1fr; }.unit-table th, .unit-table td { font-size: .77rem; padding: 8px 1px; }.activity-choice-grid { grid-template-columns: 1fr; }.result-slide { grid-template-columns: 1fr; }.result-icon { width: 62px; height: 62px; font-size: 2.2rem; }.howto-slide { grid-template-columns: 1fr; gap: 20px; }.howto-number { width: 75px; height: 75px; font-size: 2.3rem; }.family-result-grid { grid-template-columns: 1fr; }.display-tools { width: 100%; }.game-footer { padding-left: 14px; padding-right: 14px; }.room-header-actions { margin-top: 10px; }.slide-actions .text-button { margin-left: 0; } }
+  @media (max-width: 1050px) { .village-selection-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }.mesurovia-catalog-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.welcome-layout { grid-template-columns: 1fr; }.welcome-art { min-height: 390px; }.welcome-copy { max-width: 800px; }.activity-choice-grid { grid-template-columns: 1fr 1fr; }.game-header { grid-template-columns: 1fr auto; }.header-player { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }.header-menu-wrap { grid-column: 2; grid-row: 1; } }
+  @media (max-width: 680px) { .game-header { padding: 9px 12px; gap: 8px; }.brand-button strong { font-size: .92rem; }.brand-icon { width: 37px; height: 37px; }.player-chip, .xp-chip, .crest-chip { font-size: .72rem; padding: 6px 8px; }.menu-toggle { padding: 9px 10px; }.welcome-layout { padding: 22px 14px 40px; }.welcome-art { min-height: 300px; }.welcome-copy h1 { font-size: 2.4rem; }.mesurovia-catalog-page { padding:18px 12px 36px; }.mesurovia-catalog-grid { grid-template-columns:1fr; }.character-slide { grid-template-columns: 1fr; }.slide-illustration { min-height: 110px; }.avatar-big { font-size: 4.5rem; }.village-selection-grid { grid-template-columns: 1fr; }.village-choice-card { min-height: auto; }.village-card-art { height: 75px; }.village-topbar, .room-header { display: block; }.village-side-panel { margin-top: 15px; grid-template-columns: 1fr 1fr; }.village-side-panel button { grid-column: span 2; }.map-instructions { align-items: flex-start; flex-wrap: wrap; }.map-instructions .text-button { margin-left: 41px; }.pixel-map-frame { border-width: 3px; border-radius: 10px; }.building-label { font-size: 13px; }.building-number { font-size: 17px; }.classroom-scene { min-height: 160px; grid-template-columns: 1fr 90px; }.classroom-wall { min-height: 160px; padding: 10px; }.chalkboard { left: 20%; top: 20px; width: 62%; height: 105px; border-width: 6px; padding: 10px 4px; }.chalkboard-small { font-size: .6rem; margin-top: 7px; }.chalk-marks { margin-top: 12px; }.classroom-clock { display: none; }.classroom-window { width: 43px; height: 53px; right: 2px; top: 10px; border-width: 3px; }.teacher-character { width: 90px; }.teacher-label { font-size: .58rem; padding: 4px; }.theory-progress, .session-progress { flex-wrap: wrap; gap: 9px; }.theory-progress .progress-track, .session-progress .progress-track { flex-basis: 100%; }.slide-card { padding: 19px; border-radius: 14px; }.slide-topline { align-items: flex-start; flex-wrap: wrap; }.answer-options { grid-template-columns: 1fr; gap: 8px; }.answer-option { min-height: 50px; }.table-steps { grid-template-columns: 1fr; }.unit-table th, .unit-table td { font-size: .77rem; padding: 8px 1px; }.activity-choice-grid { grid-template-columns: 1fr; }.result-slide { grid-template-columns: 1fr; }.result-icon { width: 62px; height: 62px; font-size: 2.2rem; }.howto-slide { grid-template-columns: 1fr; gap: 20px; }.howto-number { width: 75px; height: 75px; font-size: 2.3rem; }.family-result-grid { grid-template-columns: 1fr; }.display-tools { width: 100%; }.game-footer { padding-left: 14px; padding-right: 14px; }.room-header-actions { margin-top: 10px; }.slide-actions .text-button { margin-left: 0; } }
 
   /* V3 — mini-jeux animés, interactifs et sobres en ressources. */
   .mini-game-stage { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:16px; margin:8px 0 22px; padding:15px; min-height:108px; border:3px solid #334d3d; border-radius:12px; background:linear-gradient(135deg,#dceac8,#f5e9ba); box-shadow:inset 0 -5px #c6d4b6, 0 4px #b2b99a; }
@@ -1369,8 +1479,6 @@
   .memory-card.face-up .memory-card-inner { transform:rotateY(180deg); }
   .memory-card-back, .memory-card-front { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:5px; padding:8px; border:3px solid #617a5b; border-radius:12px; backface-visibility:hidden; -webkit-backface-visibility:hidden; box-shadow:0 5px #b5c3a7; }
   .memory-card-back { color:#fff8df; background:repeating-linear-gradient(135deg,#4e805f 0 9px,#5b9169 9px 18px); }
-  .memory-card-back b { font-size:2rem; text-shadow:0 2px #315940; }
-  .memory-card-back small { font-size:.58rem; font-weight:900; letter-spacing:.15em; }
   .memory-card-front { transform:rotateY(180deg); color:#314c39; background:linear-gradient(145deg,#fffef5,#f4e5b7); border-color:#b4954f; text-align:center; }
   .memory-card-front b { font-size:clamp(.78rem,1.7vw,1.2rem); overflow-wrap:anywhere; }
   .memory-card-front small { color:#6a7259; font-size:clamp(.55rem,1vw,.72rem); }

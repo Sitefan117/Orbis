@@ -11,8 +11,8 @@
     length: { label: 'Longueurs', base: 'm', units: { mm: 0.001, cm: 0.01, dm: 0.1, m: 1, dam: 10, hm: 100, km: 1000 } },
     mass: { label: 'Masses', base: 'kg', units: { mg: 0.000001, g: 0.001, kg: 1, t: 1000 } },
     capacity: { label: 'Capacités', base: 'L', units: { mL: 0.001, cL: 0.01, dL: 0.1, L: 1, daL: 10, hL: 100 } },
-    duration: { label: 'Durées', base: 's', units: { s: 1, min: 60, h: 3600, j: 86400 } },
-    area: { label: 'Aires', base: 'm²', units: { 'mm²': 0.000001, 'cm²': 0.0001, 'dm²': 0.01, 'm²': 1, 'dam²': 100, 'hm²': 10000, 'km²': 1000000 } },
+    duration: { label: 'Durées', base: 's', units: { s: 1, min: 60, h: 3600, j: 86400, sem: 604800 } },
+    area: { label: 'Aires', base: 'm²', units: { 'mm²': 0.000001, 'cm²': 0.0001, 'dm²': 0.01, 'm²': 1, 'dam²': 100, ha: 10000, 'hm²': 10000, 'km²': 1000000 } },
     volume: { label: 'Volumes', base: 'm³', units: { 'mm³': 0.000000001, 'cm³': 0.000001, 'dm³': 0.001, 'm³': 1 } }
   };
 
@@ -61,12 +61,12 @@
       {title:'Je choisis une unité qui a du sens',body:'Avant de calculer, je me demande ce que je mesure : une longueur, une masse, une capacité ou une durée. Le nom de l’unité me donne un indice.',visual:'<div class="measure-cards"><span>📏 longueur<br><b>m · cm · km</b></span><span>⚖️ masse<br><b>g · kg · t</b></span><span>🫗 capacité<br><b>mL · L</b></span><span>⏱ durée<br><b>s · min · h</b></span></div>',ask:'Une valise bien remplie pèse environ 12 ___. Quelle unité choisir ?',options:['g','kg','t'],answer:'kg',explain:'Le kilogramme (kg) convient pour la masse d’une valise. Le gramme est trop petit et la tonne beaucoup trop grande.'},
       {title:'J’estime avant de convertir',body:'Je pense à un repère réel. Une porte mesure environ 2 m, une bouteille peut contenir 1 L et un trajet entre deux villes se mesure souvent en kilomètres.',visual:'<div class="example-strip"><span>🚪 porte ≈ 2 m</span><span>🧴 bouteille ≈ 1 L</span><span>🚲 tour ≈ 20 min</span></div>',ask:'Une carte indique une distance de 4 km. Quelle autre écriture représente la même distance ?',options:['400 m','4 000 m','40 000 m'],answer:'4 000 m',explain:'1 km = 1 000 m. Donc 4 km = 4 × 1 000 = 4 000 m.'},
       {title:'Je garde la même grandeur',body:'Convertir ne change pas la longueur, la masse ou la capacité réelle. Seul le nombre écrit change parce que l’unité n’a pas la même taille.',visual:'<div class="equal-visual"><b>1 m</b><span>＝</span><div class="bar-meter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><b>100 cm</b></div>',ask:'Un ruban mesure 3 m. Un autre mesure 300 cm. Lequel est le plus long ?',options:['Celui de 3 m','Celui de 300 cm','Ils ont la même longueur'],answer:'Ils ont la même longueur',explain:'3 m = 300 cm. Les deux rubans ont la même longueur, même si le nombre écrit est différent.'},
-      {title:'Je vérifie si le résultat est raisonnable',body:'Après une conversion, je relis l’unité et j’estime le résultat. En allant vers une unité plus petite, le nombre augmente. En allant vers une unité plus grande, le nombre diminue.',visual:'<div class="direction-visual"><span>unité grande</span><b>← le nombre diminue</b><b>le nombre augmente →</b><span>unité petite</span></div>',ask:'Combien de centimètres y a-t-il dans 2 mètres ?',options:['0,2 cm','20 cm','200 cm'],answer:'200 cm',explain:'Le centimètre est plus petit que le mètre : il en faut 100 pour faire 1 m. Donc 2 m = 200 cm.'}
+      {title:'Je vérifie si le résultat est raisonnable',body:'Une unité plus petite demande un nombre plus grand : 2 m = 200 cm. Une unité plus grande demande un nombre plus petit : 200 cm = 2 m. Compare toujours à la même longueur.',visual:'<div class="direction-visual"><span>petite unité : cm</span><b>← nombre plus grand : 200</b><b>nombre plus petit : 2 →</b><span>grande unité : m</span></div>',ask:'Combien de centimètres y a-t-il dans 3 mètres ?',options:['0,3 cm','30 cm','300 cm'],answer:'300 cm',explain:'Le centimètre est plus petit que le mètre : il en faut 100 pour faire 1 m. Donc 3 m = 300 cm.'}
     ],
     'longueurs': [
-      {title:'Étape 1 — Je lis les unités',body:'Ordre des longueurs : km | hm | dam | m | dm | cm | mm. Chaque pas vers la droite correspond à une unité dix fois plus petite.',visual:'TABLE',ask:'Une fourmi mesure quelques millimètres. Quelle unité convient pour écrire sa longueur ?',options:['mm','m','km'],answer:'mm',explain:'Le centimètre est plus petit que le mètre. Le kilomètre et le décamètre sont plus grands.'},
+      {title:'Étape 1 — Je lis les unités',body:'Ordre de notre tableau : km | hm | dam | m | dm | cm | mm. Chaque pas vers la droite correspond à une unité dix fois plus petite.',visual:'TABLE',ask:'Une fourmi mesure quelques millimètres. Quelle unité convient pour écrire sa longueur ?',options:['mm','m','km'],answer:'mm',explain:'Le millimètre est plus petit que le centimètre et le mètre.'},
       {title:'Étape 2 — Je place le nombre dans le tableau',body:'Pour 2,4 m, je place le 2 dans la colonne des mètres et le 4 dans celle des décimètres. Les chiffres occupent une colonne ; les cases vides valent zéro.',visual:'TABLE_EXAMPLE',ask:'Dans 3,6 m, quel chiffre indique les décimètres ?',options:['3','6','0'],answer:'6',explain:'Dans 3,6 m, le 3 correspond aux mètres et le 6 aux décimètres.'},
-      {title:'Étape 3 — Je lis la colonne d’arrivée',body:'Pour convertir, je repère la colonne demandée puis je lis le nombre. Vers une unité plus petite, le nombre s’écrit avec davantage de chiffres ; vers une unité plus grande, il devient plus petit.',visual:'<div class="number-line"><span>km</span><span>hm</span><span>dam</span><span class="active">m</span><span>dm</span><span>cm</span><span>mm</span></div>',ask:'2 m = combien de dm ?',options:['0,2 dm','20 dm','200 dm'],answer:'20 dm',explain:'Entre m et dm, il y a un pas vers une unité dix fois plus petite. 2 × 10 = 20 dm.'},
+      {title:'Étape 3 — Je lis la colonne d’arrivée',body:'Pour convertir, je repère la colonne demandée puis je lis le nombre. Vers une unité plus petite, à droite, le nombre augmente ; vers une unité plus grande, à gauche, il diminue.',visual:'<div class="number-line"><span>km</span><span>hm</span><span>dam</span><span class="active">m</span><span>dm</span><span>cm</span><span>mm</span></div>',ask:'2 m = combien de dm ?',options:['0,2 dm','20 dm','200 dm'],answer:'20 dm',explain:'Entre m et dm, il y a un pas vers une unité dix fois plus petite. 2 × 10 = 20 dm.'},
       {title:'Étape 4 — Je vérifie si le résultat a du sens',body:'Je peux contrôler avec un repère : 2 m est la longueur d’une grande table. 20 dm désigne exactement la même longueur. 200 dm ferait 20 mètres : beaucoup trop long.',visual:'<div class="example-strip"><span>❌ 2 m = 0,2 cm</span><span>✅ 2 m = 200 cm</span></div>',ask:'5 m = combien de cm ?',options:['50 cm','500 cm','5 000 cm'],answer:'500 cm',explain:'m → dm → cm : deux pas vers des unités 10 fois plus petites. 5 × 100 = 500 cm.'}
     ],
     'masses': [
@@ -107,7 +107,7 @@
   // de compréhension de l'interface, tandis que le défi augmente avec les régions.
   const STAGE_FINAL_CHECKPOINTS = {
     'sentiers-moulin': {
-      'repères': {ask:'Le moulin doit préparer 2 mètres de ruban. Combien cela représente-t-il en centimètres ?',options:['20 cm','200 cm','2 000 cm'],answer:'200 cm',explain:'1 m = 100 cm. Donc 2 m = 2 × 100 = 200 cm.'},
+      'repères': {ask:'Le moulin doit préparer 3 mètres de ruban. Combien cela représente-t-il en centimètres ?',options:['30 cm','300 cm','3 000 cm'],answer:'300 cm',explain:'1 m = 100 cm. Donc 3 m = 3 × 100 = 300 cm.'},
       'longueurs': {ask:'Le moulin a besoin de 5 m de corde. Combien de centimètres faut-il mesurer ?',options:['50 cm','500 cm','5 000 cm'],answer:'500 cm',explain:'m → dm → cm : deux pas vers des unités 10 fois plus petites. 5 × 100 = 500 cm.'},
       'masses': {ask:'Le boulanger pèse 2 kg de farine. Cela représente combien de grammes ?',options:['20 g','200 g','2 000 g'],answer:'2 000 g',explain:'1 kg = 1 000 g, donc 2 kg = 2 × 1 000 = 2 000 g.'},
       'durées': {ask:'Le moulin tourne pendant 2 h 40 min. Combien cela fait-il de minutes ?',options:['160 min','240 min','204 min'],answer:'160 min',explain:'2 h = 120 min. Puis 120 + 40 = 160 minutes.'},
@@ -141,7 +141,7 @@
   // conserve une interface familière sans répéter exactement le même cours.
   const STAGE_HOUSE_NOTES = {
     'sentiers-moulin': {
-      'repères':['Associe d’abord chaque objet à ce que tu mesures : longueur, masse, capacité ou durée.','Compare avec un objet familier : une porte, une bouteille ou un sac de pommes.','La mesure réelle ne change pas quand on change l’unité ; seul le nombre écrit change.','Si tu comptes dans une unité plus petite, il faut davantage d’unités pour mesurer la même chose.'],
+      'repères':['Repère les grandes unités à gauche du tableau et les petites à droite.','Aligne le chiffre des unités avec la colonne de l’unité de départ.','La mesure réelle ne change pas quand on change l’unité ; seul le nombre écrit change.','Si tu comptes dans une unité plus petite, il faut davantage d’unités pour mesurer la même chose.'],
       'longueurs':['Commence par repérer le mètre dans la famille des longueurs.','Dans le tableau, place le chiffre des unités dans la colonne de l’unité donnée.','Pour passer de mètres à centimètres, avance de deux colonnes vers des unités plus petites.','Avant de valider, imagine la longueur d’une corde ou d’une table pour vérifier le résultat.'],
       'masses':['Une balance mesure une masse ; un verre mesure une capacité. Ne mélange pas ces deux grandeurs.','Retiens le repère central : 1 kg pèse autant que 1 000 g.','Pour les contenances, un litre équivaut à 1 000 millilitres. Utilise le tableau adapté à la capacité.','Relis l’unité : quelques grammes sont légers, quelques kilogrammes sont plausibles pour un sac.'],
       'durées':['Pour le temps, retiens d’abord les deux relations utiles : 1 min = 60 s et 1 h = 60 min.','Convertis les heures en paquets de 60 minutes, puis ajoute les minutes restantes.','Ne traite pas les minutes comme des centièmes d’heure : 30 min correspondent à une demi-heure.','Vérifie en recomposant les heures et les minutes de départ.'],
@@ -149,7 +149,7 @@
     },
     'clairieres-compas': {
       'repères':['Le cartographe choisit une unité qui correspond à l’échelle du trajet ou de l’objet.','Une estimation t’aide à voir à peu près quel résultat attendre avant d’utiliser le tableau.','Avec les décimaux, la quantité reste identique ; seule sa représentation change.','Compare les résultats proposés avec le repère : 0,08 km doit rester une petite distance, soit 80 m.'],
-      'longueurs':['La famille complète est km | hm | dam | m | dm | cm | mm ; chaque pas change par 10.','Aligne le chiffre de départ avec la bonne colonne, même si le nombre contient une virgule.','Compte le nombre de pas entre l’unité de départ et celle d’arrivée, puis applique le facteur.','Vérifie le résultat avec une unité connue : 3,2 dm, c’est 32 cm ou 320 mm.'],
+      'longueurs':['Notre tableau va de km à gauche jusqu’à mm à droite ; chaque pas change par 10.','Aligne le chiffre de départ avec la bonne colonne, même si le nombre contient une virgule.','Compte le nombre de pas entre l’unité de départ et celle d’arrivée, puis applique le facteur.','Vérifie le résultat avec une unité connue : 3,2 dm, c’est 32 cm ou 320 mm.'],
       'masses':['Observe le nombre et l’unité ensemble : 0,75 kg n’est pas 0,75 g.','Pour les masses, kg → g multiplie par 1 000 ; dans l’autre sens, on divise par 1 000.','Une capacité suit son propre tableau ; un résultat en mL ne peut pas être une masse en g.','Contrôle que 0,75 kg est proche de trois quarts de kilogramme, donc 750 g.'],
       'durées':['Les heures et les minutes utilisent un facteur 60, contrairement aux colonnes décimales de longueur.','Sépare la partie entière des heures et la partie décimale avant de convertir.','0,5 h vaut 30 minutes ; 0,25 h vaut 15 minutes. Ne lis jamais 2,5 h comme 2 h 5 min.','Contrôle le total en recomposant : 150 min = 2 h 30 min.'],
       'expedition':['Choisis une unité commune avant d’additionner ou de comparer des mesures.','Convertis d’abord les kilomètres en mètres, puis ajoute les mètres restants.','Garde la famille de grandeur visible : une longueur ne s’ajoute pas à une masse.','Refais le calcul dans l’autre sens ou utilise une estimation pour repérer un zéro de trop.']
@@ -176,6 +176,10 @@
     const lesson = source.map(item => ({...item}));
     const checkpoints = STAGE_FINAL_CHECKPOINTS[villageId]?.[houseId];
     if (checkpoints) lesson[3] = {...lesson[3], ...checkpoints};
+    if (villageId === 'sentiers-moulin' && houseId === 'repères') {
+      lesson[0] = { title:'Je découvre le tableau de conversion', body:'Une même longueur peut s’écrire en km, m, dm, cm ou mm. Dans notre tableau, les grandes unités sont à gauche et les petites à droite. Les colonnes intermédiaires hm et dam aident à voir chaque pas.', visual:'TABLE', ask:'Quelle unité se trouve juste à droite du mètre dans le tableau ?', options:['dm','km','hm'], answer:'dm', explain:'Le décimètre est dix fois plus petit que le mètre ; il est placé à sa droite.' };
+      lesson[1] = { title:'Je place les chiffres au bon endroit', body:'Pour 2,4 m, je place le 2 dans la colonne m et le 4 dans la colonne dm. La mesure reste la même : 2,4 m = 24 dm = 240 cm.', visual:'TABLE_EXAMPLE', ask:'Dans 3,6 m, quel chiffre faut-il placer dans la colonne des décimètres ?', options:['3','6','0'], answer:'6', explain:'Le 3 va dans la colonne m, le 6 dans la colonne dm.' };
+    }
     if (villageId === 'sentiers-moulin' && houseId === 'durées') {
       lesson[1] = {...lesson[1], title:'Je décompose heures et minutes', body:'Chaque heure vaut 60 minutes. Je convertis d’abord les heures complètes, puis j’ajoute les minutes restantes.', visual:'<div class="time-blocks"><span>2 h = 120 min</span><b>+</b><span>15 min</span><b>=</b><strong>135 min</strong></div>', ask:'2 h 25 min = combien de minutes ?', options:['125 min','145 min','225 min'], answer:'145 min', explain:'2 h = 120 min. Ensuite 120 + 25 = 145 min.'};
       lesson[2] = {...lesson[2], title:'Je garde les unités visibles', body:'Quand une durée contient des heures et des minutes, je transforme d’abord les heures, puis j’ajoute les minutes. Je vérifie que le total peut se recomposer en heures et minutes.', visual:'<div class="time-blocks"><span>1 h = 60 min</span><b>+</b><span>50 min</span><b>=</b><strong>110 min</strong></div>', ask:'1 h 45 min = combien de minutes ?', options:['145 min','105 min','85 min'], answer:'105 min', explain:'1 h = 60 min ; 60 + 45 = 105 min.'};
@@ -215,7 +219,7 @@
   function unitsFor(family, difficulty) {
     // La progression introduit les unités par étapes pour éviter des conversions
     // absurdes (par exemple mm² → km²) dès qu'un élève choisit un village avancé.
-    if (family === 'duration') return difficulty <= 2 ? ['min','h'] : ['s','min','h','j'];
+    if (family === 'duration') return difficulty <= 2 ? ['min','h'] : difficulty === 3 ? ['s','min','h','j'] : ['s','min','h','j','sem'];
     if (family === 'length') {
       if (difficulty === 1) return ['cm','m'];
       if (difficulty === 2) return ['mm','cm','dm','m'];
@@ -235,8 +239,8 @@
     if (family === 'area') {
       if (difficulty === 1) return ['dm²','m²'];
       if (difficulty === 2) return ['cm²','dm²','m²'];
-      if (difficulty === 3) return ['cm²','dm²','m²'];
-      return ['mm²','cm²','dm²','m²','dam²'];
+      if (difficulty === 3) return ['cm²','m²','ha'];
+      return ['mm²','cm²','m²','ha','km²'];
     }
     if (family === 'volume') {
       if (difficulty <= 2) return ['dm³','m³'];
@@ -297,7 +301,11 @@
         'j>h': [1, 2, 3, 5],
         'h>j': [24, 36, 48, 72, 120],
         'j>min': [1, 2, 3],
-        'min>j': [1440, 2160, 2880, 4320]
+        'min>j': [1440, 2160, 2880, 4320],
+        'sem>j': [1, 2, 3, 4],
+        'j>sem': [7, 14, 21, 28],
+        'sem>h': [1, 2, 3],
+        'h>sem': [168, 336, 504]
       };
       value = pick(durationValues[`${from}>${to}`] || [1, 2, 3, 4]);
     } else {
@@ -521,18 +529,16 @@
 
   function makeErrorQuestion(family, difficulty) {
     const q = makeConversion(family, difficulty);
-    const alternatives = chooseDistractors(q.answer, family, q.from, q.to, { includeCorrect: false });
-    const wrong = alternatives.find(item => normalizeAnswer(item) !== normalizeAnswer(`${fmt(q.answer)} ${q.to}`)) || `${fmt(q.answer + 1)} ${q.to}`;
-    const correct = `${fmt(q.answer)} ${q.to}`;
-    const options = shuffle([correct, ...alternatives.filter(item => normalizeAnswer(item) !== normalizeAnswer(wrong) && normalizeAnswer(item) !== normalizeAnswer(correct)).slice(0, 2), wrong]);
-    const unique = [...new Set(options)];
-    while (unique.length < 4) unique.push(`${fmt(q.answer + unique.length + 1)} ${q.to}`);
+    const names = ['Lina', 'Noé', 'Samir', 'Zoé'];
+    const values = [q.answer, neat(q.answer * 10), neat(q.answer / 10), neat(q.answer * 100)];
+    const options = shuffle(values).map((value, index) => `${names[index]} : ${fmt(value)} ${q.to}`);
+    const correct = options.find(option => normalizeAnswer(option.split(': ')[1]) === normalizeAnswer(`${fmt(q.answer)} ${q.to}`));
     return {
-      ...q, type: 'error', prompt: `Léo écrit : ${fmt(q.value)} ${q.from} = ${wrong}. Quelle est la bonne conversion ?`,
-      options: shuffle(unique), answer: correct, answerLabel: correct,
-      explain: `La bonne conversion est ${correct}. ${q.explain}`,
-      hint: 'Ne choisis pas tout de suite : regarde les unités et demande-toi si le nombre doit augmenter ou diminuer.',
-      worked: `${fmt(q.value)} ${q.from} = ${correct}. La réponse de Léo, ${wrong}, utilise un mauvais facteur de conversion.`
+      ...q, type: 'error', prompt: `Quatre élèves convertissent ${fmt(q.value)} ${q.from} en ${q.to}. Qui a raison ?`,
+      options, answer: correct, answerLabel: correct,
+      explain: `${correct} a raison. ${q.explain}`,
+      hint: 'Compare les quatre propositions. Le nombre doit augmenter vers une unité plus petite et diminuer vers une plus grande.',
+      worked: `${fmt(q.value)} ${q.from} = ${fmt(q.answer)} ${q.to}. Les trois autres élèves ont utilisé un mauvais facteur.`
     };
   }
 
@@ -584,7 +590,8 @@
 
   function tableUnitsFor(family) {
     if (!FAMILIES[family]) return [];
-    return Object.keys(FAMILIES[family].units).sort((a, b) => FAMILIES[family].units[a] - FAMILIES[family].units[b]);
+    if (family === 'area') return ['km²','ha','m²','dm²','cm²','mm²'];
+    return Object.keys(FAMILIES[family].units).sort((a, b) => FAMILIES[family].units[b] - FAMILIES[family].units[a]);
   }
 
   function availableFormats(family) {

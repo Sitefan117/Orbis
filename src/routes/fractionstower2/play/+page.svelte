@@ -53,6 +53,7 @@
     }
 
     let animTimer = 0;
+    let movementStep = 1;
 
     const npcArtwork: Record<string, { src: string; alt: string; width: number; height: number }> = {
         'course-intro': {
@@ -163,9 +164,12 @@
     onMount(() => {
         updateScale();
         window.addEventListener('resize', updateScale);
-        window.addEventListener('orientationchange', () => {
-            setTimeout(updateScale, 200);
-        });
+        const onOrientationChange = () => window.setTimeout(updateScale, 200);
+        window.addEventListener('orientationchange', onOrientationChange);
+        const touchDevice = window.matchMedia('(pointer: coarse)').matches;
+        movementStep = touchDevice ? 2 : 1;
+        let frameId = 0;
+        let lastUpdate = 0;
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -186,17 +190,19 @@
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
 
-        function loop() {
-            update();
-            requestAnimationFrame(loop);
+        function loop(time: number) {
+            if (time - lastUpdate >= (touchDevice ? 30 : 15)) {
+                update();
+                lastUpdate = time;
+            }
+            frameId = requestAnimationFrame(loop);
         }
-        requestAnimationFrame(loop);
+        frameId = requestAnimationFrame(loop);
 
         return () => {
             window.removeEventListener('resize', updateScale);
-            window.removeEventListener('orientationchange', () => {
-                setTimeout(updateScale, 200);
-            });
+            window.removeEventListener('orientationchange', onOrientationChange);
+            cancelAnimationFrame(frameId);
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
             if (guardMessageTimer) clearTimeout(guardMessageTimer);
@@ -329,26 +335,25 @@
         if (!floor || activeActivityId || activeBossFloorId || activeCourseFloorId || game.isTransitioning) return;
         let dx = 0; let dy = 0;
         if (keys.has('ArrowUp') || keys.has('z') || keys.has('w')) {
-            dy = -game.player.speed;
-            game.setDirection('up');
+            dy = -game.player.speed * movementStep;
+            if (game.player.direction !== 'up') game.setDirection('up');
         } else if (keys.has('ArrowDown') || keys.has('s')) {
-            dy = game.player.speed;
-            game.setDirection('down');
+            dy = game.player.speed * movementStep;
+            if (game.player.direction !== 'down') game.setDirection('down');
         }
         if (keys.has('ArrowLeft') || keys.has('q') || keys.has('a')) {
-            dx = -game.player.speed;
-            game.setDirection('left');
+            dx = -game.player.speed * movementStep;
+            if (game.player.direction !== 'left') game.setDirection('left');
         } else if (keys.has('ArrowRight') || keys.has('d')) {
-            dx = game.player.speed;
-            game.setDirection('right');
+            dx = game.player.speed * movementStep;
+            if (game.player.direction !== 'right') game.setDirection('right');
         }
 
         isWalking = (dx !== 0 || dy !== 0);
 
         if (isWalking) {
             animTimer += 1;
-            if (animTimer === 1 || animTimer > 14) {
-                safePlayAudio('step');
+            if (animTimer >= (movementStep === 2 ? 4 : 7)) {
                 walkFrame = !walkFrame;
                 animTimer = 0;
             }
@@ -493,18 +498,9 @@
                 <!-- PERSONNAGE PRINCIPAL -->
                 <img
                     class="character-art player-art"
-                    class:walking={isWalking && !walkFrame}
-                    src={`${base}/fractionstower2/characters/hero.png`}
+                    class:walking={isWalking}
+                    src={`${base}/fractionstower2/characters/${isWalking && walkFrame ? 'hero-step' : 'hero'}.png`}
                     alt="Héros de Fraction Tower"
-                    draggable="false"
-                    style="left: {game.player.position.x + 30 - heroWidth / 2}px; top: {game.player.position.y + 50 - heroHeight}px; --facing: {game.player.direction === 'left' ? -1 : 1}; width: {heroWidth}px; height: {heroHeight}px;"
-                />
-                <img
-                    class="character-art player-step-art"
-                    class:walking={isWalking && walkFrame}
-                    src={`${base}/fractionstower2/characters/hero-step.png`}
-                    alt=""
-                    aria-hidden="true"
                     draggable="false"
                     style="left: {game.player.position.x + 30 - heroWidth / 2}px; top: {game.player.position.y + 50 - heroHeight}px; --facing: {game.player.direction === 'left' ? -1 : 1}; width: {heroWidth}px; height: {heroHeight}px;"
                 />
@@ -663,20 +659,11 @@
     }
     .player-art {
         z-index: 10;
-        opacity: 1;
-        transition: opacity 70ms linear;
     }
     .player-art.walking {
-        opacity: 0;
+        animation: hero-walk-bob 230ms ease-in-out infinite alternate;
     }
-    .player-step-art {
-        z-index: 10;
-        opacity: 0;
-        transition: opacity 70ms linear;
-    }
-    .player-step-art.walking {
-        opacity: 1;
-    }
+    @keyframes hero-walk-bob { from { transform: translateY(0) scaleX(var(--facing, 1)); } to { transform: translateY(-4px) scaleX(var(--facing, 1)); } }
     .npc-sector {
         position: absolute;
         z-index: 7;
@@ -811,9 +798,7 @@
         white-space: nowrap;
     }
     @media (prefers-reduced-motion: reduce) {
-        .player-art, .player-step-art { transition: none; }
-        .player-art.walking { opacity: 1; }
-        .player-step-art.walking { opacity: 0; }
+        .player-art.walking { animation: none; }
     }
 
     .error {

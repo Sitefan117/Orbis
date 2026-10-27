@@ -4,7 +4,7 @@
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { onMount } from 'svelte';
   import { getStudentName, studentStorageScope } from '$lib/orbis/identity/local-student';
-  import { submitActivityResult } from '$lib/orbis/results/client';
+  import { recordGameActivity } from '$lib/orbis/tracking/client';
   import type { ChatMessage, CvFields, LetterFields, PcpScreen } from '$lib/games/pcp/types';
 
   let studentName = 'Explorateur';
@@ -216,13 +216,12 @@ Consignes strictes :
   }
 
   async function markComplete(kind: 'CV' | 'Lettre de motivation') {
-    const report = await submitActivityResult({
+    const report = await recordGameActivity({
       studentName,
-      world: 'pcp',
-      mission: kind,
-      score: 1,
-      total: 1,
-      scoreBasis: 'last',
+      gameId: 'pcp',
+      activityId: kind,
+      correctCount: 1,
+      questionCount: 1,
       errorCount: 0,
       metadata: { completedAt: new Date().toISOString() }
     });

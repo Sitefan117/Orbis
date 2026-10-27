@@ -4,7 +4,7 @@
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { onDestroy, onMount, tick } from 'svelte';
   import { getStudentName } from '$lib/orbis/identity/local-student';
-  import { submitActivityResult } from '$lib/orbis/results/client';
+  import { recordGameActivity } from '$lib/orbis/tracking/client';
   import { GEOMETRY_FIGURES, getFiguresForLevel } from '$lib/games/geometrie/figures';
   import FigureDrawing from '$lib/games/geometrie/FigureDrawing.svelte';
   import { generateQuestion } from '$lib/games/geometrie/question-engine';
@@ -225,13 +225,12 @@
     submittingResult = true;
     try {
       // Conserve le contrat d'intégration ORBIS du composant précédent.
-      await submitActivityResult({
+      await recordGameActivity({
         studentName,
-        world: 'geometrie',
-        mission: `${level} mode ${mode}`,
-        score: correctCount,
-        total: QUESTION_COUNT,
-        scoreBasis: 'last',
+        gameId: 'geometrie',
+        activityId: `${level} mode ${mode}`,
+        correctCount,
+        questionCount: QUESTION_COUNT,
         errorCount: QUESTION_COUNT - correctCount,
         errorFamilies,
         metadata: { xp, firstTryCorrectCount, attemptedErrors: errorFamilies.length, level, mode }

@@ -1,6 +1,6 @@
 # Guide développeur Orbis
 
-Guide provisoire mis à jour le 26 octobre 2026. L’interface distante de sauvegarde et la transmission vers Supabase sont proposées, mais pas encore implémentées. Ne copie pas de clé secrète dans le code du navigateur.
+Guide provisoire mis à jour le 27 octobre 2026. Le stockage local commun et le client de synchronisation Supabase sont présents ; le projet distant et la connexion par codes ne sont pas encore configurés. Ne copie pas de clé secrète dans le code du navigateur.
 
 ## Lancer et contrôler le projet
 
@@ -44,11 +44,11 @@ Erreurs fréquentes : oublier d’enregistrer le jeu dans `games.ts`, coder en d
 
 Ne transforme pas une ressemblance visuelle entre deux exercices en moteur commun sans vérifier que les règles et les résultats sont aussi communs.
 
-## Transmettre un résultat à Orbis : état actuel et cible
+## Transmettre un résultat à Orbis
 
-Le contrat et le client actuels sont dans `src/lib/orbis/results/`. Plusieurs pages appellent `submitActivityResult`, qui envoie à `/api/activity-results`; cette route écrit dans SQLite sous `src/lib/server/`. Elle nécessite un serveur et ne fonctionne pas comme API hébergée sur GitHub Pages.
+Le point d’entrée public est `src/lib/orbis/tracking/client.ts`. Tous les jeux intégrés utilisent `recordGameActivity` et `recordGameProgress` avec les mêmes noms de champs. L’implémentation sous `results/` et `persistence/` écrit d’abord dans le navigateur puis synchronise si Supabase, le réseau et une session authentifiée sont disponibles. GitHub Pages n’a donc pas besoin d’exécuter une route serveur.
 
-La cible proposée est un client de service Orbis indépendant du moteur, appelé depuis le jeu avec un identifiant élève stable, un identifiant de jeu et les champs de résultat validés. Les données exactes du tableau enseignant restent à définir. Ne branche pas un nouveau jeu sur le prénom dans l’URL comme identité sécurisée.
+Le prénom transmis dans l’URL reste un nom d’affichage local et non une identité sécurisée. La liste minimale des données est documentée dans `ORBiS_SUIVI_PEDAGOGIQUE.md`.
 
 ## Sauvegarder et reprendre une progression
 
@@ -61,7 +61,7 @@ Avant de modifier un jeu :
 3. Conserver le format existant pendant la transition ; ne pas supprimer de clé.
 4. Si une migration est approuvée, copier vers le nouveau format, relire et comparer les données, puis seulement documenter le traitement de l’ancien format.
 
-L’interface de persistance commune proposée est documentée dans `ORBiS_ARCHITECTURE.md`. Elle n’est pas encore présente dans le code.
+L’interface de persistance commune est documentée dans `ORBiS_ARCHITECTURE.md` et implémentée sous `src/lib/orbis/persistence/`. Pour une transition sans risque, appeler `queueGameProgressSnapshot` après la sauvegarde historique plutôt que de la remplacer immédiatement.
 
 ## Préparer la future identité élève
 

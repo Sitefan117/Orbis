@@ -5,6 +5,7 @@
  */
 
 import { getStudentName, studentStorageScope } from '$lib/orbis/identity/local-student';
+import { recordGameProgress } from '$lib/orbis/tracking/client';
 
 export interface FloorProgress {
     floorId: string;
@@ -62,6 +63,21 @@ export class ProgressManager {
         if (typeof window === 'undefined') return;
         try {
             localStorage.setItem(currentStorageKey(), JSON.stringify(progress));
+            const studentName = getStudentName('');
+            if (studentName) {
+                const completed = Object.values(progress.floors).filter((floor) => floor.completed).length;
+                recordGameProgress({
+                    studentName,
+                    gameId: 'fractionstower2',
+                    state: progress,
+                    formatVersion: 1,
+                    summary: {
+                        label: `${progress.currentFloor.replace('floor-', 'Étage ')} · ${completed}/9 terminés`,
+                        completed,
+                        total: 9
+                    }
+                });
+            }
         } catch (e) {
             console.error("Erreur lors de la sauvegarde de la progression :", e);
         }

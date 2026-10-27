@@ -4,7 +4,7 @@
   import { base } from '$app/paths';
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { getStudentName } from '$lib/orbis/identity/local-student';
-  import { submitActivityResult } from '$lib/orbis/results/client';
+  import { recordGameActivity } from '$lib/orbis/tracking/client';
   import { generateDecimalQuestion, type DecimalQuestion } from '$lib/games/calculs/question-engine';
 
   type Phase = 'setup' | 'play' | 'done';
@@ -132,13 +132,12 @@
   // Termine la séance puis tente d’envoyer un bilan sans empêcher le jeu de fonctionner hors ligne.
   async function finishMission() {
     phase = 'done';
-    const report = await submitActivityResult({
+    const report = await recordGameActivity({
       studentName,
-      world: 'calculs',
-      mission: `Niveaux ${activeLevels.join(', ')}`,
-      score,
-      total: 10,
-      scoreBasis: 'last',
+      gameId: 'calculs',
+      activityId: `Niveaux ${activeLevels.join(', ')}`,
+      correctCount: score,
+      questionCount: 10,
       errorCount: 10 - score,
       errorFamilies: Array.from(new Set(errorFamilies))
     });

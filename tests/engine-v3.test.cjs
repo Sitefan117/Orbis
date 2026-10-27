@@ -40,7 +40,9 @@ for (const family of families) {
       if (['choice', 'number', 'table', 'error'].includes(q.type) && q.from && q.to && q.value !== undefined) {
         const expectedValue = E.convert(q.value, family, q.from, q.to);
         const expectedLabel = `${E.fmt(expectedValue)} ${q.to}`;
-        const actualLabel = ['number', 'table'].includes(q.type) ? `${E.fmt(q.answer)} ${q.to}` : String(q.answer);
+        const actualLabel = ['number', 'table'].includes(q.type)
+          ? `${E.fmt(q.answer)} ${q.to}`
+          : q.type === 'error' ? String(q.answer).split(': ').slice(1).join(': ') : String(q.answer);
         assert.equal(E.normalizeAnswer(actualLabel), E.normalizeAnswer(expectedLabel), `${family}/${format}: résultat mathématique concorde avec les unités`);
       }
 
@@ -96,7 +98,9 @@ for (const family of families) {
       // Pour les formats de conversion, la consigne ne doit pas répéter le résultat exact.
       // On exige une limite après l'unité (m et m³ sont différents) pour éviter les faux positifs.
       if (['choice', 'number', 'table', 'error'].includes(q.type)) {
-        const answerLabel = ['number', 'table'].includes(q.type) ? `${E.fmt(q.answer)} ${q.to}` : q.answer;
+        const answerLabel = ['number', 'table'].includes(q.type)
+          ? `${E.fmt(q.answer)} ${q.to}`
+          : q.type === 'error' ? String(q.answer).split(': ').slice(1).join(': ') : q.answer;
         const answer = E.normalizeAnswer(answerLabel).replace(/[\s'’]/g, '').replace(',', '.');
         const parts = answer.match(/^([0-9]+(?:\.[0-9]+)?)([a-z²³]+)$/);
         assert.ok(parts, `${family}/${format}: réponse de conversion au format nombre + unité`);

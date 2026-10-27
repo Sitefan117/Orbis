@@ -4,7 +4,7 @@
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { onMount } from 'svelte';
   import { getStudentName } from '$lib/orbis/identity/local-student';
-  import { submitActivityResult } from '$lib/orbis/results/client';
+  import { recordGameActivity } from '$lib/orbis/tracking/client';
   import { generateMultiplicationQuestion } from '$lib/games/livrets/question-engine';
 
   type Phase = 'setup' | 'play' | 'done';
@@ -87,13 +87,12 @@
 
   async function finishMission() {
     phase = 'done';
-    const report = await submitActivityResult({
+    const report = await recordGameActivity({
       studentName,
-      world: 'livrets',
-      mission: `Tables ${selectedTables.join(', ')}`,
-      score,
-      total: 10,
-      scoreBasis: 'last',
+      gameId: 'livrets',
+      activityId: `Tables ${selectedTables.join(', ')}`,
+      correctCount: score,
+      questionCount: 10,
       errorCount: 10 - score,
       errorFamilies: Array.from(new Set(errorFamilies))
     });

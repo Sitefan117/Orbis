@@ -62,6 +62,46 @@ create index classes_teacher_idx on public.classes (teacher_id);
 create index activity_events_student_date_idx on public.activity_events (student_id, occurred_at desc);
 create index activity_events_game_idx on public.activity_events (student_id, game_id, occurred_at desc);
 
+-- Sauvegarde optimiste : refuse d'écraser une révision créée sur un autre appareil.
+create function public.orbis_save_game_state(
+  p_game_id text,
+  p_format_version integer,
+  p_state jsonb,
+  p_expected_revision bigint,
+  p_updated_at timestamptz
+)
+returns bigint
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  next_revision bigint;
+begin
+  if p_expected_revision = 0 then
+    insert into public.game_saves (student_id, game_id, format_version, state, revision, updated_at)
+    values ((select auth.uid()), p_game_id, p_format_version, p_state, 1, p_updated_at)
+    on conflict (student_id, game_id) do nothing
+    returning revision into next_revision;
+  else
+    update public.game_saves
+    set format_version = p_format_version,
+        state = p_state,
+        revision = revision + 1,
+        updated_at = p_updated_at
+    where student_id = (select auth.uid())
+      and game_id = p_game_id
+      and revision = p_expected_revision
+    returning revision into next_revision;
+  end if;
+
+  if next_revision is null then
+    raise exception using errcode = '23505', message = 'orbis_save_conflict';
+  end if;
+  return next_revision;
+end;
+$$;
+
 -- These helpers use the table owner's permissions to avoid recursive RLS checks.
 -- Their return values reveal only whether the current teacher has the relationship.
 create function public.orbis_is_teacher()
@@ -110,6 +150,8 @@ revoke all on function public.orbis_teacher_can_view_student(uuid) from public, 
 grant execute on function public.orbis_is_teacher() to authenticated;
 grant execute on function public.orbis_teacher_owns_class(uuid) to authenticated;
 grant execute on function public.orbis_teacher_can_view_student(uuid) to authenticated;
+revoke all on function public.orbis_save_game_state(text, integer, jsonb, bigint, timestamptz) from public, anon;
+grant execute on function public.orbis_save_game_state(text, integer, jsonb, bigint, timestamptz) to authenticated;
 
 alter table public.teacher_accounts enable row level security;
 alter table public.classes enable row level security;

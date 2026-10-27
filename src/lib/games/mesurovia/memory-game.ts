@@ -1,4 +1,4 @@
-/** Prépare les paires et les cartes du jeu de mémoire propre à Mesurovia. */
+/** Prépare les paires visibles du jeu d'appariement de Mesurovia. */
 import type { MesuroviaEngineApiV3 } from './engine-v3-adapter';
 
 export type MemoryPair = {
@@ -64,8 +64,8 @@ export function createMemoryPairs(
 /** Transforme chaque association en deux cartes puis mélange le paquet. */
 export function createMemoryCards(pairs: MemoryPair[]): MemoryCard[] {
   const cards = pairs.flatMap((pair) => [
-    { id: `${pair.id}-a`, pairId: pair.id, family: pair.family, label: pair.left, revealed: false, matched: false },
-    { id: `${pair.id}-b`, pairId: pair.id, family: pair.family, label: pair.right, revealed: false, matched: false }
+    { id: `${pair.id}-a`, pairId: pair.id, family: pair.family, label: pair.left, revealed: true, matched: false },
+    { id: `${pair.id}-b`, pairId: pair.id, family: pair.family, label: pair.right, revealed: true, matched: false }
   ]);
 
   for (let index = cards.length - 1; index > 0; index -= 1) {

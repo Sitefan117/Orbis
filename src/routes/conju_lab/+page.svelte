@@ -4,7 +4,7 @@
   import { base } from '$app/paths';
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
 import { getStudentName } from '$lib/orbis/identity/local-student';
-import { submitActivityResult } from '$lib/orbis/results/client';
+import { recordGameActivity } from '$lib/orbis/tracking/client';
   import { getTenseInfo, getTensesForGrade, RULE_CARDS } from '$lib/games/conju-lab/curriculum';
   import { getGroupLabel, getVerbsForGrade } from '$lib/games/conju-lab/verbs';
   import {
@@ -284,12 +284,12 @@ import { submitActivityResult } from '$lib/orbis/results/client';
     resultStatus = 'sending';
     try {
       // ConjuLab garde sa logique pédagogique et envoie seulement le bilan de session.
-      const report = await submitActivityResult({
+      const report = await recordGameActivity({
         studentName: getStudentName(),
-        world: 'conju_lab',
-        mission: `${grade} · ${playPath === 'guide' ? 'parcours guidé' : 'parcours libre'} · ${selectedGradeFocus}`,
-        score: correctQuestions,
-        total: SESSION_LENGTH,
+        gameId: 'conju_lab',
+        activityId: `${grade} · ${playPath === 'guide' ? 'parcours guidé' : 'parcours libre'} · ${selectedGradeFocus}`,
+        correctCount: correctQuestions,
+        questionCount: SESSION_LENGTH,
         errorCount: totalErrors,
         metadata: { grade, playPath, selectedTenses, selectedGroups, answerStyle, retrySuccesses, totalErrors }
       });

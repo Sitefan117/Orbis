@@ -6,7 +6,7 @@ Orbis est un portail pédagogique construit avec SvelteKit, Svelte et TypeScript
 
 Le dépôt publie un site statique sur GitHub Pages. Le workflow `.github/workflows/main.yml` installe les dépendances, exécute les contrôles et tests, construit le site, puis publie le dossier `build/`. Aucun serveur ne tourne sur le Mac de l’enseignant.
 
-Le dépôt contient aussi des routes API SvelteKit et un stockage SQLite côté serveur. GitHub Pages ne peut pas exécuter ces routes ni conserver ce fichier SQLite. L’envoi de résultats vers `/api/activity-results` et le chat serveur ne sont donc pas des fonctions disponibles sur le site GitHub Pages actuel. Un service en ligne séparé sera nécessaire pour le suivi enseignant et les comptes élèves.
+Le dépôt contient aussi d’anciennes routes API SvelteKit et un stockage SQLite côté serveur. GitHub Pages ne peut pas exécuter ces routes ni conserver ce fichier SQLite. Les nouveaux bilans passent donc par un stockage local compatible avec GitHub Pages ; une synchronisation Supabase facultative est préparée pour réunir ensuite les appareils. Les comptes élèves et enseignant restent à configurer.
 
 ## Démarrer en local
 

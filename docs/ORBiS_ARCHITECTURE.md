@@ -57,7 +57,7 @@ Les pages de `routes/` assemblent les écrans. Les jeux ne partagent que les ser
 - `/` : portail Arcade et Cours ; les listes proviennent de `src/lib/orbis/catalog/games.ts` et `courses.ts`.
 - Routes de jeux : `/livrets`, `/geometrie`, `/calculs`, `/numeria`, `/mesurovia`, `/fractionstower2`, `/race`, `/mathhunt`, `/shift`, `/conju_lab` et `/pcp`.
 - `/teacher` : import local de sauvegardes `.fracsave` pour le tableau présent dans cette page.
-- `/api/activity-results` : route POST SvelteKit qui écrit les rapports dans SQLite.
+- `/api/activity-results` : ancienne route POST SvelteKit qui écrit les rapports dans SQLite ; elle reste dans le dépôt mais le client GitHub Pages ne l’utilise plus.
 - `/api/chat` : route serveur de chat.
 
 Les cours HTML sont regroupés sous `static/cours/<matiere>/<theme>/` et catalogués dans `src/lib/orbis/catalog/courses.ts`. Les anciennes adresses des fichiers déplacés restent accessibles par de petites redirections. Les corrigés Mesurovia sont rangés sous `enseignant/` et ne sont pas proposés dans le catalogue élève.
@@ -65,7 +65,7 @@ Les cours HTML sont regroupés sous `static/cours/<matiere>/<theme>/` et catalog
 ## Circulation actuelle des données
 
 1. La page d’accueil lit le prénom d’élève depuis `sessionStorage` (clé `nomEleve`) et le transmet aux pages par le paramètre `eleve`.
-2. Certaines activités appellent `src/lib/orbis/results/client.ts`, qui envoie le prénom affiché, le jeu, la mission, le score et d’autres champs à `/api/activity-results`.
+2. Certaines activités appellent `src/lib/orbis/results/client.ts`, qui conserve d’abord le prénom affiché, le jeu, la mission, le score et les champs facultatifs dans la file locale Orbis.
 3. Cette route valide les champs et appelle `recordActivityResult`; SQLite conserve élèves, résultats, agrégats de progression, notes et sessions enseignant.
 4. Les jeux qui ont une reprise locale conservent leurs formats indépendants dans `localStorage`; Fraction Tower peut aussi exporter/importer des fichiers `.fracsave`.
 
@@ -83,7 +83,7 @@ La plupart des données locales sont propres à un jeu. La progression de Numér
 | Fraction Tower | Nouvelles progressions locales séparées par nom de profil, plus export/import `.fracsave`. L’ancienne clé globale reste accessible sans profil. | Progression conservée ; les anciennes données globales ne sont pas attribuées automatiquement. |
 | Race | Statistiques locales de faits mathématiques par profil. | Statistiques conservées ; reprise d’une course non repérée. |
 | PCP | CV et lettre enregistrés localement et séparés par nom de profil pour les nouveaux brouillons ; anciennes clés conservées sans attribution automatique. | Brouillons conservés. Ces documents peuvent contenir des données personnelles et ne doivent pas être synchronisés par défaut sans décision explicite. |
-| ConjuLab | Envoie maintenant les champs attendus par le client de résultats. Le destinataire `/api` reste indisponible sur GitHub Pages. | Aucun stockage de session déclaré dans la page. |
+| ConjuLab | Envoie maintenant les champs attendus par le client de résultats local-first. | Aucun stockage de session déclaré dans la page. |
 | Shift | Aucune sauvegarde ou transmission de résultat repérée dans la page. | Pas de reprise repérée. |
 | Math Hunt | Aucune sauvegarde ou transmission de résultat repérée dans la page. | Pas de reprise repérée. |
 
@@ -93,7 +93,7 @@ Ces constats sont un inventaire du code, pas une décision sur les mesures qui d
 
 GitHub Pages sert des fichiers statiques. Le workflow publie uniquement `build/`; il ne démarre pas de serveur Node et ne conserve pas une base SQLite. Les routes API et modules SQLite présents dans le dépôt ne peuvent donc pas être exécutés par GitHub Pages. Le README a été corrigé pour expliquer cette limite.
 
-Au contrôle du 25 octobre 2026, `npm run check`, `npm test` et `npm run build` passent. Le build produit encore un avertissement de bundle JavaScript supérieur à 500 kB. Le workflow GitHub exécute maintenant ces trois commandes avant publication.
+Au contrôle du 25 octobre 2026, `npm run check`, `npm test` et `npm run build` passaient. Le build produisait encore un avertissement de bundle JavaScript supérieur à 500 kB. Le workflow GitHub exécute ces trois commandes avant publication. Le chantier local-first du 27 octobre n’a pas encore fait l’objet d’un nouveau contrôle automatisé.
 
 `npm test` rassemble les tests des moteurs, la structure des routes, la navigation, les illustrations et les sauvegardes locales. Les scripts Mesurovia et Numéria ont été adaptés pour lancer correctement les moteurs existants dans leur contexte navigateur/CommonJS ; aucune mécanique pédagogique n’a été changée pour cela.
 
@@ -115,11 +115,12 @@ type OrbisError = 'offline' | 'unauthorized' | 'invalid-data' | 'conflict' | 'st
 type Result<T> = { ok: true; value: T } | { ok: false; error: OrbisError; message?: string };
 
 type ActivityResultInput = {
-  eventId: string; // créé une seule fois et réutilisé aux tentatives de synchronisation
+  studentName: string; // nom d’affichage local pendant la transition
+  gameId: WorldId;
   activityId: string;
   skillId?: string;
-  correct: number;
-  total: number;
+  correctCount: number;
+  questionCount: number;
   errorCount?: number;
   errorFamilies?: string[];
   hintsUsed?: number;
@@ -133,7 +134,7 @@ interface OrbisGameServices<TProgress> {
 }
 ```
 
-Orbis crée un service lié à l’identité de l’élève et au jeu courant ; le jeu ne passe donc ni prénom ni identifiant de destinataire. L’implémentation ajoute la date. `eventId` est généré au moment du résultat puis gardé dans la file locale jusqu’à confirmation distante : renvoyer le même résultat n’en crée pas un deuxième. Les détails pédagogiques restent facultatifs ; un jeu n’envoie que ce qu’il sait mesurer de façon fiable. `formatVersion` permet au jeu de faire évoluer sa sauvegarde sans imposer la même structure aux autres jeux.
+L’interface actuelle est exposée par `src/lib/orbis/tracking/client.ts`. Pendant la transition locale, le jeu fournit encore un nom d’affichage ; une fois connecté, la session Supabase fournit l’identifiant opaque utilisé à distance. L’implémentation ajoute la date et génère `eventId`, puis le garde dans la file locale jusqu’à confirmation distante : renvoyer le même événement n’en crée pas un deuxième. Les détails pédagogiques restent facultatifs ; un jeu n’envoie que ce qu’il sait mesurer de façon fiable. `formatVersion` permet au jeu de faire évoluer sa sauvegarde sans imposer la même structure aux autres jeux.
 
 ### Modèle de données distant proposé
 
@@ -164,7 +165,7 @@ Les données d’un élève seraient accessibles à cet élève et à l’enseig
 
 - Au départ, chaque jeu garde son écriture locale existante et un adaptateur facultatif peut ensuite relire/écrire son format.
 - Les résultats créés hors réseau sont mis en attente localement avec un identifiant d’événement stable, puis synchronisés quand la connexion revient.
-- Une sauvegarde distante porte une révision ; une divergence entre la copie locale et la copie distante doit conserver une copie de secours avant toute résolution. Aucun écrasement silencieux n’est acceptable.
+- Une sauvegarde distante porte une révision. La fonction SQL du pilote n’accepte une écriture que si la dernière révision distante connue correspond ; une divergence est signalée comme conflit au lieu d’écraser silencieusement l’autre appareil.
 - La première intégration ne migre pas automatiquement toutes les clés localStorage. Chaque jeu a une migration documentée et vérifiée, à valider séparément.
 
 ### Connexion et gestion par l’enseignant
@@ -176,14 +177,19 @@ Le détail technique (format de connexion, règles contre les essais répétés 
 Exemple d’utilisation par un jeu, sans exposer Supabase au moteur :
 
 ```ts
-const orbisGame = await orbis.forGame<TowerProgress>('fractionstower2');
-const saved = await orbisGame.saveProgress(towerProgress, 1);
-const result = await orbisGame.recordResult({
-  eventId: crypto.randomUUID(),
+recordGameProgress({
+  studentName,
+  gameId: 'fractionstower2',
+  state: towerProgress,
+  formatVersion: 1
+});
+const result = await recordGameActivity({
+  studentName,
+  gameId: 'fractionstower2',
   activityId: 'floor-1-boss',
   skillId: 'fraction-comparison',
-  correct: 14,
-  total: 18,
+  correctCount: 14,
+  questionCount: 18,
   errorCount: 6,
   errorFamilies: ['equivalent-fractions']
 });

@@ -11,10 +11,10 @@
   import { catalogReturnHref } from '$lib/orbis/navigation';
   import { onDestroy, onMount } from 'svelte';
   import { getStudentName } from '$lib/orbis/identity/local-student';
-  import { submitActivityResult } from '$lib/orbis/results/client';
+  import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
   import { CODEX, GRADE_STORIES, REALMS, getRealm, realmsForGrade } from '$lib/games/numeria/curriculum';
   import { answersEqual, generateQuestions, normalizeAnswer } from '$lib/games/numeria/question-engine';
-  import { clearProgress, createEmptySave, loadSave, saveProgress, TEACHER_ACCESS_CODE } from '$lib/games/numeria/progress';
+  import { clearProgress, createEmptySave, loadSave, saveProgress as saveNumeriaProgress, TEACHER_ACCESS_CODE } from '$lib/games/numeria/progress';
   import type { ActiveMissionSave, Grade, MissionFeedback, MissionMode, Question, QuestionOutcome, Realm, SessionResult, StudentSave } from '$lib/games/numeria/types';
 
   type Screen = 'welcome' | 'hub' | 'realm' | 'game' | 'result' | 'codex';
@@ -65,6 +65,21 @@
   let progressCount = 0;
   let progressPercent = 0;
   let sortedNumberOptions: string[] = [];
+
+  /** Garde la sauvegarde historique de Numéria et en place une copie dans le service Orbis. */
+  function saveProgress(nextSave: StudentSave): void {
+    saveNumeriaProgress(nextSave);
+    recordGameProgress({
+      studentName: nextSave.studentName,
+      gameId: 'numeria',
+      state: nextSave,
+      formatVersion: 1,
+      summary: {
+        label: `${nextSave.grade} · ${nextSave.completedRealms.length} royaume(x) terminé(s)`,
+        completed: nextSave.completedRealms.length
+      }
+    });
+  }
 
   /** Restaure une mission enregistrée, avec ses questions déjà générées. */
   function resumeActiveMission(session: ActiveMissionSave | undefined = save.activeMission): boolean {
@@ -346,13 +361,12 @@
     // Prépare l'envoi vers le suivi ORBIS existant. La sauvegarde de secours reste locale.
     // L'échec de la synchronisation ne bloque jamais l'écran de résultat.
     try {
-      const submission = submitActivityResult({
+      const submission = recordGameActivity({
         studentName,
-        world: 'numeria',
-        mission: `${currentRealm.id}-${missionMode}`,
-        score: correct,
-        total,
-        scoreBasis: 'best',
+        gameId: 'numeria',
+        activityId: `${currentRealm.id}-${missionMode}`,
+        correctCount: correct,
+        questionCount: total,
         errorCount,
         errorFamilies: questions.filter((question, index) => (outcomes[index]?.mistakes ?? 0) > 0).map((question) => question.errorFamily),
         metadata: { grade: selectedGrade, realmId: currentRealm.id, mode: missionMode, stars, firstTry, xpGained, guardianWon, sessionScore: correct, bestScore, errorCount }

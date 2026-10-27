@@ -2,6 +2,7 @@
 	// Tableau local historique : importe des sauvegardes Fraction Tower et produit un CSV.
 	import { languageState } from '$lib/games/fractionstower2/persistence/LanguageManager';
 	import { SaveManager, type SaveData } from '$lib/games/fractionstower2/persistence/SaveManager';
+	import LocalTrackingPanel from '$lib/orbis/teacher/LocalTrackingPanel.svelte';
 
 	let isAuthenticated = $state(false);
 	let password = $state('');
@@ -90,6 +91,7 @@
 		<div class="login-card">
 			<h1>{languageState.current === 'fr-FR' ? 'Espace Enseignant' : 'Пространство учителя'}</h1>
 			<p>{languageState.current === 'fr-FR' ? 'Veuillez entrer le mot de passe pour accéder au tableau de bord.' : 'Пожалуйста, введите пароль для доступа к панели управления.'}</p>
+			<p class="local-warning">Protection locale provisoire : elle ne remplace pas encore un compte enseignant sécurisé.</p>
 			<input type="password" bind:value={password} placeholder="Mot de passe..." />
 			<button onclick={login}>{languageState.current === 'fr-FR' ? 'Se connecter' : 'Войти'}</button>
 		</div>
@@ -98,19 +100,21 @@
 	<div class="teacher-container">
 		<header>
 			<h1>{languageState.current === 'fr-FR' ? 'Tableau de Bord des Élèves' : 'Панель управления учениками'}</h1>
-			<div class="actions">
-				<label class="import-btn">
-					{languageState.current === 'fr-FR' ? '📂 Importer' : '📂 Импортировать'}
-					<input type="file" multiple accept=".fracsave" onchange={handleFileUpload} />
-				</label>
-				<button class="excel-btn" onclick={exportToExcel}>
-					{languageState.current === 'fr-FR' ? '📊 Export Excel' : '📊 Экспорт в Excel'}
-				</button>
-				<button class="clear-btn" onclick={clearStudents}>
-					{languageState.current === 'fr-FR' ? '🗑️ Effacer' : '🗑️ Очистить'}
-				</button>
-			</div>
 		</header>
+
+		<LocalTrackingPanel />
+
+		<section class="legacy-heading">
+			<div>
+				<h2>Anciennes sauvegardes Fractions Tower</h2>
+				<p>Cette partie reste disponible pour importer les fichiers <code>.fracsave</code> existants.</p>
+			</div>
+			<div class="actions">
+				<label class="import-btn">📂 Importer<input type="file" multiple accept=".fracsave" onchange={handleFileUpload} /></label>
+				<button class="excel-btn" onclick={exportToExcel}>📊 Exporter</button>
+				<button class="clear-btn" onclick={clearStudents}>🗑️ Effacer</button>
+			</div>
+		</section>
 
 		{#if students.length === 0}
 			<div class="empty-state">
@@ -180,6 +184,7 @@
 		box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 	}
 	.login-card h1 { color: #ffcc00; margin-bottom: 1rem; }
+	.local-warning { color: #ffdc72; font-size: .85rem; }
 	.login-card input {
 		width: 80%;
 		padding: 10px;
@@ -241,6 +246,9 @@
 		border: 1px solid #333;
 		box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 	}
+	.legacy-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin: 1.5rem 0 1rem; }
+	.legacy-heading h2 { margin-bottom: .35rem; color: #ffcc00; }
+	.legacy-heading p { margin: 0; color: #aaa; }
 	table {
 		width: 100%;
 		border-collapse: collapse;
@@ -256,4 +264,8 @@
 	.status-complete { color: #4caf50; font-weight: bold; }
 	.status-progress { color: #ffcc00; }
 	.status-stuck { color: #ff5252; }
+	@media (max-width: 800px) {
+		header, .legacy-heading { align-items: flex-start; flex-direction: column; }
+		.actions { flex-wrap: wrap; }
+	}
 </style>
