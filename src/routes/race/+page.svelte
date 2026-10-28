@@ -24,7 +24,7 @@
     // Aucune donnée n'est envoyée à un serveur dans cette version.
     // -------------------------------------------------------------------------
 
-    type GameState = 'MENU' | 'PLAYING' | 'PAUSED_ERROR' | 'SUMMARY' | 'GAMEOVER';
+    type GameState = 'MENU' | 'TABLE_PICKER' | 'PLAYING' | 'PAUSED_ERROR' | 'SUMMARY' | 'GAMEOVER';
     type GameMode = 'training' | 'arcade';
     interface NotionOption {
         id: Notion;
@@ -49,7 +49,7 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
         {
             title: 'MULTIPLICATIONS',
             items: [
-                { id: 'livrets', label: 'Livrets', help: 'Tables de 1 à 12' },
+                { id: 'livrets', label: 'Livrets', help: 'Tables de 2 à 12' },
                 { id: 'doubles', label: 'Doubles / moitiés', help: 'Ex. : double de 18' },
                 { id: 'triples', label: 'Triples', help: 'Ex. : triple de 12' },
                 { id: 'quadruples', label: 'Quadruples', help: 'Ex. : quadruple de 8' },
@@ -84,6 +84,8 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
     let engineReady = $state(false);
     let engineError = $state('');
     let selectedNotions = $state<Notion[]>(['livrets', 'doubles', 'complements10']);
+    const tableChoices = Array.from({ length: 11 }, (_, index) => index + 2);
+    let selectedTables = $state<number[]>([...tableChoices]);
 
     let musicEnabled = $state(true);
     let sfxEnabled = $state(true);
@@ -475,7 +477,7 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
             base = retry.base;
         } else {
             const activeNotions: Notion[] = selectedNotions.length > 0 ? selectedNotions : ['livrets'];
-            base = makeQuestionBase(choose(activeNotions), practiceLevel, notionLabels);
+            base = makeQuestionBase(choose(activeNotions), practiceLevel, notionLabels, selectedTables);
             if (gameMode === 'training') normalQuestionsGenerated++;
         }
         generatedQuestions++;
@@ -607,6 +609,24 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
         }
     }
 
+    function needsTablePicker(): boolean {
+        return selectedNotions.some((notion) => notion === 'livrets' || notion === 'trous' || notion === 'divisions');
+    }
+
+    function requestStartGame() {
+        if (!engineReady || !scene || !carGroup) return;
+        if (selectedNotions.length === 0) selectedNotions = ['livrets'];
+        if (needsTablePicker()) {
+            gameState = 'TABLE_PICKER';
+            return;
+        }
+        startGame();
+    }
+
+    function toggleAllTables() {
+        selectedTables = selectedTables.length === tableChoices.length ? [] : [...tableChoices];
+    }
+
     function startGame() {
         if (!engineReady || !scene || !carGroup) return;
 
@@ -615,6 +635,11 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
             displayFeedback('info', 'On garde un point de départ !', 'Les livrets sont sélectionnés pour commencer.', 1800);
         } else {
             clearFeedback();
+        }
+
+        if (needsTablePicker() && selectedTables.length === 0) {
+            gameState = 'TABLE_PICKER';
+            return;
         }
 
         score = 0;
@@ -869,12 +894,12 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
             <span>↑ / ↓ : ACCÉLÉRER / RALENTIR</span>
         </div>
 
-        <nav class="touch-controls" aria-label="Commandes tactiles">
-            <button type="button" class="touch-control lane-control" onclick={moveLeft} aria-label="Aller sur la voie de gauche">◀<span>GAUCHE</span></button>
-            <button type="button" class="touch-control lane-control" onclick={moveRight} aria-label="Aller sur la voie de droite"><span>DROITE</span>▶</button>
-            <button type="button" class="touch-control speed-control brake-control" aria-label="Ralentir" onpointerdown={handleBrakePointerDown} onpointerup={handleSpeedPointerUp} onpointercancel={handleSpeedPointerUp} onlostpointercapture={handleSpeedPointerUp}>−<span>{gameMode === 'training' ? 'RALENTIR' : 'FREIN'}</span></button>
-            <button type="button" class="touch-control speed-control boost-control" aria-label={gameState === 'PAUSED_ERROR' ? 'Accélérer pour continuer' : 'Accélérer'} onpointerdown={handleAcceleratorPointerDown} onpointerup={handleSpeedPointerUp} onpointercancel={handleSpeedPointerUp} onlostpointercapture={handleSpeedPointerUp}>+<span>{gameState === 'PAUSED_ERROR' ? 'CONTINUER' : gameMode === 'training' ? 'ACCÉLÉRER' : 'BOOST'}</span></button>
-        </nav>
+        {#if gameState === 'PLAYING'}
+            <nav class="touch-steering" aria-label="Commandes tactiles de direction">
+                <button type="button" class="steering-zone steering-left" onclick={moveLeft} aria-label="Aller sur la voie de gauche"><span>◀</span></button>
+                <button type="button" class="steering-zone steering-right" onclick={moveRight} aria-label="Aller sur la voie de droite"><span>▶</span></button>
+            </nav>
+        {/if}
     {/if}
 
     {#if showFeedbackBanner && gameState === 'PLAYING'}
@@ -964,11 +989,38 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
                 {#if selectedNotions.length === 0}<p class="notice">Aucune notion cochée : les livrets seront sélectionnés au lancement.</p>{/if}
                 {#if engineError}<p class="engine-error" role="alert">{engineError}</p>{/if}
 
-                <button type="button" class="primary-button" disabled={!engineReady || Boolean(engineError)} onclick={startGame}>
+                <button type="button" class="primary-button" disabled={!engineReady || Boolean(engineError)} onclick={requestStartGame}>
                     {#if engineReady}▶ LANCER LA COURSE{:else if engineError}CIRCUIT INDISPONIBLE{:else}CHARGEMENT DU CIRCUIT…{/if}
                 </button>
                 <a class="orbis-link" href={ORBIS_HOME} use:restoreCatalogReturn={base} onclick={(event) => { event.preventDefault(); void returnToOrbis(); }}>↩ RETOUR AUX JEUX</a>
                 <div class="menu-footnote"><span>CLAVIER : ← → / A D · ↑ ↓ : VITESSE</span><span>TACTILE : COMMANDES À L’ÉCRAN</span></div>
+            </div>
+        </section>
+    {/if}
+
+    {#if gameState === 'TABLE_PICKER'}
+        <section class="menu-screen table-picker-screen" aria-label="Choix des livrets à travailler">
+            <div class="menu-panel table-picker-panel">
+                <div class="brand-row"><span class="brand-mark">MR</span><span class="eyebrow">PRÉPARATION DE LA COURSE</span></div>
+                <h2 class="picker-title">QUELS LIVRETS VEUX-TU TRAVAILLER ?</h2>
+                <p class="picker-intro">Ces choix s’appliquent aux livrets, aux facteurs manquants et aux divisions liées.</p>
+                <div class="table-choice-grid">
+                    {#each tableChoices as table}
+                        <label class="table-choice" class:selected={selectedTables.includes(table)}>
+                            <input type="checkbox" bind:group={selectedTables} value={table} />
+                            <span class="table-number">{table}</span>
+                            <small>livret de {table}</small>
+                        </label>
+                    {/each}
+                </div>
+                <div class="picker-actions">
+                    <button type="button" class="secondary-button select-all-button" onclick={toggleAllTables}>
+                        {selectedTables.length === tableChoices.length ? 'TOUT DÉSÉLECTIONNER' : 'TOUT SÉLECTIONNER'}
+                    </button>
+                    <button type="button" class="primary-button" disabled={selectedTables.length === 0} onclick={startGame}>▶ DÉMARRER AVEC {selectedTables.length} LIVRET{selectedTables.length > 1 ? 'S' : ''}</button>
+                    <button type="button" class="picker-back" onclick={() => { gameState = 'MENU'; }}>← MODIFIER LES ACTIVITÉS</button>
+                </div>
+                {#if selectedTables.length === 0}<p class="notice">Choisis au moins un livret pour démarrer.</p>{/if}
             </div>
         </section>
     {/if}
@@ -1112,14 +1164,14 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
     .keyboard-hint { position: absolute; z-index: 5; bottom: 1.1rem; left: 50%; transform: translateX(-50%); width: max-content; max-width: 80vw; color: rgb(214 229 255 / 65%); text-align: center; font: 0.72rem/1.8 'Oxanium', sans-serif; pointer-events: none; }
     .keyboard-hint span { display: block; color: rgb(0 234 255 / 70%); }
 
-    .touch-controls { display: none; }
-    .touch-control { min-width: 58px; min-height: 58px; border: 2px solid #6b80a6; border-radius: 7px; background: rgb(8 12 33 / 88%); color: white; box-shadow: 0 5px 0 #15192e; font-size: 1rem; touch-action: none; }
-    .touch-control span { display: block; margin-top: 0.35rem; font: 0.62rem 'Oxanium', sans-serif; }
-    .lane-control { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #bffaff; border-color: #00a9bd; }
-    .speed-control { min-width: 62px; font-size: 1.45rem; }
-    .brake-control { border-color: #ff286d; color: #ff8fb4; }
-    .boost-control { border-color: #00eaff; color: #7ff7ff; }
-    .touch-control:active { transform: translateY(3px); box-shadow: 0 2px 0 #15192e; }
+    .touch-steering { display: none; }
+    .steering-zone { position: absolute; top: 128px; bottom: 0; width: 50%; border: 0; background: transparent; color: rgb(127 247 255 / 28%); font-size: 2rem; touch-action: manipulation; }
+    .steering-zone span { position: absolute; bottom: max(1.2rem, env(safe-area-inset-bottom)); }
+    .steering-left { left: 0; }
+    .steering-left span { left: 1.2rem; }
+    .steering-right { right: 0; }
+    .steering-right span { right: 1.2rem; }
+    .steering-zone:active { background: linear-gradient(to top, rgb(0 234 255 / 12%), transparent 45%); color: #7ff7ff; }
 
     .feedback-banner {
         position: absolute;
@@ -1196,6 +1248,22 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
         background: linear-gradient(150deg, rgb(13 20 48 / 98%), rgb(12 8 32 / 98%));
         box-shadow: 0 0 32px rgb(0 234 255 / 14%), inset 0 0 24px rgb(0 234 255 / 3%);
     }
+
+    .table-picker-panel { width: min(100%, 760px); }
+    .picker-title { margin: 1.2rem 0 0.45rem; color: #9cfaff; font-size: clamp(0.9rem, 2.5vw, 1.35rem); line-height: 1.55; }
+    .picker-intro { margin: 0 0 1.15rem; color: #afbed8; font: 0.92rem/1.55 'Oxanium', sans-serif; }
+    .table-choice-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.6rem; }
+    .table-choice { display: grid; place-items: center; min-height: 92px; padding: 0.55rem 0.25rem; border: 2px solid #344365; border-radius: 7px; background: #080e25; cursor: pointer; touch-action: manipulation; }
+    .table-choice.selected { border-color: #00eaff; background: rgb(0 234 255 / 11%); box-shadow: inset 0 0 18px rgb(0 234 255 / 7%); }
+    .table-choice input { position: absolute; opacity: 0; }
+    .table-choice:focus-within { outline: 3px solid #f02bff; outline-offset: 2px; }
+    .table-number { color: #fff; font-size: clamp(1.1rem, 3vw, 1.65rem); font-weight: 800; }
+    .table-choice.selected .table-number { color: #7ff7ff; }
+    .table-choice small { color: #899cbd; font: 0.67rem/1.3 'Oxanium', sans-serif; text-align: center; }
+    .picker-actions { display: grid; grid-template-columns: 0.8fr 1.4fr; gap: 0.65rem; margin-top: 1rem; }
+    .picker-actions .primary-button { margin-top: 0; }
+    .select-all-button { width: 100%; }
+    .picker-back { grid-column: 1 / -1; min-height: 44px; border: 0; color: #aebed9; background: transparent; cursor: pointer; }
 
     .brand-row { display: flex; align-items: center; gap: 0.75rem; color: #9ba9c8; font-size: clamp(0.46rem, 1vw, 0.65rem); line-height: 1.7; }
     .brand-mark { display: grid; place-items: center; width: 36px; height: 36px; border: 2px solid #f02bff; color: #f9b8ff; font-size: 0.65rem; transform: skew(-8deg); }
@@ -1287,12 +1355,10 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
         .target-hint { font-size: 0.68rem; }
         .quit-run { top: 95px; padding: 0.5rem; font-size: 0.45rem; }
         .keyboard-hint { display: none; }
-        .touch-controls { position: absolute; z-index: 25; right: 0.55rem; bottom: max(1rem, env(safe-area-inset-bottom)); left: 0.55rem; display: flex; align-items: end; gap: 0.45rem; }
-        .touch-control { min-height: 58px; }
-        .touch-controls:has(.speed-control) .lane-control { min-height: 54px; }
-        .speed-control { flex: 0 0 54px; min-width: 54px; min-height: 54px; }
-        .touch-control span { font-size: 0.55rem; }
+        .touch-steering { position: absolute; z-index: 25; inset: 0; display: block; pointer-events: none; }
+        .steering-zone { pointer-events: auto; }
         .notion-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .table-choice-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .menu-panel { max-height: calc(100dvh - 1rem); }
     }
 
@@ -1308,6 +1374,10 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
         .target-hint { font-size: 0.6rem; }
         .quit-run { top: 82px; font-size: 0.42rem; }
         .notion-grid, .mode-grid, .level-grid { grid-template-columns: 1fr; }
+        .table-choice-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .table-choice { min-height: 76px; }
+        .picker-actions { grid-template-columns: 1fr; }
+        .picker-back { grid-column: 1; }
         .notion-option { min-height: 54px; }
         .menu-panel { padding: 0.9rem; }
         .encouragement { font-size: 0.85rem; }
@@ -1321,17 +1391,8 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
        on détecte donc aussi le type de pointeur, pas seulement la largeur. */
     @media (hover: none) and (pointer: coarse) {
         .keyboard-hint { display: none; }
-        .touch-controls {
-            position: absolute;
-            z-index: 25;
-            right: 0.55rem;
-            bottom: max(1rem, env(safe-area-inset-bottom));
-            left: 0.55rem;
-            display: flex;
-            align-items: end;
-            gap: 0.45rem;
-        }
-        .touch-control { min-height: 58px; }
+        .touch-steering { position: absolute; z-index: 25; inset: 0; display: block; pointer-events: none; }
+        .steering-zone { pointer-events: auto; }
     }
 
     @media (max-height: 620px) and (min-width: 781px) {

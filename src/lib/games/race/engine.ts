@@ -65,7 +65,8 @@ export function formatNumber(value: number): string {
 export function makeQuestionBase(
   notion: Notion,
   practiceLevel: PracticeLevel,
-  notionLabels: Record<Notion, string>
+  notionLabels: Record<Notion, string>,
+  selectedTables: number[] = []
 ): QuestionBase {
   let questionText = '';
   let fullFormula = '';
@@ -73,10 +74,9 @@ export function makeQuestionBase(
   let factKey = '';
 
   if (notion === 'livrets') {
-    const minFactor = practiceLevel === 'guided' ? 2 : 1;
-    const maxFactor = practiceLevel === 'guided' ? 6 : 12;
-    const a = randomInt(minFactor, maxFactor);
-    const b = randomInt(minFactor, maxFactor);
+    const tables = selectedTables.length > 0 ? selectedTables : Array.from({ length: 11 }, (_, index) => index + 2);
+    const a = choose(tables);
+    const b = randomInt(1, 12);
     answer = a * b;
     questionText = `${a} × ${b}`;
     fullFormula = `${a} × ${b} = ${answer}`;
@@ -149,9 +149,9 @@ export function makeQuestionBase(
     fullFormula = `${formatNumber(value)} + ${formatNumber(answer)} = ${formatNumber(target)}`;
     factKey = `millierSuivant:${value}`;
   } else if (notion === 'trous') {
-    const maxFactor = practiceLevel === 'guided' ? 6 : 12;
-    const a = randomInt(2, maxFactor);
-    const b = randomInt(2, maxFactor);
+    const tables = selectedTables.length > 0 ? selectedTables : Array.from({ length: 11 }, (_, index) => index + 2);
+    const a = choose(tables);
+    const b = randomInt(1, 12);
     const product = a * b;
     const hideA = Math.random() < 0.5;
     answer = hideA ? a : b;
@@ -159,9 +159,9 @@ export function makeQuestionBase(
     fullFormula = `${a} × ${b} = ${product}`;
     factKey = `trou:${Math.min(a, b)}x${Math.max(a, b)}`;
   } else {
-    const maxFactor = practiceLevel === 'guided' ? 6 : 12;
-    const a = randomInt(2, maxFactor);
-    const b = randomInt(2, maxFactor);
+    const tables = selectedTables.length > 0 ? selectedTables : Array.from({ length: 11 }, (_, index) => index + 2);
+    const a = choose(tables);
+    const b = randomInt(1, 12);
     const product = a * b;
     const divisor = Math.random() < 0.5 ? a : b;
     answer = product / divisor;
