@@ -19,7 +19,7 @@
   import GameObjectArt from '$lib/games/mesurovia/GameObjectArt.svelte';
   import ConversionGuide from '$lib/games/mesurovia/ConversionGuide.svelte';
   import ConversionPlacementTable from '$lib/games/mesurovia/ConversionPlacementTable.svelte';
-  import { houseCurriculum, villageCurriculum } from '$lib/games/mesurovia/curriculum';
+  import { houseCurriculum, villageCurriculum, housePerLinks, villagePerLinks, PER_MSN24_URL } from '$lib/games/mesurovia/curriculum';
   import { coursePaths } from '$lib/orbis/catalog/course-paths';
 
   type View = 'welcome' | 'games-catalog' | 'courses-catalog' | 'character' | 'villages' | 'village' | 'room' | 'pretest' | 'howto';
@@ -994,7 +994,7 @@
     {:else if view === 'village'}
       <section class="village-page">
         <div class="village-topbar">
-          <div><button class="text-button" onclick={() => (view = 'villages')}>← Choisir une autre région</button><p class="eyebrow">RÉGION OUVERTE · {currentVillage.name}</p><h1>{currentVillage.name}</h1><p>{currentVillage.story}</p><div class="village-objective-panel"><strong>{villageCurriculum[currentVillageId]?.code}</strong><span><b>Objectif du village :</b> {villageCurriculum[currentVillageId]?.objective}</span>{#each villageCurriculum[currentVillageId]?.priorities ?? [] as priority}<small>{priority}</small>{/each}</div></div>
+          <div><button class="text-button" onclick={() => (view = 'villages')}>← Choisir une autre région</button><p class="eyebrow">RÉGION OUVERTE · {currentVillage.name}</p><h1>{currentVillage.name}</h1><p>{currentVillage.story}</p><div class="village-objective-panel"><strong>{villageCurriculum[currentVillageId]?.code}</strong><span><b>Objectif du village :</b> {villageCurriculum[currentVillageId]?.objective}</span>{#each villageCurriculum[currentVillageId]?.priorities ?? [] as priority}<small>{priority}</small>{/each}{#if villagePerLinks[currentVillageId]}<div class="per-link"><b>PER · MSN 24 :</b> {villagePerLinks[currentVillageId].label}<br /><span>{villagePerLinks[currentVillageId].progression}</span> <a href={PER_MSN24_URL} target="_blank" rel="noreferrer">Voir le document officiel</a></div>{/if}</div></div>
           <img class="village-region-art" src={villageArtwork[currentVillageId] ?? villageArtwork['sentiers-moulin']} alt="" aria-hidden="true" loading="lazy" />
           <div class="village-side-panel"><span>🏠 {mapProgress}/5 maisons validées</span><span>✨ {profile?.xp ?? 0} XP</span><button class="secondary-button" onclick={() => downloadCourse(currentVillageId)}>📖 Cahier à imprimer</button><button class="primary-button" onclick={beginBoss}>🏰 Défi du village</button></div>
         </div>
@@ -1078,7 +1078,7 @@
 
     {:else if view === 'room'}
       <section class="classroom-page">
-        <div class="room-header"><div><button class="text-button" onclick={closeHouse}>← Retour au village</button><p class="eyebrow">{currentVillage.name} · {house ? `MAISON ${house.index + 1}` : 'DÉFI DU CHÂTEAU'}</p><h1>{house?.title ?? 'Défi du village'}</h1><p>{house?.subtitle ?? 'Une grande épreuve de mesures à l’échelle du village.'}</p>{#if house}<p class="curriculum-code">{houseCurriculum[currentVillageId]?.[house.id]?.code}</p><p class="house-objective"><strong>Objectif de la maison :</strong> {houseCurriculum[currentVillageId]?.[house.id]?.objective}</p>{/if}</div><div class="room-header-actions"><button class="secondary-button" onclick={() => downloadCourse(currentVillageId)}>Cahier élève</button><button class="secondary-button" onclick={exportSave}>Sauvegarder</button></div></div>
+        <div class="room-header"><div><button class="text-button" onclick={closeHouse}>← Retour au village</button><p class="eyebrow">{currentVillage.name} · {house ? `MAISON ${house.index + 1}` : 'DÉFI DU CHÂTEAU'}</p><h1>{house?.title ?? 'Défi du village'}</h1><p>{house?.subtitle ?? 'Une grande épreuve de mesures à l’échelle du village.'}</p>{#if house}<p class="curriculum-code">{houseCurriculum[currentVillageId]?.[house.id]?.code}</p><p class="house-objective"><strong>Objectif de la maison :</strong> {houseCurriculum[currentVillageId]?.[house.id]?.objective}</p>{#if housePerLinks[currentVillageId]?.[house.id]}<div class="per-link house-per-link"><b>PER · MSN 24 :</b> {housePerLinks[currentVillageId][house.id].label}<br /><span>{housePerLinks[currentVillageId][house.id].progression}</span> <a href={PER_MSN24_URL} target="_blank" rel="noreferrer">Référence officielle</a></div>{/if}{/if}</div><div class="room-header-actions"><button class="secondary-button" onclick={() => downloadCourse(currentVillageId)}>Cahier élève</button><button class="secondary-button" onclick={exportSave}>Sauvegarder</button></div></div>
         <div class="classroom-scene">
           <div class="classroom-wall"><div class="classroom-clock">10:10</div><div class="classroom-window"><span></span><span></span><span></span><span></span></div><div class="chalkboard"><div class="chalkboard-heading">{session ? (session.mode === 'exam' ? 'TABLE D’EXAMEN' : session.mode === 'boss' ? 'DÉFI DU VILLAGE' : session.mode === 'memory' ? 'ASSOCIE LES MESURES' : session.mode === 'race' ? 'COURSE AU TRÉSOR' : session.mode === 'battle' ? 'DUEL DES UNITÉS' : session.mode === 'table' ? 'TABLEAU MAGIQUE' : session.mode === 'detective' ? 'ENQUÊTE DES UNITÉS' : session.mode === 'clock' ? 'HORLOGE DU MOULIN' : session.mode === 'builder' ? 'CHANTIER DES FORMES' : session.mode === 'pretest' ? 'BILAN DE DÉPART' : 'PUPITRE D’ENTRAÎNEMENT') : sessionResult ? 'BILAN DE LA MISSION' : houseProgress.theoryDone ? 'CHOISIS TON ACTIVITÉ' : `LEÇON ${lessonIndex + 1} · ${currentLesson?.title ?? ''}`}</div><div class="chalkboard-small">1 grandeur · 1 méthode · 1 étape à la fois</div><div class="chalk-marks"><span></span><span></span><span></span><span></span></div></div><div class="teacher-desk"></div></div>
           <div class="teacher-character"><img class="teacher-guide" src={`${base}/images/mesurovia/maitre-mesuro.png`} alt="" aria-hidden="true" /><span class="teacher-label">Maître Mesuro</span></div>
@@ -1288,6 +1288,10 @@
   .village-objective-panel { display:flex; flex-wrap:wrap; gap:7px; max-width:760px; margin-top:14px; padding:13px; border:2px solid #c8d2b7; border-radius:12px; background:#f5f4e7; }
   .village-objective-panel strong, .village-objective-panel span { flex-basis:100%; }
   .village-objective-panel small { padding:5px 8px; border-radius:999px; background:#e3ecd5; color:#3f5946; font-weight:800; }
+  .per-link { flex-basis:100%; margin-top:4px; padding:10px 12px; border-left:4px solid #6f8e5d; border-radius:8px; background:#edf3e8; color:#315840; line-height:1.45; }
+  .per-link span { color:#42584a; }
+  .per-link a { color:#315d8a; font-weight:800; }
+  .house-per-link { max-width:760px; margin-top:10px; }
   .mesurovia-catalog-page { padding:clamp(22px,4vw,52px); }
   .catalog-page-heading { max-width:850px; margin:0 auto 28px; }
   .catalog-page-heading h1 { margin:8px 0 10px; font:700 clamp(2rem,5vw,3.4rem) Georgia,serif; }

@@ -52,3 +52,69 @@ export const houseCurriculum: Record<string, Record<string, { code: string; obje
     expedition: { code: '8H / Grandeurs et mesures / Ceintures blanche à bleue', objective: 'Justifier une solution complète avec des mesures cohérentes.' }
   }
 };
+
+/** Références PER explicites. La correspondance maison → PER est une traduction pédagogique locale,
+ * tandis que MSN 24 est la référence officielle commune aux activités de mesure. */
+export const PER_MSN24_URL = 'https://bdper.plandetudes.ch/uploads/per_pdf/Mathematiques_et_sciences_de_la_nature/Mathematiques/PER_print_MSN_24.pdf';
+
+export type PerMeasureLink = {
+  label: string;
+  progression: string;
+};
+
+export const perMeasureLinks: Record<string, PerMeasureLink> = {
+  repères: {
+    label: 'MSN 24 · comparer des grandeurs et choisir une unité conventionnelle',
+    progression: 'Estimer une mesure, choisir une unité adaptée et vérifier la vraisemblance du résultat.'
+  },
+  longueurs: {
+    label: 'MSN 24 · longueurs : mm, cm, dm, m, km',
+    progression: 'Comparer et exprimer une même longueur dans différentes unités, notamment km↔m et m↔cm.'
+  },
+  masses: {
+    label: 'MSN 24 · masses et capacités : t↔kg, kg↔g, l↔dl',
+    progression: 'Comparer et convertir des masses et des capacités ; les unités intermédiaires servent d’étayage dans Mesurovia.'
+  },
+  durées: {
+    label: 'MSN 24 · durées : h↔min et min↔s',
+    progression: 'Comparer et calculer avec les heures, minutes et secondes, puis élargir aux jours et semaines.'
+  },
+  surfaces: {
+    label: 'MSN 24 · aires : cm², dm², m²',
+    progression: 'Distinguer une aire d’une longueur et convertir les unités d’aire ; Mesurovia ajoute km², ha et mm².'
+  },
+  formes: {
+    label: 'MSN 24 · aires, volumes et capacités',
+    progression: 'Distinguer aire, volume et capacité et utiliser les relations entre L, dm³, cm³ et m³ dans des situations.'
+  },
+  expedition: {
+    label: 'MSN 24 · résoudre des problèmes de mesure',
+    progression: 'Mobiliser les unités, les conversions, l’estimation et la justification dans une situation-problème.'
+  }
+};
+
+export const villagePerLinks: Record<string, PerMeasureLink> = {
+  'sentiers-moulin': perMeasureLinks.repères,
+  'clairieres-compas': perMeasureLinks.longueurs,
+  'canaux-artisans': perMeasureLinks.surfaces,
+  'hautes-terres': perMeasureLinks.expedition
+};
+
+export const housePerLinks: Record<string, Record<string, PerMeasureLink>> = {
+  'sentiers-moulin': {
+    repères: perMeasureLinks.repères, longueurs: perMeasureLinks.longueurs, masses: perMeasureLinks.masses,
+    durées: perMeasureLinks.durées, expedition: perMeasureLinks.expedition
+  },
+  'clairieres-compas': {
+    repères: perMeasureLinks.repères, longueurs: perMeasureLinks.longueurs, masses: perMeasureLinks.masses,
+    durées: perMeasureLinks.durées, expedition: perMeasureLinks.expedition
+  },
+  'canaux-artisans': {
+    repères: perMeasureLinks.repères, longueurs: perMeasureLinks.longueurs, masses: perMeasureLinks.masses,
+    surfaces: perMeasureLinks.surfaces, expedition: perMeasureLinks.expedition
+  },
+  'hautes-terres': {
+    repères: perMeasureLinks.repères, longueurs: perMeasureLinks.longueurs, masses: perMeasureLinks.masses,
+    formes: perMeasureLinks.formes, expedition: perMeasureLinks.expedition
+  }
+};
