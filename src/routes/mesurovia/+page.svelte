@@ -4,7 +4,7 @@
    *
    * Choix de conception :
    * - une seule diapositive visible à la fois pour limiter la recherche d'information ;
-   * - la théorie est divisée en 4 explications, chacune suivie d'une question obligatoire ;
+   * - chaque cours suit 6 étapes : explication, exemple, manipulation, vérification, autonomie et réussite ;
    * - les maisons et villages restent tous accessibles dans ce prototype ;
    * - la carte utilise le point-and-click : aucun déplacement au clavier n'est enregistré ;
    * - profil et progression sont stockés dans une clé V2 dédiée, sans modifier les anciennes sauvegardes.
@@ -23,6 +23,7 @@
   import { courseForHouse } from '$lib/games/mesurovia/courses';
   import { hasHouseQuestionBank, makeHouseQuestion } from '$lib/games/mesurovia/question-bank';
   import { coursePaths } from '$lib/orbis/catalog/course-paths';
+  import { getConversionFamily } from '$lib/games/mesurovia/conversion-table';
 
   type View = 'welcome' | 'games-catalog' | 'courses-catalog' | 'character' | 'villages' | 'village' | 'room' | 'pretest' | 'howto';
   type SessionMode = 'practice' | 'battle' | 'table' | 'detective' | 'clock' | 'builder' | 'memory' | 'race' | 'exam' | 'boss' | 'pretest';
@@ -41,6 +42,7 @@
     typed: string;
     tableComplete: boolean;
     tableCommaCorrect: boolean;
+    tablePlacementCorrect: boolean;
     tableResult: string;
     selectedMany: string[];
     matches: Record<string, string>;
@@ -69,14 +71,15 @@
     { mode: 'clock', title: 'Répare l’horloge', description: 'Travaille les secondes, minutes, heures, jours et semaines.', image: 'game-clock.png', target: ['royaume-conversions', 'table-durees'] },
     { mode: 'builder', title: 'Le chantier des formes', description: 'Construis avec les aires, les capacités et les volumes.', image: 'game-builder.png', target: ['volumes-capacites', 'paves'] }
   ];
+  const familyUnits = (id: string) => getConversionFamily(id).units.map((unit) => unit.alias ? `${unit.label}/${unit.alias}` : unit.label).join(' · ');
   const courseCatalog = [
-    { id: 'length', title: 'Longueurs', units: 'km · hm · dam · m · dm · cm · mm', description: 'Mesurer, comparer puis convertir des longueurs.', image: 'course-length.png', target: ['royaume-conversions', 'table-longueurs'] },
-    { id: 'mass', title: 'Masses', units: 'kg · hg · dag · g · dg · cg · mg', description: 'Peser, comparer et convertir les masses avec toutes les unités intermédiaires.', image: 'course-mass.png', target: ['royaume-conversions', 'table-masses'] },
-    { id: 'capacity', title: 'Capacités', units: 'kL · hL · daL · L · dL · cL · mL', description: 'Comparer des capacités et changer d’unité.', image: 'course-capacity.png', target: ['royaume-conversions', 'table-capacites'] },
+    { id: 'length', title: 'Longueurs', units: familyUnits('length'), description: 'Mesurer, comparer puis convertir des longueurs.', image: 'course-length.png', target: ['royaume-conversions', 'table-longueurs'] },
+    { id: 'mass', title: 'Masses', units: familyUnits('mass'), description: 'Peser, comparer et convertir les masses avec toutes les unités intermédiaires.', image: 'course-mass.png', target: ['royaume-conversions', 'table-masses'] },
+    { id: 'capacity', title: 'Capacités', units: familyUnits('capacity'), description: 'Comparer des capacités et changer d’unité.', image: 'course-capacity.png', target: ['royaume-conversions', 'table-capacites'] },
     { id: 'duration', title: 'Durées', units: 'h · min · s puis j · semaine · mois · année', description: 'Calculer des durées avec les relations 60, 24 et 7.', image: 'course-duration.png', target: ['royaume-conversions', 'table-durees'] },
     { id: 'perimeter', title: 'Périmètres', units: 'mm · cm · dm · m · km', description: 'Distinguer le contour de la surface et calculer un périmètre.', image: 'course-length.png', target: ['aires-perimetres', 'contours'] },
-    { id: 'area', title: 'Aires', units: 'km² · hm²/ha · dam²/a · m² · dm² · cm² · mm²', description: 'Mesurer une surface et comprendre les facteurs 100.', image: 'course-area.png', target: ['aires-perimetres', 'surfaces'] },
-    { id: 'volume', title: 'Volumes et litres', units: 'm³ · dm³ (= L) · cm³ (= mL) · mm³', description: 'Mesurer l’espace occupé et relier volume et capacité.', image: 'course-volume.png', target: ['volumes-capacites', 'litres'] }
+    { id: 'area', title: 'Aires', units: familyUnits('area'), description: 'Mesurer une surface et comprendre les facteurs 100.', image: 'course-area.png', target: ['aires-perimetres', 'surfaces'] },
+    { id: 'volume', title: 'Volumes et litres', units: familyUnits('volume'), description: 'Mesurer l’espace occupé et relier volume et capacité.', image: 'course-volume.png', target: ['volumes-capacites', 'litres'] }
   ];
   const avatars = ['hero-1', 'hero-2', 'hero-3', 'hero-4', 'hero-5', 'hero-6'];
   const legacyAvatars = ['🧑‍🎒', '🧙🏽‍♀️', '🧑🏻‍🔬', '🧝🏾', '🧑🏼‍🚀', '🦊'];
@@ -168,7 +171,7 @@
 
   const howToSlides = [
     { title: '1. Explore le village', text: 'Clique sur le sol : ton personnage court jusque-là. Clique sur une maison pour entrer. Tous les villages et toutes les maisons sont accessibles dans cette version.' },
-    { title: '2. Lis les explications', text: 'Chaque maison propose quatre petites explications. Après chacune, réponds à une question pour passer à la diapositive suivante.' },
+    { title: '2. Suis les six étapes du cours', text: 'Chaque maison avance de l’explication à l’exemple, puis à la manipulation, la vérification, l’exercice autonome et aux critères de réussite.' },
     { title: '3. Entraîne-toi en jouant', text: 'Choisis un jeu : appariement de mesures, course au trésor, duel de cartes, enquête ou défi de construction. Tu peux toucher les éléments à l’écran ; le jeu t’aide sans chronomètre.' },
     { title: '4. Valide ton blason', text: 'L’épreuve comporte dix questions. Il faut au moins 8 réponses justes sur 10. En cas d’échec, révise et recommence : aucun point ni badge ne sera retiré.' }
   ];
@@ -183,6 +186,7 @@
   $: lessonSlideNumber = lessonIndex * 2 + (theoryPhase === 'explain' ? 1 : 2);
   $: lessonProgress = Math.round((lessonSlideNumber / Math.max(1, lessons.length * 2)) * 100);
   $: currentFamilyLabel = activeQuestion ? (engine.FAMILIES[activeQuestion.family]?.label ?? 'Mesures') : '';
+  $: currentHouseCurriculum = house ? houseCurriculum[currentVillageId]?.[house.id] : null;
   $: tableGameAvailable = !!house?.families?.some((family: string) => ['length', 'mass', 'capacity', 'area', 'volume'].includes(family));
   $: builderGameAvailable = !!house?.families?.some((family: string) => ['area', 'volume'].includes(family));
   $: clockGameAvailable = house?.id === 'table-durees' || house?.id === 'durees';
@@ -553,7 +557,7 @@
     session = {
       mode, questions: mode === 'memory' ? memoryPairs : createQuestionList(mode, total), index: 0, correct: 0, firstTryCorrect: 0,
       wrong: 0, attempts: 0, helped: false, answerStatus: null, selected: '', typed: '',
-      tableComplete: false, tableCommaCorrect: false, tableResult: '',
+      tableComplete: false, tableCommaCorrect: false, tablePlacementCorrect: false, tableResult: '',
       selectedMany: [], matches: {}, matchingLeft: '', orderedItems: [], gameEvent: null,
       playerHp: 3, enemyHp: 3, raceSteps: 0, rivalSteps: 0, raceRoll: 0,
       memoryCards: createMemoryCards(memoryPairs), memoryOpenIds: [], memoryMoves: 0, familyResults: {}
@@ -606,12 +610,13 @@
     } else if (session.typed.length < 12) session.typed += key;
   }
 
-  function updateTableAnswer(state: { result: string; commaCorrect: boolean; complete: boolean }) {
+  function updateTableAnswer(state: { result: string; commaCorrect: boolean; placementCorrect: boolean; complete: boolean }) {
     if (!session || session.answerStatus) return;
     session.tableComplete = state.complete;
     session.tableCommaCorrect = state.commaCorrect;
+    session.tablePlacementCorrect = state.placementCorrect;
     session.tableResult = state.result;
-    session.typed = state.complete && state.commaCorrect ? state.result : '';
+    session.typed = state.complete && state.commaCorrect && state.placementCorrect ? state.result : '';
   }
 
   function selectMatchLeft(id: string) {
@@ -661,9 +666,11 @@
     const raw = readSessionAnswer();
     if (!String(raw).trim()) {
       if (activeQuestion.type === 'table') {
-        currentFeedback = session.tableComplete
+        currentFeedback = session.tableComplete && !session.tableCommaCorrect
           ? { kind: 'notice', title: 'Place la virgule de départ', text: `La virgule doit être placée juste après le chiffre des unités en ${activeQuestion.from}. Clique une fois sur la petite case correspondante.` }
-          : { kind: 'notice', title: 'Complète le chemin dans le tableau', text: `Place un chiffre par case, puis complète avec les zéros nécessaires jusqu’à la colonne ${activeQuestion.to}.` };
+          : session.tableComplete && !session.tablePlacementCorrect
+            ? { kind: 'notice', title: 'Vérifie la place des chiffres', text: `Le chiffre des unités doit être dans ${activeQuestion.from}. Distingue les chiffres du nombre de départ des zéros ajoutés jusqu’à ${activeQuestion.to}.` }
+            : { kind: 'notice', title: 'Complète le chemin dans le tableau', text: `Place un chiffre par case, puis complète avec les zéros nécessaires jusqu’à la colonne ${activeQuestion.to}.` };
         return;
       }
       currentFeedback = { kind: 'notice', title: 'Choisis ou écris une réponse', text: 'Tu peux prendre ton temps. Regarde les unités dans la consigne.' };
@@ -747,6 +754,7 @@
     session.typed = '';
     session.tableComplete = false;
     session.tableCommaCorrect = false;
+    session.tablePlacementCorrect = false;
     session.tableResult = '';
     session.selectedMany = [];
     session.matches = {};
@@ -1120,7 +1128,7 @@
         </div>
 
         {#if sessionResult}
-        <article class="slide-card result-slide" role="status"><div class="result-icon">{sessionResult.passed ? '✓' : '↻'}</div><div><p class="eyebrow">BILAN DE L’ACTIVITÉ</p><h2>{sessionResult.title}</h2><p class="score-line">Résultat : <strong>{sessionResult.score}/{sessionResult.total}</strong></p><p>{sessionResult.detail}</p><div class="slide-actions"><button class="primary-button" onclick={closeResult}>Choisir une autre mission</button><button class="secondary-button" onclick={closeHouse}>Explorer le village</button>{#if !sessionResult.passed}<button class="secondary-button" onclick={() => startSession(sessionResult?.mode ?? 'practice')}>Réessayer</button>{/if}{#if ['battle', 'table', 'detective', 'clock', 'builder', 'memory', 'race'].includes(sessionResult.mode ?? '')}<button class="secondary-button" onclick={() => startSession(sessionResult?.mode as SessionMode)}>Rejouer</button>{/if}</div></div></article>
+        <article class="slide-card result-slide" role="status"><div class="result-icon">{sessionResult.passed ? '✓' : '↻'}</div><div><p class="eyebrow">BILAN DE L’ACTIVITÉ</p><h2>{sessionResult.title}</h2>{#if currentHouseCurriculum}<div class="activity-objective"><strong>Objectif évalué</strong><span>{currentHouseCurriculum.objective}</span><small>{currentHouseCurriculum.code} · {currentHouseCurriculum.per.label}</small></div>{/if}<p class="score-line">Résultat : <strong>{sessionResult.score}/{sessionResult.total}</strong></p><p>{sessionResult.detail}</p><div class="slide-actions"><button class="primary-button" onclick={closeResult}>Choisir une autre mission</button><button class="secondary-button" onclick={closeHouse}>Explorer le village</button>{#if !sessionResult.passed}<button class="secondary-button" onclick={() => startSession(sessionResult?.mode ?? 'practice')}>Réessayer</button>{/if}{#if ['battle', 'table', 'detective', 'clock', 'builder', 'memory', 'race'].includes(sessionResult.mode ?? '')}<button class="secondary-button" onclick={() => startSession(sessionResult?.mode as SessionMode)}>Rejouer</button>{/if}</div></div></article>
 
         {:else if session && activeQuestion}
           {#if session.mode === 'memory'}
@@ -1168,7 +1176,7 @@
                 {#key `${session.index}-${activeQuestion.prompt}`}
                   <ConversionPlacementTable family={activeQuestion.family} value={String(activeQuestion.value).replace('.', ',')} from={activeQuestion.from} to={activeQuestion.to} stage={5} compact interactive lockUnits onStateChange={updateTableAnswer} />
                 {/key}
-                <div class="table-result-field" aria-live="polite"><span>Résultat lu en <strong>{activeQuestion.to}</strong></span><strong>{session.tableComplete && session.tableCommaCorrect ? (session.tableResult || '0') : 'Complète le tableau'}</strong></div>
+                <div class="table-result-field" aria-live="polite"><span>Résultat lu en <strong>{activeQuestion.to}</strong></span><strong>{session.tableComplete && session.tableCommaCorrect && session.tablePlacementCorrect ? (session.tableResult || '0') : 'Complète exactement le tableau'}</strong></div>
               </div>
             {:else if session.mode === 'detective'}
               <div class:game-success={session.gameEvent === 'success'} class:game-miss={session.gameEvent === 'miss'} class="mini-game-stage detective-stage"><div class="detective-character"><GameObjectArt kind="detective" reduceMotion={reduceMotion} /></div><div><strong>Indice {session.index + 1} / {session.questions.length}</strong><p>Quatre élèves proposent une conversion. Trouve qui a raison en vérifiant le facteur.</p></div><div class="evidence-stamp">{session.gameEvent === 'success' ? '✓' : '!'}</div></div>
@@ -1221,9 +1229,9 @@
         {:else if !houseProgress.theoryDone}
           <div class="theory-progress"><div><span class="eyebrow">COURS GUIDÉ · {house?.title}</span><strong>Diapositive {lessonSlideNumber} sur {lessons.length * 2}</strong></div><div class="progress-track"><i style={`width:${lessonProgress}%`}></i></div></div>
           <article class="slide-card lesson-slide">
-            <div class="slide-topline"><span class="step-counter">{theoryPhase === 'explain' ? `PARTIE ${lessonIndex + 1} / ${lessons.length}` : `QUESTION ${lessonIndex + 1} / ${lessons.length}`}</span><span class="step-counter">Une seule idée à la fois</span></div>
+            <div class="slide-topline"><span class="step-counter">{theoryPhase === 'explain' ? `PARTIE ${lessonIndex + 1} / ${lessons.length}` : `QUESTION ${lessonIndex + 1} / ${lessons.length}`}</span><span class="step-counter">{currentLesson?.step ? currentLesson.step.toUpperCase() : 'UNE SEULE IDÉE À LA FOIS'}</span></div>
             {#if theoryPhase === 'explain'}
-              <div class="lesson-copy"><p class="eyebrow">LE MAÎTRE EXPLIQUE</p><h2>{currentLesson?.title}</h2><p class="lesson-body">{currentLesson?.body}</p>
+              <div class="lesson-copy"><p class="eyebrow">{currentLesson?.step === 'autonomie' ? 'À TOI DE JOUER' : currentLesson?.step === 'réussite' ? 'CRITÈRES DE RÉUSSITE' : 'LE MAÎTRE EXPLIQUE'}</p><h2>{currentLesson?.title}</h2><p class="lesson-body">{currentLesson?.body}</p>
                 {#if currentLesson?.visual === 'TABLE' || currentLesson?.visual === 'TABLE_EXAMPLE'}
                   {@const tableExample = courseTableExample(house?.families?.[0] ?? 'length')}
                   <div class="conversion-table-card"><h3>Le tableau des {engine.FAMILIES[house?.families?.[0] ?? 'length']?.label.toLowerCase()}</h3><p>Les grandes unités sont à gauche et les petites à droite. Un chiffre occupe une case. La virgule se place juste après le chiffre des unités de départ.</p><ConversionPlacementTable family={house?.families?.[0] ?? 'length'} value={tableExample.value} from={tableExample.from} to={tableExample.to} stage={Math.min(6, lessonIndex + 3)} compact /><div class="table-steps"><span><b>1</b> Repère l’unité de départ.</span><span><b>2</b> Place le chiffre des unités.</span><span><b>3</b> Complète jusqu’à l’arrivée.</span><span><b>4</b> Lis et vérifie le résultat.</span></div><button class="secondary-button" onclick={() => (conversionGuideOpen = true)}>Essayer avec mon nombre</button></div>
@@ -1263,6 +1271,7 @@
         {:else}
           <div class="room-dashboard">
             <div class="room-dashboard-heading"><p class="eyebrow">THÉORIE VALIDÉE</p><h2>À toi de choisir la prochaine mission.</h2><p>Tu peux t’entraîner tranquillement ou apprendre en jouant avec les cartes. L’examen devient disponible après un entraînement réussi.</p></div>
+            {#if currentHouseCurriculum}<div class="activity-objective dashboard-objective"><strong>Objectif travaillé dans tous les jeux de cette maison</strong><span>{currentHouseCurriculum.objective}</span><small>{currentHouseCurriculum.code} · Grandeur : {currentHouseCurriculum.families.map((family) => engine.FAMILIES[family]?.label).join(', ')}</small></div>{/if}
             <div class="activity-choice-grid">
               <article class="activity-choice"><div class="activity-art"><img src={`${base}/images/mesurovia/catalog/game-practice.png`} alt="" /></div><p class="eyebrow">MODE APPRENTISSAGE</p><h3>Le pupitre d’exercices</h3><p>Dix questions progressives. Dans le Royaume des conversions, le tableau revient plusieurs fois pour apprendre à le lire et le remplir.</p><button class="primary-button" onclick={() => startSession('practice')}>S’entraîner au pupitre →</button></article>
               <article class="activity-choice"><div class="activity-art"><img src={`${base}/images/mesurovia/catalog/game-battle.png`} alt="" /></div><p class="eyebrow">VRAI MINI-JEU · 5 MANCHES</p><h3>Bataille des unités</h3><p>Choisis une carte-mesure pour attaquer le gardien. Une bonne réponse déclenche ton attaque ; une erreur déclenche sa riposte. Sans chronomètre.</p><button class="primary-button" onclick={() => startSession('battle')}>Lancer le duel →</button></article>
@@ -1462,6 +1471,8 @@
   .room-header { align-items: flex-start; margin-bottom: 20px; }.room-header h1 { font-size: clamp(2rem, 3vw, 2.8rem); margin-bottom: 8px; }.room-header p:not(.eyebrow) { color: var(--muted); }.room-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   .house-success { max-width:760px; margin:10px 0; padding:10px 13px; border-left:4px solid #d1ae55; border-radius:0 9px 9px 0; background:#fff7db; color:#435445; }
   .house-success ul { margin:6px 0 0; padding-left:20px; display:grid; gap:3px; }
+  .activity-objective { display:grid; gap:4px; margin:12px 0; padding:11px 13px; border:2px solid #b9c9a7; border-radius:10px; background:#eef4e6; color:#34513d; }
+  .activity-objective span { line-height:1.45; }.activity-objective small { color:#5e6d60; }.dashboard-objective { max-width:900px; }
   .classroom-scene { min-height: 235px; display: grid; grid-template-columns: 1fr auto; position: relative; overflow: hidden; border: 3px solid #9f957a; border-radius: 16px; background: #eadab4; box-shadow: 0 6px 0 #d4c39c; margin-bottom: 22px; }
   .classroom-wall { position: relative; min-height: 235px; background: repeating-linear-gradient(0deg, #ebddbd 0 40px, #e0d0ae 41px 43px); padding: 24px; }
   .chalkboard { position: absolute; top: 25px; left: 25%; width: 52%; height: 145px; box-sizing: border-box; background: #35624c; border: 9px solid #9b6c45; border-radius: 5px; box-shadow: inset 0 0 0 2px #234a38; color: #f4edcf; padding: 17px; }

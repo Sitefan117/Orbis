@@ -57,8 +57,8 @@
     { id:'missions-maitrise', name:'Les Expéditions de maîtrise', subtitle:'Le village des stratégies et des preuves', palette:['#bcded8','#4f877d','#d6a451'], story:'Les expéditions partent demain. Chaque chargement, chaque durée et chaque surface doit être vérifié et justifié.' }
   ];
 
-  // Les contenus de cours suivent une structure stable : 4 explications courtes,
-  // chacune suivie d'une question de compréhension avant de poursuivre.
+  // Archive de compatibilité pour les anciens profils. L’interface V3 n’utilise
+  // plus ces leçons : les cours actifs vivent dans courses/ et suivent 6 étapes.
   const LESSONS = {
     'repères': [
       {title:'Je choisis une unité qui a du sens',body:'Avant de calculer, je me demande ce que je mesure : une longueur, une masse, une capacité ou une durée. Le nom de l’unité me donne un indice.',visual:'<div class="measure-cards"><span>longueur<br><b>m · cm · km</b></span><span>masse<br><b>mg · g · kg</b></span><span>capacité<br><b>mL · L</b></span><span>durée<br><b>s · min · h</b></span></div>',ask:'Une valise bien remplie pèse environ 12 ___. Quelle unité choisir ?',options:['g','kg','mg'],answer:'kg',explain:'Le kilogramme convient pour la masse d’une valise.'},

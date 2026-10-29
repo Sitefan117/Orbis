@@ -1,4 +1,5 @@
 export type LessonSlide = {
+  step?: 'explication' | 'exemple' | 'manipulation' | 'vérification' | 'autonomie' | 'réussite';
   title: string;
   body: string;
   visual?: string;

@@ -10,6 +10,7 @@
  * évite de dépendre de l'ancien type MesuroviaEngineApi.
  */
 import './engine-legacy.js';
+import { conversionFamilies } from './conversion-table';
 
 type MesuroviaEngineApiV3 = {
   FAMILIES: Record<string, { label: string; base: string; units: Record<string, number> }>;
@@ -52,6 +53,19 @@ function loadMesuroviaEngine(): MesuroviaEngineApiV3 {
     throw new Error(
       'Mesurovia V3 : le fichier engine-legacy.js chargé est ancien. Remplace-le par la version V3 fournie.'
     );
+  }
+
+  // La définition TypeScript du tableau est la source de vérité de l’interface.
+  // On synchronise ici le moteur historique afin que cours, exercices, mini-jeux
+  // et tableau utilisent exactement les mêmes unités, alias et facteurs.
+  for (const family of conversionFamilies) {
+    const units: Record<string, number> = {};
+    for (const unit of family.units) {
+      units[unit.key] = unit.factor;
+      if (unit.alias) units[unit.alias] = unit.factor;
+    }
+    const base = family.units.find((unit) => unit.factor === 1)?.key ?? family.units[0].key;
+    api.FAMILIES[family.id] = { label: family.name, base, units };
   }
 
   return api;

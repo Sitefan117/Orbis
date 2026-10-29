@@ -35,6 +35,7 @@ assert.equal(areaPlacement.cells[unitAnchor(area, 'm²')].value, '2');
 assert.equal(areaPlacement.cells[unitAnchor(area, 'm²') + 1].value, '4');
 assert.equal(areaPlacement.cells[unitAnchor(area, 'cm²')].value, '0');
 assert.equal(convertTableValue(2.4, area, 'm²', 'cm²'), 24_000);
+assert.equal(convertTableValue(2.4, area, 'm²', 'dm²'), 240);
 
 const mass = getConversionFamily('mass');
 assert.deepEqual(mass.units.map((unit) => unit.key), ['kg', 'hg', 'dag', 'g', 'dg', 'cg', 'mg']);
@@ -44,6 +45,7 @@ assert.equal(massPlacement.cells[unitAnchor(mass, 'hg')].value, '4');
 assert.equal(massPlacement.cells[unitAnchor(mass, 'dag')].value, '0');
 assert.equal(massPlacement.cells[unitAnchor(mass, 'g')].value, '0');
 assert.equal(convertTableValue(2.4, mass, 'kg', 'g'), 2400);
+assert.equal(`${massPlacement.cells[unitAnchor(mass, 'kg')].value} kg ${massPlacement.cells[unitAnchor(mass, 'hg')].value} hg`, '2 kg 4 hg');
 
 const volume = getConversionFamily('volume');
 assert.equal(convertTableValue(1.5, volume, 'm³', 'dm³'), 1500);

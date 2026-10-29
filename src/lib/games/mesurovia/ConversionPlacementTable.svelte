@@ -13,7 +13,7 @@
   export let interactive = false;
   export let lockUnits = false;
   export let onUnitSelect: (unit: string) => void = () => {};
-  export let onStateChange: (state: { cells: string[]; commaAfter: number | null; result: string; commaCorrect: boolean; complete: boolean }) => void = () => {};
+  export let onStateChange: (state: { cells: string[]; commaAfter: number | null; result: string; commaCorrect: boolean; placementCorrect: boolean; complete: boolean }) => void = () => {};
   let manualCells: string[] = [];
   let manualComma: number | null = null;
   let activeCell: number | null = null;
@@ -55,11 +55,14 @@
     const requiredStart = occupied.length ? Math.min(occupied[0], sourceAnchor, targetAnchor) : -1;
     const requiredEnd = occupied.length ? Math.max(occupied[occupied.length - 1], sourceAnchor, targetAnchor) : -1;
     const complete = requiredStart >= 0 && manualCells.slice(requiredStart, requiredEnd + 1).every(Boolean);
+    const expectedCells = placement.cells.map((cell) => cell.value);
+    const placementCorrect = manualCells.every((digit, index) => digit === expectedCells[index]);
     onStateChange({
       cells: [...manualCells],
       commaAfter: manualComma,
       result: to ? readPlacementCells(manualCells, selected, to) : '',
       commaCorrect: Boolean(from) && (manualComma === sourceAnchor || (!/[,.]/.test(value) && manualComma === null)),
+      placementCorrect,
       complete
     });
   }
@@ -134,7 +137,7 @@
           <tr class="digit-row">
             {#each placement.cells as cell}
               <td class:group-start={cell.subIndex === 0} class:source-zone={cell.groupIndex === sourceGroup} class:target-zone={cell.groupIndex === targetGroup} class:travel-zone={stage >= 4 && cell.groupIndex >= pathStart && cell.groupIndex <= pathEnd} class:added-zero={stage >= 5 && cell.addedZero}>
-                {#if interactive}<button type="button" class:active-cell={activeCell === cell.index} class="cell-button" aria-label={`Case ${cell.index + 1}${manualCells[cell.index] ? `, chiffre ${manualCells[cell.index]}` : ', vide'}`} onclick={() => selectCell(cell.index)}>{manualCells[cell.index] || ''}</button>
+                {#if interactive}<button type="button" class:active-cell={activeCell === cell.index} class:placed-digit={Boolean(manualCells[cell.index]) && placement.cells[cell.index].original} class:added-zero={manualCells[cell.index] === '0' && placement.cells[cell.index].addedZero} class="cell-button" aria-label={`Case ${cell.index + 1}${manualCells[cell.index] ? `, chiffre ${manualCells[cell.index]}` : ', vide'}`} onclick={() => selectCell(cell.index)}>{manualCells[cell.index] || '–'}</button>
                 {:else if cell.original && (stage >= 3 || (stage >= 2 && cell.index === placement.sourceAnchor))}<b>{cell.value}</b>{:else if stage >= 5 && cell.addedZero}<b>{cell.value}</b>{:else}<span>–</span>{/if}
                 {#if !interactive && stage >= 2 && (stage < 6 || placement.targetAnchor === placement.sourceAnchor) && cell.index === placement.sourceAnchor}<i class="comma source-comma" title="Virgule de départ">,</i>{/if}
                 {#if !interactive && stage >= 6 && cell.index === placement.targetAnchor && placement.targetAnchor !== placement.sourceAnchor}<i class="comma target-comma" title="Nouvelle place de la virgule">,</i>{/if}
@@ -156,6 +159,7 @@
       </table>
     </div>
     {#if interactive}
+      <div class="legend interactive-legend"><span class="source-key">Départ : {from}</span><span class="target-key">Arrivée : {to}</span><span class="placed-key">Chiffre placé</span><span class="zero-key">Zéro ajouté</span><span class="empty-key">– = case vide</span></div>
       <div class="number-pad" aria-label="Pavé numérique">
         {#each ['1','2','3','4','5','6','7','8','9','0'] as digit}<button type="button" onclick={() => enterDigit(digit)}>{digit}</button>{/each}
         <button type="button" class="pad-utility" onclick={eraseDigit}>⌫</button>
@@ -183,6 +187,8 @@
   .unit-button { min-height:44px; font-weight:950; }.unit-button span,.unit-button small { display:block; }
   .cell-button { min-height:46px; font-size:1.3rem; font-weight:950; }
   .cell-button.active-cell { background:#e7f5d9; box-shadow:inset 0 0 0 3px #4e8159; }
+  .cell-button.placed-digit { color:#245b39; background:#eef7e6; }
+  .cell-button.added-zero { color:#8b5712; background:#fff0bd; }
   td.group-start { border-left-width:4px; }
   th.source,.source-zone { background:#dcebc8; border-color:#66865a; }
   th.target,.target-zone { background:#ffe5a2; border-color:#b27d2f; }
@@ -199,7 +205,8 @@
   .number-pad button:active { transform:translateY(1px); background:#e7f5d9; }
   .number-pad .pad-utility { background:#e5edda; }.number-pad .clear-pad { grid-column:span 2; }
   .legend { display:flex; flex-wrap:wrap; gap:7px; margin-top:5px; font-size:.75rem; font-weight:900; }
-  .legend span { padding:5px 8px; border-radius:999px; }.source-key { background:#dcebc8; }.target-key { background:#ffe5a2; }.zero-key { background:#fff1c9; color:#875b1f; }
+  .legend span { padding:5px 8px; border-radius:999px; }.source-key { background:#dcebc8; }.target-key { background:#ffe5a2; }.placed-key { background:#eef7e6; color:#245b39; }.zero-key { background:#fff1c9; color:#875b1f; }.empty-key { background:#f0efe7; color:#6d7168; }
+  .interactive-legend { margin-top:8px; }
   .result-line { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:12px 0 0; padding:10px 12px; border:2px solid #b27d2f; border-radius:10px; background:#fff5d6; }
   .result-line span { color:#5c654f; font-size:.83rem; }.result-line strong { color:#744d16; font-size:1.25rem; }
   .overflow-warning,.calendar-warning { padding:8px 10px; border-radius:8px; background:#ffe8d6; color:#7c3e26; font-weight:800; }

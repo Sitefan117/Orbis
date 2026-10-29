@@ -4,9 +4,14 @@ import { houseCurriculum, villageCurriculum } from '../src/lib/games/mesurovia/c
 import { coursesByVillage, courseForHouse } from '../src/lib/games/mesurovia/courses';
 import { hasHouseQuestionBank, makeHouseQuestion } from '../src/lib/games/mesurovia/question-bank';
 import { normalizeProfile } from '../src/lib/games/mesurovia/progress';
+import { conversionFamilies } from '../src/lib/games/mesurovia/conversion-table';
 
 const villageIds = Object.keys(villageCurriculum);
 assert.equal(villageIds.length, 5);
+for (const family of conversionFamilies) {
+  const expected = Object.fromEntries(family.units.flatMap((unit) => unit.alias ? [[unit.key, unit.factor], [unit.alias, unit.factor]] : [[unit.key, unit.factor]]));
+  assert.deepEqual(engine.FAMILIES[family.id].units, expected, `${family.id}: moteur synchronisé avec la source du tableau`);
+}
 let lessonCount = 0;
 const lessonSignatures = new Set<string>();
 
@@ -22,7 +27,8 @@ for (const villageId of villageIds) {
     assert.ok(entry.objective && entry.code && entry.per.label, `${villageId}/${house.id}: objectif, code et PER`);
     assert.equal(entry.success.length, 3, `${villageId}/${house.id}: trois critères`);
     const lessons = courseForHouse(villageId, house.id);
-    assert.equal(lessons.length, 4, `${villageId}/${house.id}: quatre diapositives`);
+    assert.equal(lessons.length, 6, `${villageId}/${house.id}: six étapes pédagogiques`);
+    assert.deepEqual(lessons.map((lesson) => lesson.step), ['explication', 'exemple', 'manipulation', 'vérification', 'autonomie', 'réussite'], `${villageId}/${house.id}: séquence complète`);
     for (const lesson of lessons) {
       lessonCount += 1;
       assert.ok(lesson.title && lesson.body && lesson.ask && lesson.explain);
@@ -43,8 +49,8 @@ for (const villageId of villageIds) {
   }
 }
 
-assert.equal(lessonCount, 80, '80 diapositives au total');
-assert.equal(lessonSignatures.size, 80, 'aucune diapositive copiée mot pour mot');
+assert.equal(lessonCount, 120, '120 diapositives au total');
+assert.equal(lessonSignatures.size, 120, 'aucune diapositive copiée mot pour mot');
 assert.ok(!JSON.stringify(coursesByVillage).match(/\btonne(s)?\b/i), 'aucune tonne dans les cours');
 
 const migrated = normalizeProfile({
@@ -63,4 +69,4 @@ for (const family of Object.keys(engine.FAMILIES)) {
   }
 }
 
-console.log('Mesurovia curriculum simulation: OK — 20 maisons, 80 diapositives uniques et 2 400 questions générées.');
+console.log('Mesurovia curriculum simulation: OK — 20 maisons, 120 diapositives uniques et 2 400 questions générées.');
