@@ -11,8 +11,9 @@
   export let stage = 5;
   export let compact = false;
   export let interactive = false;
+  export let lockUnits = false;
   export let onUnitSelect: (unit: string) => void = () => {};
-  export let onStateChange: (state: { cells: string[]; commaAfter: number | null; result: string; commaCorrect: boolean }) => void = () => {};
+  export let onStateChange: (state: { cells: string[]; commaAfter: number | null; result: string; commaCorrect: boolean; complete: boolean }) => void = () => {};
   let manualCells: string[] = [];
   let manualComma: number | null = null;
   let activeCell: number | null = null;
@@ -38,15 +39,28 @@
   }
   $: if (interactive && from && from !== initializedFrom) {
     initializedFrom = from;
-    activeCell = unitAnchor(selected, from);
+    activeCell = sourceEntryStart();
+  }
+
+  function sourceEntryStart() {
+    const sourceAnchor = unitAnchor(selected, from);
+    const wholeDigits = value.trim().replace(/\s/g, '').split(/[,.]/)[0].replace(/\D/g, '').length || 1;
+    return Math.max(0, sourceAnchor - wholeDigits + 1);
   }
 
   function emitState() {
+    const occupied = manualCells.map((digit, index) => digit ? index : -1).filter((index) => index >= 0);
+    const sourceAnchor = unitAnchor(selected, from);
+    const targetAnchor = unitAnchor(selected, to);
+    const requiredStart = occupied.length ? Math.min(occupied[0], sourceAnchor, targetAnchor) : -1;
+    const requiredEnd = occupied.length ? Math.max(occupied[occupied.length - 1], sourceAnchor, targetAnchor) : -1;
+    const complete = requiredStart >= 0 && manualCells.slice(requiredStart, requiredEnd + 1).every(Boolean);
     onStateChange({
       cells: [...manualCells],
       commaAfter: manualComma,
       result: to ? readPlacementCells(manualCells, selected, to) : '',
-      commaCorrect: Boolean(from) && manualComma === unitAnchor(selected, from)
+      commaCorrect: Boolean(from) && (manualComma === sourceAnchor || (!/[,.]/.test(value) && manualComma === null)),
+      complete
     });
   }
 
@@ -55,7 +69,7 @@
   }
 
   function enterDigit(digit: string) {
-    if (activeCell === null) activeCell = Math.max(0, unitAnchor(selected, from));
+    if (activeCell === null) activeCell = sourceEntryStart();
     if (activeCell === null || activeCell < 0) return;
     manualCells[activeCell] = digit;
     manualCells = [...manualCells];
@@ -77,7 +91,7 @@
   function clearBoard() {
     manualCells = Array(placement.cells.length).fill('');
     manualComma = null;
-    activeCell = from ? unitAnchor(selected, from) : null;
+    activeCell = from ? sourceEntryStart() : null;
     emitState();
   }
 
@@ -109,7 +123,7 @@
           <tr>
             {#each selected.units as unit, groupIndex}
               <th colspan={selected.power} class:source={(interactive || stage >= 2) && groupIndex === sourceGroup} class:target={(interactive || stage >= 2) && groupIndex === targetGroup} class:on-path={stage >= 4 && groupIndex >= pathStart && groupIndex <= pathEnd}>
-                {#if interactive}
+                {#if interactive && !lockUnits}
                   <button type="button" class="unit-button" onclick={() => onUnitSelect(unit.key)}><span>{unit.label}</span>{#if unit.alias}<small>{unit.alias}</small>{/if}</button>
                 {:else}<span>{unit.label}</span>{#if unit.alias}<small>{unit.alias}</small>{/if}{/if}
               </th>

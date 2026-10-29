@@ -5,6 +5,7 @@ set -euo pipefail
 node tests/engine.test.cjs
 node tests/engine-v3.test.cjs
 node tests/content-quality-v3.test.cjs
+node --import tsx tests/mesurovia-curriculum.test.ts
 node --import tsx tests/mesurovia-conversion-table.test.ts
 node --import tsx tests/race-table-selection.test.ts
 ./node_modules/.bin/tsx tests/fractionstower2-generator.test.ts

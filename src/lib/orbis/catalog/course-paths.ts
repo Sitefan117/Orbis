@@ -7,10 +7,11 @@ export const coursePaths = {
   measures: {
     reference: '/cours/maths/mesures/reference.html',
     mesurovia: {
-      'sentiers-moulin': '/cours/maths/mesures/mesurovia/sentiers.html',
-      'clairieres-compas': '/cours/maths/mesures/mesurovia/clairieres.html',
-      'canaux-artisans': '/cours/maths/mesures/mesurovia/canaux.html',
-      'hautes-terres': '/cours/maths/mesures/mesurovia/hautes-terres.html'
+      'fondations-mesure': '/cours/maths/mesures/mesurovia/fondations.html',
+      'royaume-conversions': '/cours/maths/mesures/mesurovia/conversions.html',
+      'aires-perimetres': '/cours/maths/mesures/mesurovia/aires-perimetres.html',
+      'volumes-capacites': '/cours/maths/mesures/mesurovia/volumes-capacites.html',
+      'missions-maitrise': '/cours/maths/mesures/mesurovia/missions-maitrise.html'
     }
   },
   geometry: {

@@ -1,12 +1,5 @@
-# Corrigés enseignant
+# Archive des anciens corrigés
 
-**Rôle du dossier :** réponses et explications réservées à l’accompagnement de chacun des quatre cahiers Mesurovia.
+Les anciens corrigés ont été retirés avec l’ancien découpage à cinq maisons par village. Les réponses des cours guidés sont désormais contrôlées dans les fichiers de chaque village sous `src/lib/games/mesurovia/courses/`, afin d’éviter qu’un corrigé imprimable diverge du jeu.
 
-| Fichier | Corrige |
-|---|---|
-| `corrige-sentiers.html` | `../sentiers.html` — Sentiers du Moulin. |
-| `corrige-clairieres.html` | `../clairieres.html` — Clairières du Compas. |
-| `corrige-canaux.html` | `../canaux.html` — Canaux des Artisans. |
-| `corrige-hautes-terres.html` | `../hautes-terres.html` — Hautes-Terres de la Mesure. |
-
-Ces documents sont des fichiers HTML autonomes. Ils ne sont pas inscrits comme cours élève dans le catalogue Orbis.
+Une version enseignant pourra être générée à partir de cette source unique après validation pédagogique du nouveau cursus.

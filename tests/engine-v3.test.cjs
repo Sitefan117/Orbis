@@ -129,8 +129,8 @@ for (let i = 0; i < 100; i += 1) {
   assert.equal(E.checkAnswer(q, String(q.answer)), true, 'conversion de durée exacte');
 }
 
-// Tableaux : seules les familles prévues disposent du format de tableau de conversion.
-for (const family of ['length', 'mass', 'capacity']) assert.ok(E.availableFormats(family).includes('table'));
-for (const family of ['duration', 'area', 'volume']) assert.ok(!E.availableFormats(family).includes('table'));
+// Tableaux : toutes les grandeurs décimales sont manipulables ; les durées gardent leurs relations propres.
+for (const family of ['length', 'mass', 'capacity', 'area', 'volume']) assert.ok(E.availableFormats(family).includes('table'));
+assert.ok(!E.availableFormats('duration').includes('table'));
 
 console.log(`Mesurovia V3 engine tests: OK — ${families.length} grandeurs, formats générés, corrections exactes, propositions distinctes, associations/classements/réponses multiples, 1 000 questions dynamiques et conversions temporelles.`);

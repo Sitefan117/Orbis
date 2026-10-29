@@ -32,25 +32,12 @@ assert.equal(a.correctStreak, 0, 'une réussite guidée ne gonfle pas la série 
 for (const v of E.VILLAGES) {
   assert.equal(v.stage, undefined, 'le degré scolaire ne doit pas se glisser dans les données affichables du jeu');
   const houses = E.listHouses(v.id);
-  assert.equal(houses.length, 5, `${v.id} doit avoir cinq maisons`);
+  assert.equal(houses.length, 4, `${v.id} doit avoir quatre maisons`);
   for (const h of houses) {
     assert.ok(h.title && h.families.length, `maison complète: ${h.id}`);
     for (const family of h.families) assert.ok(E.FAMILIES[family], `${family} est une famille reconnue`);
   }
 }
-// Chaque maison dispose de quatre étapes et le dernier checkpoint tient compte de la région.
-const stageHouseKeys = ['repères','longueurs','masses','expedition'];
-for (const houseId of stageHouseKeys) {
-  const regionalLessons = E.VILLAGES.map(v => E.lessonForHouse(houseId, v.id));
-  for (const lessons of regionalLessons) assert.equal(lessons.length, 4, `${houseId}: quatre explications/checkpoints`);
-  const lastPrompts = new Set(regionalLessons.map(lessons => lessons[3].ask));
-  const firstStepBodies = new Set(regionalLessons.map(lessons => lessons[0].body));
-  assert.equal(lastPrompts.size, 4, `${houseId}: le dernier checkpoint doit être adapté à chacune des quatre régions`);
-  assert.equal(firstStepBodies.size, 4, `${houseId}: le raisonnement de chaque région doit progresser`);
-}
-assert.ok(E.lessonForHouse('surfaces','canaux-artisans')[3].ask.includes('m²'), 'les aires sont explicitées dans la région des artisans');
-assert.ok(E.lessonForHouse('formes','hautes-terres')[3].ask.includes('volume'), 'le volume est explicitement travaillé dans les Hautes-Terres');
-
 for (const family of Object.keys(E.FAMILIES)) {
   for (let i = 0; i < 50; i++) {
     const q = E.makeQuestion(family, 1 + (i % 4));
@@ -59,13 +46,14 @@ for (const family of Object.keys(E.FAMILIES)) {
   }
 }
 
-assert.equal(E.startingDifficulty('sentiers-moulin','length'), 1);
-assert.equal(E.startingDifficulty('clairieres-compas','length'), 2);
-assert.equal(E.startingDifficulty('canaux-artisans','length'), 3);
-assert.equal(E.startingDifficulty('hautes-terres','length'), 3);
-assert.equal(E.startingDifficulty('canaux-artisans','length',{byFamily:{length:{correct:0,total:2}}}), 2, 'un besoin en longueur baisse le départ de cette compétence');
-assert.equal(E.startingDifficulty('canaux-artisans','mass',{byFamily:{mass:{correct:2,total:2}}}), 4, 'une compétence maîtrisée peut commencer plus haut');
+assert.equal(E.startingDifficulty('fondations-mesure','length'), 1);
+assert.equal(E.startingDifficulty('royaume-conversions','length'), 2);
+assert.equal(E.startingDifficulty('aires-perimetres','length'), 2);
+assert.equal(E.startingDifficulty('volumes-capacites','length'), 3);
+assert.equal(E.startingDifficulty('missions-maitrise','length'), 4);
+assert.equal(E.startingDifficulty('volumes-capacites','length',{byFamily:{length:{correct:0,total:2}}}), 2, 'un besoin en longueur baisse le départ de cette compétence');
+assert.equal(E.startingDifficulty('volumes-capacites','mass',{byFamily:{mass:{correct:2,total:2}}}), 4, 'une compétence maîtrisée peut commencer plus haut');
 
 const rec = E.pretestRecommendation({total:12,correct:10,byFamily:{length:{correct:2,total:2},mass:{correct:2,total:2}}});
 assert.ok(E.VILLAGES.some(v => v.id === rec.villageId), 'le prétest recommande une région existante');
-console.log('Mesurovia engine tests: OK — conversions, réponses, adaptation éphémère, quatre niveaux de départ, ajustement par prétest et compétence, 20 maisons, questions différenciées par région, générateur de 300 questions et recommandation.');
+console.log('Mesurovia engine tests: OK — conversions, réponses, adaptation, cinq villages, 20 maisons, générateur de questions et recommandation.');

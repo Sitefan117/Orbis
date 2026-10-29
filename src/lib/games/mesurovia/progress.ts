@@ -49,6 +49,23 @@ export function normalizeProfile(
   const raw = rawProfile && typeof rawProfile === 'object' ? rawProfile as Record<string, any> : {};
   const base = createBlankProfile(String(raw.name || fallbackName || 'Aventurier'), String(raw.avatar || defaultAvatar), defaultVillage);
   const convertedHouses: Record<string, Record<string, HouseProgress>> = {};
+  const legacyVillageTargets: Record<string, string> = {
+    'sentiers-moulin': 'fondations-mesure',
+    'clairieres-compas': 'royaume-conversions',
+    'canaux-artisans': 'aires-perimetres',
+    'hautes-terres': 'volumes-capacites'
+  };
+  const legacyHouseTargets: Record<string, [string, string]> = {
+    'repères': ['fondations-mesure', 'reperes'],
+    reperes: ['fondations-mesure', 'reperes'],
+    longueurs: ['fondations-mesure', 'longueurs'],
+    masses: ['royaume-conversions', 'table-masses'],
+    'durées': ['royaume-conversions', 'table-durees'],
+    durees: ['royaume-conversions', 'table-durees'],
+    surfaces: ['aires-perimetres', 'surfaces'],
+    formes: ['volumes-capacites', 'solides'],
+    expedition: ['missions-maitrise', 'enquetes']
+  };
 
   if (raw.houses && typeof raw.houses === 'object') {
     Object.assign(convertedHouses, raw.houses);
@@ -63,6 +80,25 @@ export function normalizeProfile(
           bestScore: Number(progress.bestScore ?? progress.examBest ?? 0) || 0
         };
       }
+    }
+  }
+
+  // Reprise prudente des blasons de l'ancien découpage : les anciennes clés sont
+  // conservées et les compétences équivalentes sont recopiées dans le nouveau cursus.
+  for (const [legacyVillageId, houses] of Object.entries(convertedHouses)) {
+    if (!legacyVillageTargets[legacyVillageId]) continue;
+    for (const [legacyHouseId, progress] of Object.entries(houses ?? {})) {
+      const target = legacyHouseTargets[legacyHouseId];
+      if (!target) continue;
+      const [villageId, houseId] = target;
+      const previous = convertedHouses[villageId]?.[houseId];
+      convertedHouses[villageId] ??= {};
+      convertedHouses[villageId][houseId] = {
+        theoryDone: Boolean(previous?.theoryDone || progress?.theoryDone),
+        trainingDone: Boolean(previous?.trainingDone || progress?.trainingDone),
+        examPassed: Boolean(previous?.examPassed || progress?.examPassed),
+        bestScore: Math.max(Number(previous?.bestScore) || 0, Number(progress?.bestScore) || 0)
+      };
     }
   }
 
@@ -86,7 +122,9 @@ export function normalizeProfile(
       : [],
     lastVillage: validVillageIds.includes(raw.lastVillage)
       ? raw.lastVillage
-      : validVillageIds.includes(raw.recommended) ? raw.recommended : base.lastVillage,
+      : validVillageIds.includes(legacyVillageTargets[raw.lastVillage])
+        ? legacyVillageTargets[raw.lastVillage]
+        : validVillageIds.includes(raw.recommended) ? raw.recommended : base.lastVillage,
     houses: convertedHouses,
     skills: raw.skills ?? raw.adaptive ?? {},
     pretest,

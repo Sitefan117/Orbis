@@ -9,56 +9,59 @@
 
   const FAMILIES = {
     length: { label: 'Longueurs', base: 'm', units: { mm: 0.001, cm: 0.01, dm: 0.1, m: 1, dam: 10, hm: 100, km: 1000 } },
-    mass: { label: 'Masses', base: 'kg', units: { mg: 0.000001, g: 0.001, kg: 1, t: 1000 } },
-    capacity: { label: 'Capacités', base: 'L', units: { mL: 0.001, cL: 0.01, dL: 0.1, L: 1, daL: 10, hL: 100 } },
+    mass: { label: 'Masses', base: 'g', units: { mg: 0.001, cg: 0.01, dg: 0.1, g: 1, dag: 10, hg: 100, kg: 1000 } },
+    capacity: { label: 'Capacités', base: 'L', units: { mL: 0.001, cL: 0.01, dL: 0.1, L: 1, daL: 10, hL: 100, kL: 1000 } },
     duration: { label: 'Durées', base: 's', units: { s: 1, min: 60, h: 3600, j: 86400, sem: 604800 } },
-    area: { label: 'Aires', base: 'm²', units: { 'mm²': 0.000001, 'cm²': 0.0001, 'dm²': 0.01, 'm²': 1, 'dam²': 100, ha: 10000, 'hm²': 10000, 'km²': 1000000 } },
+    area: { label: 'Aires', base: 'm²', units: { 'mm²': 0.000001, 'cm²': 0.0001, 'dm²': 0.01, 'm²': 1, a: 100, 'dam²': 100, ha: 10000, 'hm²': 10000, 'km²': 1000000 } },
     volume: { label: 'Volumes', base: 'm³', units: { 'mm³': 0.000000001, 'cm³': 0.000001, 'dm³': 0.001, 'm³': 1 } }
   };
 
   const HOUSE_SETS = {
-    'sentiers-moulin': [
-      ['repères', 'La Maison des Repères', ['length','mass','capacity'], 'Choisir une unité et estimer'],
-      ['longueurs', 'L’Atelier des Rubans', ['length'], 'Convertir des longueurs'],
-      ['masses', 'La Halle des Balances', ['mass','capacity'], 'Peser et mesurer des contenances'],
-      ['durées', 'L’Horloge du Moulin', ['duration'], 'Comprendre les durées'],
-      ['expedition', 'Le Bureau des Courses', ['length','mass','capacity','duration'], 'Résoudre des problèmes concrets']
+    'fondations-mesure': [
+      ['grandeurs', 'La Maison des grandeurs', ['length','mass','capacity','duration','area','volume'], 'Distinguer les grandeurs'],
+      ['reperes', 'L’Atelier des repères', ['length','mass','capacity','duration'], 'Choisir et estimer'],
+      ['longueurs', 'Le Sentier des longueurs', ['length'], 'Mesurer, comparer et ordonner'],
+      ['mesures', 'Le Laboratoire des mesures', ['length','mass','capacity','duration'], 'Estimer puis mesurer']
     ],
-    'clairieres-compas': [
-      ['repères', 'La Maison des Repères', ['length','mass','capacity'], 'Choisir une unité adaptée'],
-      ['longueurs', 'L’Atelier des Rubans', ['length'], 'Relier km, m, dm, cm et mm'],
-      ['masses', 'La Halle des Balances', ['mass','capacity'], 'Convertir masses et capacités'],
-      ['durées', 'L’Horloge des Clairières', ['duration'], 'Calculer des durées sans piège décimal'],
-      ['expedition', 'Le Bureau des Courses', ['length','mass','capacity','duration','area'], 'Appliquer les conversions en situation']
+    'royaume-conversions': [
+      ['table-longueurs', 'L’Atelier des longueurs', ['length'], 'Remplir le tableau des longueurs'],
+      ['table-capacites', 'La Maison des capacités', ['capacity'], 'Remplir le tableau des capacités'],
+      ['table-masses', 'La Halle des masses', ['mass'], 'Remplir le tableau des masses'],
+      ['table-durees', 'L’Horloge des durées', ['duration'], 'Utiliser les relations du temps']
     ],
-    'canaux-artisans': [
-      ['repères', 'La Maison des Repères', ['length','mass','capacity','duration'], 'Choisir, estimer et vérifier'],
-      ['longueurs', 'L’Atelier des Rubans', ['length'], 'Convertir avec des nombres décimaux'],
-      ['masses', 'La Halle des Balances', ['mass','capacity'], 'Maîtriser masses et capacités'],
-      ['surfaces', 'La Cour des Pavés', ['area'], 'Convertir des aires : les unités sont au carré'],
-      ['expedition', 'Le Bureau des Expéditions', ['length','mass','capacity','duration','area','volume'], 'Résoudre des problèmes à plusieurs étapes']
+    'aires-perimetres': [
+      ['contours', 'La Maison des contours', ['length'], 'Calculer un périmètre'],
+      ['surfaces', 'La Cour des surfaces', ['area'], 'Comprendre les unités carrées'],
+      ['quadrillages', 'L’Atelier des quadrillages', ['area'], 'Mesurer une aire par pavage'],
+      ['figures', 'Le Chantier des figures', ['length','area'], 'Calculer périmètre et aire']
     ],
-    'hautes-terres': [
-      ['repères', 'La Maison des Repères', ['length','mass','capacity','duration','area','volume'], 'Choisir l’unité et contrôler la vraisemblance'],
-      ['longueurs', 'L’Atelier des Rubans', ['length'], 'Convertir, comparer et ordonner'],
-      ['masses', 'La Halle des Balances', ['mass','capacity'], 'Mélanger les unités sans perdre le sens'],
-      ['formes', 'L’Atelier des Formes', ['area','volume'], 'Aires et volumes : puissances des unités'],
-      ['expedition', 'Le Bureau des Expéditions', ['length','mass','capacity','duration','area','volume'], 'Résoudre et justifier une situation complète']
+    'volumes-capacites': [
+      ['solides', 'La Maison des solides', ['area','volume'], 'Distinguer aire et volume'],
+      ['cubes', 'L’Atelier des cubes', ['volume'], 'Comprendre les unités cubiques'],
+      ['paves', 'Le Chantier des pavés', ['volume'], 'Calculer un volume'],
+      ['litres', 'Le Laboratoire des litres', ['volume','capacity'], 'Relier volume et capacité']
+    ],
+    'missions-maitrise': [
+      ['masses', 'L’Expédition des masses', ['mass'], 'Comparer et convertir les masses'],
+      ['aires', 'L’Expédition des terrains', ['area'], 'Convertir les aires complètes'],
+      ['durees', 'L’Expédition du calendrier', ['duration'], 'Calculer des durées avancées'],
+      ['enquetes', 'Le Bureau des enquêtes', ['length','mass','capacity','duration','area','volume'], 'Résoudre, expliquer et contrôler']
     ]
   };
 
   const VILLAGES = [
-    { id:'sentiers-moulin', name:'Les Sentiers du Moulin', subtitle:'Le hameau des premières mesures', palette:['#c9e9a9','#7cbe74','#e9c26c'], story:'Le moulin s’est arrêté : ses habitants ne savent plus quelle quantité de farine peser, ni quelle longueur de ruban préparer.' },
-    { id:'clairieres-compas', name:'Les Clairières du Compas', subtitle:'Le village des chemins et des balances', palette:['#c8e5a8','#62ab87','#e4b26e'], story:'Les sentiers se croisent sans panneaux. Aide les cartographes à remettre les distances et les mesures dans le bon ordre.' },
-    { id:'canaux-artisans', name:'Les Canaux des Artisans', subtitle:'La cité des ateliers et des pavés', palette:['#bfe6df','#58a6ad','#e5bd83'], story:'Les bâtisseurs ont mélangé longueurs, surfaces et contenances. Le chantier ne reprendra que lorsque chaque mesure aura retrouvé sa place.' },
-    { id:'hautes-terres', name:'Les Hautes-Terres de la Mesure', subtitle:'Le bourg des missions expertes', palette:['#c7d8ef','#6b8dc5','#d8b184'], story:'Le château prépare une grande expédition. Il faut des mesures fiables, des calculs cohérents et des résultats qu’on sait vérifier.' }
+    { id:'fondations-mesure', name:'Les Fondations de la mesure', subtitle:'Le village où chaque grandeur trouve son unité', palette:['#d7e7b7','#659765','#e5b764'], story:'Les enseignes du village ont perdu leurs unités. Aide les habitants à reconnaître ce qu’ils mesurent et à choisir des repères fiables.' },
+    { id:'royaume-conversions', name:'Le Royaume des conversions', subtitle:'Les quatre ateliers du tableau', palette:['#cae4af','#4f9678','#dfa85f'], story:'Quatre ateliers ont mélangé leurs colonnes. Remets les chiffres, les virgules et les unités à leur juste place.' },
+    { id:'aires-perimetres', name:'La Cité des aires et périmètres', subtitle:'Des contours aux surfaces', palette:['#c5e5db','#4a9ba0','#e2b875'], story:'Les architectes confondent le bord des jardins et la surface à paver. Aide-les à mesurer ce qui entoure et ce qui recouvre.' },
+    { id:'volumes-capacites', name:'Les Ateliers des volumes', subtitle:'Des cubes, des pavés et des litres', palette:['#c4dce9','#5d88ad','#d4a96e'], story:'Les artisans savent construire des caisses, mais ils ne savent plus combien elles peuvent contenir. Explore les solides et leurs unités.' },
+    { id:'missions-maitrise', name:'Les Expéditions de maîtrise', subtitle:'Le village des stratégies et des preuves', palette:['#bcded8','#4f877d','#d6a451'], story:'Les expéditions partent demain. Chaque chargement, chaque durée et chaque surface doit être vérifié et justifié.' }
   ];
 
   // Les contenus de cours suivent une structure stable : 4 explications courtes,
   // chacune suivie d'une question de compréhension avant de poursuivre.
   const LESSONS = {
     'repères': [
-      {title:'Je choisis une unité qui a du sens',body:'Avant de calculer, je me demande ce que je mesure : une longueur, une masse, une capacité ou une durée. Le nom de l’unité me donne un indice.',visual:'<div class="measure-cards"><span>📏 longueur<br><b>m · cm · km</b></span><span>⚖️ masse<br><b>g · kg · t</b></span><span>🫗 capacité<br><b>mL · L</b></span><span>⏱ durée<br><b>s · min · h</b></span></div>',ask:'Une valise bien remplie pèse environ 12 ___. Quelle unité choisir ?',options:['g','kg','t'],answer:'kg',explain:'Le kilogramme (kg) convient pour la masse d’une valise. Le gramme est trop petit et la tonne beaucoup trop grande.'},
+      {title:'Je choisis une unité qui a du sens',body:'Avant de calculer, je me demande ce que je mesure : une longueur, une masse, une capacité ou une durée. Le nom de l’unité me donne un indice.',visual:'<div class="measure-cards"><span>longueur<br><b>m · cm · km</b></span><span>masse<br><b>mg · g · kg</b></span><span>capacité<br><b>mL · L</b></span><span>durée<br><b>s · min · h</b></span></div>',ask:'Une valise bien remplie pèse environ 12 ___. Quelle unité choisir ?',options:['g','kg','mg'],answer:'kg',explain:'Le kilogramme convient pour la masse d’une valise.'},
       {title:'J’estime avant de convertir',body:'Je pense à un repère réel. Une porte mesure environ 2 m, une bouteille peut contenir 1 L et un trajet entre deux villes se mesure souvent en kilomètres.',visual:'<div class="example-strip"><span>🚪 porte ≈ 2 m</span><span>🧴 bouteille ≈ 1 L</span><span>🚲 tour ≈ 20 min</span></div>',ask:'Une carte indique une distance de 4 km. Quelle autre écriture représente la même distance ?',options:['400 m','4 000 m','40 000 m'],answer:'4 000 m',explain:'1 km = 1 000 m. Donc 4 km = 4 × 1 000 = 4 000 m.'},
       {title:'Je garde la même grandeur',body:'Convertir ne change pas la longueur, la masse ou la capacité réelle. Seul le nombre écrit change parce que l’unité n’a pas la même taille.',visual:'<div class="equal-visual"><b>1 m</b><span>＝</span><div class="bar-meter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><b>100 cm</b></div>',ask:'Un ruban mesure 3 m. Un autre mesure 300 cm. Lequel est le plus long ?',options:['Celui de 3 m','Celui de 300 cm','Ils ont la même longueur'],answer:'Ils ont la même longueur',explain:'3 m = 300 cm. Les deux rubans ont la même longueur, même si le nombre écrit est différent.'},
       {title:'Je vérifie si le résultat est raisonnable',body:'Une unité plus petite demande un nombre plus grand : 2 m = 200 cm. Une unité plus grande demande un nombre plus petit : 200 cm = 2 m. Compare toujours à la même longueur.',visual:'<div class="direction-visual"><span>petite unité : cm</span><b>← nombre plus grand : 200</b><b>nombre plus petit : 2 →</b><span>grande unité : m</span></div>',ask:'Combien de centimètres y a-t-il dans 3 mètres ?',options:['0,3 cm','30 cm','300 cm'],answer:'300 cm',explain:'Le centimètre est plus petit que le mètre : il en faut 100 pour faire 1 m. Donc 3 m = 300 cm.'}
@@ -70,10 +73,10 @@
       {title:'Étape 4 — Je vérifie si le résultat a du sens',body:'Je peux contrôler avec un repère : 2 m est la longueur d’une grande table. 20 dm désigne exactement la même longueur. 200 dm ferait 20 mètres : beaucoup trop long.',visual:'<div class="example-strip"><span>❌ 2 m = 0,2 cm</span><span>✅ 2 m = 200 cm</span></div>',ask:'5 m = combien de cm ?',options:['50 cm','500 cm','5 000 cm'],answer:'500 cm',explain:'m → dm → cm : deux pas vers des unités 10 fois plus petites. 5 × 100 = 500 cm.'}
     ],
     'masses': [
-      {title:'Je sais ce que je mesure',body:'Une masse se pèse avec une balance. Les unités fréquentes sont le gramme (g), le kilogramme (kg) et parfois la tonne (t). Une capacité indique ce qu’un récipient peut contenir : mL, cL, dL ou L.',visual:'<div class="measure-cards"><span>🍎 pomme<br><b>≈ 150 g</b></span><span>🎒 sac<br><b>≈ 4 kg</b></span><span>🥛 verre<br><b>≈ 2 dL</b></span><span>🧃 bouteille<br><b>≈ 1 L</b></span></div>',ask:'Un seau peut contenir 8 ___. Quelle unité choisir ?',options:['L','mL','cL'],answer:'L',explain:'Le litre (L) convient pour la capacité d’un seau. Le millilitre et le centilitre sont de plus petites unités.'},
+      {title:'Je sais ce que je mesure',body:'Une masse se pèse avec une balance. Le tableau utilisé va de kg à mg avec les unités intermédiaires. Une capacité indique ce qu’un récipient peut contenir : mL, cL, dL ou L.',visual:'<div class="measure-cards"><span>pomme<br><b>≈ 150 g</b></span><span>sac<br><b>≈ 4 kg</b></span><span>verre<br><b>≈ 2 dL</b></span><span>bouteille<br><b>≈ 1 L</b></span></div>',ask:'Un seau peut contenir 8 ___. Quelle unité choisir ?',options:['L','mL','cL'],answer:'L',explain:'Le litre convient pour la capacité d’un seau.'},
       {title:'Les masses : kg et g',body:'1 kg = 1 000 g. Pour passer des kilogrammes aux grammes, on multiplie par 1 000. Dans l’autre sens, on divise par 1 000.',visual:'<div class="conversion-equation"><span>1 kg</span><b>＝</b><span>1 000 g</span></div>',ask:'2 kg = combien de g ?',options:['200 g','2 000 g','20 000 g'],answer:'2 000 g',explain:'2 × 1 000 = 2 000 g.'},
       {title:'Les capacités : L et mL',body:'1 L = 100 cL = 1 000 mL. Les unités de capacité suivent ici des rapports par 10 entre L, dL, cL et mL.',visual:'<div class="beaker"><div class="water"></div><span>1 L = 1 000 mL</span></div>',ask:'0,5 L = combien de mL ?',options:['5 mL','50 mL','500 mL'],answer:'500 mL',explain:'1 L vaut 1 000 mL. La moitié de 1 000 mL est 500 mL.'},
-      {title:'Je contrôle avec la vie réelle',body:'Une conversion doit rester plausible. Une personne ne pèse pas 70 g, et une petite bouteille d’eau ne contient pas 500 L. Les repères aident à repérer une erreur de zéro.',visual:'<div class="example-strip"><span>🙂 personne ≈ 70 kg</span><span>💧 petite bouteille ≈ 500 mL</span></div>',ask:'Quelle masse est plausible pour un petit chien ?',options:['8 kg','8 g','8 t'],answer:'8 kg',explain:'8 kg est plausible pour un petit chien. 8 g est presque la masse d’un petit objet, et 8 tonnes celle d’un très gros véhicule.'}
+      {title:'Je contrôle avec la vie réelle',body:'Une conversion doit rester plausible. Une personne ne pèse pas 70 g, et une petite bouteille d’eau ne contient pas 500 L. Les repères aident à repérer une erreur de zéro.',visual:'<div class="example-strip"><span>personne ≈ 70 kg</span><span>petite bouteille ≈ 500 mL</span></div>',ask:'Quelle masse est plausible pour un petit chien ?',options:['8 kg','8 g','8 mg'],answer:'8 kg',explain:'8 kg est plausible pour un petit chien ; 8 g et 8 mg sont beaucoup trop petits.'}
     ],
     'durées': [
       {title:'Le temps ne se convertit pas comme les longueurs',body:'Pour les durées, 1 minute = 60 secondes et 1 heure = 60 minutes. Attention : les minutes ne sont pas des centièmes d’heure. 1,5 h, c’est 1 h 30 min, pas 1 h 5 min.',visual:'<div class="clock-equation"><span>1 h</span><b>＝</b><span>60 min</span><br><span>1 min</span><b>＝</b><span>60 s</span></div>',ask:'1 h 30 min correspond à combien de minutes ?',options:['90 min','130 min','30 min'],answer:'90 min',explain:'1 heure = 60 minutes. 60 + 30 = 90 minutes.'},
@@ -123,7 +126,7 @@
     'canaux-artisans': {
       'repères': {ask:'Un plan indique 1,2 m² pour une surface. Que signifie le symbole m² ?',options:['Une longueur','Une masse','Une aire'],answer:'Une aire',explain:'Le carré (²) indique une aire : on mesure une surface, par exemple le sol d’un atelier. Une longueur s’exprime en m, pas en m².'},
       'longueurs': {ask:'Une planche mesure 2,48 m. Quelle est sa longueur en centimètres ?',options:['24,8 cm','248 cm','2 480 cm'],answer:'248 cm',explain:'1 m = 100 cm, donc 2,48 × 100 = 248 cm. Le nombre augmente car on compte dans une unité plus petite.'},
-      'masses': {ask:'Une palette a une masse de 1,25 t. Combien cela représente-t-il de kilogrammes ?',options:['125 kg','1 250 kg','12 500 kg'],answer:'1 250 kg',explain:'1 t = 1 000 kg. Donc 1,25 × 1 000 = 1 250 kg.'},
+      'masses': {ask:'Un colis a une masse de 1,25 kg. Combien cela représente-t-il en grammes ?',options:['125 g','1 250 g','12 500 g'],answer:'1 250 g',explain:'1 kg = 1 000 g. Donc 1,25 × 1 000 = 1 250 g.'},
       'surfaces': {ask:'Un atelier couvre 2,4 m². Combien cela représente-t-il de dm² ?',options:['24 dm²','240 dm²','2 400 dm²'],answer:'240 dm²',explain:'Pour les aires, chaque pas d’unité multiplie par 100 : 1 m² = 100 dm². Donc 2,4 m² = 240 dm².'},
       'expedition': {ask:'Un sol fait 2,4 m² et une extension ajoute 75 dm². Quelle aire totale obtient-on en m² ?',options:['2,475 m²','3,15 m²','9,9 m²'],answer:'3,15 m²',explain:'Convertis 75 dm² en m² : 75 ÷ 100 = 0,75 m². Puis 2,4 + 0,75 = 3,15 m².'}
     },
@@ -157,7 +160,7 @@
     'canaux-artisans': {
       'repères':['Regarde les symboles : m, m² et m³ désignent trois grandeurs différentes.','Les décimaux sont utiles en mesure ; estime d’abord si le résultat attendu est de quelques unités ou de centaines.','Pour comparer deux mesures, transforme-les dans la même unité sans changer la grandeur.','Un exposant au carré indique une aire : ne convertis pas m² avec le même facteur qu’un m.'],
       'longueurs':['Le tableau sert aussi avec un nombre décimal : la virgule ne doit pas te faire perdre la colonne d’unité.','Place les chiffres à partir de l’unité donnée et complète les colonnes absentes par des zéros si nécessaire.','Vérifie le facteur avant de déplacer la virgule : m ↔ cm correspond à 100, pas à 10.','Après conversion, contrôle en sens inverse : 236 cm divisés par 100 redonnent 2,36 m.'],
-      'masses':['Pour les cargaisons, tu peux rencontrer kg et tonnes ; le rapport est 1 t = 1 000 kg.','Multiplie ou divise par 1 000 selon le sens de conversion, puis relis la virgule.','Pour les capacités, conserve le tableau L, dL, cL, mL ; les unités doivent rester dans la même famille.','Une réponse réaliste doit correspondre à la taille de l’objet ou de la livraison décrite.'],
+      'masses':['Le tableau complet utilise kg, hg, dag, g, dg, cg et mg.','Chaque colonne voisine correspond à un facteur 10.','Pour les capacités, utilise un tableau distinct.','Une réponse réaliste doit correspondre à la taille de l’objet décrit.'],
       'surfaces':['Un côté se mesure en mètres ; la surface du pavé se mesure en mètres carrés.','Chaque côté se multiplie par 10 entre m et dm : l’aire se multiplie donc par 10 × 10 = 100.','Pour m² → cm², le facteur global est 10 000 ; ne déplace pas seulement d’une colonne.','Compare avec une grille : 1 m² contient 100 carrés de 1 dm².'],
       'expedition':['Avant les calculs, sépare les longueurs, masses, durées et aires données.','Ramène chaque donnée dans l’unité qui rend l’opération possible.','Additionne seulement des mesures de même grandeur et garde l’unité commune dans l’écriture.','Une extension de surface doit être convertie en m² avant de s’ajouter à des m².']
     },
@@ -192,7 +195,7 @@
   }
 
   function listHouses(villageId) {
-    return (HOUSE_SETS[villageId] || HOUSE_SETS['sentiers-moulin']).map((h, i) => ({
+    return (HOUSE_SETS[villageId] || HOUSE_SETS['fondations-mesure']).map((h, i) => ({
       index: i, id: h[0], title: h[1], families: h[2], subtitle: h[3],
       icon: ['🧭','📏','⚖️','🧱','🗺️'][i]
     }));
@@ -227,20 +230,21 @@
       return ['mm','cm','dm','m','dam','hm','km'];
     }
     if (family === 'mass') {
-      if (difficulty <= 2) return ['g','kg'];
-      // Les mg restent dans le moteur mais ne sont pas mélangés aux kg et tonnes dans un seul saut.
-      return ['g','kg','t'];
+      if (difficulty === 1) return ['g','kg'];
+      if (difficulty === 2) return ['dag','g','dg'];
+      if (difficulty === 3) return ['kg','hg','dag','g'];
+      return ['kg','hg','dag','g','dg','cg','mg'];
     }
     if (family === 'capacity') {
       if (difficulty === 1) return ['mL','L'];
       if (difficulty === 2) return ['mL','cL','dL','L'];
-      return ['mL','cL','dL','L','daL','hL'];
+      return ['mL','cL','dL','L','daL','hL','kL'];
     }
     if (family === 'area') {
       if (difficulty === 1) return ['dm²','m²'];
       if (difficulty === 2) return ['cm²','dm²','m²'];
-      if (difficulty === 3) return ['cm²','m²','ha'];
-      return ['mm²','cm²','m²','ha','km²'];
+      if (difficulty === 3) return ['cm²','dm²','m²','dam²','hm²'];
+      return ['mm²','cm²','dm²','m²','dam²','a','hm²','ha','km²'];
     }
     if (family === 'volume') {
       if (difficulty <= 2) return ['dm³','m³'];
@@ -349,7 +353,7 @@
     if (roll < 0.70 && ['length','mass','capacity'].includes(family)) {
       const examples = {
         length: [{p:'La longueur d’un terrain de football est plutôt proche de…',o:['100 m','100 cm','100 km'],a:'100 m',e:'Un terrain mesure environ une centaine de mètres.'},{p:'Pour mesurer la distance entre deux villes, choisis…',o:['km','mm','cm'],a:'km',e:'On utilise généralement les kilomètres pour des distances entre villes.'}],
-        mass: [{p:'La masse d’un gros sac de pommes est plutôt…',o:['5 kg','5 g','5 t'],a:'5 kg',e:'Quelques kilogrammes sont plausibles pour un sac de pommes.'}],
+        mass: [{p:'La masse d’un gros sac de pommes est plutôt…',o:['5 kg','5 g','5 mg'],a:'5 kg',e:'Quelques kilogrammes sont plausibles pour un sac de pommes.'}],
         capacity: [{p:'Une grande bouteille d’eau contient environ…',o:['1,5 L','1,5 mL','1,5 kL'],a:'1,5 L',e:'Une bouteille courante contient un ou quelques litres.'}]
       };
       const t = pick(examples[family]); return {family,type:'choice',prompt:t.p,options:t.o,answer:t.a,answerLabel:t.a,explain:t.e,hint:'Pense à un objet réel. Quelle unité est utilisée dans la vie quotidienne ?',worked:`Repère concret : ${t.e}`};
@@ -372,7 +376,7 @@
    * ici et on ajoute son rendu/correcteur dans la page de jeu.
    */
   const QUESTION_FORMATS = ['choice', 'number', 'unit', 'match', 'order', 'table', 'error', 'multi'];
-  const TABLE_FAMILIES = ['length', 'mass', 'capacity'];
+  const TABLE_FAMILIES = ['length', 'mass', 'capacity', 'area', 'volume'];
 
   const UNIT_SCENARIOS = {
     length: [
@@ -382,9 +386,9 @@
       { prompt: 'Une fourmi mesure quelques ___. Quelle unité convient ?', answer: 'mm', options: ['mm', 'cm', 'm'] }
     ],
     mass: [
-      { prompt: 'Un sac de pommes pèse 4 ___. Quelle unité convient ?', answer: 'kg', options: ['kg', 'g', 't'] },
-      { prompt: 'Une pomme pèse environ 150 ___. Quelle unité convient ?', answer: 'g', options: ['g', 'kg', 't'] },
-      { prompt: 'Un camion chargé peut peser 8 ___. Quelle unité convient ?', answer: 't', options: ['t', 'kg', 'g'] }
+      { prompt: 'Un sac de pommes pèse 4 ___. Quelle unité convient ?', answer: 'kg', options: ['kg', 'g', 'mg'] },
+      { prompt: 'Une pomme pèse environ 150 ___. Quelle unité convient ?', answer: 'g', options: ['g', 'kg', 'mg'] },
+      { prompt: 'Un trombone pèse environ 1 ___. Quelle unité convient ?', answer: 'g', options: ['g', 'kg', 'mg'] }
     ],
     capacity: [
       { prompt: 'Une bouteille d’eau contient 1,5 ___. Quelle unité convient ?', answer: 'L', options: ['L', 'mL', 'cL'] },
@@ -408,7 +412,7 @@
 
   const MATCH_BANK = {
     length: [['1 m','100 cm'],['2 m','200 cm'],['3 m','30 dm'],['1 km','1 000 m'],['50 cm','5 dm'],['4 dm','40 cm'],['1,5 m','150 cm']],
-    mass: [['1 kg','1 000 g'],['2 kg','2 000 g'],['500 g','0,5 kg'],['3 t','3 000 kg'],['250 g','0,25 kg'],['4 kg','4 000 g']],
+    mass: [['1 kg','1 000 g'],['2 kg','2 000 g'],['500 g','0,5 kg'],['3 hg','300 g'],['250 g','0,25 kg'],['4 dag','40 g']],
     capacity: [['1 L','1 000 mL'],['2 L','200 cL'],['50 cL','0,5 L'],['3 dL','300 mL'],['1,5 L','1 500 mL'],['4 L','400 cL']],
     duration: [['1 h','60 min'],['2 h','120 min'],['3 min','180 s'],['90 min','1 h 30 min'],['1 min','60 s'],['2 h','7 200 s']],
     area: [['1 m²','100 dm²'],['2 m²','20 000 cm²'],['3 m²','300 dm²'],['1 dm²','100 cm²'],['4 m²','400 dm²']],
@@ -545,7 +549,7 @@
   function makeMultiQuestion(family, difficulty = 1) {
     const configs = {
       length: { unit:'m', targets:[['cm',100],['dm',10],['mm',1000]], wrong:[['cm',10],['mm',100]] },
-      mass: { unit:'kg', targets:[['g',1000],['t',0.001]], wrong:[['g',100],['t',1]] },
+      mass: { unit:'kg', targets:[['g',1000],['hg',10]], wrong:[['g',100],['hg',100]] },
       capacity: { unit:'L', targets:[['cL',100],['dL',10],['mL',1000]], wrong:[['cL',10],['mL',100]] },
       duration: { unit:'h', targets:[['min',60],['s',3600]], wrong:[['min',100],['s',600]] },
       area: { unit:'m²', targets:[['dm²',100],['cm²',10000]], wrong:[['dm²',10],['cm²',100]] },
@@ -590,7 +594,7 @@
 
   function tableUnitsFor(family) {
     if (!FAMILIES[family]) return [];
-    if (family === 'area') return ['km²','ha','m²','dm²','cm²','mm²'];
+    if (family === 'area') return ['km²','hm²','ha','dam²','a','m²','dm²','cm²','mm²'];
     return Object.keys(FAMILIES[family].units).sort((a, b) => FAMILIES[family].units[b] - FAMILIES[family].units[a]);
   }
 
@@ -661,7 +665,7 @@
   // Niveau de départ prudent selon la région choisie ; le prétest ajuste seulement
   // la famille de compétence concernée. Il s'agit d'une heuristique à valider en classe.
   function startingDifficulty(villageId, family, pretest = null) {
-    const levels = [1, 2, 3, 3];
+    const levels = [1, 2, 2, 3, 4];
     const idx = Math.max(0, VILLAGES.findIndex(v => v.id === villageId));
     let start = levels[idx] || 1;
     const result = pretest && pretest.byFamily && pretest.byFamily[family];
@@ -675,10 +679,10 @@
 
   function pretestRecommendation(results) {
     // Un prétest conseille un point de départ ; il ne produit pas un diagnostic validé.
-    const levels = ['sentiers-moulin','clairieres-compas','canaux-artisans','hautes-terres'];
+    const levels = ['fondations-mesure','royaume-conversions','aires-perimetres','volumes-capacites','missions-maitrise'];
     const total = results.total || 0, score = total ? results.correct / total : 0;
     const perFamily = results.byFamily || {};
-    let recommended = score < .35 ? 0 : score < .55 ? 1 : score < .76 ? 2 : 3;
+    let recommended = score < .35 ? 0 : score < .55 ? 1 : score < .76 ? 2 : score < .9 ? 3 : 4;
     const weak = Object.entries(perFamily).filter(([,v]) => v.total && v.correct / v.total < .5).map(([k]) => k);
     if (weak.length >= 3) recommended = Math.max(0,recommended - 1);
     return { villageId:levels[recommended], villageIndex:recommended, percent:Math.round(score*100), weakFamilies:weak };
