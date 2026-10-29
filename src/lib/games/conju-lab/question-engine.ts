@@ -177,7 +177,10 @@ function getEligibleVerbs(config: EngineConfig): VerbEntry[] {
   const withSelectedGroups = config.selectedGroups.length
     ? gradeVerbs.filter((verb) => config.selectedGroups.includes(verb.group))
     : gradeVerbs;
-  return withSelectedGroups.length ? withSelectedGroups : gradeVerbs;
+  const withSelectedVerbs = config.selectedInfinitives?.length
+    ? withSelectedGroups.filter((verb) => config.selectedInfinitives?.includes(verb.infinitive))
+    : withSelectedGroups;
+  return withSelectedVerbs.length ? withSelectedVerbs : withSelectedGroups.length ? withSelectedGroups : gradeVerbs;
 }
 
 function nextQuestionId(): string {
@@ -337,9 +340,7 @@ function explainConjugation(verb: VerbEntry, tense: TenseId, subject: SubjectOpt
 }
 
 function buildGroupQuestion(config: EngineConfig): VerbQuestion {
-  // Pour apprendre à distinguer les groupes, l'activité compare les trois modèles.
-  // Le filtre de groupes s'applique aux exercices de conjugaison, pas à cette classification.
-  const verb = randomItem(getVerbsForGrade(config.grade));
+  const verb = randomItem(getEligibleVerbs(config));
   const correctAnswer = `Groupe ${verb.group}`;
   const options = shuffle(['Groupe 1', 'Groupe 2', 'Groupe 3']);
   return {
@@ -388,6 +389,43 @@ function buildIdentifyQuestion(config: EngineConfig): VerbQuestion {
       `${getTenseInfo(selected.tense).shortLabel} : ${getTenseInfo(selected.tense).description}`
     ],
     feedbackTag: 'temps'
+  };
+}
+
+function buildPersonQuestion(config: EngineConfig): VerbQuestion {
+  const eligibleVerbs = getEligibleVerbs(config);
+  const tenses = getTenseCandidates(config).filter((tense) => tense !== 'imperatif');
+  const candidates: Array<{ verb: VerbEntry; tense: TenseId; subject: SubjectOption; form: string }> = [];
+  for (const verb of eligibleVerbs) {
+    for (const tense of tenses) {
+      for (const subject of getPersonCandidates(verb, tense)) {
+        const form = conjugateForm(verb, tense, subject);
+        if (form) candidates.push({ verb, tense, subject, form });
+      }
+    }
+  }
+  if (!candidates.length) throw new Error('Aucune forme ne permet d’identifier une personne avec ces critères.');
+  const selected = randomItem(candidates);
+  const samePersonLabels = PERSONS
+    .filter((person) => person.personIndex === selected.subject.personIndex)
+    .map((person) => person.label);
+  const correctAnswer = samePersonLabels.join(' / ');
+  const personFamilies = [
+    ['je'], ['tu'], ['il', 'elle', 'on'], ['nous'], ['vous'], ['ils', 'elles']
+  ].map((family) => family.join(' / '));
+  const distractors = personFamilies.filter((label) => label !== correctAnswer);
+  return {
+    id: nextQuestionId(), kind: 'personne', prompt: 'Identifier le pronom',
+    sentence: `Quel pronom peut accompagner la forme « ${selected.form} » du verbe ${selected.verb.infinitive} au ${getTenseInfo(selected.tense).shortLabel.toLocaleLowerCase('fr')} ?`,
+    verb: selected.verb, tense: selected.tense, subject: selected.subject,
+    correctAnswer, options: optionsWithCorrect(correctAnswer, distractors),
+    explanation: `« ${selected.form} » correspond ici à la ${selected.subject.personIndex + 1}${selected.subject.personIndex === 0 ? 're' : 'e'} personne : ${correctAnswer}.`,
+    hintSteps: [
+      'Repère la terminaison de la forme proposée.',
+      'Compare-la mentalement avec les six personnes : je, tu, il/elle/on, nous, vous, ils/elles.',
+      `Le temps demandé est le ${getTenseInfo(selected.tense).shortLabel.toLocaleLowerCase('fr')}.`
+    ],
+    feedbackTag: 'personne'
   };
 }
 
@@ -531,13 +569,14 @@ function buildEndingQuestion(config: EngineConfig): VerbQuestion {
   };
 }
 
-function focusToKind(focus: ActivityFocus): Array<'conjuguer' | 'identifier' | 'groupe' | 'terminaison' | 'radical'> {
+function focusToKind(focus: ActivityFocus): Array<'conjuguer' | 'identifier' | 'personne' | 'groupe' | 'terminaison' | 'radical'> {
   switch (focus) {
     case 'conjuguer': return ['conjuguer'];
     case 'identifier': return ['identifier'];
+    case 'personnes': return ['personne'];
     case 'groupes': return ['groupe'];
     case 'radicaux': return ['terminaison', 'radical'];
-    default: return ['conjuguer', 'identifier', 'groupe', 'terminaison', 'radical'];
+    default: return ['conjuguer', 'identifier', 'personne', 'groupe', 'terminaison', 'radical'];
   }
 }
 
@@ -547,6 +586,7 @@ export function generateQuestion(config: EngineConfig): VerbQuestion {
   const builders = {
     conjuguer: buildConjugationQuestion,
     identifier: buildIdentifyQuestion,
+    personne: buildPersonQuestion,
     groupe: buildGroupQuestion,
     terminaison: buildEndingQuestion,
     radical: buildRadicalQuestion
@@ -618,6 +658,10 @@ export function analyseAnswer(question: VerbQuestion, rawAnswer: string): Answer
     return { isCorrect: false, isNearMiss: false, hint: 'Demande-toi si la forme est simple ou composée. Dans un temps composé, repère l’auxiliaire et le participe passé.', explanation: question.explanation };
   }
 
+  if (question.kind === 'personne') {
+    return { isCorrect: false, isNearMiss: false, hint: 'Observe la terminaison et associe-la à une personne : je, tu, il/elle/on, nous, vous ou ils/elles.', explanation: question.explanation };
+  }
+
   if (question.tense && isCompoundTense(question.tense)) {
     return { isCorrect: false, isNearMiss: false, hint: 'Sépare les deux parties : l’auxiliaire donne la personne et le temps ; le participe passé complète la forme.', explanation: question.explanation };
   }
@@ -667,7 +711,7 @@ export function resolveAnswerStyle(style: AnswerStyle, question: VerbQuestion): 
 
 export function getGradeFocusLabel(focus: ActivityFocus): string {
   const labels: Record<ActivityFocus, string> = {
-    mixte: 'Mission mixte', conjuguer: 'Conjuguer', identifier: 'Identifier les temps', groupes: 'Groupes de verbes', radicaux: 'Radicaux et terminaisons'
+    mixte: 'Mission mixte', conjuguer: 'Conjuguer', identifier: 'Identifier les temps', personnes: 'Identifier les pronoms', groupes: 'Groupes de verbes', radicaux: 'Radicaux et terminaisons'
   };
   return labels[focus];
 }

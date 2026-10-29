@@ -6,8 +6,7 @@
 export type Grade = '6H' | '7H' | '8H' | '9H';
 export type VerbGroup = 1 | 2 | 3;
 export type AnswerStyle = 'mixte' | 'qcm' | 'saisie';
-export type ActivityFocus = 'mixte' | 'conjuguer' | 'identifier' | 'groupes' | 'radicaux';
-export type PlayPath = 'guide' | 'libre';
+export type ActivityFocus = 'mixte' | 'conjuguer' | 'identifier' | 'personnes' | 'groupes' | 'radicaux';
 
 export type TenseId =
   | 'present'
@@ -78,7 +77,7 @@ export interface TenseInfo {
   advanced?: boolean;
 }
 
-export type QuestionKind = 'conjuguer' | 'identifier' | 'groupe' | 'terminaison' | 'radical';
+export type QuestionKind = 'conjuguer' | 'identifier' | 'personne' | 'groupe' | 'terminaison' | 'radical';
 
 /** Une question complète et validée avant affichage. */
 export interface VerbQuestion {
@@ -105,6 +104,8 @@ export interface EngineConfig {
   answerStyle: AnswerStyle;
   selectedTenses: TenseId[];
   selectedGroups: VerbGroup[];
+  /** Filtre facultatif : une liste vide signifie « tous les verbes des groupes choisis ». */
+  selectedInfinitives?: string[];
 }
 
 export interface AnswerAnalysis {

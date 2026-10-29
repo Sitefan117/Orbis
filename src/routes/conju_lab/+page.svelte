@@ -30,8 +30,9 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   const GRADES: Grade[] = ['6H', '7H', '8H', '9H'];
   const FOCI: Array<{ id: ActivityFocus; label: string; detail: string }> = [
     { id: 'mixte', label: 'Mission mixte', detail: 'Varier les exercices et les stratégies.' },
-    { id: 'conjuguer', label: 'Conjuguer', detail: 'Trouver ou écrire la forme correcte.' },
+    { id: 'conjuguer', label: 'Conjuguer', detail: 'Choisir la forme correcte parmi quatre réponses.' },
     { id: 'identifier', label: 'Identifier un temps', detail: 'Lire une forme et reconnaître son temps.' },
+    { id: 'personnes', label: 'Identifier un pronom', detail: 'Associer une forme à je, tu, il, nous…' },
     { id: 'groupes', label: 'Classer les verbes', detail: 'Comprendre les trois groupes de verbes.' },
     { id: 'radicaux', label: 'Radicaux et terminaisons', detail: 'Découper une forme et repérer son modèle.' }
   ];
@@ -40,12 +41,13 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   // Aucune progression n’est enregistrée localement par ConjuLab.
   let screen: Screen = 'menu';
   let grade: Grade = '6H';
-  let playPath: 'guide' | 'libre' = 'guide';
   let focus: ActivityFocus = 'mixte';
-  let answerStyle: AnswerStyle = 'mixte';
+  let answerStyle: AnswerStyle = 'qcm';
   let selectedTenses: TenseId[] = ['present', 'imparfait', 'futurSimple', 'passeCompose'];
   let selectedGroups: VerbGroup[] = [1, 2, 3];
-  let timedChallenge = false;
+  let selectedVerbs: string[] = [];
+  let gameMode: 'detente' | 'rapide' = 'detente';
+  let openVerbGroup: VerbGroup | null = null;
 
   // Réglages d’accessibilité disponibles depuis le menu et pendant les activités.
   let largeText = false;
@@ -74,11 +76,22 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   let selectedRuleIndex = 0;
   let resultStatus: 'not-sent' | 'sending' | 'sent' | 'unavailable' = 'not-sent';
   let fatalError = '';
+  let bossHp = 100;
+  let playerLives = 3;
+  let combo = 0;
+  let bestCombo = 0;
+  let combatOutcome: 'victory' | 'defeat' | null = null;
+  let combatState: 'idle' | 'attack' | 'special' | 'hurt' | 'victory' | 'defeat' = 'idle';
   let intervalId: ReturnType<typeof setInterval> | null = null;
+  let combatTimeoutId: ReturnType<typeof setTimeout> | null = null;
   let audioContext: AudioContext | null = null;
 
   $: availableTenses = getTensesForGrade(grade);
   $: gradeVerbCount = getVerbsForGrade(grade).length;
+  $: verbsByGroup = [1, 2, 3].map((group) => ({
+    group: group as VerbGroup,
+    verbs: getVerbsForGrade(grade).filter((verb) => verb.group === group)
+  }));
   $: selectedGradeFocus = FOCI.find((item) => item.id === focus)?.label ?? 'Mission mixte';
   $: progressPercent = Math.round((questionIndex / SESSION_LENGTH) * 100);
   $: currentHint = errorHint || currentQuestion?.hintSteps[Math.min(hintIndex, (currentQuestion?.hintSteps.length ?? 1) - 1)] || 'Repère le sujet, le temps et le verbe avant de répondre.';
@@ -93,9 +106,20 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   }
 
   function toggleGroup(group: VerbGroup) {
-    selectedGroups = selectedGroups.includes(group)
-      ? selectedGroups.filter((item) => item !== group)
-      : [...selectedGroups, group];
+    if (selectedGroups.includes(group)) {
+      selectedGroups = selectedGroups.filter((item) => item !== group);
+      const removed = new Set(getVerbsForGrade(grade).filter((verb) => verb.group === group).map((verb) => verb.infinitive));
+      selectedVerbs = selectedVerbs.filter((verb) => !removed.has(verb));
+    } else {
+      selectedGroups = [...selectedGroups, group];
+    }
+    configError = '';
+  }
+
+  function toggleVerb(infinitive: string) {
+    selectedVerbs = selectedVerbs.includes(infinitive)
+      ? selectedVerbs.filter((verb) => verb !== infinitive)
+      : [...selectedVerbs, infinitive];
     configError = '';
   }
 
@@ -112,29 +136,8 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     configError = '';
   }
 
-  function makeConfig(index = questionIndex): EngineConfig {
-    let activeFocus = focus;
-    let activeTenses = [...selectedTenses];
-
-    // Le mode guidé progresse : classement du verbe, analyse du modèle, puis conjugaison.
-    // Le mode libre respecte le choix de l’élève à chaque question.
-    if (playPath === 'guide') {
-      if (index < 2) activeFocus = 'groupes';
-      else if (index < 4) activeFocus = 'radicaux';
-      else activeFocus = index % 4 === 0 ? 'identifier' : 'conjuguer';
-
-      const ordered = availableTenses
-        .filter((item) => selectedTenses.includes(item.id))
-        .map((item) => item.id);
-      if (ordered.length > 0 && index >= 4) {
-        const unlockedCount = Math.max(1, Math.ceil(((index - 3) / (SESSION_LENGTH - 4)) * ordered.length));
-        activeTenses = ordered.slice(0, unlockedCount);
-      } else {
-        activeTenses = ordered.length > 0 ? [ordered[0]] : ['present'];
-      }
-    }
-
-    return { grade, focus: activeFocus, answerStyle, selectedTenses: activeTenses, selectedGroups };
+  function makeConfig(): EngineConfig {
+    return { grade, focus, answerStyle, selectedTenses: [...selectedTenses], selectedGroups, selectedInfinitives: selectedVerbs };
   }
 
   function startSession() {
@@ -152,6 +155,12 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     correctQuestions = 0;
     retrySuccesses = 0;
     totalErrors = 0;
+    bossHp = 100;
+    playerLives = 3;
+    combo = 0;
+    bestCombo = 0;
+    combatOutcome = null;
+    combatState = 'idle';
     resultStatus = 'not-sent';
     fatalError = '';
     screen = 'game';
@@ -174,7 +183,8 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       feedbackMessage = '';
       errorHint = '';
       timeLeft = 15;
-      if (timedChallenge) startTimer();
+      combatState = 'idle';
+      if (gameMode === 'rapide') startTimer();
     } catch (error) {
       fatalError = error instanceof Error ? error.message : 'Une question n’a pas pu être préparée.';
       screen = 'end';
@@ -188,6 +198,37 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     }
   }
 
+  function stopCombatAnimation() {
+    if (combatTimeoutId !== null) {
+      clearTimeout(combatTimeoutId);
+      combatTimeoutId = null;
+    }
+  }
+
+  function animateCombat(state: 'attack' | 'special' | 'hurt') {
+    stopCombatAnimation();
+    combatState = state;
+    combatTimeoutId = setTimeout(() => {
+      if (!combatOutcome) combatState = 'idle';
+      combatTimeoutId = null;
+    }, reducedMotion ? 50 : 850);
+  }
+
+  function bossCounterAttack(kind: 'error' | 'timeout') {
+    combo = 0;
+    playerLives = Math.max(0, playerLives - 1);
+    if (playerLives === 0) {
+      combatOutcome = 'defeat';
+      combatState = 'defeat';
+      resolved = true;
+      feedbackKind = kind === 'timeout' ? 'timeout' : 'revealed';
+      feedbackMessage = 'K.-O. Le boss remporte cette manche. Observe la correction, puis prépare ta revanche.';
+    } else {
+      animateCombat('hurt');
+    }
+    playTone(false);
+  }
+
   function startTimer() {
     stopTimer();
     intervalId = setInterval(() => {
@@ -197,8 +238,9 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
         totalErrors += 1;
         attemptCount = 2;
         resolved = true;
+        bossCounterAttack('timeout');
         feedbackKind = 'timeout';
-        feedbackMessage = 'Le temps du défi est écoulé. Regarde la correction, puis continue quand tu es prêt.';
+        if (!combatOutcome) feedbackMessage = 'Le temps est écoulé : le boss riposte. Regarde la correction avant de continuer.';
         errorHint = currentQuestion?.hintSteps[1] ?? 'Repère d’abord le temps, puis cherche la terminaison adaptée au sujet.';
       }
     }, 1000);
@@ -222,6 +264,18 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
         retrySuccesses += 1;
       }
       resolved = true;
+      combo += 1;
+      bestCombo = Math.max(bestCombo, combo);
+      const isSpecialCombo = combo > 0 && combo % 3 === 0;
+      const damage = isSpecialCombo ? 18 : 8;
+      bossHp = Math.max(0, bossHp - damage);
+      if (bossHp === 0) {
+        combatOutcome = 'victory';
+        combatState = 'victory';
+        score += 250;
+      } else {
+        animateCombat(isSpecialCombo ? 'special' : 'attack');
+      }
       feedbackKind = 'correct';
       feedbackMessage = attemptCount === 1 ? 'Bien joué : réponse correcte du premier coup.' : 'Tu as corrigé ton raisonnement. Réponse juste !';
       errorHint = '';
@@ -230,12 +284,15 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     }
 
     totalErrors += 1;
+    bossCounterAttack('error');
     const normalizedExpected = normalizeForComparison(currentQuestion.correctAnswer);
     const normalizedGiven = normalizeForComparison(rawValue);
-    const looksLikeMissingAuxiliary = currentQuestion.tense !== undefined
+    const looksLikeMissingAuxiliary = currentQuestion.kind === 'conjuguer'
+      && currentQuestion.tense !== undefined
       && ['passeCompose', 'plusQueParfait', 'futurAnterieur', 'passeAnterieur', 'subjonctifPasse', 'conditionnelPasse'].includes(currentQuestion.tense)
       && !normalizedGiven.includes(' ');
-    const looksLikePersonError = currentQuestion.subject
+    const looksLikePersonError = currentQuestion.kind === 'conjuguer'
+      && currentQuestion.subject
       && currentQuestion.tense
       && (currentQuestion.options.includes(rawValue) || (!looksLikeMissingAuxiliary && normalizedGiven.length > 0 && normalizedGiven !== normalizedExpected));
 
@@ -249,15 +306,17 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       errorHint = analysis.hint || currentQuestion.hintSteps[1] || 'Relis le sujet et le temps demandé, puis essaie encore.';
     }
 
-    if (attemptCount === 1) {
+    if (combatOutcome === 'defeat') {
+      resolved = true;
+      feedbackKind = 'revealed';
+      feedbackMessage = 'K.-O. Le boss remporte cette manche. Observe la correction, puis prépare ta revanche.';
+    } else if (attemptCount === 1) {
       feedbackKind = 'retry';
       feedbackMessage = 'Pas encore. Utilise l’indice pour vérifier une chose, puis réessaie.';
-      playTone(false);
     } else {
       resolved = true;
       feedbackKind = 'revealed';
       feedbackMessage = 'La forme correcte est affichée. Compare-la à ta réponse pour repérer la différence.';
-      playTone(false);
     }
   }
 
@@ -270,7 +329,10 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     if (!resolved) return;
     stopTimer();
     showHelp = false;
-    if (questionIndex + 1 >= SESSION_LENGTH) {
+    if (combatOutcome || questionIndex + 1 >= SESSION_LENGTH) {
+      if (!combatOutcome) {
+        combatOutcome = bossHp <= 0 ? 'victory' : 'defeat';
+      }
       screen = 'end';
       void sendResult();
       return;
@@ -287,11 +349,11 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       const report = await recordGameActivity({
         studentName: getStudentName(),
         gameId: 'conju_lab',
-        activityId: `${grade} · ${playPath === 'guide' ? 'parcours guidé' : 'parcours libre'} · ${selectedGradeFocus}`,
+        activityId: `${grade} · ${gameMode === 'rapide' ? 'jeu rapide' : 'mode détente'} · ${selectedGradeFocus}`,
         correctCount: correctQuestions,
         questionCount: SESSION_LENGTH,
         errorCount: totalErrors,
-        metadata: { grade, playPath, selectedTenses, selectedGroups, answerStyle, retrySuccesses, totalErrors }
+        metadata: { grade, selectedTenses, selectedGroups, selectedVerbs, answerStyle, gameMode, bossHp, playerLives, bestCombo, combatOutcome, retrySuccesses, totalErrors }
       });
       resultStatus = report.ok ? 'sent' : 'unavailable';
     } catch (error) {
@@ -302,6 +364,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
 
   function returnToMenu() {
     stopTimer();
+    stopCombatAnimation();
     showHelp = false;
     screen = 'menu';
     currentQuestion = null;
@@ -357,7 +420,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   function toggleHelp() {
     showHelp = !showHelp;
     if (showHelp) stopTimer();
-    else if (timedChallenge && !resolved) startTimer();
+    else if (gameMode === 'rapide' && !resolved) startTimer();
   }
 
   function selectAnswerFromKeyboard(event: KeyboardEvent) {
@@ -379,6 +442,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
 
   onDestroy(() => {
     stopTimer();
+    stopCombatAnimation();
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
     if (audioContext) void audioContext.close();
     if (typeof window !== 'undefined') window.removeEventListener('keydown', selectAnswerFromKeyboard);
@@ -439,13 +503,13 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
         </div>
 
         <div class="setup-block">
-          <h3><span class="step-number">02</span> Choisis ton parcours</h3>
+          <h3><span class="step-number">02</span> Choisis ton rythme</h3>
           <div class="choice-grid two-columns">
-            <button type="button" class:chosen={playPath === 'guide'} class="choice-card" aria-pressed={playPath === 'guide'} onclick={() => playPath = 'guide'}>
-              <span class="choice-icon" aria-hidden="true">↗</span><strong>Parcours guidé</strong><small>Classement → modèles → conjugaison progressive.</small>
+            <button type="button" class:chosen={gameMode === 'detente'} class="choice-card" aria-pressed={gameMode === 'detente'} onclick={() => gameMode = 'detente'}>
+              <span class="choice-icon" aria-hidden="true">☕</span><strong>Mode détente</strong><small>Sans chrono, avec indices et correction expliquée.</small>
             </button>
-            <button type="button" class:chosen={playPath === 'libre'} class="choice-card" aria-pressed={playPath === 'libre'} onclick={() => playPath = 'libre'}>
-              <span class="choice-icon" aria-hidden="true">⌘</span><strong>Accès libre</strong><small>Choisis le type d’exercice et les notions à revoir.</small>
+            <button type="button" class:chosen={gameMode === 'rapide'} class="choice-card" aria-pressed={gameMode === 'rapide'} onclick={() => gameMode = 'rapide'}>
+              <span class="choice-icon" aria-hidden="true">⚡</span><strong>Jeu rapide</strong><small>15 secondes par question, score et combo pour challenger.</small>
             </button>
           </div>
         </div>
@@ -465,16 +529,15 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
               </label>
             {/each}
           </div>
-          <p class="small-note">Le mode guidé introduit progressivement les temps sélectionnés. Le mode libre les mélange selon tes choix.</p>
+          <p class="small-note">Les questions utilisent uniquement les temps cochés. Tu peux en sélectionner un seul pour une mission très ciblée.</p>
         </div>
 
         <div class="setup-block">
-          <h3><span class="step-number">04</span> Personnalise les exercices</h3>
+          <h3><span class="step-number">04</span> Choisis le mode de jeu</h3>
           <div class="field-label">Type d’activité</div>
-          {#if playPath === 'guide'}<p class="small-note focus-note">Le parcours guidé organise les activités dans un ordre progressif. Passe en accès libre pour choisir un type d’exercice précis.</p>{/if}
           <div class="focus-grid">
             {#each FOCI as item}
-              <button type="button" class:chosen={focus === item.id} class="focus-button" aria-pressed={focus === item.id} disabled={playPath === 'guide'} onclick={() => focus = item.id}>
+              <button type="button" class:chosen={focus === item.id} class="focus-button" aria-pressed={focus === item.id} onclick={() => focus = item.id}>
                 <strong>{item.label}</strong><small>{item.detail}</small>
               </button>
             {/each}
@@ -482,17 +545,19 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
           <div class="field-label group-label">Groupes de verbes</div>
           <div class="group-pills" role="group" aria-label="Groupes de verbes">
             {#each [1, 2, 3] as group}
-              <button type="button" class:chosen={selectedGroups.includes(group as VerbGroup)} class="group-pill" aria-pressed={selectedGroups.includes(group as VerbGroup)} onclick={() => toggleGroup(group as VerbGroup)}>{getGroupLabel(group as VerbGroup)}</button>
+              <div class="group-control">
+                <button type="button" class:open={openVerbGroup === group} class="group-pill" aria-expanded={openVerbGroup === group} onclick={() => openVerbGroup = openVerbGroup === group ? null : group as VerbGroup}>{getGroupLabel(group as VerbGroup)} <span aria-hidden="true">⌄</span></button>
+                <button type="button" class:chosen={selectedGroups.includes(group as VerbGroup)} class="group-toggle" aria-pressed={selectedGroups.includes(group as VerbGroup)} onclick={() => toggleGroup(group as VerbGroup)}>{selectedGroups.includes(group as VerbGroup) ? '✓ Inclus' : '+ Inclure'}</button>
+              </div>
             {/each}
           </div>
-          <p class="small-note">Le filtre limite les verbes des exercices. Dans « Classer les verbes », les trois groupes sont comparés pour éviter de révéler la réponse.</p>
+          {#if openVerbGroup !== null}
+            {@const subgroup = verbsByGroup.find((item) => item.group === openVerbGroup)}
+            <div class="verb-submenu"><div class="verb-submenu-head"><p class="small-note">Choisis éventuellement des verbes précis · aucun choix = tout le groupe.</p>{#if selectedVerbs.length}<button type="button" class="text-button" onclick={() => selectedVerbs = []}>Tout réactiver</button>{/if}</div><div class="verb-chip-list">{#each subgroup?.verbs ?? [] as verb}<button type="button" class:verb-special={!!verb.note && !['Verbe du 1er groupe', 'Verbe du 2e groupe'].some((label) => verb.note?.startsWith(label))} class:chosen={selectedVerbs.includes(verb.infinitive)} class="verb-chip" aria-pressed={selectedVerbs.includes(verb.infinitive)} onclick={() => toggleVerb(verb.infinitive)}>{verb.infinitive}</button>{/each}</div></div>
+          {/if}
+          <p class="small-note">Clique sur un groupe pour voir ses verbes. Les verbes à piège orthographique ou radical irrégulier sont mis en évidence.</p>
           <div class="field-label group-label">Format des réponses</div>
-          <div class="segmented-control" role="group" aria-label="Format de réponse">
-            <button type="button" class:active={answerStyle === 'mixte'} aria-pressed={answerStyle === 'mixte'} onclick={() => answerStyle = 'mixte'}>Alternance</button>
-            <button type="button" class:active={answerStyle === 'qcm'} aria-pressed={answerStyle === 'qcm'} onclick={() => answerStyle = 'qcm'}>Choix multiples</button>
-            <button type="button" class:active={answerStyle === 'saisie'} aria-pressed={answerStyle === 'saisie'} onclick={() => answerStyle = 'saisie'}>Écrire la forme</button>
-          </div>
-          <label class="toggle-row"><input type="checkbox" bind:checked={timedChallenge} /><span><strong>Défi chronométré (facultatif)</strong><small>15 secondes par question. Désactivé par défaut.</small></span></label>
+          <div class="qcm-lock"><strong>QCM uniquement</strong><span>Réponds en un clic : forme, temps, pronom ou radical/terminaison.</span></div>
         </div>
 
         {#if configError}<p class="inline-error" role="alert">{configError}</p>{/if}
@@ -543,16 +608,22 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   {:else if screen === 'game' && currentQuestion}
     <main class="game-layout">
       <div class="game-topbar">
-        <div><p class="eyebrow">SESSION {grade} · {playPath === 'guide' ? 'PARCOURS GUIDÉ' : 'ACCÈS LIBRE'}</p><p class="game-progress-label">Question {questionIndex + 1} sur {SESSION_LENGTH}</p></div>
+        <div><p class="eyebrow">SESSION {grade} · {gameMode === 'rapide' ? 'JEU RAPIDE' : 'MODE DÉTENTE'}</p><p class="game-progress-label">Question {questionIndex + 1} sur {SESSION_LENGTH}</p></div>
         <div class="topbar-actions"><button type="button" class="secondary-button small-button" onclick={toggleHelp} aria-expanded={showHelp}>{showHelp ? 'Fermer les fiches' : 'Aide et règles'}</button><button type="button" class="text-button back-menu" onclick={returnToMenu}>↩ Menu des niveaux</button></div>
       </div>
       <div class="progress-track" role="progressbar" aria-label="Progression de la session" aria-valuemin="0" aria-valuemax={SESSION_LENGTH} aria-valuenow={questionIndex}><span style={`width: ${progressPercent}%`}></span></div>
 
+      <section class="combat-arena panel" aria-label="Combat ConjuLab">
+        <div class="combat-hud"><div><span class="fighter-name">ÉLÈVE</span><div class="life-row"><span class="life-label">❤ {playerLives}</span><div class="combat-life"><span style={`width: ${(playerLives / 3) * 100}%`}></span></div></div></div><div class="combo-readout" class:combo-hot={combo >= 3}>{combo > 0 ? `${combo} COMBO` : 'PRÊT !'}</div><div class="boss-hud"><span class="fighter-name">BOSS DES TEMPS</span><div class="life-row"><div class="combat-life boss-life"><span style={`width: ${bossHp}%`}></span></div><span class="life-label">{bossHp} PV</span></div></div></div>
+        <div class:combat-attack={combatState === 'attack'} class:combat-special={combatState === 'special'} class:combat-hurt={combatState === 'hurt'} class:combat-victory={combatState === 'victory'} class:combat-defeat={combatState === 'defeat'} class="combat-sprite-stage" role="img" aria-label="Combattant contre le boss de conjugaison"></div>
+        <p class="combat-caption">{combatState === 'special' ? 'SUPER COMBO !' : combatState === 'hurt' ? 'Le boss riposte !' : combatState === 'victory' ? 'Boss vaincu !' : combatState === 'defeat' ? 'Reprends ton souffle…' : 'Réponds juste pour frapper.'}</p>
+      </section>
+
       <div class="game-columns">
         <section class="question-panel panel" aria-labelledby="question-title">
-          <div class="question-meta"><span class="micro-tag">{currentQuestion.kind === 'conjuguer' ? 'FORME VERBALE' : currentQuestion.kind === 'identifier' ? 'ANALYSE' : currentQuestion.kind === 'groupe' ? 'CLASSIFICATION' : currentQuestion.kind === 'radical' ? 'RADICAL VARIABLE' : 'DÉCOUPAGE'}</span><span class="micro-tag">{currentQuestion.verb.infinitive}</span></div>
+          <div class="question-meta"><span class="micro-tag">{currentQuestion.kind === 'conjuguer' ? 'FORME VERBALE' : currentQuestion.kind === 'identifier' ? 'ANALYSE DU TEMPS' : currentQuestion.kind === 'personne' ? 'PRONOM' : currentQuestion.kind === 'groupe' ? 'CLASSIFICATION' : currentQuestion.kind === 'radical' ? 'RADICAL VARIABLE' : 'DÉCOUPAGE'}</span><span class="micro-tag">{currentQuestion.verb.infinitive}</span></div>
           <h1 id="question-title" tabindex="-1">{currentQuestion.prompt}</h1>
-          <p class="question-instruction">{currentQuestion.kind === 'conjuguer' ? 'Complète la forme demandée.' : currentQuestion.kind === 'identifier' ? 'Observe la forme puis choisis le temps.' : currentQuestion.kind === 'groupe' ? 'Classe le verbe en t’appuyant sur son infinitif et son modèle.' : currentQuestion.kind === 'radical' ? 'Compare plusieurs formes du même verbe et repère ce qui change.' : 'Repère la terminaison dans la forme proposée.'}</p>
+          <p class="question-instruction">{currentQuestion.kind === 'conjuguer' ? 'Choisis la forme demandée.' : currentQuestion.kind === 'identifier' ? 'Observe la forme puis choisis le temps.' : currentQuestion.kind === 'personne' ? 'Observe la terminaison puis retrouve le pronom.' : currentQuestion.kind === 'groupe' ? 'Classe le verbe en t’appuyant sur son infinitif et son modèle.' : currentQuestion.kind === 'radical' ? 'Compare plusieurs formes du même verbe et repère ce qui change.' : 'Repère la terminaison dans la forme proposée.'}</p>
           <div class="sentence-card"><p>{currentQuestion.sentence}</p></div>
           {#if currentQuestion.kind === 'conjuguer' && currentQuestion.tense}
             <div class="form-tags"><span>{getTenseInfo(currentQuestion.tense).label}</span><span>{getGroupLabel(currentQuestion.verb.group)}</span></div>
@@ -597,13 +668,13 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
               <button type="button" class="secondary-button" onclick={() => { hintIndex = Math.min(hintIndex + 1, currentQuestion?.hintSteps.length ?? 0); errorHint = ''; }} disabled={hintIndex >= currentQuestion.hintSteps.length - 1}>Indice suivant</button>
               {#if voiceEnabled}<button type="button" class="secondary-button" onclick={speakQuestion}>Écouter la consigne</button>{/if}
             {:else}
-              <button type="button" class="primary-button" onclick={moveNext}>{questionIndex + 1 >= SESSION_LENGTH ? 'Voir le bilan' : 'Continuer'} <span aria-hidden="true">→</span></button>
+              <button type="button" class="primary-button" onclick={moveNext}>{combatOutcome ? 'Voir le résultat du combat' : questionIndex + 1 >= SESSION_LENGTH ? 'Voir le bilan' : 'Continuer'} <span aria-hidden="true">→</span></button>
             {/if}
           </div>
         </section>
 
         <aside class="side-column">
-          <section class="panel lab-status"><p class="eyebrow">STATUT DU LABO</p><div class="status-line"><span>Précision</span><strong>{correctQuestions}/{Math.max(1, questionIndex + (resolved ? 1 : 0))}</strong></div><div class="mini-track"><span style={`width: ${Math.min(100, (correctQuestions / Math.max(1, questionIndex + (resolved ? 1 : 0))) * 100)}%`}></span></div><div class="status-line"><span>Points acquis</span><strong>{score}</strong></div><div class="status-line"><span>Indices utilisés</span><strong>{hintIndex + (errorHint ? 1 : 0)}</strong></div>{#if timedChallenge && !resolved}<div class="timer-pill">Temps restant : <strong>{timeLeft}s</strong></div>{/if}</section>
+          <section class="panel lab-status"><p class="eyebrow">STATUT DU LABO</p><div class="status-line"><span>Précision</span><strong>{correctQuestions}/{Math.max(1, questionIndex + (resolved ? 1 : 0))}</strong></div><div class="mini-track"><span style={`width: ${Math.min(100, (correctQuestions / Math.max(1, questionIndex + (resolved ? 1 : 0))) * 100)}%`}></span></div><div class="status-line"><span>Points acquis</span><strong>{score}</strong></div><div class="status-line"><span>Indices utilisés</span><strong>{hintIndex + (errorHint ? 1 : 0)}</strong></div>{#if gameMode === 'rapide' && !resolved}<div class="timer-pill">Temps restant : <strong>{timeLeft}s</strong></div>{/if}</section>
           <section class="panel coach-card"><div class="coach-icon" aria-hidden="true">✳</div><p class="eyebrow">MÉTHODE</p><h2>Décompose avant de répondre.</h2><ol><li>Repère le sujet.</li><li>Identifie le temps.</li><li>Choisis le radical ou l’auxiliaire.</li><li>Vérifie la terminaison.</li></ol><button type="button" class="text-button" onclick={toggleHelp}>{showHelp ? 'Masquer les fiches' : 'Ouvrir les fiches de règle'} ↗</button></section>
           {#if showHelp}<section class="panel quick-help" aria-label="Fiche de révision"><p class="eyebrow">RAPPEL EXPRESS</p><h2>{RULE_CARDS[selectedRuleIndex].title}</h2><ol>{#each RULE_CARDS[selectedRuleIndex].steps as step}<li>{step}</li>{/each}</ol><div class="rule-switcher"><button type="button" class="secondary-button small-button" onclick={() => selectedRuleIndex = (selectedRuleIndex + RULE_CARDS.length - 1) % RULE_CARDS.length}>← Précédente</button><button type="button" class="secondary-button small-button" onclick={() => selectedRuleIndex = (selectedRuleIndex + 1) % RULE_CARDS.length}>Suivante →</button></div></section>{/if}
         </aside>
@@ -616,9 +687,9 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       {#if fatalError}
         <p class="eyebrow">PROBLÈME DE GÉNÉRATION</p><h1 id="end-title">Une question n’a pas pu être préparée.</h1><p>{fatalError}</p><p class="small-note">Aucun résultat n’a été envoyé. Reviens au menu, ajuste les critères et réessaie.</p><button type="button" class="primary-button" onclick={returnToMenu}>Retour au menu</button>
       {:else}
-        <p class="eyebrow">SESSION TERMINÉE</p><h1 id="end-title">Analyse terminée<span>.</span></h1><p class="end-copy">Tu as travaillé comme un laboratoire : observer, faire une hypothèse, tester, puis corriger.</p>
-        <div class="score-grid"><div><strong>{score}</strong><span>Points</span></div><div><strong>{correctQuestions}/10</strong><span>Réponses trouvées</span></div><div><strong>{retrySuccesses}</strong><span>Corrections réussies</span></div><div><strong>{totalErrors}</strong><span>Essais incorrects / temps écoulés</span></div></div>
-        <div class="end-reflection"><h2>Pour la suite</h2><p>{correctQuestions >= 8 ? 'Tu sembles à l’aise avec ces questions. Essaie un temps plus difficile ou une activité de saisie libre.' : correctQuestions >= 5 ? 'Tu as déjà plusieurs repères. Revois les formes qui t’ont posé problème, puis recommence.' : 'Reprends les fiches sur les groupes et les terminaisons, puis choisis une session plus ciblée.'}</p><button type="button" class="secondary-button" onclick={openStudy}>Réviser les règles</button></div>
+        <p class="eyebrow">COMBAT TERMINÉ</p><h1 id="end-title">{combatOutcome === 'victory' ? 'Victoire !' : 'Revanche ?'}<span>.</span></h1><p class="end-copy">{combatOutcome === 'victory' ? 'Le boss des temps est vaincu. Tes bonnes réponses et tes combos ont fait la différence.' : 'Le boss a gagné cette manche, mais chaque correction te prépare pour la suivante.'}</p>
+        <div class="score-grid"><div><strong>{score}</strong><span>Points</span></div><div><strong>{correctQuestions}/{questionIndex + 1}</strong><span>Réponses trouvées</span></div><div><strong>×{bestCombo}</strong><span>Meilleur combo</span></div><div><strong>{playerLives}</strong><span>Vies restantes</span></div></div>
+        <div class="end-reflection"><h2>Pour la suite</h2><p>{combatOutcome === 'victory' && bestCombo >= 3 ? 'Excellent enchaînement. Essaie un temps plus difficile ou le mode rapide.' : correctQuestions >= 5 ? 'Tu as déjà plusieurs repères. Revois les formes qui t’ont posé problème, puis prends ta revanche.' : 'Reprends les fiches sur les groupes et les terminaisons, puis choisis une mission plus ciblée.'}</p><button type="button" class="secondary-button" onclick={openStudy}>Réviser les règles</button></div>
         <p class="result-status" aria-live="polite">{resultStatus === 'sending' ? 'Transmission du bilan à ORBIS…' : resultStatus === 'sent' ? 'Bilan transmis à ORBIS.' : resultStatus === 'unavailable' ? 'Le bilan n’a pas pu être transmis. La session reste consultable jusqu’à la sortie de la page.' : 'Le bilan sera transmis à ORBIS.'}</p>
         {#if resultStatus === 'unavailable'}<button type="button" class="secondary-button" onclick={() => void sendResult()}>Réessayer la transmission</button>{/if}
         <div class="end-actions"><button type="button" class="primary-button" onclick={returnToMenu}>Retour au menu des niveaux</button><a class="secondary-button" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>Retour aux jeux</a></div>
@@ -702,7 +773,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   .grade-button { min-height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center; padding: 8px 4px; }
   .grade-button strong { font-size: 20px; }
   .grade-button small { font-size: 10px; color: var(--muted-2); }
-  .chosen, .grade-button.chosen, .choice-card.chosen, .focus-button.chosen, .group-pill.chosen { border-color: var(--cyan); background: rgba(112, 225, 208, .09); box-shadow: inset 0 0 0 1px rgba(112, 225, 208, .08); }
+  .chosen, .grade-button.chosen, .choice-card.chosen, .focus-button.chosen { border-color: var(--cyan); background: rgba(112, 225, 208, .09); box-shadow: inset 0 0 0 1px rgba(112, 225, 208, .08); }
   .chosen strong, .grade-button.chosen strong { color: var(--cyan); }
   .small-note { color: var(--muted-2); font-size: 12px; margin: 10px 0 0; line-height: 1.5; }
   .choice-grid { display: grid; gap: 10px; }
@@ -718,7 +789,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   .check-card { min-height: 60px; display: flex; align-items: center; gap: 10px; padding: 11px; cursor: pointer; }
   .check-card:has(input:checked) { border-color: rgba(112, 225, 208, .8); background: rgba(112, 225, 208, .06); }
   .check-card.advanced { border-style: dashed; }
-  .check-card input, .toggle-row input { width: 19px; height: 19px; accent-color: var(--cyan-strong); flex-shrink: 0; }
+  .check-card input { width: 19px; height: 19px; accent-color: var(--cyan-strong); flex-shrink: 0; }
   .fake-check { display: none; }
   .check-copy { display: flex; flex-direction: column; min-width: 0; }
   .check-copy strong { font-size: 12px; font-weight: 750; }
@@ -728,18 +799,49 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   .focus-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .focus-button { padding: 12px; display: flex; flex-direction: column; gap: 4px; }
   .focus-button:disabled { opacity: .55; cursor: not-allowed; }
-  .focus-note { margin: -2px 0 10px; }
   .focus-button strong { font-size: 12px; }
   .focus-button small { font-size: 11px; color: var(--muted-2); line-height: 1.35; }
   .group-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .group-control { display: inline-flex; align-items: stretch; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: rgba(10, 17, 34, .7); }
+  .group-control .group-pill { border: 0; border-radius: 0; background: transparent; }
+  .group-control .group-toggle { border: 0; border-left: 1px solid var(--border); padding: 7px 9px; background: rgba(148, 164, 190, .08); color: var(--muted-2); font-size: 10px; font-weight: 850; cursor: pointer; }
+  .group-control .group-toggle.chosen { background: rgba(112, 225, 208, .12); color: var(--cyan); }
+  .group-pill span { color: var(--cyan); margin-left: 5px; }
+  .verb-submenu { margin-top: 10px; padding: 12px; border: 1px solid rgba(112, 225, 208, .25); border-radius: 12px; background: rgba(8, 14, 28, .55); }
+  .verb-chip-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .verb-submenu-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .verb-submenu-head .small-note { margin: 0; }
+  .verb-chip { padding: 6px 9px; border: 1px solid transparent; border-radius: 999px; color: var(--muted); background: rgba(148, 164, 190, .1); font-size: 11px; cursor: pointer; }
+  .verb-chip.chosen { color: #081722; background: var(--cyan); border-color: var(--cyan); }
+  .verb-chip.verb-special { color: var(--amber); border: 1px solid rgba(243, 200, 121, .42); background: rgba(243, 200, 121, .08); }
+  .qcm-lock { display: flex; flex-direction: column; gap: 3px; padding: 12px; border-radius: 10px; border: 1px solid rgba(112, 225, 208, .35); background: rgba(112, 225, 208, .07); }
+  .qcm-lock strong { color: var(--cyan); font-size: 12px; }
+  .qcm-lock span { color: var(--muted-2); font-size: 11px; }
+  .combat-arena { grid-column: 1 / -1; overflow: hidden; margin: 18px 0 22px; background: linear-gradient(180deg, rgba(20, 29, 57, .98), rgba(11, 16, 32, .98)); }
+  .combat-hud { display: grid; grid-template-columns: 1fr auto 1fr; gap: 18px; align-items: center; padding: 14px 18px 8px; position: relative; z-index: 2; }
+  .fighter-name { color: var(--muted-2); font-size: 10px; letter-spacing: .14em; font-weight: 900; }
+  .boss-hud { text-align: right; }
+  .life-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+  .boss-hud .life-row { justify-content: flex-end; }
+  .life-label { color: var(--text); font-size: 11px; font-weight: 900; white-space: nowrap; }
+  .combat-life { height: 9px; flex: 1; max-width: 210px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18); border-radius: 99px; overflow: hidden; }
+  .combat-life span { display: block; height: 100%; background: linear-gradient(90deg, #70e1d0, #22b9a6); transition: width .25s ease; }
+  .combat-life.boss-life span { margin-left: auto; background: linear-gradient(90deg, #ff7c95, #c54072); }
+  .combo-readout { color: var(--amber); font-weight: 950; font-size: 17px; letter-spacing: .08em; text-shadow: 0 0 16px rgba(243,200,121,.3); }
+  .combo-hot { color: #ff7c95; transform: scale(1.08); }
+  .combat-sprite-stage { min-height: 260px; background-image: url('/assets/conju-lab/arcade-sprite-sheet.png'); background-repeat: no-repeat; background-size: 400% 300%; background-position: 0% 0%; image-rendering: pixelated; transition: transform .12s ease, filter .12s ease; }
+  .combat-attack { background-position: 66.666% 0%; animation: player-strike .85s steps(2, end); }
+  .combat-special { background-position: 100% 0%; filter: saturate(1.3) drop-shadow(0 0 18px rgba(255,190,80,.3)); animation: super-strike .85s ease-out; }
+  .combat-hurt { background-position: 0% 50%; filter: hue-rotate(290deg); animation: arena-shake .5s steps(2, end); }
+  .combat-victory { background-position: 66.666% 50%; filter: saturate(1.35); animation: victory-pulse 1.1s ease-in-out infinite alternate; }
+  .combat-defeat { background-position: 100% 100%; filter: grayscale(.3); animation: defeat-fade .7s ease-out; }
+  .combat-caption { margin: 0; padding: 0 18px 13px; text-align: center; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .08em; }
+  @keyframes player-strike { 0% { transform: translateX(-12px); } 45% { transform: translateX(20px); } 100% { transform: translateX(0); } }
+  @keyframes super-strike { 0% { transform: scale(.98); filter: brightness(1); } 45% { transform: scale(1.035); filter: brightness(1.75) saturate(1.5); } 100% { transform: scale(1); } }
+  @keyframes arena-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 50% { transform: translateX(9px); } 75% { transform: translateX(-5px); } }
+  @keyframes victory-pulse { from { filter: saturate(1.15) drop-shadow(0 0 0 rgba(112,225,208,0)); } to { filter: saturate(1.5) drop-shadow(0 0 22px rgba(112,225,208,.35)); } }
+  @keyframes defeat-fade { from { opacity: 1; } to { opacity: .72; } }
   .group-pill { min-height: 44px; padding: 9px 12px; font-size: 11px; font-weight: 750; }
-  .segmented-control { border: 1px solid var(--border); background: rgba(8, 14, 28, .7); padding: 4px; border-radius: 12px; display: flex; gap: 4px; }
-  .segmented-control button { flex: 1; border: 0; background: transparent; border-radius: 8px; color: var(--muted); min-height: 39px; padding: 7px; font-size: 11px; font-weight: 800; cursor: pointer; }
-  .segmented-control button.active { background: var(--surface-soft); color: var(--cyan); box-shadow: inset 0 0 0 1px var(--border); }
-  .toggle-row { display: flex; align-items: center; gap: 11px; margin-top: 16px; padding: 12px; border-radius: 10px; background: rgba(8, 14, 28, .4); cursor: pointer; }
-  .toggle-row span { display: flex; flex-direction: column; }
-  .toggle-row strong { font-size: 12px; }
-  .toggle-row small { font-size: 11px; color: var(--muted-2); margin-top: 3px; }
   .main-actions { display: flex; flex-direction: column; gap: 10px; padding-top: 12px; }
   .primary-button, .secondary-button { min-height: 46px; border-radius: 11px; padding: 11px 16px; display: inline-flex; align-items: center; justify-content: center; gap: 11px; font-size: 13px; font-weight: 850; text-decoration: none; cursor: pointer; border: 1px solid transparent; }
   .primary-button { background: var(--cyan); color: #081722; box-shadow: 0 9px 24px rgba(34, 185, 166, .12); }
@@ -888,6 +990,10 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     .settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .accessibility-panel { padding: 17px; }
     .game-topbar { align-items: flex-start; flex-direction: column; }
+    .combat-hud { grid-template-columns: 1fr 1fr; padding: 11px 12px 6px; gap: 8px; }
+    .combo-readout { grid-column: 1 / -1; grid-row: 2; text-align: center; font-size: 14px; }
+    .combat-sprite-stage { min-height: 185px; }
+    .combat-arena { margin-block: 13px 16px; }
     .topbar-actions { width: 100%; justify-content: space-between; }
     .question-panel { padding: 17px; }
     .question-panel h1 { margin-top: 17px; }

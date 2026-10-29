@@ -72,7 +72,7 @@ for (const grade of ['6H', '7H', '8H', '9H']) {
     gradeTenses.filter((tense) => ['passeAnterieur', 'subjonctifPasse', 'conditionnelPasse'].includes(tense))
   ];
 
-  for (const focus of ['mixte', 'conjuguer', 'identifier', 'groupes', 'radicaux']) {
+  for (const focus of ['mixte', 'conjuguer', 'identifier', 'personnes', 'groupes', 'radicaux']) {
     for (const selectedTenses of tenseSets) {
       for (let iteration = 0; iteration < 250; iteration += 1) {
         const question = engine.generateQuestion({
@@ -92,6 +92,18 @@ for (const grade of ['6H', '7H', '8H', '9H']) {
       }
     }
   }
+}
+
+// Le filtre de verbes est réellement appliqué à tous les exercices compatibles.
+for (let iteration = 0; iteration < 250; iteration += 1) {
+  const question = engine.generateQuestion({
+    grade: '8H', focus: 'personnes', answerStyle: 'qcm', selectedTenses: ['present'],
+    selectedGroups: [1], selectedInfinitives: ['appeler']
+  });
+  assert.equal(question.kind, 'personne');
+  assert.equal(question.verb.infinitive, 'appeler');
+  assert.equal(engine.validateQuestion(question), true);
+  targetedGenerated += 1;
 }
 
 // Les exercices de radicaux restent pertinents même lorsque l’élève filtre un seul groupe.
