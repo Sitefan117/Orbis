@@ -26,6 +26,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
 
   const SESSION_LENGTH = 10;
   const FOCI: Array<{ id: ActivityFocus; label: string; detail: string }> = [
+    { id: 'mixte', label: 'Les trois', detail: 'Alterner conjugaison, temps et pronoms.' },
     { id: 'conjuguer', label: 'Conjuguer', detail: 'Choisir la forme correcte parmi quatre réponses.' },
     { id: 'identifier', label: 'Identifier un temps', detail: 'Lire une forme et reconnaître son temps.' },
     { id: 'personnes', label: 'Identifier un pronom', detail: 'Associer une forme à je, tu, il, nous…' }
@@ -35,7 +36,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   // Aucune progression n’est enregistrée localement par ConjuFighter.
   let screen: Screen = 'menu';
   const grade: Grade = '9H';
-  let focus: ActivityFocus = 'conjuguer';
+  let focus: ActivityFocus = 'mixte';
   let selectedTenses: TenseId[] = ['present', 'imparfait', 'futurSimple', 'passeCompose'];
   let selectedGroups: VerbGroup[] = [1, 2, 3];
   let selectedVerbs: string[] = [];
@@ -81,7 +82,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     group: group as VerbGroup,
     verbs: getVerbsForGrade(grade).filter((verb) => verb.group === group)
   }));
-  $: selectedGradeFocus = FOCI.find((item) => item.id === focus)?.label ?? 'Conjuguer';
+  $: selectedGradeFocus = FOCI.find((item) => item.id === focus)?.label ?? 'Les trois';
   $: progressPercent = Math.round((questionIndex / SESSION_LENGTH) * 100);
   $: currentHint = errorHint || currentQuestion?.hintSteps[Math.min(hintIndex, (currentQuestion?.hintSteps.length ?? 1) - 1)] || 'Repère le sujet, le temps et le verbe avant de répondre.';
 

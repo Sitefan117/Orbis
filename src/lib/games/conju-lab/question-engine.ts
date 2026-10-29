@@ -238,6 +238,41 @@ function optionsWithCorrect(correct: string, candidates: string[]): string[] {
   return shuffle([correct, ...shuffle(distinct).slice(0, 3)]);
 }
 
+function editDistance(left: string, right: string): number {
+  const a = normalizeAnswer(left);
+  const b = normalizeAnswer(right);
+  const row = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i++) {
+    let diagonal = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const previous = row[j];
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
+      diagonal = previous;
+    }
+  }
+  return row[b.length];
+}
+
+/** Conserve la priorité des bassins, puis retient les graphies les plus proches. */
+function plausibleOptionsWithCorrect(correct: string, pools: string[][]): string[] {
+  const selected: string[] = [];
+  const seen = new Set([normalizeAnswer(correct)]);
+  for (const pool of pools) {
+    const ranked = [...new Set(pool)]
+      .filter((candidate) => !seen.has(normalizeAnswer(candidate)))
+      .sort((left, right) => editDistance(correct, left) - editDistance(correct, right) || left.localeCompare(right, 'fr'));
+    for (const candidate of ranked) {
+      const normalized = normalizeAnswer(candidate);
+      if (seen.has(normalized)) continue;
+      selected.push(candidate);
+      seen.add(normalized);
+      if (selected.length === 3) return shuffle([correct, ...selected]);
+    }
+  }
+  return shuffle([correct, ...selected]);
+}
+
 /** Affiche correctement l’élision de je devant une forme commençant par une voyelle. */
 function formatSubjectForm(subject: SubjectOption, form: string): string {
   if (subject.id === 'je' && /^[aeiouyàâäéèêëîïôöùûüœ]/i.test(form)) return `j’${form}`;
@@ -304,13 +339,32 @@ function buildConjugationQuestion(config: EngineConfig): VerbQuestion {
     }
   }
 
-  const distractors: string[] = [];
   const alternatives = selected.verb.acceptedAlternatives?.[selected.tense]?.[selected.subject.personIndex];
-  for (const tense of getTensesForGrade(config.grade).map((item) => item.id)) {
-    for (const subject of getPersonCandidates(selected.verb, tense)) {
-      const form = conjugateForm(selected.verb, tense, subject);
-      if (form && form !== answer && normalizeAnswer(form) !== normalizeAnswer(alternatives ?? '')) distractors.push(form);
+  const formsForTenses = (tenseIds: TenseId[], samePersonOnly = false): string[] => {
+    const forms: string[] = [];
+    for (const tense of tenseIds) {
+      const subjects = samePersonOnly
+        ? getPersonCandidates(selected.verb, tense).filter((subject) => subject.personIndex === selected.subject.personIndex)
+        : getPersonCandidates(selected.verb, tense);
+      for (const subject of subjects) {
+        const form = conjugateForm(selected.verb, tense, subject);
+        if (form && form !== answer && normalizeAnswer(form) !== normalizeAnswer(alternatives ?? '')) forms.push(form);
+      }
     }
+    return forms;
+  };
+  const selectedOtherTenses = tenses.filter((tense) => tense !== selected.tense);
+  const fallbackTenses = getTensesForGrade(config.grade).map((item) => item.id).filter((tense) => !tenses.includes(tense));
+  const distractorPools = [
+    formsForTenses([selected.tense]),
+    formsForTenses(selectedOtherTenses, true),
+    formsForTenses(selectedOtherTenses),
+    formsForTenses(fallbackTenses, true),
+    formsForTenses(fallbackTenses)
+  ];
+
+  if (distractorPools.flat().length < 3) {
+    distractorPools.push(formsForTenses(getTensesForGrade(config.grade).map((item) => item.id)));
   }
 
   return {
@@ -322,7 +376,7 @@ function buildConjugationQuestion(config: EngineConfig): VerbQuestion {
     tense: selected.tense,
     subject: selected.subject,
     correctAnswer: answer,
-    options: optionsWithCorrect(answer, distractors),
+    options: plausibleOptionsWithCorrect(answer, distractorPools),
     explanation: explainConjugation(selected.verb, selected.tense, selected.subject, answer),
     hintSteps: getHintSteps(selected.verb, selected.tense, selected.subject),
     feedbackTag: isCompoundTense(selected.tense) ? 'auxiliaire' : 'terminaison'
@@ -365,7 +419,7 @@ function buildIdentifyQuestion(config: EngineConfig): VerbQuestion {
   const eligibleVerbs = getEligibleVerbs(config);
   // La bonne réponse respecte les temps choisis par l’élève ; les autres temps du niveau
   // peuvent servir de distracteurs même si l’élève n’a pas sélectionné leur entraînement.
-  const allTenses = getTensesForGrade(config.grade).map((item) => item.id).filter((tense) => tense !== 'imperatif' && tense !== 'passeSimple3e');
+  const allTenses: TenseId[] = getTensesForGrade(config.grade).map((item) => item.id).filter((tense) => tense !== 'imperatif' && tense !== 'passeSimple3e');
   const targetTenses = getTenseCandidates(config).filter((tense) => tense !== 'imperatif');
   const tenses = targetTenses.length ? targetTenses : allTenses;
   const key = candidateKey(config);
@@ -380,10 +434,28 @@ function buildIdentifyQuestion(config: EngineConfig): VerbQuestion {
   }
   const selected = randomItem(candidates);
   const correctAnswer = getTenseInfo(selected.tense).label;
-  const selectedOthers = tenses.filter((item) => item !== selected.tense).map((item) => getTenseInfo(item).label);
-  const extraOthers = allTenses.filter((item) => !tenses.includes(item)).map((item) => getTenseInfo(item).label);
-  const distractors = [...shuffle(selectedOthers), ...shuffle(extraOthers)].slice(0, 3);
-  const options = shuffle([correctAnswer, ...distractors]);
+  const tenseNeighbours: Partial<Record<TenseId, TenseId[]>> = {
+    present: ['imparfait', 'futurSimple', 'conditionnelPresent', 'subjonctifPresent'],
+    imparfait: ['present', 'conditionnelPresent', 'passeSimple', 'plusQueParfait'],
+    futurSimple: ['conditionnelPresent', 'present', 'futurAnterieur'],
+    passeCompose: ['plusQueParfait', 'futurAnterieur', 'conditionnelPasse', 'subjonctifPasse'],
+    conditionnelPresent: ['futurSimple', 'imparfait', 'conditionnelPasse'],
+    plusQueParfait: ['passeCompose', 'passeAnterieur', 'conditionnelPasse'],
+    futurAnterieur: ['passeCompose', 'conditionnelPasse', 'plusQueParfait'],
+    passeSimple: ['imparfait', 'passeCompose', 'passeAnterieur'],
+    subjonctifPresent: ['present', 'subjonctifPasse'],
+    passeAnterieur: ['plusQueParfait', 'passeSimple', 'passeCompose'],
+    subjonctifPasse: ['passeCompose', 'subjonctifPresent', 'plusQueParfait'],
+    conditionnelPasse: ['passeCompose', 'plusQueParfait', 'futurAnterieur']
+  };
+  const selectedOthers = tenses.filter((item) => item !== selected.tense);
+  const relatedOthers = (tenseNeighbours[selected.tense] ?? []).filter((item) => allTenses.includes(item));
+  const remainingOthers = allTenses.filter((item) => item !== selected.tense && !selectedOthers.includes(item) && !relatedOthers.includes(item));
+  const options = plausibleOptionsWithCorrect(correctAnswer, [
+    selectedOthers.map((item) => getTenseInfo(item).label),
+    relatedOthers.map((item) => getTenseInfo(item).label),
+    remainingOthers.map((item) => getTenseInfo(item).label)
+  ]);
   return {
     id: nextQuestionId(), kind: 'identifier',
     prompt: 'Identifier le temps', sentence: formatFormInContext(selected.tense, selected.subject, selected.form),
@@ -584,7 +656,7 @@ function focusToKind(focus: ActivityFocus): Array<'conjuguer' | 'identifier' | '
     case 'personnes': return ['personne'];
     case 'groupes': return ['groupe'];
     case 'radicaux': return ['terminaison', 'radical'];
-    default: return ['conjuguer', 'identifier', 'personne', 'groupe', 'terminaison', 'radical'];
+    default: return ['conjuguer', 'identifier', 'personne'];
   }
 }
 

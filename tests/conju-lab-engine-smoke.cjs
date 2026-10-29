@@ -114,6 +114,39 @@ for (let iteration = 0; iteration < 250; iteration += 1) {
   targetedGenerated += 1;
 }
 
+// Avec assez de formes disponibles, les distracteurs restent dans les temps choisis.
+const aimerPresentForms = new Set(engine.getAvailableForms('9H')
+  .filter((entry) => entry.infinitive === 'aimer' && entry.tense === 'present')
+  .map((entry) => entry.form));
+for (let iteration = 0; iteration < 250; iteration += 1) {
+  const question = engine.generateQuestion({
+    grade: '9H', focus: 'conjuguer', answerStyle: 'qcm', selectedTenses: ['present'],
+    selectedGroups: [1], selectedInfinitives: ['aimer']
+  });
+  assert.equal(question.options.length, 4);
+  question.options.forEach((option) => assert.ok(aimerPresentForms.has(option), `« ${option} » devrait rester au présent de aimer.`));
+  targetedGenerated += 1;
+}
+
+const selectedTimeLabels = new Set(['present', 'imparfait', 'futurSimple', 'passeCompose']
+  .map((tense) => curriculum.getTenseInfo(tense).label));
+for (let iteration = 0; iteration < 250; iteration += 1) {
+  const question = engine.generateQuestion({
+    grade: '9H', focus: 'identifier', answerStyle: 'qcm',
+    selectedTenses: ['present', 'imparfait', 'futurSimple', 'passeCompose'], selectedGroups: [1, 2, 3]
+  });
+  question.options.forEach((option) => assert.ok(selectedTimeLabels.has(option), `Le temps « ${option} » n’était pas sélectionné.`));
+  targetedGenerated += 1;
+}
+
+for (let iteration = 0; iteration < 250; iteration += 1) {
+  const question = engine.generateQuestion({
+    grade: '9H', focus: 'mixte', answerStyle: 'qcm', selectedTenses: ['present', 'imparfait'], selectedGroups: [1, 2, 3]
+  });
+  assert.ok(['conjuguer', 'identifier', 'personne'].includes(question.kind), `Le mode Les trois ne doit pas produire « ${question.kind} ».`);
+  targetedGenerated += 1;
+}
+
 // Les exercices de radicaux restent pertinents même lorsque l’élève filtre un seul groupe.
 for (const selectedGroups of [[1], [2], [3], [1, 2], [2, 3]]) {
   for (let iteration = 0; iteration < 150; iteration += 1) {
