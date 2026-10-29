@@ -10,12 +10,10 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   import {
     analyseAnswer,
     generateQuestion,
-    resolveAnswerStyle,
     validateQuestion
   } from '$lib/games/conju-lab/question-engine';
   import type {
     ActivityFocus,
-    AnswerStyle,
     EngineConfig,
     Grade,
     TenseId,
@@ -27,22 +25,17 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   type FeedbackKind = 'none' | 'correct' | 'retry' | 'revealed' | 'timeout';
 
   const SESSION_LENGTH = 10;
-  const GRADES: Grade[] = ['6H', '7H', '8H', '9H'];
   const FOCI: Array<{ id: ActivityFocus; label: string; detail: string }> = [
-    { id: 'mixte', label: 'Mission mixte', detail: 'Varier les exercices et les stratégies.' },
     { id: 'conjuguer', label: 'Conjuguer', detail: 'Choisir la forme correcte parmi quatre réponses.' },
     { id: 'identifier', label: 'Identifier un temps', detail: 'Lire une forme et reconnaître son temps.' },
-    { id: 'personnes', label: 'Identifier un pronom', detail: 'Associer une forme à je, tu, il, nous…' },
-    { id: 'groupes', label: 'Classer les verbes', detail: 'Comprendre les trois groupes de verbes.' },
-    { id: 'radicaux', label: 'Radicaux et terminaisons', detail: 'Découper une forme et repérer son modèle.' }
+    { id: 'personnes', label: 'Identifier un pronom', detail: 'Associer une forme à je, tu, il, nous…' }
   ];
 
   // L’interface garde seulement les réglages et résultats de la session en mémoire.
-  // Aucune progression n’est enregistrée localement par ConjuLab.
+  // Aucune progression n’est enregistrée localement par ConjuFighter.
   let screen: Screen = 'menu';
-  let grade: Grade = '6H';
-  let focus: ActivityFocus = 'mixte';
-  let answerStyle: AnswerStyle = 'qcm';
+  const grade: Grade = '9H';
+  let focus: ActivityFocus = 'conjuguer';
   let selectedTenses: TenseId[] = ['present', 'imparfait', 'futurSimple', 'passeCompose'];
   let selectedGroups: VerbGroup[] = [1, 2, 3];
   let selectedVerbs: string[] = [];
@@ -53,13 +46,10 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   let largeText = false;
   let reducedMotion = false;
   let soundEnabled = false;
-  let voiceEnabled = false;
 
   let studentParam = '';
   let configError = '';
   let currentQuestion: VerbQuestion | null = null;
-  let activeAnswerMode: 'qcm' | 'saisie' = 'qcm';
-  let answerInput = '';
   let hintIndex = 0;
   let attemptCount = 0;
   let resolved = false;
@@ -87,21 +77,19 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   let audioContext: AudioContext | null = null;
 
   $: availableTenses = getTensesForGrade(grade);
-  $: gradeVerbCount = getVerbsForGrade(grade).length;
   $: verbsByGroup = [1, 2, 3].map((group) => ({
     group: group as VerbGroup,
     verbs: getVerbsForGrade(grade).filter((verb) => verb.group === group)
   }));
-  $: selectedGradeFocus = FOCI.find((item) => item.id === focus)?.label ?? 'Mission mixte';
+  $: selectedGradeFocus = FOCI.find((item) => item.id === focus)?.label ?? 'Conjuguer';
   $: progressPercent = Math.round((questionIndex / SESSION_LENGTH) * 100);
   $: currentHint = errorHint || currentQuestion?.hintSteps[Math.min(hintIndex, (currentQuestion?.hintSteps.length ?? 1) - 1)] || 'Repère le sujet, le temps et le verbe avant de répondre.';
 
   // Ces gestionnaires configurent la session, affichent les exercices et expliquent les réponses.
-  function chooseGrade(nextGrade: Grade) {
-    grade = nextGrade;
-    // Changer de niveau active les temps proposés pour ce niveau ; l’élève peut ensuite
-    // décocher les notions qu’il ne veut pas travailler dans cette session.
-    selectedTenses = getTensesForGrade(grade).map((item) => item.id);
+  function chooseFocus(nextFocus: ActivityFocus) {
+    focus = nextFocus;
+    if (focus !== 'conjuguer') selectedTenses = selectedTenses.filter((tense) => tense !== 'imperatif');
+    if (selectedTenses.length === 0) selectedTenses = ['present'];
     configError = '';
   }
 
@@ -124,20 +112,20 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   }
 
   function selectAllTenses() {
-    selectedTenses = availableTenses.map((item) => item.id);
+    selectedTenses = availableTenses.filter((item) => focus === 'conjuguer' || item.id !== 'imperatif').map((item) => item.id);
     configError = '';
   }
 
   function selectCoreTenses() {
     selectedTenses = availableTenses
-      .filter((item) => !item.advanced && item.id !== 'passeSimple3e')
+      .filter((item) => !item.advanced && item.id !== 'passeSimple3e' && (focus === 'conjuguer' || item.id !== 'imperatif'))
       .map((item) => item.id);
     if (selectedTenses.length === 0) selectedTenses = availableTenses.slice(0, 1).map((item) => item.id);
     configError = '';
   }
 
   function makeConfig(): EngineConfig {
-    return { grade, focus, answerStyle, selectedTenses: [...selectedTenses], selectedGroups, selectedInfinitives: selectedVerbs };
+    return { grade, focus, answerStyle: 'qcm', selectedTenses: [...selectedTenses], selectedGroups, selectedInfinitives: selectedVerbs };
   }
 
   function startSession() {
@@ -174,8 +162,6 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       const question = generateQuestion(makeConfig());
       if (!validateQuestion(question)) throw new Error('La question produite ne passe pas la validation.');
       currentQuestion = question;
-      activeAnswerMode = resolveAnswerStyle(answerStyle, question);
-      answerInput = '';
       hintIndex = 0;
       attemptCount = 0;
       resolved = false;
@@ -264,7 +250,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
         retrySuccesses += 1;
       }
       resolved = true;
-      combo += 1;
+      combo = attemptCount === 1 ? combo + 1 : 0;
       bestCombo = Math.max(bestCombo, combo);
       const isSpecialCombo = combo > 0 && combo % 3 === 0;
       const damage = isSpecialCombo ? 18 : 8;
@@ -320,10 +306,6 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     }
   }
 
-  function submitTypedAnswer(event: SubmitEvent) {
-    event.preventDefault();
-    submitAnswer(answerInput);
-  }
 
   function moveNext() {
     if (!resolved) return;
@@ -349,11 +331,11 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       const report = await recordGameActivity({
         studentName: getStudentName(),
         gameId: 'conju_lab',
-        activityId: `${grade} · ${gameMode === 'rapide' ? 'jeu rapide' : 'mode détente'} · ${selectedGradeFocus}`,
+        activityId: `${gameMode === 'rapide' ? 'jeu rapide' : 'mode détente'} · ${selectedGradeFocus}`,
         correctCount: correctQuestions,
         questionCount: SESSION_LENGTH,
         errorCount: totalErrors,
-        metadata: { grade, selectedTenses, selectedGroups, selectedVerbs, answerStyle, gameMode, bossHp, playerLives, bestCombo, combatOutcome, retrySuccesses, totalErrors }
+        metadata: { selectedTenses, selectedGroups, selectedVerbs, answerStyle: 'qcm', gameMode, bossHp, playerLives, bestCombo, combatOutcome, retrySuccesses, totalErrors }
       });
       resultStatus = report.ok ? 'sent' : 'unavailable';
     } catch (error) {
@@ -379,20 +361,6 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
 
   function backFromStudy() {
     screen = 'menu';
-  }
-
-  function speak(text: string) {
-    if (!voiceEnabled || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'fr-FR';
-    utterance.rate = 0.88;
-    window.speechSynthesis.speak(utterance);
-  }
-
-  function speakQuestion() {
-    if (!currentQuestion) return;
-    speak(`${currentQuestion.prompt}. ${currentQuestion.sentence}. Verbe : ${currentQuestion.verb.infinitive}.`);
   }
 
   function playTone(isCorrect: boolean) {
@@ -424,7 +392,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   }
 
   function selectAnswerFromKeyboard(event: KeyboardEvent) {
-    if (screen !== 'game' || activeAnswerMode !== 'qcm' || resolved || showHelp) return;
+    if (screen !== 'game' || resolved || showHelp) return;
     if (!['1', '2', '3', '4'].includes(event.key)) return;
     const target = event.target;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
@@ -443,7 +411,6 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   onDestroy(() => {
     stopTimer();
     stopCombatAnimation();
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
     if (audioContext) void audioContext.close();
     if (typeof window !== 'undefined') window.removeEventListener('keydown', selectAnswerFromKeyboard);
   });
@@ -453,8 +420,8 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
 </script>
 
 <svelte:head>
-  <title>ConjuLab — Laboratoire du langage</title>
-  <meta name="description" content="Un laboratoire de conjugaison progressif pour apprendre les groupes de verbes, les radicaux et les temps de conjugaison." />
+  <title>ConjuFighter — Le combat des verbes</title>
+  <meta name="description" content="Un combat arcade pour maîtriser la conjugaison française avec des questions à choix multiples." />
 </svelte:head>
 
 <!-- Les écrans menu, révision, activité et fin sont choisis selon `screen`. -->
@@ -465,10 +432,10 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   <header class="site-header">
     <a class="brand" href={orbisHref} aria-label="Retour à l'accueil ORBIS">
       <span class="brand-mark" aria-hidden="true">C<span>.</span></span>
-      <span class="brand-text"><strong>CONJULAB</strong><small>LABORATOIRE DU LANGAGE</small></span>
+      <span class="brand-text"><strong>CONJUFIGHTER</strong><small>LE COMBAT DES VERBES</small></span>
     </a>
     <div class="header-right">
-      <span class="header-tag">FRANÇAIS · 6H–9H</span>
+      <span class="header-tag">FRANÇAIS · MODE ARCADE</span>
       <a class="top-link" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>← Retour aux jeux</a>
     </div>
   </header>
@@ -476,34 +443,22 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   {#if screen === 'menu'}
     <main class="menu-layout">
       <section class="hero-section" aria-labelledby="main-title">
-        <p class="eyebrow"><span class="live-dot"></span> LABORATOIRE OUVERT</p>
-        <h1 id="main-title">Les verbes ont<br /><em>un système.</em></h1>
-        <p class="hero-copy">Observe les modèles. Comprends les radicaux. Décode les terminaisons. Puis conjugue avec méthode.</p>
+        <p class="eyebrow"><span class="live-dot"></span> INSERT COIN · PRÊT À JOUER ?</p>
+        <h1 id="main-title">CONJU<br /><em>FIGHTER.</em></h1>
+        <p class="hero-copy">Choisis tes temps, entre dans l’arène et bats le boss à coups de bonnes réponses. Trois réponses de suite déclenchent une attaque spéciale.</p>
         <div class="hero-chips" aria-label="Compétences travaillées">
-          <span>01 · GROUPES</span><span>02 · RADICAUX</span><span>03 · TEMPS</span>
+          <span>01 · CHOISIS</span><span>02 · RÉPONDS</span><span>03 · COMBO !</span>
         </div>
       </section>
 
       <section class="panel setup-panel" aria-labelledby="setup-title">
         <div class="panel-heading">
-          <div><p class="eyebrow">PRÉPARER UNE SESSION</p><h2 id="setup-title">Configure ton labo</h2></div>
-          <span class="level-tag">{grade}</span>
+          <div><p class="eyebrow">SÉLECTION DU COMBATTANT</p><h2 id="setup-title">Prépare ton combat</h2></div>
+          <span class="level-tag">VS</span>
         </div>
 
         <div class="setup-block">
-          <h3><span class="step-number">01</span> Choisis ton niveau</h3>
-          <div class="grade-grid" role="group" aria-label="Niveau scolaire">
-            {#each GRADES as level}
-              <button type="button" class:chosen={grade === level} class="grade-button" aria-pressed={grade === level} onclick={() => chooseGrade(level)}>
-                <strong>{level}</strong><small>{level === '6H' ? 'Consolider' : level === '7H' ? 'Structurer' : level === '8H' ? 'Approfondir' : 'Maîtriser'}</small>
-              </button>
-            {/each}
-          </div>
-          <p class="small-note">{gradeVerbCount} verbes accessibles dans la banque de ce niveau. Les niveaux supérieurs incluent les notions précédentes.</p>
-        </div>
-
-        <div class="setup-block">
-          <h3><span class="step-number">02</span> Choisis ton rythme</h3>
+          <h3><span class="step-number">01</span> Choisis ton rythme</h3>
           <div class="choice-grid two-columns">
             <button type="button" class:chosen={gameMode === 'detente'} class="choice-card" aria-pressed={gameMode === 'detente'} onclick={() => gameMode = 'detente'}>
               <span class="choice-icon" aria-hidden="true">☕</span><strong>Mode détente</strong><small>Sans chrono, avec indices et correction expliquée.</small>
@@ -515,29 +470,29 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
         </div>
 
         <div class="setup-block">
-          <h3><span class="step-number">03</span> Les temps à travailler</h3>
+          <h3><span class="step-number">02</span> Les temps à travailler</h3>
           <div class="compact-actions">
             <button type="button" class="text-button" onclick={selectAllTenses}>Tout sélectionner</button>
-            <button type="button" class="text-button" onclick={selectCoreTenses}>Notions principales seulement</button>
+            <button type="button" class="text-button" onclick={selectCoreTenses}>Temps courants</button>
           </div>
           <div class="tense-grid">
             {#each availableTenses as tense}
               <label class:advanced={tense.advanced} class="check-card">
-                <input type="checkbox" value={tense.id} bind:group={selectedTenses} />
+                <input type="checkbox" value={tense.id} bind:group={selectedTenses} disabled={tense.id === 'imperatif' && focus !== 'conjuguer'} />
                 <span class="fake-check" aria-hidden="true"></span>
                 <span class="check-copy"><strong>{tense.shortLabel}</strong><small>{tense.mood}{tense.advanced ? ' · avancé' : ''}</small></span>
               </label>
             {/each}
           </div>
-          <p class="small-note">Les questions utilisent uniquement les temps cochés. Tu peux en sélectionner un seul pour une mission très ciblée.</p>
+          <p class="small-note">Choisis un ou plusieurs temps. L’impératif se travaille uniquement dans « Conjuguer » : il n’a pas de pronom sujet.</p>
         </div>
 
         <div class="setup-block">
-          <h3><span class="step-number">04</span> Choisis le mode de jeu</h3>
+          <h3><span class="step-number">03</span> Choisis ton épreuve</h3>
           <div class="field-label">Type d’activité</div>
           <div class="focus-grid">
             {#each FOCI as item}
-              <button type="button" class:chosen={focus === item.id} class="focus-button" aria-pressed={focus === item.id} onclick={() => focus = item.id}>
+              <button type="button" class:chosen={focus === item.id} class="focus-button" aria-pressed={focus === item.id} onclick={() => chooseFocus(item.id)}>
                 <strong>{item.label}</strong><small>{item.detail}</small>
               </button>
             {/each}
@@ -557,13 +512,13 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
           {/if}
           <p class="small-note">Clique sur un groupe pour voir ses verbes. Les verbes à piège orthographique ou radical irrégulier sont mis en évidence.</p>
           <div class="field-label group-label">Format des réponses</div>
-          <div class="qcm-lock"><strong>QCM uniquement</strong><span>Réponds en un clic : forme, temps, pronom ou radical/terminaison.</span></div>
+          <div class="qcm-lock"><strong>QCM uniquement</strong><span>Une réponse, une attaque. Sur iPad, touche la bonne case.</span></div>
         </div>
 
         {#if configError}<p class="inline-error" role="alert">{configError}</p>{/if}
         <div class="main-actions">
-          <button class="primary-button" type="button" onclick={startSession}>Lancer une session <span aria-hidden="true">↗</span></button>
-          <button class="secondary-button" type="button" onclick={openStudy}>Ouvrir les fiches du labo</button>
+          <button class="primary-button" type="button" onclick={startSession}>FIGHT ! <span aria-hidden="true">↗</span></button>
+          <button class="secondary-button" type="button" onclick={openStudy}>Voir les astuces</button>
         </div>
       </section>
 
@@ -572,7 +527,6 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
         <div class="settings-grid">
           <button type="button" class:setting-active={largeText} class="setting-button" aria-pressed={largeText} onclick={() => largeText = !largeText}><span aria-hidden="true">A+</span><strong>Texte agrandi</strong><small>{largeText ? 'Activé' : 'Standard'}</small></button>
           <button type="button" class:setting-active={reducedMotion} class="setting-button" aria-pressed={reducedMotion} onclick={() => reducedMotion = !reducedMotion}><span aria-hidden="true">◌</span><strong>Animations réduites</strong><small>{reducedMotion ? 'Activé' : 'Standard'}</small></button>
-          <button type="button" class:setting-active={voiceEnabled} class="setting-button" aria-pressed={voiceEnabled} onclick={() => voiceEnabled = !voiceEnabled}><span aria-hidden="true">◖))</span><strong>Lecture vocale</strong><small>{voiceEnabled ? 'Activée' : 'Désactivée'}</small></button>
           <button type="button" class:setting-active={soundEnabled} class="setting-button" aria-pressed={soundEnabled} onclick={() => soundEnabled = !soundEnabled}><span aria-hidden="true">♫</span><strong>Effets sonores</strong><small>{soundEnabled ? 'Activés' : 'Désactivés'}</small></button>
         </div>
       </section>
@@ -580,7 +534,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
 
   {:else if screen === 'study'}
     <main class="study-layout panel" aria-labelledby="study-title">
-      <div class="panel-heading"><div><p class="eyebrow">CENTRE DE RÉFÉRENCE</p><h1 id="study-title">Les outils du labo</h1></div><button type="button" class="secondary-button small-button" onclick={backFromStudy}>← Retour au menu</button></div>
+      <div class="panel-heading"><div><p class="eyebrow">ENTRAÎNEMENT</p><h1 id="study-title">Astuces de combat</h1></div><button type="button" class="secondary-button small-button" onclick={backFromStudy}>← Retour au menu</button></div>
       <p class="study-intro">Utilise ces fiches avant une session ou pendant un exercice. Elles donnent des repères : elles ne remplacent pas un tableau complet pour chaque verbe irrégulier.</p>
       <div class="rule-layout">
         <nav class="rule-nav" aria-label="Choisir une fiche">
@@ -592,43 +546,33 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
           <p class="eyebrow">FICHE {String(selectedRuleIndex + 1).padStart(2, '0')}</p>
           <h2>{RULE_CARDS[selectedRuleIndex].title}</h2>
           <ol>{#each RULE_CARDS[selectedRuleIndex].steps as step}<li>{step}</li>{/each}</ol>
-          {#if voiceEnabled}<button type="button" class="secondary-button" onclick={() => speak(`${RULE_CARDS[selectedRuleIndex].title}. ${RULE_CARDS[selectedRuleIndex].steps.join('. ')}`)}>Écouter cette fiche</button>{/if}
         </article>
       </div>
-      <section class="reference-section"><h2>Repères rapides par niveau</h2>
-        <div class="reference-grid">
-          {#each GRADES as level}
-            <article class="reference-grade"><h3>{level}</h3><p>{level === '6H' ? 'Présent, imparfait, futur simple et passé composé ; reconnaître l’infinitif, le sujet et les modèles usuels.' : level === '7H' ? 'Réactiver les temps de base ; travailler aussi le conditionnel présent, l’impératif et des verbes à orthographe variable.' : level === '8H' ? 'Approfondir les temps composés, repérer le passé simple à la 3e personne et travailler le subjonctif présent selon la progression de classe.' : 'Approfondir le système des modes et temps, notamment passé simple, passé antérieur, subjonctif et conditionnel passé, avec étude des valeurs en contexte.'}</p></article>
-          {/each}
-        </div>
-        <p class="small-note">La progression est un repère pédagogique fondé sur la lecture du PER. Les attendus annuels exacts doivent être alignés avec la progression MER/cantonale utilisée en classe.</p>
-      </section>
     </main>
 
   {:else if screen === 'game' && currentQuestion}
     <main class="game-layout">
       <div class="game-topbar">
-        <div><p class="eyebrow">SESSION {grade} · {gameMode === 'rapide' ? 'JEU RAPIDE' : 'MODE DÉTENTE'}</p><p class="game-progress-label">Question {questionIndex + 1} sur {SESSION_LENGTH}</p></div>
-        <div class="topbar-actions"><button type="button" class="secondary-button small-button" onclick={toggleHelp} aria-expanded={showHelp}>{showHelp ? 'Fermer les fiches' : 'Aide et règles'}</button><button type="button" class="text-button back-menu" onclick={returnToMenu}>↩ Menu des niveaux</button></div>
+        <div><p class="eyebrow">ROUND {questionIndex + 1} · {gameMode === 'rapide' ? 'JEU RAPIDE' : 'MODE DÉTENTE'}</p><p class="game-progress-label">Question {questionIndex + 1} sur {SESSION_LENGTH}</p></div>
+        <div class="topbar-actions"><button type="button" class="secondary-button small-button" onclick={toggleHelp} aria-expanded={showHelp}>{showHelp ? 'Fermer les astuces' : 'Astuces'}</button><button type="button" class="text-button back-menu" onclick={returnToMenu}>↩ Menu</button></div>
       </div>
       <div class="progress-track" role="progressbar" aria-label="Progression de la session" aria-valuemin="0" aria-valuemax={SESSION_LENGTH} aria-valuenow={questionIndex}><span style={`width: ${progressPercent}%`}></span></div>
 
-      <section class="combat-arena panel" aria-label="Combat ConjuLab">
-        <div class="combat-hud"><div><span class="fighter-name">ÉLÈVE</span><div class="life-row"><span class="life-label">❤ {playerLives}</span><div class="combat-life"><span style={`width: ${(playerLives / 3) * 100}%`}></span></div></div></div><div class="combo-readout" class:combo-hot={combo >= 3}>{combo > 0 ? `${combo} COMBO` : 'PRÊT !'}</div><div class="boss-hud"><span class="fighter-name">BOSS DES TEMPS</span><div class="life-row"><div class="combat-life boss-life"><span style={`width: ${bossHp}%`}></span></div><span class="life-label">{bossHp} PV</span></div></div></div>
+      <section class="combat-arena panel" aria-label="Combat ConjuFighter">
+        <div class="combat-hud"><div><span class="fighter-name">ÉLÈVE</span><div class="life-row"><span class="life-label">❤ {playerLives}</span><div class="combat-life"><span style={`width: ${(playerLives / 3) * 100}%`}></span></div></div></div><div class="combo-readout" class:combo-hot={combo >= 3}>{combo > 0 ? `${combo} COMBO` : 'PRÊT !'}</div><div class="boss-hud"><span class="fighter-name">{focus === 'identifier' ? 'MAÎTRE DES TEMPS' : focus === 'personnes' ? 'VOLEUR DE PRONOMS' : 'BOSS DES VERBES'}</span><div class="life-row"><div class="combat-life boss-life"><span style={`width: ${bossHp}%`}></span></div><span class="life-label">{bossHp} PV</span></div></div></div>
         <div class:combat-attack={combatState === 'attack'} class:combat-special={combatState === 'special'} class:combat-hurt={combatState === 'hurt'} class:combat-victory={combatState === 'victory'} class:combat-defeat={combatState === 'defeat'} class="combat-sprite-stage" role="img" aria-label="Combattant contre le boss de conjugaison"></div>
         <p class="combat-caption">{combatState === 'special' ? 'SUPER COMBO !' : combatState === 'hurt' ? 'Le boss riposte !' : combatState === 'victory' ? 'Boss vaincu !' : combatState === 'defeat' ? 'Reprends ton souffle…' : 'Réponds juste pour frapper.'}</p>
       </section>
 
       <div class="game-columns">
         <section class="question-panel panel" aria-labelledby="question-title">
-          <div class="question-meta"><span class="micro-tag">{currentQuestion.kind === 'conjuguer' ? 'FORME VERBALE' : currentQuestion.kind === 'identifier' ? 'ANALYSE DU TEMPS' : currentQuestion.kind === 'personne' ? 'PRONOM' : currentQuestion.kind === 'groupe' ? 'CLASSIFICATION' : currentQuestion.kind === 'radical' ? 'RADICAL VARIABLE' : 'DÉCOUPAGE'}</span><span class="micro-tag">{currentQuestion.verb.infinitive}</span></div>
+          <div class="question-meta"><span class="micro-tag">{currentQuestion.kind === 'conjuguer' ? 'CONJUGUER' : currentQuestion.kind === 'identifier' ? 'IDENTIFIER LE TEMPS' : 'IDENTIFIER LE PRONOM'}</span><span class="micro-tag">VERBE · {currentQuestion.verb.infinitive}</span></div>
           <h1 id="question-title" tabindex="-1">{currentQuestion.prompt}</h1>
-          <p class="question-instruction">{currentQuestion.kind === 'conjuguer' ? 'Choisis la forme demandée.' : currentQuestion.kind === 'identifier' ? 'Observe la forme puis choisis le temps.' : currentQuestion.kind === 'personne' ? 'Observe la terminaison puis retrouve le pronom.' : currentQuestion.kind === 'groupe' ? 'Classe le verbe en t’appuyant sur son infinitif et son modèle.' : currentQuestion.kind === 'radical' ? 'Compare plusieurs formes du même verbe et repère ce qui change.' : 'Repère la terminaison dans la forme proposée.'}</p>
+          <p class="question-instruction">{currentQuestion.kind === 'conjuguer' ? 'Choisis la forme qui complète la phrase.' : currentQuestion.kind === 'identifier' ? 'À quel temps est cette forme ?' : 'Quel pronom complète cette forme ?'}</p>
           <div class="sentence-card"><p>{currentQuestion.sentence}</p></div>
-          {#if currentQuestion.kind === 'conjuguer' && currentQuestion.tense}
-            <div class="form-tags"><span>{getTenseInfo(currentQuestion.tense).label}</span><span>{getGroupLabel(currentQuestion.verb.group)}</span></div>
+          {#if currentQuestion.kind !== 'identifier' && currentQuestion.tense}
+            <div class="form-tags"><span>{getTenseInfo(currentQuestion.tense).label}</span></div>
           {/if}
-          {#if activeAnswerMode === 'qcm'}
             <div class="answer-grid" role="group" aria-label="Choisir une réponse">
               {#each currentQuestion.options as option, index}
                 <button type="button" class="answer-button" class:answer-correct={resolved && normalizeForComparison(option) === normalizeForComparison(currentQuestion.correctAnswer)} disabled={resolved} onclick={() => submitAnswer(option)}>
@@ -637,14 +581,6 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
               {/each}
             </div>
             <p class="key-help">Ordinateur : utilise les touches 1, 2, 3 ou 4. Sur iPad : touche une réponse.</p>
-          {:else}
-            <form class="typing-form" onsubmit={submitTypedAnswer}>
-              <label for="answer-input">Écris ce qui complète la phrase</label>
-              <input id="answer-input" bind:value={answerInput} autocomplete="off" autocapitalize="none" spellcheck="false" disabled={resolved} placeholder="Écris ta réponse ici…" aria-describedby="typing-help" />
-              <p id="typing-help" class="small-note">Les accents et l’apostrophe comptent. Tu peux écrire sur un clavier physique ou utiliser le clavier à l’écran de l’iPad.</p>
-              <button type="submit" class="primary-button" disabled={resolved || !answerInput.trim()}>Vérifier la réponse</button>
-            </form>
-          {/if}
 
           {#if feedbackKind !== 'none'}
             <section class="feedback-panel" class:feedback-good={feedbackKind === 'correct'} class:feedback-help={feedbackKind === 'retry'} class:feedback-reveal={feedbackKind === 'revealed' || feedbackKind === 'timeout'} aria-live="polite" aria-atomic="true">
@@ -657,16 +593,12 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
               {:else if feedbackKind === 'correct'}
                 <p>{currentQuestion.explanation}</p>
               {/if}
-              {#if (feedbackKind === 'correct' || feedbackKind === 'revealed' || feedbackKind === 'timeout') && voiceEnabled}
-                <button type="button" class="text-button" onclick={() => speak(`${feedbackMessage} ${currentQuestion?.explanation ?? ''}`)}>Écouter l’explication</button>
-              {/if}
             </section>
           {/if}
 
           <div class="question-actions">
             {#if !resolved}
               <button type="button" class="secondary-button" onclick={() => { hintIndex = Math.min(hintIndex + 1, currentQuestion?.hintSteps.length ?? 0); errorHint = ''; }} disabled={hintIndex >= currentQuestion.hintSteps.length - 1}>Indice suivant</button>
-              {#if voiceEnabled}<button type="button" class="secondary-button" onclick={speakQuestion}>Écouter la consigne</button>{/if}
             {:else}
               <button type="button" class="primary-button" onclick={moveNext}>{combatOutcome ? 'Voir le résultat du combat' : questionIndex + 1 >= SESSION_LENGTH ? 'Voir le bilan' : 'Continuer'} <span aria-hidden="true">→</span></button>
             {/if}
@@ -674,7 +606,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
         </section>
 
         <aside class="side-column">
-          <section class="panel lab-status"><p class="eyebrow">STATUT DU LABO</p><div class="status-line"><span>Précision</span><strong>{correctQuestions}/{Math.max(1, questionIndex + (resolved ? 1 : 0))}</strong></div><div class="mini-track"><span style={`width: ${Math.min(100, (correctQuestions / Math.max(1, questionIndex + (resolved ? 1 : 0))) * 100)}%`}></span></div><div class="status-line"><span>Points acquis</span><strong>{score}</strong></div><div class="status-line"><span>Indices utilisés</span><strong>{hintIndex + (errorHint ? 1 : 0)}</strong></div>{#if gameMode === 'rapide' && !resolved}<div class="timer-pill">Temps restant : <strong>{timeLeft}s</strong></div>{/if}</section>
+          <section class="panel lab-status"><p class="eyebrow">SCORE DU ROUND</p><div class="status-line"><span>Précision</span><strong>{correctQuestions}/{Math.max(1, questionIndex + (resolved ? 1 : 0))}</strong></div><div class="mini-track"><span style={`width: ${Math.min(100, (correctQuestions / Math.max(1, questionIndex + (resolved ? 1 : 0))) * 100)}%`}></span></div><div class="status-line"><span>Points acquis</span><strong>{score}</strong></div><div class="status-line"><span>Indices utilisés</span><strong>{hintIndex + (errorHint ? 1 : 0)}</strong></div>{#if gameMode === 'rapide' && !resolved}<div class="timer-pill">Temps restant : <strong>{timeLeft}s</strong></div>{/if}</section>
           <section class="panel coach-card"><div class="coach-icon" aria-hidden="true">✳</div><p class="eyebrow">MÉTHODE</p><h2>Décompose avant de répondre.</h2><ol><li>Repère le sujet.</li><li>Identifie le temps.</li><li>Choisis le radical ou l’auxiliaire.</li><li>Vérifie la terminaison.</li></ol><button type="button" class="text-button" onclick={toggleHelp}>{showHelp ? 'Masquer les fiches' : 'Ouvrir les fiches de règle'} ↗</button></section>
           {#if showHelp}<section class="panel quick-help" aria-label="Fiche de révision"><p class="eyebrow">RAPPEL EXPRESS</p><h2>{RULE_CARDS[selectedRuleIndex].title}</h2><ol>{#each RULE_CARDS[selectedRuleIndex].steps as step}<li>{step}</li>{/each}</ol><div class="rule-switcher"><button type="button" class="secondary-button small-button" onclick={() => selectedRuleIndex = (selectedRuleIndex + RULE_CARDS.length - 1) % RULE_CARDS.length}>← Précédente</button><button type="button" class="secondary-button small-button" onclick={() => selectedRuleIndex = (selectedRuleIndex + 1) % RULE_CARDS.length}>Suivante →</button></div></section>{/if}
         </aside>
@@ -687,17 +619,17 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       {#if fatalError}
         <p class="eyebrow">PROBLÈME DE GÉNÉRATION</p><h1 id="end-title">Une question n’a pas pu être préparée.</h1><p>{fatalError}</p><p class="small-note">Aucun résultat n’a été envoyé. Reviens au menu, ajuste les critères et réessaie.</p><button type="button" class="primary-button" onclick={returnToMenu}>Retour au menu</button>
       {:else}
-        <p class="eyebrow">COMBAT TERMINÉ</p><h1 id="end-title">{combatOutcome === 'victory' ? 'Victoire !' : 'Revanche ?'}<span>.</span></h1><p class="end-copy">{combatOutcome === 'victory' ? 'Le boss des temps est vaincu. Tes bonnes réponses et tes combos ont fait la différence.' : 'Le boss a gagné cette manche, mais chaque correction te prépare pour la suivante.'}</p>
+        <p class="eyebrow">COMBAT TERMINÉ</p><h1 id="end-title">{combatOutcome === 'victory' ? 'Victoire !' : 'Revanche ?'}<span>.</span></h1><p class="end-copy">{combatOutcome === 'victory' ? 'Le boss est vaincu. Tes bonnes réponses et tes combos ont fait la différence.' : 'Le boss a gagné cette manche, mais chaque correction te prépare pour la suivante.'}</p>
         <div class="score-grid"><div><strong>{score}</strong><span>Points</span></div><div><strong>{correctQuestions}/{questionIndex + 1}</strong><span>Réponses trouvées</span></div><div><strong>×{bestCombo}</strong><span>Meilleur combo</span></div><div><strong>{playerLives}</strong><span>Vies restantes</span></div></div>
         <div class="end-reflection"><h2>Pour la suite</h2><p>{combatOutcome === 'victory' && bestCombo >= 3 ? 'Excellent enchaînement. Essaie un temps plus difficile ou le mode rapide.' : correctQuestions >= 5 ? 'Tu as déjà plusieurs repères. Revois les formes qui t’ont posé problème, puis prends ta revanche.' : 'Reprends les fiches sur les groupes et les terminaisons, puis choisis une mission plus ciblée.'}</p><button type="button" class="secondary-button" onclick={openStudy}>Réviser les règles</button></div>
         <p class="result-status" aria-live="polite">{resultStatus === 'sending' ? 'Transmission du bilan à ORBIS…' : resultStatus === 'sent' ? 'Bilan transmis à ORBIS.' : resultStatus === 'unavailable' ? 'Le bilan n’a pas pu être transmis. La session reste consultable jusqu’à la sortie de la page.' : 'Le bilan sera transmis à ORBIS.'}</p>
         {#if resultStatus === 'unavailable'}<button type="button" class="secondary-button" onclick={() => void sendResult()}>Réessayer la transmission</button>{/if}
-        <div class="end-actions"><button type="button" class="primary-button" onclick={returnToMenu}>Retour au menu des niveaux</button><a class="secondary-button" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>Retour aux jeux</a></div>
+        <div class="end-actions"><button type="button" class="primary-button" onclick={returnToMenu}>Rejouer</button><a class="secondary-button" href={catalogHref(base, 'jeux')} use:restoreCatalogReturn={base}>Retour aux jeux</a></div>
       {/if}
     </main>
   {/if}
 
-  <footer class="site-footer"><span>CONJULAB <span class="footer-dot">•</span> APPRENDRE À COMPRENDRE</span><span>Une forme à la fois.</span></footer>
+  <footer class="site-footer"><span>CONJUFIGHTER <span class="footer-dot">•</span> UN VERBE, UN COUP</span><span>Prêt pour la revanche ?</span></footer>
 </div>
 
 <style>
@@ -755,7 +687,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   .live-dot { width: 7px; height: 7px; display: inline-block; margin-right: 8px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px rgba(112, 225, 208, .7); }
   h1, h2, h3, p { overflow-wrap: anywhere; }
   .hero-section h1 { font-size: clamp(43px, 6vw, 74px); line-height: .99; letter-spacing: -.055em; margin: 0; font-weight: 900; max-width: 620px; }
-  .hero-section h1 em { font-style: normal; color: var(--cyan); }
+  .hero-section h1 em { font-style: normal; color: #ff718d; text-shadow: 4px 4px 0 #432143, 0 0 32px rgba(255, 113, 141, .35); }
   .hero-copy { max-width: 470px; color: var(--muted); font-size: 18px; margin: 27px 0; }
   .hero-chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .hero-chips span { color: #d7e0ef; font-size: 10px; letter-spacing: .09em; border: 1px solid var(--border); background: rgba(20, 30, 51, .6); border-radius: 8px; padding: 9px 10px; }
@@ -768,13 +700,9 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   .setup-block { padding: 20px 0; border-top: 1px solid rgba(148, 164, 190, .13); }
   .setup-block h3 { margin: 0 0 14px; font-size: 15px; display: flex; gap: 10px; align-items: center; }
   .step-number { width: 24px; height: 24px; display: inline-grid; place-items: center; color: var(--bg); font-weight: 900; background: var(--cyan); border-radius: 7px; font-size: 11px; flex-shrink: 0; }
-  .grade-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-  .grade-button, .choice-card, .focus-button, .group-pill, .setting-button, .check-card, .answer-button { border: 1px solid var(--border); background: rgba(10, 17, 34, .7); color: var(--text); border-radius: 12px; text-align: left; cursor: pointer; transition: border-color .16s ease, background .16s ease, transform .16s ease; }
-  .grade-button { min-height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center; padding: 8px 4px; }
-  .grade-button strong { font-size: 20px; }
-  .grade-button small { font-size: 10px; color: var(--muted-2); }
-  .chosen, .grade-button.chosen, .choice-card.chosen, .focus-button.chosen { border-color: var(--cyan); background: rgba(112, 225, 208, .09); box-shadow: inset 0 0 0 1px rgba(112, 225, 208, .08); }
-  .chosen strong, .grade-button.chosen strong { color: var(--cyan); }
+  .choice-card, .focus-button, .group-pill, .setting-button, .check-card, .answer-button { border: 1px solid var(--border); background: rgba(10, 17, 34, .7); color: var(--text); border-radius: 12px; text-align: left; cursor: pointer; transition: border-color .16s ease, background .16s ease, transform .16s ease; }
+  .chosen, .choice-card.chosen, .focus-button.chosen { border-color: var(--cyan); background: rgba(112, 225, 208, .09); box-shadow: inset 0 0 0 1px rgba(112, 225, 208, .08); }
+  .chosen strong { color: var(--cyan); }
   .small-note { color: var(--muted-2); font-size: 12px; margin: 10px 0 0; line-height: 1.5; }
   .choice-grid { display: grid; gap: 10px; }
   .two-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -817,7 +745,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   .qcm-lock { display: flex; flex-direction: column; gap: 3px; padding: 12px; border-radius: 10px; border: 1px solid rgba(112, 225, 208, .35); background: rgba(112, 225, 208, .07); }
   .qcm-lock strong { color: var(--cyan); font-size: 12px; }
   .qcm-lock span { color: var(--muted-2); font-size: 11px; }
-  .combat-arena { grid-column: 1 / -1; overflow: hidden; margin: 18px 0 22px; background: linear-gradient(180deg, rgba(20, 29, 57, .98), rgba(11, 16, 32, .98)); }
+  .combat-arena { grid-column: 1 / -1; overflow: hidden; margin: 18px 0 22px; border: 2px solid #a94868; box-shadow: 0 0 0 4px #15162c, 0 0 35px rgba(255, 96, 143, .2); background: radial-gradient(ellipse at 50% 68%, #643b71 0%, transparent 46%), linear-gradient(180deg, #281b44 0%, #13172f 72%, #25223d 73%, #111325 100%); }
   .combat-hud { display: grid; grid-template-columns: 1fr auto 1fr; gap: 18px; align-items: center; padding: 14px 18px 8px; position: relative; z-index: 2; }
   .fighter-name { color: var(--muted-2); font-size: 10px; letter-spacing: .14em; font-weight: 900; }
   .boss-hud { text-align: right; }
@@ -829,7 +757,8 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   .combat-life.boss-life span { margin-left: auto; background: linear-gradient(90deg, #ff7c95, #c54072); }
   .combo-readout { color: var(--amber); font-weight: 950; font-size: 17px; letter-spacing: .08em; text-shadow: 0 0 16px rgba(243,200,121,.3); }
   .combo-hot { color: #ff7c95; transform: scale(1.08); }
-  .combat-sprite-stage { min-height: 260px; background-image: url('/assets/conju-lab/arcade-sprite-sheet.png'); background-repeat: no-repeat; background-size: 400% 300%; background-position: 0% 0%; image-rendering: pixelated; transition: transform .12s ease, filter .12s ease; }
+  .combat-sprite-stage { min-height: 260px; background-image: url('/assets/conju-lab/arcade-sprite-sheet.png'); background-repeat: no-repeat; background-size: 400% 300%; background-position: 0% 0%; image-rendering: pixelated; transition: transform .12s ease, filter .12s ease; position: relative; }
+  .combat-sprite-stage::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(5, 6, 18, .12) 0 2px, transparent 2px 5px); }
   .combat-attack { background-position: 66.666% 0%; animation: player-strike .85s steps(2, end); }
   .combat-special { background-position: 100% 0%; filter: saturate(1.3) drop-shadow(0 0 18px rgba(255,190,80,.3)); animation: super-strike .85s ease-out; }
   .combat-hurt { background-position: 0% 50%; filter: hue-rotate(290deg); animation: arena-shake .5s steps(2, end); }
@@ -879,7 +808,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   .micro-tag { border: 1px solid var(--border); background: rgba(8, 14, 28, .5); border-radius: 7px; padding: 5px 8px; font-size: 10px; color: var(--muted); letter-spacing: .04em; }
   .question-panel h1 { margin: 23px 0 5px; font-size: clamp(27px, 4vw, 42px); letter-spacing: -.035em; line-height: 1.12; }
   .question-instruction { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
-  .sentence-card { padding: clamp(18px, 3vw, 26px); background: rgba(5, 11, 24, .55); border: 1px solid rgba(112, 225, 208, .18); border-radius: 14px; margin: 18px 0 12px; }
+  .sentence-card { padding: clamp(18px, 3vw, 26px); background: rgba(5, 11, 24, .55); border: 1px solid rgba(255, 113, 141, .4); border-radius: 14px; margin: 18px 0 12px; box-shadow: inset 0 0 24px rgba(255,113,141,.05); }
   .sentence-card p { font-size: clamp(20px, 3.2vw, 28px); font-weight: 850; line-height: 1.45; text-align: center; margin: 0; letter-spacing: -.015em; }
   .form-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; margin: 13px 0 20px; }
   .form-tags span { font-size: 11px; color: #d0d7e8; background: #1b2740; padding: 5px 9px; border-radius: 7px; }
@@ -889,11 +818,6 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   .answer-number { display: inline-grid; place-items: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; background: #26344f; color: var(--cyan); font-size: 12px; }
   .answer-correct { border-color: var(--good) !important; background: rgba(138, 240, 194, .11) !important; }
   .key-help { margin: 10px 0 0; text-align: center; font-size: 11px; color: var(--muted-2); }
-  .typing-form { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-  .typing-form label { font-size: 13px; font-weight: 800; }
-  .typing-form input { width: 100%; min-height: 55px; border-radius: 11px; border: 1px solid #465575; background: #080e1d; color: var(--text); padding: 13px 15px; font-size: 18px; }
-  .typing-form input:focus { outline: 3px solid rgba(112, 225, 208, .25); border-color: var(--cyan); }
-  .typing-form .primary-button { align-self: flex-start; }
   .feedback-panel { margin-top: 20px; border-radius: 13px; padding: 16px; border: 1px solid var(--border); background: rgba(13, 21, 39, .7); font-size: 13px; }
   .feedback-panel p { margin: 6px 0; }
   .feedback-title { font-weight: 900; font-size: 14px; }
@@ -938,12 +862,6 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   .rule-card-reading h2 { font-size: clamp(23px, 3vw, 31px); margin: 0 0 15px; }
   .rule-card-reading ol { padding-left: 22px; margin: 0 0 22px; color: #dbe3f1; }
   .rule-card-reading li { margin: 12px 0; }
-  .reference-section { border-top: 1px solid var(--border); margin-top: 30px; padding-top: 25px; }
-  .reference-section h2 { margin-top: 0; }
-  .reference-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-  .reference-grade { border: 1px solid var(--border); border-radius: 12px; background: rgba(6, 12, 26, .42); padding: 14px; }
-  .reference-grade h3 { color: var(--cyan); margin: 0 0 8px; }
-  .reference-grade p { color: var(--muted); font-size: 12px; margin: 0; }
 
   .end-layout { max-width: 900px; padding: clamp(22px, 5vw, 54px); margin-top: 50px; }
   .end-layout h1 { margin: 0; font-size: clamp(37px, 6vw, 62px); letter-spacing: -.05em; line-height: 1.05; }
@@ -985,8 +903,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     .hero-section { padding-top: 30px; }
     .hero-section h1 { font-size: clamp(40px, 12vw, 57px); }
     .hero-copy { font-size: 16px; }
-    .grade-button { min-height: 66px; }
-    .two-columns, .tense-grid, .focus-grid, .answer-grid, .reference-grid, .score-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .two-columns, .tense-grid, .focus-grid, .answer-grid, .score-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .accessibility-panel { padding: 17px; }
     .game-topbar { align-items: flex-start; flex-direction: column; }
@@ -1002,7 +919,6 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     .rule-layout { grid-template-columns: 1fr; }
     .rule-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .rule-nav button { padding: 10px; }
-    .reference-section h2 { font-size: 21px; }
     .score-grid div { padding: 13px 10px; }
     .end-actions { flex-direction: column; }
     .end-actions > * { width: 100%; }

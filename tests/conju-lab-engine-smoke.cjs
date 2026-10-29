@@ -65,6 +65,7 @@ assert.equal(engine.analyseAnswer(payerQuestion, 'paye').isCorrect, true);
 let generated = 0;
 let targetedGenerated = 0;
 for (const grade of ['6H', '7H', '8H', '9H']) {
+  const formIndex = new Set(engine.getAvailableForms(grade).map((entry) => `${entry.infinitive}|${entry.form}`));
   const gradeTenses = curriculum.getTensesForGrade(grade).map((tense) => tense.id);
   const tenseSets = [
     gradeTenses.slice(0, 1),
@@ -88,6 +89,13 @@ for (const grade of ['6H', '7H', '8H', '9H']) {
           `${grade}/${focus}: la réponse doit figurer parmi les options.`);
         assert.equal(new Set(question.options.map((option) => option.trim().toLocaleLowerCase('fr'))).size, question.options.length,
           `${grade}/${focus}: doublon dans les options.`);
+        if (focus === 'conjuguer') {
+          assert.equal(question.options.length, 4, 'La conjugaison propose quatre formes du même verbe.');
+          for (const option of question.options) {
+            assert.ok(formIndex.has(`${question.verb.infinitive}|${option}`),
+              `${question.verb.infinitive} : « ${option} » ne doit pas venir d’un autre verbe.`);
+          }
+        }
         generated += 1;
       }
     }

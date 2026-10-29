@@ -118,8 +118,8 @@ export const worlds: World[] = [
   {
     id: 'conju_lab',
     image: 'conju_fighter.png',
-    title: 'ConjuLab',
-    subtitle: 'Qui est le meilleur conjugueur ?',
+    title: 'ConjuFighter',
+    subtitle: 'Enchaîne les bonnes réponses et bats le boss des verbes !',
     route: '/conju_lab',
     emoji: '🔄',
     color: 'blue',

@@ -28,6 +28,13 @@ const IMPERFECT_ENDING_LABELS = ['-ais', '-ais', '-ait', '-ions', '-iez', '-aien
 const FUTURE_ENDING_LABELS = ['-ai', '-as', '-a', '-ons', '-ez', '-ont'];
 
 let questionSequence = 0;
+type FormCandidate = { verb: VerbEntry; tense: TenseId; subject: SubjectOption; form: string };
+const conjugationCandidates = new Map<string, Array<FormCandidate>>();
+const timeCandidates = new Map<string, Array<FormCandidate>>();
+const personCandidates = new Map<string, Array<FormCandidate>>();
+function candidateKey(config: EngineConfig): string {
+  return JSON.stringify([config.grade, config.selectedTenses, config.selectedGroups, config.selectedInfinitives]);
+}
 
 function randomItem<T>(items: T[]): T {
   if (items.length === 0) throw new Error('Le moteur ne dispose d’aucun élément pour créer une question.');
@@ -256,31 +263,34 @@ function formatFormInContext(tense: TenseId, subject: SubjectOption, form: strin
 function buildConjugationQuestion(config: EngineConfig): VerbQuestion {
   const allVerbs = getEligibleVerbs(config);
   const tenses = getTenseCandidates(config);
-  const candidates: Array<{ verb: VerbEntry; tense: TenseId; subject: SubjectOption; answer: string }> = [];
-
-  for (const verb of allVerbs) {
-    for (const tense of tenses) {
+  const key = candidateKey(config);
+  let candidates = conjugationCandidates.get(key);
+  if (!candidates) {
+    candidates = [];
+    for (const verb of allVerbs) for (const tense of tenses) {
       if (tense === 'imperatif' && !verb.imperative) continue;
       for (const subject of getPersonCandidates(verb, tense)) {
-        const answer = conjugateForm(verb, tense, subject);
-        if (answer) candidates.push({ verb, tense, subject, answer });
+        const form = conjugateForm(verb, tense, subject);
+        if (form) candidates.push({ verb, tense, subject, form });
       }
     }
+    conjugationCandidates.set(key, candidates);
   }
 
   if (!candidates.length) throw new Error('Aucune forme conjugée ne correspond aux critères sélectionnés.');
   const selected = randomItem(candidates);
+  const answer = selected.form;
   const info = getTenseInfo(selected.tense);
   const tenseLabel = `${info.label} · ${selected.verb.group === 1 ? '1er' : selected.verb.group === 2 ? '2e' : '3e'} groupe`;
   let sentence: string;
   if (selected.tense === 'imperatif') {
     sentence = `À l’impératif, complète la forme pour « ${selected.subject.label} » : ________ (${selected.verb.infinitive}).`;
   } else {
-    const prefix = selected.subject.id === 'je' && /^[aeiouyàâäéèêëîïôöùûüœ]/i.test(selected.answer)
+    const prefix = selected.subject.id === 'je' && /^[aeiouyàâäéèêëîïôöùûüœ]/i.test(answer)
       ? 'J’'
       : `${selected.subject.label.charAt(0).toLocaleUpperCase('fr')}${selected.subject.label.slice(1)}`;
     if (selected.tense === 'subjonctifPresent' || selected.tense === 'subjonctifPasse') {
-      const subjectPhrase = selected.subject.id === 'je' && /^[aeiouyàâäéèêëîïôöùûüœ]/i.test(selected.answer)
+      const subjectPhrase = selected.subject.id === 'je' && /^[aeiouyàâäéèêëîïôöùûüœ]/i.test(answer)
         ? 'que j’'
         : ['il', 'elle', 'on', 'ils', 'elles'].includes(selected.subject.id)
           ? `qu’${selected.subject.label}`
@@ -295,17 +305,12 @@ function buildConjugationQuestion(config: EngineConfig): VerbQuestion {
   }
 
   const distractors: string[] = [];
-  for (const verb of allVerbs) {
-    for (const subject of getPersonCandidates(verb, selected.tense)) {
-      const form = conjugateForm(verb, selected.tense, subject);
-      if (form && form !== selected.answer) distractors.push(form);
+  const alternatives = selected.verb.acceptedAlternatives?.[selected.tense]?.[selected.subject.personIndex];
+  for (const tense of getTensesForGrade(config.grade).map((item) => item.id)) {
+    for (const subject of getPersonCandidates(selected.verb, tense)) {
+      const form = conjugateForm(selected.verb, tense, subject);
+      if (form && form !== answer && normalizeAnswer(form) !== normalizeAnswer(alternatives ?? '')) distractors.push(form);
     }
-  }
-  // Quelques formes d'autres temps créent de bons distracteurs sans fabriquer de conjugaison inventée.
-  for (const otherTense of tenses) {
-    if (otherTense === selected.tense) continue;
-    const form = conjugateForm(selected.verb, otherTense, selected.subject);
-    if (form) distractors.push(form);
   }
 
   return {
@@ -316,9 +321,9 @@ function buildConjugationQuestion(config: EngineConfig): VerbQuestion {
     verb: selected.verb,
     tense: selected.tense,
     subject: selected.subject,
-    correctAnswer: selected.answer,
-    options: optionsWithCorrect(selected.answer, distractors),
-    explanation: explainConjugation(selected.verb, selected.tense, selected.subject, selected.answer),
+    correctAnswer: answer,
+    options: optionsWithCorrect(answer, distractors),
+    explanation: explainConjugation(selected.verb, selected.tense, selected.subject, answer),
     hintSteps: getHintSteps(selected.verb, selected.tense, selected.subject),
     feedbackTag: isCompoundTense(selected.tense) ? 'auxiliaire' : 'terminaison'
   };
@@ -360,26 +365,28 @@ function buildIdentifyQuestion(config: EngineConfig): VerbQuestion {
   const eligibleVerbs = getEligibleVerbs(config);
   // La bonne réponse respecte les temps choisis par l’élève ; les autres temps du niveau
   // peuvent servir de distracteurs même si l’élève n’a pas sélectionné leur entraînement.
-  const allTenses = getTensesForGrade(config.grade).map((item) => item.id).filter((tense) => tense !== 'imperatif');
+  const allTenses = getTensesForGrade(config.grade).map((item) => item.id).filter((tense) => tense !== 'imperatif' && tense !== 'passeSimple3e');
   const targetTenses = getTenseCandidates(config).filter((tense) => tense !== 'imperatif');
   const tenses = targetTenses.length ? targetTenses : allTenses;
-  const candidates: Array<{ verb: VerbEntry; tense: TenseId; subject: SubjectOption; form: string }> = [];
-  for (const verb of eligibleVerbs) {
-    for (const tense of tenses) {
-      for (const subject of getPersonCandidates(verb, tense)) {
-        const form = conjugateForm(verb, tense, subject);
-        if (form) candidates.push({ verb, tense, subject, form });
-      }
+  const key = candidateKey(config);
+  let candidates = timeCandidates.get(key);
+  if (!candidates) {
+    candidates = [];
+    for (const verb of eligibleVerbs) for (const tense of tenses) for (const subject of getPersonCandidates(verb, tense)) {
+      const form = conjugateForm(verb, tense, subject);
+      if (form && allTenses.filter((other) => normalizeAnswer(conjugateForm(verb, other, subject)) === normalizeAnswer(form)).length === 1) candidates.push({ verb, tense, subject, form });
     }
+    timeCandidates.set(key, candidates);
   }
   const selected = randomItem(candidates);
   const correctAnswer = getTenseInfo(selected.tense).label;
-  const otherLabels = allTenses.filter((item) => item !== selected.tense).map((item) => getTenseInfo(item).label);
-  const distractors = shuffle(otherLabels).slice(0, 3);
+  const selectedOthers = tenses.filter((item) => item !== selected.tense).map((item) => getTenseInfo(item).label);
+  const extraOthers = allTenses.filter((item) => !tenses.includes(item)).map((item) => getTenseInfo(item).label);
+  const distractors = [...shuffle(selectedOthers), ...shuffle(extraOthers)].slice(0, 3);
   const options = shuffle([correctAnswer, ...distractors]);
   return {
     id: nextQuestionId(), kind: 'identifier',
-    prompt: 'Identifier le temps', sentence: `Forme à analyser : « ${formatFormInContext(selected.tense, selected.subject, selected.form)} » · verbe : ${selected.verb.infinitive}`,
+    prompt: 'Identifier le temps', sentence: formatFormInContext(selected.tense, selected.subject, selected.form),
     verb: selected.verb, tense: selected.tense, subject: selected.subject,
     correctAnswer, options,
     explanation: `Cette forme est au ${correctAnswer.toLocaleLowerCase('fr')}. ${getTenseInfo(selected.tense).description} Le verbe est ${selected.verb.infinitive}.`,
@@ -395,28 +402,29 @@ function buildIdentifyQuestion(config: EngineConfig): VerbQuestion {
 function buildPersonQuestion(config: EngineConfig): VerbQuestion {
   const eligibleVerbs = getEligibleVerbs(config);
   const tenses = getTenseCandidates(config).filter((tense) => tense !== 'imperatif');
-  const candidates: Array<{ verb: VerbEntry; tense: TenseId; subject: SubjectOption; form: string }> = [];
-  for (const verb of eligibleVerbs) {
-    for (const tense of tenses) {
-      for (const subject of getPersonCandidates(verb, tense)) {
-        const form = conjugateForm(verb, tense, subject);
-        if (form) candidates.push({ verb, tense, subject, form });
-      }
+  const key = candidateKey(config);
+  let candidates = personCandidates.get(key);
+  if (!candidates) {
+    candidates = [];
+    for (const verb of eligibleVerbs) for (const tense of tenses) for (const subject of getPersonCandidates(verb, tense)) {
+      const form = conjugateForm(verb, tense, subject);
+      if (form && getPersonCandidates(verb, tense).filter((other) => normalizeAnswer(conjugateForm(verb, tense, other)) === normalizeAnswer(form)).every((other) => other.personIndex === subject.personIndex)) candidates.push({ verb, tense, subject, form });
     }
+    personCandidates.set(key, candidates);
   }
   if (!candidates.length) throw new Error('Aucune forme ne permet d’identifier une personne avec ces critères.');
   const selected = randomItem(candidates);
   const samePersonLabels = PERSONS
     .filter((person) => person.personIndex === selected.subject.personIndex)
-    .map((person) => person.label);
+    .map((person) => person.id === 'je' ? 'je / j’' : person.label);
   const correctAnswer = samePersonLabels.join(' / ');
   const personFamilies = [
-    ['je'], ['tu'], ['il', 'elle', 'on'], ['nous'], ['vous'], ['ils', 'elles']
+    ['je / j’'], ['tu'], ['il', 'elle', 'on'], ['nous'], ['vous'], ['ils', 'elles']
   ].map((family) => family.join(' / '));
   const distractors = personFamilies.filter((label) => label !== correctAnswer);
   return {
     id: nextQuestionId(), kind: 'personne', prompt: 'Identifier le pronom',
-    sentence: `Quel pronom peut accompagner la forme « ${selected.form} » du verbe ${selected.verb.infinitive} au ${getTenseInfo(selected.tense).shortLabel.toLocaleLowerCase('fr')} ?`,
+    sentence: `_____ ${selected.form}`,
     verb: selected.verb, tense: selected.tense, subject: selected.subject,
     correctAnswer, options: optionsWithCorrect(correctAnswer, distractors),
     explanation: `« ${selected.form} » correspond ici à la ${selected.subject.personIndex + 1}${selected.subject.personIndex === 0 ? 're' : 'e'} personne : ${correctAnswer}.`,
