@@ -43,6 +43,7 @@
     shift: { notion: 'Numération', goal: 'Comprends la valeur de chaque chiffre.' },
     fractionstower2: { notion: 'Fractions', goal: 'Comprends les fractions, étape par étape.' },
     mathhunt: { notion: 'Calcul mental', goal: 'Vise la bonne réponse.' }
+    ,grammaire_lab: { notion: 'Grammaire', goal: 'Construis des phrases correctes.' }
   };
   $: selectedGameNotion = catalogParams.get('notion');
   $: visibleArcadeCategories = arcadeCategories.filter(category => category === 'TOUS' || worlds.some(world => world.subject === category));
@@ -243,7 +244,11 @@
   }
 
   function courseImage(domain: string): string {
-    const name = domain === 'Fractions' ? 'fractions' : domain === 'Espace' ? 'geometrie' : 'mesures';
+    const name = domain === 'Fractions' ? 'fractions'
+      : domain === 'Espace' ? 'geometrie'
+      : domain === 'Calcul mental' ? 'mathracer'
+      : domain === 'Grammaire' ? 'grammaire'
+      : 'mesures';
     return `${base}/orbis/illustrations/${name}.svg`;
   }
 

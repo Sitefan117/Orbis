@@ -10,7 +10,8 @@ export type WorldId =
   | 'race'
   | 'shift'
   | 'mathhunt'
-  | 'fractionstower2';
+  | 'fractionstower2'
+  | 'grammaire_lab';
 
 export type WorldSubject =
   | 'MATHS'
@@ -127,6 +128,17 @@ export const worlds: World[] = [
     status: 'available'
   },
   {
+    id: 'grammaire_lab',
+    image: 'grammaire_lab.svg',
+    title: 'L’Atelier des phrases',
+    subtitle: 'Construis des phrases qui tiennent debout !',
+    route: '/grammaire_lab',
+    emoji: '🧱',
+    color: 'emerald',
+    subject: 'FRANÇAIS',
+    status: 'available'
+  },
+  {
     id: 'shift',
     title: 'Shift',
     subtitle: 'Arriveras-tu maîtriser petits et grands nombres ?',
@@ -171,5 +183,6 @@ export const worldLabels: Record<WorldId, string> = {
   race: 'race',
   shift: 'shift',
   mathhunt: 'mathhunt',
-  fractionstower2: 'Tour des Fractions 2'
+  fractionstower2: 'Tour des Fractions 2',
+  grammaire_lab: 'L’Atelier des phrases'
 };

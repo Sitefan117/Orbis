@@ -56,4 +56,8 @@ assert.equal(convertTableValue(2.5, duration, 'h', 'min'), 150);
 assert.equal(canConvert(duration, 'mois', 'j'), false);
 assert.equal(canConvert(duration, 'an', 'mois'), true);
 
+// Dans l'exercice, la virgule finale appartient à l'unité d'arrivée.
+assert.equal(unitAnchor(length, 'cm'), 5);
+assert.equal(unitAnchor(length, 'm'), 3);
+
 console.log('Mesurovia conversion table: placements, aliases, powers and duration rules OK.');

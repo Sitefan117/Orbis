@@ -61,7 +61,9 @@
       cells: [...manualCells],
       commaAfter: manualComma,
       result: to ? readPlacementCells(manualCells, selected, to) : '',
-      commaCorrect: Boolean(from) && (manualComma === sourceAnchor || (!/[,.]/.test(value) && manualComma === null)),
+      // La virgule que l'élève construit est celle de la mesure lue dans
+      // l'unité d'arrivée : elle se place donc après la colonne cible.
+      commaCorrect: Boolean(to) && (manualComma === targetAnchor || (!/[,.]/.test(value) && manualComma === null)),
       placementCorrect,
       complete
     });

@@ -20,6 +20,30 @@ export interface CourseEntry {
 // Chaque entrée donne le titre, la matière, le chemin publié et, si utile, le jeu associé.
 export const courses: CourseEntry[] = [
   {
+    id: 'atelier-des-phrases',
+    title: 'Grammaire — construire une phrase',
+    subject: 'Français',
+    domain: 'Grammaire',
+    description: 'Un parcours Lego et Tetris en 14 niveaux : phrase, groupes, compléments, transformations et accords jusqu’à la 8H.',
+    level: '2H–8H',
+    duration: '14 niveaux',
+    isInteractive: true,
+    href: coursePaths.french.grammar,
+    gameLink: { title: 'Jouer à l’Atelier des phrases', route: '/grammaire_lab' }
+  },
+  {
+    id: 'mathracer-calcul-mental',
+    title: 'MathRacer — livret complet',
+    subject: 'Mathématiques',
+    domain: 'Calcul mental',
+    description: 'Un livret à faire en ligne ou à imprimer : théorie, exercices, validations et cinq évaluations de synthèse.',
+    level: 'Jusqu’à la 8H',
+    duration: '18 étapes',
+    isInteractive: true,
+    href: coursePaths.mentalMath.course,
+    gameLink: { title: 'Jouer à MathRacer', route: '/race' }
+  },
+  {
     id: "fractions-complet",
     title: "Fractions — cours complet",
     subject: "Mathématiques",

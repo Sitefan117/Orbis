@@ -20,7 +20,7 @@
   $: boardResult = to ? readPlacementCells(boardCells, selected, to) : '';
   $: displayedBoardResult = boardResult ? formatLocalizedNumber(parseLocalizedNumber(boardResult)) : '';
   $: hasDigits = boardCells.some((cell) => /\d/.test(cell));
-  $: commaCorrect = Boolean(from) && boardComma === unitAnchor(selected, from);
+  $: commaCorrect = Boolean(to) && boardComma === unitAnchor(selected, to);
   $: occupiedIndexes = boardCells.flatMap((cell, index) => /\d/.test(cell) ? [index] : []);
   $: targetAnchor = to ? unitAnchor(selected, to) : -1;
   $: boardComplete = targetAnchor >= 0 && occupiedIndexes.length > 0 && boardCells
@@ -31,10 +31,10 @@
     { title: '2. Je prépare 45 m → cm', text: 'Je repère m comme unité de départ et cm comme unité d’arrivée. Le chiffre des unités, 5, se place d’abord sous m.', value: '45', from: 'm', to: 'cm', stage: 2 },
     { title: '3. Je place 45 m', text: 'Le chiffre des unités est 5 : je le place sous m. Le 4 vient juste à gauche, sous dam.', value: '45', from: 'm', to: 'cm', stage: 3 },
     { title: '4. Je parcours les colonnes', text: 'De m à cm, je passe par dm puis cm. Les chiffres déjà placés ne changent pas de case.', value: '45', from: 'm', to: 'cm', stage: 4 },
-    { title: '5. Je complète et je lis', text: 'J’ajoute 0 sous dm et 0 sous cm. Je place la lecture après cm : 45 m = 4 500 cm.', value: '45', from: 'm', to: 'cm', stage: 6 },
-    { title: '6. Exemple inverse : 850 cm → m', text: 'Je place 0 sous cm, 5 sous dm et 8 sous m. La lecture après m donne 8,50 m, donc 8,5 m.', value: '850', from: 'cm', to: 'm', stage: 6 },
-    { title: '7. Exemple décimal : 2,7 m → cm', text: 'Je place 2 sous m et 7 sous dm. Il manque un chiffre sous cm : j’ajoute 0 et je lis 270 cm.', value: '2,7', from: 'm', to: 'cm', stage: 6 },
-    { title: '8. Des petites vers les grandes unités', text: 'Pour 35 cm → m, je place 5 sous cm et 3 sous dm. J’ajoute 0 sous m et je lis 0,35 m.', value: '35', from: 'cm', to: 'm', stage: 6 }
+    { title: '5. Je complète et je lis', text: 'J’ajoute 0 sous dm et 0 sous cm. La virgule finale se place après cm, l’unité d’arrivée : 45 m = 4 500 cm.', value: '45', from: 'm', to: 'cm', stage: 6 },
+    { title: '6. Exemple inverse : 850 cm → m', text: 'Je place 0 sous cm, 5 sous dm et 8 sous m. La virgule finale se place après m : 8,50 m, donc 8,5 m.', value: '850', from: 'cm', to: 'm', stage: 6 },
+    { title: '7. Exemple décimal : 2,7 m → cm', text: 'Je place 2 sous m et 7 sous dm. Il manque un chiffre sous cm : j’ajoute 0, puis je place la virgule finale après cm et je lis 270 cm.', value: '2,7', from: 'm', to: 'cm', stage: 6 },
+    { title: '8. Des petites vers les grandes unités', text: 'Pour 35 cm → m, je place 5 sous cm et 3 sous dm. J’ajoute 0 sous m, puis je place la virgule finale après m et je lis 0,35 m.', value: '35', from: 'cm', to: 'm', stage: 6 }
   ];
   $: durationTutorial = [
     { title: '1. Les durées sont différentes', text: 'Les durées ne fonctionnent pas par paquets de 10. Elles utilisent 60, 24, 7 et le calendrier.', value: '', from: '', to: '', stage: 1 },
@@ -45,7 +45,7 @@
     { title: `1. Je découvre le tableau des ${selected.name.toLowerCase()}`, text: selected.note, value: '', from: '', to: '', stage: 1 },
     { title: '2. Je repère les unités', text: `Je pars de ${selected.example.from} et je veux lire la mesure en ${selected.example.to}.`, ...selected.example, stage: 2 },
     { title: '3. Je place les chiffres', text: 'Je place un chiffre par petite case, en commençant par le chiffre des unités dans la dernière case du groupe de départ.', ...selected.example, stage: 3 },
-    { title: '4. Je complète les cases', text: 'Je complète uniquement les cases nécessaires avec des zéros, puis je lis dans l’unité d’arrivée.', ...selected.example, stage: 6 }
+    { title: '4. Je complète les cases', text: 'Je complète uniquement les cases nécessaires avec des zéros, puis je place la virgule finale dans l’unité d’arrivée.', ...selected.example, stage: 6 }
   ];
   $: tutorialSteps = selected.id === 'duration' ? durationTutorial : selected.id === 'length' ? lengthTutorial : genericTutorial;
   $: currentSlide = tutorialSteps[tutorialStep] ?? tutorialSteps[0];
@@ -142,7 +142,7 @@
           <span class:done={from}>{from ? `1. Départ : ${from}` : '1. Touche l’unité de départ'}</span>
           <span class:done={to}>{to ? `2. Arrivée : ${to}` : '2. Touche l’unité d’arrivée'}</span>
           <span class:done={hasDigits}>3. Place les chiffres</span>
-          <span class:done={commaCorrect}>4. Place la virgule après l’unité de départ</span>
+          <span class:done={commaCorrect}>4. Place la virgule après l’unité d’arrivée</span>
         </div>
         {#key boardVersion}<ConversionPlacementTable {family} value="" {from} {to} stage={1} interactive onUnitSelect={chooseUnit} onStateChange={updateBoard} />{/key}
 
@@ -150,7 +150,7 @@
           <div class:valid-result={Boolean(boardResult) && commaCorrect && boardComplete} class="read-result" role="status">
             {#if !from || !to}<strong>Choisis d’abord l’unité de départ et l’unité d’arrivée.</strong>
             {:else if !hasDigits}<strong>Place au moins un chiffre dans le tableau.</strong>
-            {:else if !commaCorrect}<strong>La virgule de départ doit être placée juste après la dernière case de {from}.</strong>
+            {:else if !commaCorrect}<strong>La virgule finale doit être placée juste après la dernière case de {to}, l’unité d’arrivée.</strong>
             {:else if !boardComplete}<strong>Complète avec des zéros toutes les cases vides jusqu’à {to}.</strong>
             {:else}<span>Je lis le tableau en <b>{to}</b></span><strong>{displayedBoardResult} {to}</strong>{/if}
           </div>

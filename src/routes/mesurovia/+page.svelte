@@ -667,7 +667,7 @@
     if (!String(raw).trim()) {
       if (activeQuestion.type === 'table') {
         currentFeedback = session.tableComplete && !session.tableCommaCorrect
-          ? { kind: 'notice', title: 'Place la virgule de départ', text: `La virgule doit être placée juste après le chiffre des unités en ${activeQuestion.from}. Clique une fois sur la petite case correspondante.` }
+          ? { kind: 'notice', title: 'Place la virgule d’arrivée', text: `La virgule doit être placée juste après la colonne de l’unité d’arrivée ${activeQuestion.to}. Clique une fois sur la petite case correspondante.` }
           : session.tableComplete && !session.tablePlacementCorrect
             ? { kind: 'notice', title: 'Vérifie la place des chiffres', text: `Le chiffre des unités doit être dans ${activeQuestion.from}. Distingue les chiffres du nombre de départ des zéros ajoutés jusqu’à ${activeQuestion.to}.` }
             : { kind: 'notice', title: 'Complète le chemin dans le tableau', text: `Place un chiffre par case, puis complète avec les zéros nécessaires jusqu’à la colonne ${activeQuestion.to}.` };
@@ -1204,7 +1204,7 @@
             {:else if activeQuestion.type === 'multi'}
               <p class="field-help">Plusieurs réponses peuvent être justes. Coche tout ce qui convient.</p><div class="answer-options multi-answer-options">{#each activeQuestion.options as option}<button class:option-selected={session.selectedMany.includes(option)} class="answer-option" aria-pressed={session.selectedMany.includes(option)} disabled={!!session.answerStatus} onclick={() => toggleMultiOption(option)}><span class="multi-check">{session.selectedMany.includes(option) ? '☑' : '□'}</span>{option}</button>{/each}</div>
             {:else if activeQuestion.type === 'table'}
-              <p class="field-help">Touche une case, puis un chiffre. Place un seul chiffre par case. Si la mesure de départ contient une virgule, clique sur son petit emplacement. Complète les zéros nécessaires jusqu’à l’unité d’arrivée.</p>
+                <p class="field-help">Touche une case, puis un chiffre. Place un seul chiffre par case. La virgule finale se place après la colonne de l’unité d’arrivée. Complète les zéros nécessaires jusqu’à cette colonne.</p>
             {:else}
               <label for="mesurovia-answer" class="field-label">Ta réponse</label>
               <input id="mesurovia-answer" class="answer-input" inputmode={useOnscreenKeyboard ? 'none' : 'decimal'} autocomplete="off" placeholder="Écris un nombre (virgule acceptée)" bind:value={session.typed} readonly={useOnscreenKeyboard} disabled={!!session.answerStatus} onkeydown={(event) => { if (event.key === 'Enter') submitSessionAnswer(); }} />
@@ -1234,7 +1234,7 @@
               <div class="lesson-copy"><p class="eyebrow">{currentLesson?.step === 'autonomie' ? 'À TOI DE JOUER' : currentLesson?.step === 'réussite' ? 'CRITÈRES DE RÉUSSITE' : 'LE MAÎTRE EXPLIQUE'}</p><h2>{currentLesson?.title}</h2><p class="lesson-body">{currentLesson?.body}</p>
                 {#if currentLesson?.visual === 'TABLE' || currentLesson?.visual === 'TABLE_EXAMPLE'}
                   {@const tableExample = courseTableExample(house?.families?.[0] ?? 'length')}
-                  <div class="conversion-table-card"><h3>Le tableau des {engine.FAMILIES[house?.families?.[0] ?? 'length']?.label.toLowerCase()}</h3><p>Les grandes unités sont à gauche et les petites à droite. Un chiffre occupe une case. La virgule se place juste après le chiffre des unités de départ.</p><ConversionPlacementTable family={house?.families?.[0] ?? 'length'} value={tableExample.value} from={tableExample.from} to={tableExample.to} stage={Math.min(6, lessonIndex + 3)} compact /><div class="table-steps"><span><b>1</b> Repère l’unité de départ.</span><span><b>2</b> Place le chiffre des unités.</span><span><b>3</b> Complète jusqu’à l’arrivée.</span><span><b>4</b> Lis et vérifie le résultat.</span></div><button class="secondary-button" onclick={() => (conversionGuideOpen = true)}>Essayer avec mon nombre</button></div>
+                  <div class="conversion-table-card"><h3>Le tableau des {engine.FAMILIES[house?.families?.[0] ?? 'length']?.label.toLowerCase()}</h3><p>Les grandes unités sont à gauche et les petites à droite. Un chiffre occupe une case. La virgule finale se place juste après l’unité d’arrivée.</p><ConversionPlacementTable family={house?.families?.[0] ?? 'length'} value={tableExample.value} from={tableExample.from} to={tableExample.to} stage={Math.min(6, lessonIndex + 3)} compact /><div class="table-steps"><span><b>1</b> Repère l’unité de départ.</span><span><b>2</b> Place le chiffre des unités.</span><span><b>3</b> Complète jusqu’à l’arrivée.</span><span><b>4</b> Place la virgule d’arrivée, puis vérifie.</span></div><button class="secondary-button" onclick={() => (conversionGuideOpen = true)}>Essayer avec mon nombre</button></div>
                 {:else if currentLesson?.visual}
                   <!-- Les visuels sont des fragments statiques définis dans le moteur du cours, jamais du HTML saisi par l'élève. -->
                   <div class="lesson-visual">{@html currentLesson.visual}</div>

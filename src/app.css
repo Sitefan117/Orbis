@@ -115,7 +115,21 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
   .pcp-grid.two { grid-template-columns: 1fr 2fr; }
 }
 
+/* Supprime l'espace utilisé par les en-têtes/pieds de page automatiques du
+   navigateur (date, titre et URL) sur toutes les routes Svelte d'Orbis. */
+@page {
+  size: auto;
+  margin: 0 !important;
+}
+
 @media print {
+  html { margin: 0 !important; padding: 0 !important; }
+  body {
+    margin: 0 !important;
+    padding: 10mm !important;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
   .no-print, .header, .footer { display: none !important; }
   .main { padding: 0; }
   .pcp-sheet { box-shadow: none; min-height: auto; }

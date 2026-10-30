@@ -17,5 +17,15 @@ export const coursePaths = {
   geometry: {
     notebook: '/cours/maths/geometrie/carnet.html',
     sketch: '/cours/maths/geometrie/croquis.html'
+  },
+  french: {
+    grammar: '/cours/francais/grammaire/atelier-des-phrases.html',
+    grammarWorkbook: '/cours/francais/grammaire/cahier-des-phrases.html',
+    grammarAnswers: '/cours/francais/grammaire/corrige-des-phrases.html'
+  },
+  mentalMath: {
+    course: '/cours/maths/calcul-mental/mathracer.html',
+    workbook: '/cours/maths/calcul-mental/cahier-mathracer.html',
+    answers: '/cours/maths/calcul-mental/corrige-mathracer.html'
   }
 } as const;

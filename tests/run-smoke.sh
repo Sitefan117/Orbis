@@ -13,6 +13,7 @@ python3 tests/orbis-route-structure.py
 python3 tests/orbis-navigation-smoke.py
 node --import tsx tests/orbis-catalog-navigation.test.ts
 node --import tsx tests/orbis-local-student.test.ts
+node --import tsx tests/grammaire-lab-engine.test.ts
 node tests/geometry-engine-smoke.cjs
 node tests/numeria-engine-smoke.cjs
 node tests/numeria-progress-smoke.cjs

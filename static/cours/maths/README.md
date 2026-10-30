@@ -6,6 +6,7 @@
 
 | Dossier | Rôle |
 |---|---|
+| [`calcul-mental/`](./calcul-mental/README.md) | Cours MathRacer, cahier d’exercices et corrigé en 18 étapes. |
 | [`fractions/`](./fractions/README.md) | Cours complet et parcours fractionné en neuf étapes. |
 | [`geometrie/`](./geometrie/README.md) | Carnet de géométrie et module de croquis. |
 | [`mesures/`](./mesures/README.md) | Référence des unités et cahiers Mesurovia. |
