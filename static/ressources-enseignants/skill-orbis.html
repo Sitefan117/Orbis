@@ -1,0 +1,49 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>--- · Orbis</title><style>
+:root{color-scheme:light;--paper:#f4f1e9;--ink:#20211f;--muted:#51555e;--line:#b8bdc9;--orange:#e88a39}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.65 Arial,Helvetica,sans-serif}
+a{color:#7c360a;text-underline-offset:3px}a:focus-visible{outline:3px solid var(--ink);outline-offset:4px}
+.frame{max-width:1000px;margin:auto;min-height:100vh;border-inline:1px solid var(--line);background:#fff}
+header{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1.1rem 1.5rem;background:var(--paper);border-bottom:1px solid var(--line)}
+header a{font:700 .9rem/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;text-decoration:none;color:var(--ink)}
+header a:first-child{font-size:1.4rem}main{padding:2.5rem clamp(1.2rem,5vw,4rem) 5rem}
+h1,h2,h3{line-height:1.2;letter-spacing:-.025em}h1{font-size:clamp(2rem,5vw,3.5rem);margin:0 0 1.5rem}h2{font-size:1.65rem;margin:2.6rem 0 1rem;padding-top:.7rem;border-top:3px solid var(--orange)}h3{font-size:1.2rem;margin:1.8rem 0 .7rem}
+p,li{max-width:78ch}ul,ol{padding-left:1.5rem}li+li{margin-top:.4rem}blockquote{margin:1.5rem 0;padding:.5rem 1.5rem;border-left:5px solid var(--orange);background:var(--paper)}
+.intro{font-size:1.18rem;color:var(--muted);max-width:65ch}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:2rem}.card{display:flex;flex-direction:column;gap:.7rem;border:1px solid var(--line);padding:1.4rem;background:#fff;min-height:190px}.card h2{font-size:1.3rem;border:0;padding:0;margin:0}.card p{margin:0;color:var(--muted);font-size:.95rem}.card a{margin-top:auto;font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:.9rem}th,td{border:1px solid var(--line);padding:.6rem;vertical-align:top;text-align:left}th{background:var(--paper)}.table-wrap{overflow-x:auto;margin:1.5rem 0}
+code{background:var(--paper);padding:.1rem .25rem;font-size:.9em;overflow-wrap:anywhere}pre{overflow-x:auto;background:#20232a;color:#fff;padding:1rem}pre code{background:none;color:inherit;padding:0}
+.tools{display:flex;flex-wrap:wrap;gap:1rem;margin:0 0 2rem;font:600 .85rem/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.tools a{display:inline-block;padding:.7rem .9rem;border:1px solid var(--line);text-decoration:none;color:var(--ink)}
+footer{padding:1.5rem;border-top:1px solid var(--line);background:var(--paper);font-size:.8rem;color:var(--muted)}
+@media(max-width:650px){.cards{grid-template-columns:1fr}header{padding:1rem}main{padding:2rem 1rem 4rem}body{font-size:16px}}
+@media print{header,.tools,footer{display:none}.frame{border:0}main{padding:0}.table-wrap{overflow:visible}body{font-size:11pt}}
+</style></head><body><div class="frame"><header><a href="../">◉ Orbis</a><a href="./">← Toutes les ressources</a></header><main><div class="tools"><a href="skill-orbis.md" download>Télécharger le Markdown</a><a href="#fin">Aller en bas</a></div><hr>
+<p>name: orbis-pedagogie description: Concevoir, corriger ou évaluer un cours, un jeu ou une fonction d&#x27;Orbis en reliant les besoins des élèves, le code existant et les études pédagogiques. À utiliser pour les futurs travaux sur Orbis, surtout en mathématiques 6H–9H.</p>
+<hr>
+<h1>Orbis : développement guidé par la pédagogie</h1>
+<p>Utiliser ce skill pour un apport ou une correction dans Orbis. Il complète le skill <a href="skill-recherche.html">recherche-pedagogique-numerique</a> ; il n&#x27;en recopie pas la revue de littérature.</p>
+<h2>Contexte stable</h2>
+<ul>
+<li>Public principal : école suisse romande, surtout mathématiques 6H–9H, avec des élèves de 12 à 15 ans dont certains ont des prérequis plus anciens à reprendre. Âge, année HarmoS et niveau réel ne sont pas interchangeables.</li>
+<li>Orbis combine un portail, des jeux autonomes et des cours parfois imprimables. L&#x27;enseignant choisit souvent l&#x27;activité ; préserver les usages guidés et hybrides.</li>
+<li>Dépôt de travail actuel : <code>/Users/stefan/ClassRoom-Sitefan</code>. Retrouver son emplacement courant si ce chemin n&#x27;existe plus. Lire son <code>README.md</code>, le catalogue et le jeu concerné avant de modifier quoi que ce soit.</li>
+<li>Le site est publié comme fichiers statiques sur GitHub Pages. Les anciennes routes API SvelteKit et SQLite n&#x27;y fonctionnent pas. Les résultats et sauvegardes restent surtout locaux ; Supabase est une piste préparée, pas un service de classe déjà opérationnel.</li>
+<li>Décisions exprimées par l&#x27;enseignant : le tableau local provisoire lui convient pour l&#x27;instant ; les corrigés peuvent rester librement accessibles. Ne pas transformer ces points en chantier prioritaire sans nouvelle demande ou changement de contexte.</li>
+</ul>
+<h2>Pour un apport ou une correction</h2>
+<ol>
+<li>Identifier la notion, les prérequis, l&#x27;obstacle observé, la tâche que l&#x27;élève doit réussir et la place de l&#x27;enseignant. Si la demande est un bug d&#x27;interface, garder le problème concret de l&#x27;élève au centre de la correction.</li>
+<li>Inspecter le parcours existant : page du jeu dans <code>src/routes/</code>, moteur et progression dans <code>src/lib/games/</code>, catalogue dans <code>src/lib/orbis/catalog/</code>, cours dans <code>static/cours/</code>, tests ciblés dans <code>tests/</code>. Préserver les routes publiques et les anciennes sauvegardes lors d&#x27;une évolution.</li>
+<li>Pour justifier une décision pédagogique, lire <a href="reference-ia.html">REFERENCE-IA.md</a> et les lignes pertinentes du <a href="etudes-verifiees.html">corpus de 30 publications</a>. Revérifier la source primaire lorsqu&#x27;une affirmation précise, un chiffre ou une nouvelle recommandation en dépend. Le livre présent seulement dans NotebookLM n&#x27;est pas disponible dans ces fichiers.</li>
+<li>Rendre explicite la chaîne <strong>besoin de l&#x27;élève → choix dans Orbis → mécanisme d&#x27;apprentissage attendu → preuve citée → limite → vérification en classe</strong>. Qualifier le lien : directement étudié, transfert plausible, ou hypothèse de conception. Aucune étude du corpus ne démontre l&#x27;efficacité d&#x27;Orbis lui-même.</li>
+<li>Modifier au périmètre utile. Garder chaque jeu autonome, avec ses règles dans son moteur propre ; réutiliser les contrats communs de suivi lorsque la donnée mesurée est fiable. Ne pas inventer d&#x27;indicateur pédagogique à partir d&#x27;une simple animation, d&#x27;un score ou d&#x27;une sauvegarde.</li>
+<li>Vérifier le comportement sur le parcours touché, y compris navigation et usage tactile quand pertinent. Utiliser les contrôles et tests du dépôt adaptés au changement ; pour une question d&#x27;apprentissage, prévoir aussi une tâche hors jeu ou différée plutôt que conclure à partir du score interne.</li>
+</ol>
+<h2>Critères de qualité pédagogiques</h2>
+<ul>
+<li>Favoriser les retours qui aident à comprendre l&#x27;erreur et à réessayer une tâche apparentée. Ne pas imposer le même niveau de détail à chaque élève ou notion.</li>
+<li>Pour les élèves en retard, proposer des marches de prérequis accessibles sans affichage stigmatisant et sans verrouillage irréversible de parcours.</li>
+<li>Distinguer entraînement de procédure, compréhension conceptuelle, motivation et transfert. Les étoiles, niveaux et temps de jeu ne mesurent pas à eux seuls l&#x27;apprentissage.</li>
+<li>Vérifier que les éléments visuels, sonores et narratifs servent l&#x27;attention sur la notion ; préserver les réglages de confort et le contrôle du rythme.</li>
+<li>Dans les bilans enseignants, montrer une information qui peut mener à une action pédagogique. Signaler honnêtement les données absentes et les limites du stockage sur un seul appareil.</li>
+</ul>
+<h2>Restitution attendue</h2>
+<p>Expliquer ce qui a changé, pourquoi, les contrôles effectués et la limite restante. Pour une recommandation fondée sur la recherche, citer la publication à côté de l&#x27;énoncé et distinguer le résultat publié de l&#x27;inférence pour Orbis. Si plusieurs études sont mobilisées, montrer aussi leurs éventuelles contradictions et le degré de proximité avec les élèves visés.</p><p id="fin"><a href="./">← Toutes les ressources</a></p></main><footer>Ressources pédagogiques Orbis · Les études citées ne constituent pas une évaluation d'Orbis.</footer></div></body></html>

@@ -417,6 +417,14 @@
               <a class="portal portal-games" href={catalogHref(base, 'jeux', studentName)}><span class="portal-number">01 / S’entraîner</span><strong>Les jeux</strong><span class="portal-arrow" aria-hidden="true">↗</span></a>
               <a class="portal" href={catalogHref(base, 'cours', studentName)}><span class="portal-number">02 / Comprendre</span><strong>Les cours</strong><span class="portal-arrow" aria-hidden="true">↗</span></a>
             </div>
+            <aside class="teacher-resources" aria-labelledby="teacher-resources-heading">
+              <div>
+                <span class="teacher-resources-label">Pour préparer et prolonger les activités</span>
+                <h2 id="teacher-resources-heading">Ressources enseignants</h2>
+                <p>Études scientifiques, synthèse lisible et guides pour concevoir ou améliorer les cours et jeux.</p>
+              </div>
+              <a href={`${base}/ressources-enseignants/`}>Voir tous les documents <span aria-hidden="true">↗</span></a>
+            </aside>
             <div class="home-note"><span>{worlds.length} jeux · {courses.length} cours</span><span>Choisis une activité. Essaie. Reviens quand tu veux.</span></div>
           {/if}
         </section>
@@ -534,6 +542,14 @@
   .portal-arrow { position:absolute; right:1.5rem; bottom:1.2rem; font-size:2rem; transition:transform 160ms ease; }
   .portal-games { background:var(--orbis-orange); color:#20211f; }
   .portal:hover .portal-arrow { transform:translate(3px,-3px); }
+  .teacher-resources { display:flex; align-items:center; justify-content:space-between; gap:2rem; padding:1.5rem; border-bottom:1px solid var(--orbis-line); background:var(--orbis-card-surface); }
+  .teacher-resources-label { color:var(--orbis-muted); font:600 .7rem/1.4 var(--orbis-label-font); letter-spacing:.08em; text-transform:uppercase; }
+  .teacher-resources h2 { margin:.35rem 0; font:700 clamp(1.35rem,2.3vw,1.8rem)/1.2 Arial,Helvetica,sans-serif; }
+  .teacher-resources p { max-width:52ch; margin:.4rem 0 0; color:var(--orbis-muted); font:400 .9rem/1.5 Arial,Helvetica,sans-serif; }
+  .teacher-resources a { flex:none; display:inline-flex; align-items:center; gap:.8rem; padding:.8rem 1rem; border:1px solid var(--orbis-ink); color:var(--orbis-ink); font:600 .8rem/1.4 var(--orbis-label-font); text-decoration:none; }
+  .teacher-resources a:hover { background:var(--orbis-ink); color:var(--orbis-paper); }
+  .teacher-resources a:focus-visible { outline:3px solid var(--orbis-orange); outline-offset:3px; }
+  @media (max-width:580px) { .teacher-resources { align-items:flex-start; flex-direction:column; gap:1rem; padding:1.25rem 1rem; } .teacher-resources a { width:100%; justify-content:space-between; } }
   .home-note { display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem; padding:1.25rem 1.5rem; color:var(--orbis-muted); font:500 .75rem/1.5 var(--orbis-label-font); }
   .section-rail { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.5rem 1.5rem; min-height:58px; font:500 .75rem/1.5 var(--orbis-label-font); border-bottom:1px solid var(--orbis-line); }
   .section-rail a { display:inline-flex; align-items:center; min-height:44px; }

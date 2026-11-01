@@ -62,5 +62,5 @@ function checkDocuments(directory: string): number {
   }
   return count;
 }
-assert.equal(checkDocuments(resolve(root, 'static')), 25);
+assert.equal(checkDocuments(resolve(root, 'static/cours')), 25);
 console.log('Orbis catalogue navigation: URLs, filters, scroll snapshots, base path, storage fallback and 25 course returns verified.');

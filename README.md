@@ -41,7 +41,7 @@ Le serveur de développement SvelteKit peut exécuter les routes serveur en loca
 
 - `/` : portail Arcade et Cours, alimenté par les catalogues dans `src/lib/orbis/catalog/`.
 - `/livrets`, `/geometrie`, `/calculs`, `/numeria`, `/mesurovia`, `/fractionstower2`, `/race`, `/mathhunt`, `/shift`, `/conju_lab` et `/pcp` : jeux et activités autonomes.
-- `/teacher` : page locale qui permet d’importer des fichiers de sauvegarde `.fracsave` de Fraction Tower. Ce n’est pas encore un tableau enseignant connecté aux résultats en ligne.
+- `/teacher` : tableau de suivi des bilans enregistrés sur ce navigateur, avec export CSV, et import des anciennes sauvegardes `.fracsave` de Fraction Tower. Ce n’est pas encore un tableau enseignant connecté aux résultats des autres appareils.
 - `static/cours/maths/` : cours HTML classés par thème et publiés comme fichiers statiques.
 
 Les anciennes adresses des cours déplacés contiennent de petites redirections vers les nouveaux fichiers.
