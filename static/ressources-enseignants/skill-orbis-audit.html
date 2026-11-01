@@ -1,0 +1,36 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>--- · Orbis</title><style>
+:root{color-scheme:light;--paper:#f4f1e9;--ink:#20211f;--muted:#51555e;--line:#b8bdc9;--orange:#e88a39}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.65 Arial,Helvetica,sans-serif}
+a{color:#7c360a;text-underline-offset:3px}a:focus-visible{outline:3px solid var(--ink);outline-offset:4px}
+.frame{max-width:1000px;margin:auto;min-height:100vh;border-inline:1px solid var(--line);background:#fff}
+header{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1.1rem 1.5rem;background:var(--paper);border-bottom:1px solid var(--line)}
+header a{font:700 .9rem/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;text-decoration:none;color:var(--ink)}
+header a:first-child{font-size:1.4rem}main{padding:2.5rem clamp(1.2rem,5vw,4rem) 5rem}
+h1,h2,h3{line-height:1.2;letter-spacing:-.025em}h1{font-size:clamp(2rem,5vw,3.5rem);margin:0 0 1.5rem}h2{font-size:1.65rem;margin:2.6rem 0 1rem;padding-top:.7rem;border-top:3px solid var(--orange)}h3{font-size:1.2rem;margin:1.8rem 0 .7rem}
+p,li{max-width:78ch}ul,ol{padding-left:1.5rem}li+li{margin-top:.4rem}blockquote{margin:1.5rem 0;padding:.5rem 1.5rem;border-left:5px solid var(--orange);background:var(--paper)}
+.intro{font-size:1.18rem;color:var(--muted);max-width:65ch}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:2rem}.card{display:flex;flex-direction:column;gap:.7rem;border:1px solid var(--line);padding:1.4rem;background:#fff;min-height:190px}.card h2{font-size:1.3rem;border:0;padding:0;margin:0}.card p{margin:0;color:var(--muted);font-size:.95rem}.card a{margin-top:auto;font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:.9rem}th,td{border:1px solid var(--line);padding:.6rem;vertical-align:top;text-align:left}th{background:var(--paper)}.table-wrap{overflow-x:auto;margin:1.5rem 0}
+code{background:var(--paper);padding:.1rem .25rem;font-size:.9em;overflow-wrap:anywhere}pre{overflow-x:auto;background:#20232a;color:#fff;padding:1rem}pre code{background:none;color:inherit;padding:0}
+.tools{display:flex;flex-wrap:wrap;gap:1rem;margin:0 0 2rem;font:600 .85rem/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.tools a{display:inline-block;padding:.7rem .9rem;border:1px solid var(--line);text-decoration:none;color:var(--ink)}
+footer{padding:1.5rem;border-top:1px solid var(--line);background:var(--paper);font-size:.8rem;color:var(--muted)}
+@media(max-width:650px){.cards{grid-template-columns:1fr}header{padding:1rem}main{padding:2rem 1rem 4rem}body{font-size:16px}}
+@media print{header,.tools,footer{display:none}.frame{border:0}main{padding:0}.table-wrap{overflow:visible}body{font-size:11pt}}
+</style></head><body><div class="frame"><header><a href="../">◉ Orbis</a><a href="./">← Toutes les ressources</a></header><main><div class="tools"><a href="skill-orbis-audit.md" download>Télécharger le Markdown</a><a href="#fin">Aller en bas</a></div><hr>
+<p>name: orbis-audit description: Auditer une activité ou une intégration du portail Orbis, notamment catalogue, navigation, sauvegarde, suivi pédagogique, déploiement statique et tests.</p>
+<hr>
+<h1>Auditer Orbis</h1>
+<p>Identifier le jeu, la route ou le service demandé dans le dépôt courant. Adapter l’étendue de l’audit à la question. Un audit autorise les inspections et contrôles locaux pertinents ; implémenter une correction seulement si la demande l’inclut.</p>
+<h2>Collecter les preuves utiles</h2>
+<p>Lire les instructions locales et <code>git status --short</code>, puis chercher avec <code>rg</code> les points d’entrée du domaine. Inspecter le code actuel et ses tests avant les documents historiques.</p>
+<p>Choisir les axes concernés :</p>
+<ul>
+<li><strong>Catalogue et navigation</strong> : comparer la route réelle avec les catalogues de jeux et de cours, les chemins de cours et les ressources <code>static/</code>. Lire le module de navigation pour les retours avec vue, filtres, position et élève. Tester le préfixe lu dans <code>svelte.config.js</code>, pas uniquement la racine en développement.</li>
+<li><strong>Sauvegarde</strong> : suivre lecture, écriture, clé, version, portée élève, migration et état repris. Vérifier le cas sans profil et l’indisponibilité du stockage. Ne pas effacer de données réelles pour tester.</li>
+<li><strong>Suivi</strong> : vérifier les contrats de suivi, la cohérence entre questions et réussites, l’absence de métriques inventées, la gestion des erreurs et la distinction entre bilan et sauvegarde. Le prénom n’authentifie pas un élève.</li>
+<li><strong>Publication</strong> : GitHub Pages sert le build statique ; les API SvelteKit et SQLite locales ne sont pas exécutées sur GitHub Pages. La présence de code Supabase ne prouve pas qu’un service distant est configuré.</li>
+<li><strong>Pédagogie</strong> : inspecter curriculum, génération, validation et progression propres au jeu. Vérifier des exemples reproductibles, les bornes et les réponses acceptées.</li>
+<li><strong>Interface</strong> : examiner rendu, consignes, feedback, tactile, clavier et retour au portail dans un environnement disponible ; signaler ce qui n’a pas été observé.</li>
+</ul>
+<h2>Vérifier et rendre compte</h2>
+<p>Choisir les tests à partir de <code>package.json</code> et <code>tests/README-TESTS.md</code>. Un test structurel ne prouve pas à lui seul un comportement navigateur.</p>
+<p>Présenter les problèmes actionnables par impact. Pour chacun, indiquer le fichier, le déclencheur, la conséquence et la preuve ou reproduction. Séparer les défauts démontrés des hypothèses à vérifier. S’il n’y a aucun défaut établi, le dire et préciser les limites du contrôle.</p><p id="fin"><a href="./">← Toutes les ressources</a></p></main><footer>Ressources pédagogiques Orbis · Les études citées ne constituent pas une évaluation d'Orbis.</footer></div></body></html>
