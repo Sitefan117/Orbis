@@ -1,6 +1,6 @@
 # Numérique, jeux et apprentissages : lecture pour l’enseignant
 
-*État au 1er novembre 2026. Pour Orbis et les dossiers hybrides en école suisse romande, surtout mathématiques 6H–9H. Ce texte synthétise un corpus ciblé de 30 publications ; il ne mesure pas l’efficacité d’Orbis.*
+*État au 2 novembre 2026. Pour Orbis et les dossiers hybrides en école suisse romande, surtout mathématiques 6H–9H. Ce texte synthétise un corpus ciblé de 30 publications et les apports d’une nouvelle synthèse NotebookLM ; il ne mesure pas l’efficacité d’Orbis.*
 
 ## Ce que la recherche permet de dire
 
@@ -19,6 +19,23 @@ Pour les élèves ayant du retard, les résultats sont encourageants mais ne jus
 Le support hybride est raisonnable, sans règle universelle du type « papier pour comprendre, écran pour automatiser ». Le résultat de [Delgado et al. (2018)](https://doi.org/10.1016/j.edurev.2018.09.003) porte sur la lecture de textes comparables sur papier et écran ; il ne tranche pas toutes les tâches mathématiques. Choisir le support selon la tâche : manipulation utile, écrit de raisonnement, échange oral, besoin d’un retour rapide.
 
 Enfin, l’attention est un enjeu réel. Dans PISA 2022, environ 30 % des élèves de 15 ans déclarent être distraits par des appareils dans la plupart ou toutes les leçons de maths ([OCDE, 2023](https://www.oecd.org/en/publications/pisa-2022-results-volume-ii_a97db61c-en/full-report/component-14.html)). Cette enquête n’établit pas qu’Orbis cause une distraction. Elle justifie de vérifier chaque jeu en classe, particulièrement ses animations, sons, consignes et changements d’écran.
+
+## Ce que la nouvelle synthèse NotebookLM ajoute
+
+Elle propose un cadre utile pour passer d’une étude à une décision sans les confondre :
+
+1. **Preuve directe** : ce que l’étude a réellement mesuré ;
+2. **Déduction prudente** : ce qui peut être pertinent pour Orbis ;
+3. **Hypothèse de conception** : ce qu’il faut encore tester ;
+4. **Limite** : ce que l’étude ne permet pas de conclure.
+
+Elle met aussi en avant trois principes opérationnels cohérents avec le corpus :
+
+- faire de la rétroaction un outil de compréhension et de réessai, pas seulement un verdict ;
+- réserver le numérique aux manipulations, représentations ou entraînements qu’il améliore réellement, et garder une trace papier ou orale lorsque le raisonnement doit être explicité ;
+- mesurer séparément le score dans le jeu, la motivation et la réussite sur une tâche nouvelle hors de l’application.
+
+Les propositions de durée fixe, de trois paliers de feedback, de « deux clics maximum » ou d’obligation générale d’écrire sur papier restent des choix à expérimenter. Elles ne sont pas des seuils établis par le corpus.
 
 ## Comment essayer Orbis avec sa classe
 

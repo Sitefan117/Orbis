@@ -32,6 +32,19 @@ Utiliser ce skill pour un apport ou une correction dans Orbis. Il complète le s
 - Vérifier que les éléments visuels, sonores et narratifs servent l'attention sur la notion ; préserver les réglages de confort et le contrôle du rythme.
 - Dans les bilans enseignants, montrer une information qui peut mener à une action pédagogique. Signaler honnêtement les données absentes et les limites du stockage sur un seul appareil.
 
+## Utiliser une nouvelle synthèse de recherche
+
+Lorsqu’un texte produit par NotebookLM ou une autre IA propose de nouvelles recommandations, classer chaque élément avant de l’appliquer :
+
+1. résultat directement mesuré dans une étude ;
+2. interprétation possible pour Orbis ;
+3. hypothèse de conception à tester ;
+4. limite ou information encore non vérifiée.
+
+Ne pas reprendre automatiquement un chiffre, une taille d’effet ou une référence simplement parce qu’ils figurent dans une synthèse. Vérifier la publication primaire, son âge scolaire, sa discipline, son comparateur et son statut d’accès. Les scores du jeu, la motivation et le transfert hors jeu doivent rester des mesures distinctes.
+
+Pour les nouvelles activités, relier chaque mécanique à une action cognitive observable : représenter, comparer, expliquer, calculer, justifier, corriger ou réutiliser. Une progression personnelle, une coopération ou une narration sont des choix de conception ; leur effet local doit être évalué par une tâche nouvelle et, si possible, différée.
+
 ## Restitution attendue
 
 Expliquer ce qui a changé, pourquoi, les contrôles effectués et la limite restante. Pour une recommandation fondée sur la recherche, citer la publication à côté de l'énoncé et distinguer le résultat publié de l'inférence pour Orbis. Si plusieurs études sont mobilisées, montrer aussi leurs éventuelles contradictions et le degré de proximité avec les élèves visés.

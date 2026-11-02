@@ -107,6 +107,30 @@ Le rapport [Cnesco de Grugeon-Allys et Grapin (2020)](https://www.cnesco.fr/fr/r
 7. Terminer toute synthèse scientifique par un tableau des études effectivement citées, avec âge/degré, pays, méthode, comparateur, durée, effectif, résultat, taille d’effet si vérifiée, limites et utilité. Une valeur inconnue doit rester « non vérifiée » ; ne jamais la compléter par plausibilité.
 8. Vérifier les chevauchements entre méta-analyses. Ne pas présenter 30 lignes de synthèses comme 30 expériences indépendantes.
 
-## 7. Périmètre non résolu
+## 7. Cadre de décision à appliquer aux nouvelles synthèses
+
+Les sorties de NotebookLM peuvent enrichir le travail, mais elles doivent être traitées comme des documents secondaires tant que leurs références et leurs passages sources n’ont pas été vérifiés. Pour chaque nouvel apport, l’IA doit remplir les quatre cases suivantes :
+
+| Niveau | Question à poser | Formulation attendue |
+|---|---|---|
+| A. Preuve | Qu’est-ce qui a été mesuré, auprès de qui et avec quel comparateur ? | « L’étude rapporte… » |
+| B. Transfert | Quelle proximité avec les élèves, la matière et l’usage d’Orbis ? | « Cela peut éclairer… » |
+| C. Conception | Quelle fonction ou activité veut-on essayer ? | « Nous proposons de tester… » |
+| D. Limite | Quelle généralisation serait abusive ? | « Cela ne permet pas d’affirmer… » |
+
+Les apports les plus utiles de la nouvelle synthèse sont donc retenus comme règles de travail :
+
+- distinguer gamification, jeu éducatif, exercice interactif, tutoriel, simulation et adaptation ;
+- relier chaque mécanique ludique à une activité cognitive observable ;
+- comparer l’apprentissage dans l’application avec une tâche nouvelle sur papier ou dans un autre contexte ;
+- concevoir l’interface pour réduire les distractions sans supprimer les représentations utiles ;
+- laisser à l’enseignant le contrôle du parcours, des aides et de l’interprétation des résultats ;
+- minimiser les données recueillies sur les mineurs et ne pas confondre tableau de progression et évaluation pédagogique.
+
+Les éléments suivants restent des hypothèses et ne doivent pas être présentés comme des résultats établis : sessions de 20–30 minutes, feedback obligatoirement en trois paliers, écriture préalable obligatoire pour toute tâche, seuil de deux clics, suppression de toute minuterie dans tous les contextes et supériorité générale du papier pour les mathématiques. Ils peuvent devenir des variables de comparaison dans une expérimentation en classe.
+
+Les nouvelles références introduites par NotebookLM, notamment Major et al. (2021), Dixon et al. (2022), l’EEF, Sweller et la référence CNESCO, doivent être ajoutées au classement détaillé seulement après vérification de leur texte, de leur méthode et de leurs chiffres. Une référence simplement citée dans une synthèse ne reçoit pas automatiquement le même niveau de confiance que les articles déjà vérifiés.
+
+## 8. Périmètre non résolu
 
 Le corpus de 30 est un **inventaire raisonné**, sans évaluation indépendante de tous les textes intégraux. La bibliographie APA 7 complète, le pays et la durée de chaque étude primaire, et le risque de biais formalisé restent à consolider. La sortie NotebookLM n’expose pas ses sources internes ni les passages exacts du livre de l’utilisateur. Avant de transformer cette référence en guide humain, vérifier ces champs et séparer clairement les recommandations robustes des idées à expérimenter.
