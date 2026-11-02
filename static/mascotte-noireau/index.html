@@ -28,7 +28,7 @@
 <body>
   <main>
     <header>
-      <a href="../">← Orbis</a>
+      <a id="orbis-home" href="../">← Orbis</a>
       <p class="eyebrow">Orbis / ressources visuelles</p>
       <h1>La bibliothèque de Noireau.</h1>
       <p class="intro">Des poses pour les fiches, les cours et les jeux. Ouvre une image pour l'afficher en grand; consulte l'index pour retrouver une pose et son usage.</p>
@@ -43,6 +43,9 @@
     <footer>Orbis · Bibliothèque de Noireau</footer>
   </main>
   <script>
+    if (location.pathname.includes('/static/mascotte-noireau/')) {
+      document.querySelector('#orbis-home').href = '../../';
+    }
     function card(item, sheet) {
       const article = document.createElement('article');
       const link = document.createElement('a');
