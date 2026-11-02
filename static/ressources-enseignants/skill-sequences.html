@@ -1,0 +1,78 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>--- · Orbis</title><style>
+:root{color-scheme:light;--paper:#f4f1e9;--ink:#20211f;--muted:#51555e;--line:#b8bdc9;--orange:#e88a39}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.65 Arial,Helvetica,sans-serif}
+a{color:#7c360a;text-underline-offset:3px}a:focus-visible{outline:3px solid var(--ink);outline-offset:4px}
+.frame{max-width:1000px;margin:auto;min-height:100vh;border-inline:1px solid var(--line);background:#fff}
+header{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1.1rem 1.5rem;background:var(--paper);border-bottom:1px solid var(--line)}
+header a{font:700 .9rem/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;text-decoration:none;color:var(--ink)}
+header a:first-child{font-size:1.4rem}main{padding:2.5rem clamp(1.2rem,5vw,4rem) 5rem}
+h1,h2,h3{line-height:1.2;letter-spacing:-.025em}h1{font-size:clamp(2rem,5vw,3.5rem);margin:0 0 1.5rem}h2{font-size:1.65rem;margin:2.6rem 0 1rem;padding-top:.7rem;border-top:3px solid var(--orange)}h3{font-size:1.2rem;margin:1.8rem 0 .7rem}
+p,li{max-width:78ch}ul,ol{padding-left:1.5rem}li+li{margin-top:.4rem}blockquote{margin:1.5rem 0;padding:.5rem 1.5rem;border-left:5px solid var(--orange);background:var(--paper)}
+.intro{font-size:1.18rem;color:var(--muted);max-width:65ch}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:2rem}.card{display:flex;flex-direction:column;gap:.7rem;border:1px solid var(--line);padding:1.4rem;background:#fff;min-height:190px}.card h2{font-size:1.3rem;border:0;padding:0;margin:0}.card p{margin:0;color:var(--muted);font-size:.95rem}.card a{margin-top:auto;font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:.9rem}th,td{border:1px solid var(--line);padding:.6rem;vertical-align:top;text-align:left}th{background:var(--paper)}.table-wrap{overflow-x:auto;margin:1.5rem 0}
+code{background:var(--paper);padding:.1rem .25rem;font-size:.9em;overflow-wrap:anywhere}pre{overflow-x:auto;background:#20232a;color:#fff;padding:1rem}pre code{background:none;color:inherit;padding:0}
+.tools{display:flex;flex-wrap:wrap;gap:1rem;margin:0 0 2rem;font:600 .85rem/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.tools a{display:inline-block;padding:.7rem .9rem;border:1px solid var(--line);text-decoration:none;color:var(--ink)}
+footer{padding:1.5rem;border-top:1px solid var(--line);background:var(--paper);font-size:.8rem;color:var(--muted)}
+@media(max-width:650px){.cards{grid-template-columns:1fr}header{padding:1rem}main{padding:2rem 1rem 4rem}body{font-size:16px}}
+@media print{header,.tools,footer{display:none}.frame{border:0}main{padding:0}.table-wrap{overflow:visible}body{font-size:11pt}}
+</style></head><body><div class="frame"><header><a href="../">◉ Orbis</a><a href="./">← Toutes les ressources</a></header><main><div class="tools"><a href="skill-sequences.md" download>Télécharger le Markdown</a><a href="#fin">Aller en bas</a></div><hr>
+<p>name: sequences-pedagogiques-orbis description: Concevoir des séquences pédagogiques hybrides et guider leur traduction en cours, jeux et fonctionnalités Orbis pour des élèves de 6H à 9H, surtout en mathématiques. metadata: short-description: Concevoir, programmer et évaluer des séquences Orbis</p>
+<hr>
+<h1>Séquences pédagogiques et Orbis</h1>
+<p>Utiliser ce skill lorsqu’il faut créer une séquence, un dossier d’apprentissage, un cours numérique, un jeu ou une fonctionnalité Orbis qui doit soutenir un apprentissage identifiable. Il complète le skill <a href="skill-recherche.html">recherche-pedagogique-numerique</a> et le skill <a href="skill-orbis.html">orbis-pedagogie</a>.</p>
+<h2>Principe directeur</h2>
+<p>Commencer par le besoin de l’élève et l’objectif observable. Choisir ensuite ce que le papier, l’oral, l’enseignant et Orbis apportent chacun. Ne jamais partir d’une mécanique de jeu pour chercher après coup une justification pédagogique.</p>
+<h2>Avant de concevoir</h2>
+<p>Définir :</p>
+<ul>
+<li>le degré HarmoS et l’âge réel ;</li>
+<li>la notion et la compétence attendue ;</li>
+<li>les prérequis ;</li>
+<li>les erreurs probables ;</li>
+<li>les élèves qui ont besoin d’une reprise ;</li>
+<li>la tâche finale qui prouvera l’apprentissage ;</li>
+<li>le temps disponible, le matériel et le rôle de l’enseignant.</li>
+</ul>
+<p>Prévoir un diagnostic bref et discret. Les parcours de reprise doivent rester accessibles sans étiquette publique ni verrouillage irréversible.</p>
+<h2>Construire la progression</h2>
+<p>Organiser selon les besoins, généralement :</p>
+<ol>
+<li>diagnostic ;</li>
+<li>découverte ou mise en situation ;</li>
+<li>explicitation et vocabulaire ;</li>
+<li>manipulation ou entraînement guidé ;</li>
+<li>trace écrite ou verbalisation ;</li>
+<li>transfert dans une tâche nouvelle ;</li>
+<li>évaluation différée ou réinvestissement.</li>
+</ol>
+<p>Pour chaque étape, préciser l’objectif, le support, la consigne, l’aide, la production de l’élève et le critère de réussite. Une activité Orbis doit avoir une place et une durée justifiées dans la séquence.</p>
+<h2>Répartir les supports</h2>
+<ul>
+<li><strong>Papier</strong> : recherche, schéma, calcul posé, justification, trace durable et résolution de problèmes longs.</li>
+<li><strong>Orbis</strong> : manipulation dynamique, entraînement ciblé, variation des exemples, adaptation prudente et feedback.</li>
+<li><strong>Oral</strong> : comparaison de stratégies, institutionnalisation et mise en mots.</li>
+<li><strong>Enseignant</strong> : diagnostic, étayage, observation, régulation et validation du savoir.</li>
+</ul>
+<p>Cette répartition est une hypothèse de conception, pas une loi générale. Vérifier que l’alternance apporte quelque chose à la tâche.</p>
+<h2>Programmer ou modifier Orbis</h2>
+<p>Avant de coder, écrire le contrat pédagogique :</p>
+<p><strong>objectif → action mathématique ou langagière → représentation → réponse attendue → erreur possible → feedback → réessai → donnée utile à l’enseignant → test de transfert.</strong></p>
+<p>Conserver les activités autonomes et les contrats de navigation et de sauvegarde existants. Utiliser le \<code>base\</code> SvelteKit pour les liens. Ne pas transformer un score, un temps ou une animation en mesure de maîtrise sans preuve.</p>
+<p>Les mécaniques de gamification doivent soutenir une action cognitive. Privilégier progression personnelle, défis accessibles et coopération pertinente. Traiter les classements publics, minuteurs agressifs, récompenses sans lien avec la compétence et animations décoratives comme des choix à justifier, surtout pour les élèves en difficulté.</p>
+<h2>Feedback et différenciation</h2>
+<p>Après une erreur, favoriser un indice qui aide à comprendre la stratégie et à refaire une tâche apparentée. Le nombre et l’ordre des aides doivent dépendre de la notion et du niveau ; trois paliers fixes ne sont pas une exigence scientifique.</p>
+<p>Prévoir plusieurs accès à la même compétence : reprise, parcours standard, approfondissement, aides facultatives et possibilité de recommencer. L’adaptation automatique doit rester visible, révisable et contrôlable par l’enseignant.</p>
+<h2>Évaluer la séquence</h2>
+<p>Séparer :</p>
+<ul>
+<li>réussite immédiate dans Orbis ;</li>
+<li>compréhension et justification ;</li>
+<li>motivation ou engagement ;</li>
+<li>autonomie et recours aux aides ;</li>
+<li>transfert sur papier, à l’oral ou dans une nouvelle situation ;</li>
+<li>maintien quelques jours plus tard.</li>
+</ul>
+<p>Ne conclure à un apprentissage qu’après une tâche nouvelle hors de l’interface. Relever aussi les problèmes d’accès, la charge de travail enseignant et les effets sur les élèves initialement faibles.</p>
+<h2>Restitution attendue</h2>
+<p>Fournir une fiche de séquence, les activités et documents nécessaires, les choix de programmation, les tests, les limites et une proposition d’observation en classe. Pour chaque recommandation fondée sur une étude, distinguer le résultat publié, l’inférence pour Orbis et l’hypothèse à tester.</p>
+<p>Lire <a href="gabarit-sequence.html">references/fiche-sequence.md</a> pour le gabarit détaillé.</p><p id="fin"><a href="./">← Toutes les ressources</a></p></main><footer>Ressources pédagogiques Orbis · Les études citées ne constituent pas une évaluation d'Orbis.</footer></div></body></html>
