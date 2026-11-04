@@ -20,6 +20,17 @@ export interface CourseEntry {
 // Chaque entrée donne le titre, la matière, le chemin publié et, si utile, le jeu associé.
 export const courses: CourseEntry[] = [
   {
+    id: 'calcul-mental-atelier',
+    title: 'Calcul mental — mon atelier',
+    subject: 'Mathématiques',
+    domain: 'Calcul mental',
+    description: '52 compétences au choix : aide-mémoire, fiches imprimables et entraînement en ligne. Séries de 10, 20 ou 30 calculs avec indices et corrections expliquées.',
+    level: 'Progressif · cycle 2',
+    duration: 'À ton rythme',
+    isInteractive: true,
+    href: coursePaths.mentalMath.workshop
+  },
+  {
     id: 'atelier-des-phrases',
     title: 'Grammaire — construire une phrase',
     subject: 'Français',
