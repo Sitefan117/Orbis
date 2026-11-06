@@ -1,4 +1,5 @@
 import type { GrammarBlock, GrammarCategory, GrammarChallenge, GrammarLevel } from './types';
+import { EXTRA_CHALLENGES, INTERACTIVE_CHALLENGES } from './practice';
 
 type Piece = [text: string, category?: GrammarCategory, group?: string];
 
@@ -25,7 +26,7 @@ function order(
     context,
     blocks: shuffle.map((index) => inAnswerOrder[index]),
     solution: inAnswerOrder.map((block) => block.id),
-    sentence: inAnswerOrder.map((block) => block.text).join(' ').replace(/ ([.!?])/g, '$1'),
+    sentence: inAnswerOrder.map((block) => block.text).join(' ').replace(/ ([.!])/g, '$1').replace(/([’']) /g, '$1'),
     explanation,
     hint,
     errorFamily
@@ -87,7 +88,7 @@ export const GRAMMAR_LEVELS: GrammarLevel[] = [
     categoriesVisible: ['phrase', 'non-phrase'],
     challenges: [
       select('l2-a', 'Sélectionne toutes les phrases.', [['Mila dessine un arbre.', 'phrase'], ['un arbre vert', 'non-phrase'], ['La cloche sonne.', 'phrase']], [0, 2], 'Les deux phrases donnent une information complète.', 'Il y a deux bonnes réponses.', 'phrase-non-phrase'),
-      select('l2-b', 'Sélectionne les non-phrases.', [['Dans la cour.', 'non-phrase'], ['Les élèves jouent.', 'phrase'], ['une jolie bille', 'non-phrase']], [0, 2], 'Ces groupes de mots ne donnent pas un message complet.', 'Cherche ce qui demande encore une suite.', 'phrase-non-phrase'),
+      select('l2-b', 'Sélectionne les non-phrases.', [['Dans la cour de', 'non-phrase'], ['Les élèves jouent.', 'phrase'], ['une jolie bille', 'non-phrase']], [0, 2], 'Ces groupes de mots ne donnent pas un message complet.', 'Cherche ce qui demande encore une suite.', 'phrase-non-phrase'),
       select('l2-c', 'Quelles propositions sont des phrases ?', [['Il pleut !', 'phrase'], ['Pourquoi ris-tu ?', 'phrase'], ['de la forêt', 'non-phrase']], [0, 1], 'Une phrase peut se terminer par différents signes.', 'Observe le sens, la majuscule et le signe final.', 'ponctuation')
     ]
   },
@@ -97,24 +98,24 @@ export const GRAMMAR_LEVELS: GrammarLevel[] = [
     goal: 'Construire une phrase simple dans un ordre compréhensible.',
     prerequisite: 'Distinguer phrase et non-phrase.',
     notions: ['ordre des mots', 'début', 'fin'],
-    theory: 'Les mots d’une phrase suivent un ordre. Cherche d’abord qui fait l’action, puis ce qui se passe.',
+    theory: 'Les mots d’une phrase suivent un ordre. Cherche d’abord de qui ou de quoi on parle, puis ce qu’on en dit.',
     categoriesVisible: [],
     challenges: [
-      order('l3-a', 'Remets les blocs dans l’ordre.', [['Le renard', 'subject', 'gs'], ['court', 'verb', 'gv'], ['dans la forêt', 'place', 'gv'], ['.', 'punctuation']], [1, 2, 0, 3], 'Le groupe qui fait l’action vient avant le verbe.', 'Commence par « Le renard ».', 'ordre-mots'),
+      order('l3-a', 'Remets les blocs dans l’ordre.', [['Le renard', 'subject', 'gs'], ['court', 'verb', 'gv'], ['dans la forêt', 'place', 'cp'], ['.', 'punctuation']], [1, 2, 0, 3], 'Le groupe qui fait l’action vient avant le verbe.', 'Commence par « Le renard ».', 'ordre-mots'),
       order('l3-b', 'Construis une phrase correcte.', [['Mila', 'subject', 'gs'], ['observe', 'verb', 'gv'], ['une fleur', 'complement', 'gv'], ['.', 'punctuation']], [2, 1, 0, 3], 'Mila fait l’action d’observer.', 'Qui observe ? Place ce bloc en premier.', 'ordre-mots'),
       order('l3-c', 'Remets la phrase debout.', [['Les enfants', 'subject', 'gs'], ['préparent', 'verb', 'gv'], ['un gâteau', 'complement', 'gv'], ['.', 'punctuation']], [1, 0, 2, 3], 'Le sujet pluriel « Les enfants » est suivi de « préparent ».', 'Cherche le bloc avec une majuscule.', 'ordre-mots')
     ]
   },
   {
     id: 4,
-    title: 'Identifier le sujet et le verbe', shortTitle: 'Qui fait quoi ?', grade: '3H–4H',
-    goal: 'Repérer qui fait l’action et le mot qui indique l’action.',
+    title: 'Identifier le sujet et le verbe', shortTitle: 'Sujet et verbe', grade: '3H–4H',
+    goal: 'Repérer le sujet et le verbe dans une phrase simple.',
     prerequisite: 'Construire une phrase simple en ordre.',
     notions: ['sujet', 'verbe', 'accord simple'],
-    theory: 'Le sujet indique qui fait l’action. Le verbe dit ce que fait le sujet ou ce qui se passe. Le sujet et le verbe s’accordent.',
+    theory: 'Le sujet désigne de qui ou de quoi on parle ; il ne fait pas toujours une action. Le verbe indique ce qui se passe. Le verbe s’accorde avec le sujet.',
     categoriesVisible: ['subject', 'verb'],
     challenges: [
-      select('l4-a', 'Clique sur le sujet.', [['Le petit chien', 'subject', 'gs'], ['aboie', 'verb', 'gv'], ['dans le jardin', 'place', 'gv']], [0], '« Le petit chien » est celui qui aboie.', 'Pose la question : qui est-ce qui aboie ?', 'sujet', 'Le petit chien aboie dans le jardin.'),
+      select('l4-a', 'Clique sur le sujet.', [['Le petit chien', 'subject', 'gs'], ['aboie', 'verb', 'gv'], ['dans le jardin', 'place', 'cp']], [0], '« Le petit chien » est celui qui aboie.', 'Pose la question : qui est-ce qui aboie ?', 'sujet', 'Le petit chien aboie dans le jardin.'),
       select('l4-b', 'Clique sur le verbe.', [['Les oiseaux', 'subject', 'gs'], ['construisent', 'verb', 'gv'], ['un nid', 'complement', 'gv']], [1], '« construisent » indique l’action.', 'Demande-toi : que font les oiseaux ?', 'verbe', 'Les oiseaux construisent un nid.'),
       select('l4-c', 'Choisis le verbe qui s’accorde avec le sujet.', [['joue', 'verb'], ['jouent', 'verb'], ['jouons', 'verb']], [1], '« Les filles » est au pluriel : elles jouent.', 'Remplace « Les filles » par « elles ».', 'accord-sujet-verbe', 'Les filles … dans la cour.')
     ]
@@ -128,7 +129,7 @@ export const GRAMMAR_LEVELS: GrammarLevel[] = [
     theory: 'Plusieurs mots peuvent former un seul bloc de sens. Une fois assemblés, ils se déplacent ensemble.',
     categoriesVisible: ['subject', 'verb', 'complement'],
     challenges: [
-      order('l5-a', 'Assemble les groupes dans l’ordre.', [['Le petit chien', 'subject', 'gs'], ['aboie', 'verb', 'gv'], ['dans le jardin', 'place', 'gv'], ['.', 'punctuation']], [2, 0, 1, 3], 'La phrase contient un groupe sujet et un groupe qui dit ce qui se passe.', 'Cherche d’abord qui aboie.', 'groupes-mots'),
+      order('l5-a', 'Assemble les groupes dans l’ordre.', [['Le petit chien', 'subject', 'gs'], ['aboie', 'verb', 'gv'], ['dans le jardin', 'place', 'cp'], ['.', 'punctuation']], [2, 0, 1, 3], 'La phrase contient un groupe sujet et un groupe qui dit ce qui se passe.', 'Cherche d’abord qui aboie.', 'groupes-mots'),
       order('l5-b', 'Construis la phrase avec trois groupes.', [['Une petite souris', 'subject', 'gs'], ['mange', 'verb', 'gv'], ['un morceau de fromage', 'complement', 'gv'], ['.', 'punctuation']], [1, 2, 0, 3], 'Chaque grand bloc rassemble des mots qui vont ensemble.', 'La souris fait l’action.', 'groupes-mots'),
       select('l5-c', 'Quel groupe peut remplacer « Le grand arbre » ?', [['Il', 'pronoun'], ['Ils', 'pronoun'], ['Elle', 'pronoun']], [0], '« Le grand arbre » est masculin singulier : on peut dire « il ».', 'Le groupe parle d’un seul arbre.', 'pronominalisation', 'Le grand arbre abrite un nid.')
     ]
@@ -163,11 +164,11 @@ export const GRAMMAR_LEVELS: GrammarLevel[] = [
   },
   {
     id: 8,
-    title: 'Groupe sujet et groupe verbal', shortTitle: 'Les deux piliers', grade: '5H–6H',
-    goal: 'Découper la phrase en groupe sujet et groupe verbal.',
+    title: 'Sujet et groupe verbal', shortTitle: 'Les deux piliers', grade: '5H–6H',
+    goal: 'Repérer le sujet et le groupe verbal dans une phrase.',
     prerequisite: 'Reconnaître sujet, verbe et groupe nominal.',
-    notions: ['groupe sujet', 'groupe verbal'],
-    theory: 'Le groupe sujet indique de qui ou de quoi on parle. Le groupe verbal contient le verbe et ce qui le complète.',
+    notions: ['sujet (fonction)', 'groupe verbal (GV)'],
+    theory: 'Le sujet est une fonction souvent remplie par un groupe nominal. Le groupe verbal (GV) contient le verbe et, parfois, un complément de verbe (CV).',
     categoriesVisible: ['subject', 'verb', 'complement'],
     challenges: [
       select('l8-a', 'Sélectionne tout le groupe sujet.', [['Le', 'determiner', 'gs'], ['grand', 'adjective', 'gs'], ['arbre', 'noun', 'gs'], ['abrite', 'verb', 'gv'], ['un nid', 'complement', 'gv']], [0, 1, 2], '« Le grand arbre » forme tout le groupe sujet.', 'Sélectionne tous les mots qui désignent ce qui abrite le nid.', 'groupe-sujet', 'Le grand arbre abrite un nid.'),
@@ -180,22 +181,22 @@ export const GRAMMAR_LEVELS: GrammarLevel[] = [
     title: 'Ajouter des compléments', shortTitle: 'Enrichir', grade: '6H',
     goal: 'Ajouter une information à une phrase simple.',
     prerequisite: 'Distinguer groupe sujet et groupe verbal.',
-    notions: ['complément', 'information ajoutée'],
-    theory: 'Un complément apporte une information : quoi, où, quand ou comment. Certains compléments peuvent être déplacés ou supprimés.',
+    notions: ['complément de verbe (CV)', 'complément de phrase (CP)'],
+    theory: 'Le complément de verbe (CV) fait partie du groupe verbal. Le complément de phrase (CP) peut généralement être déplacé ou supprimé. Le sens « lieu » ne suffit pas à décider de sa fonction.',
     categoriesVisible: ['subject', 'verb', 'complement'],
     challenges: [
-      order('l9-a', 'Enrichis la phrase avec le complément.', [['Le chat', 'subject', 'gs'], ['dort', 'verb', 'gv'], ['sur le canapé', 'place', 'gv'], ['.', 'punctuation']], [2, 0, 1, 3], '« sur le canapé » précise où dort le chat.', 'Construis d’abord « Le chat dort ».', 'complement'),
+      order('l9-a', 'Enrichis la phrase avec le complément.', [['Le chat', 'subject', 'gs'], ['dort', 'verb', 'gv'], ['sur le canapé', 'place', 'cp'], ['.', 'punctuation']], [2, 0, 1, 3], '« sur le canapé » précise où dort le chat.', 'Construis d’abord « Le chat dort ».', 'complement'),
       select('l9-b', 'Clique sur le complément.', [['Mila', 'subject', 'gs'], ['ouvre', 'verb', 'gv'], ['la fenêtre', 'complement', 'gv']], [2], '« la fenêtre » complète le verbe « ouvre ».', 'Mila ouvre quoi ?', 'complement-verbe', 'Mila ouvre la fenêtre.'),
-      order('l9-c', 'Construis la phrase enrichie.', [['Les enfants', 'subject', 'gs'], ['jouent', 'verb', 'gv'], ['dans la cour', 'place', 'gv'], ['après la classe', 'time', 'gv'], ['.', 'punctuation']], [3, 1, 0, 2, 4], 'Deux compléments précisent le lieu et le moment.', 'Commence par le groupe sujet.', 'complements')
+      order('l9-c', 'Construis la phrase enrichie.', [['Les enfants', 'subject', 'gs'], ['jouent', 'verb', 'gv'], ['dans la cour', 'place', 'cp'], ['après la classe', 'time', 'cp'], ['.', 'punctuation']], [3, 1, 0, 2, 4], 'Deux compléments précisent le lieu et le moment.', 'Commence par le groupe sujet.', 'complements')
     ]
   },
   {
     id: 10,
     title: 'Lieu, temps et manière', shortTitle: 'Où ? Quand ? Comment ?', grade: '6H–7H',
-    goal: 'Reconnaître les compléments de lieu, de temps et de manière.',
+    goal: 'Reconnaître les indications de lieu, de temps et de manière.',
     prerequisite: 'Reconnaître un complément.',
-    notions: ['complément de lieu', 'complément de temps', 'complément de manière'],
-    theory: 'Le complément de lieu répond à « où ? », celui de temps à « quand ? » et celui de manière à « comment ? ».',
+    notions: ['valeur de lieu', 'valeur de temps', 'valeur de manière'],
+    theory: '« Où ? », « quand ? » et « comment ? » indiquent le sens d’un groupe, pas sa fonction grammaticale. Pour reconnaître un complément de phrase, essaie aussi de le déplacer ou de le supprimer.',
     categoriesVisible: ['place', 'time', 'manner'],
     challenges: [
       select('l10-a', 'Quel bloc indique le lieu ?', [['dans la forêt', 'place'], ['le matin', 'time'], ['rapidement', 'manner']], [0], '« dans la forêt » répond à la question « où ? ».', 'Cherche l’endroit.', 'complement-lieu', 'Le renard court dans la forêt.'),
@@ -208,8 +209,8 @@ export const GRAMMAR_LEVELS: GrammarLevel[] = [
     title: 'Transformer les phrases', shortTitle: 'Négation et question', grade: '7H',
     goal: 'Passer de l’affirmation à la négation et de la déclaration à la question.',
     prerequisite: 'Maîtriser l’ordre de la phrase simple.',
-    notions: ['affirmative', 'négative', 'déclarative', 'interrogative'],
-    theory: 'Pour nier, on encadre souvent le verbe avec « ne … pas ». Pour poser une question, on peut utiliser « est-ce que » et un point d’interrogation.',
+    notions: ['forme positive', 'forme négative', 'type déclaratif', 'type interrogatif'],
+    theory: 'Positive et négative sont des formes de phrase ; déclaratif et interrogatif sont des types. Pour nier, on encadre souvent le verbe avec « ne … pas ». Pour questionner, on peut utiliser « est-ce que ».',
     categoriesVisible: ['subject', 'verb', 'negation', 'punctuation'],
     challenges: [
       order('l11-a', 'Transforme la phrase en phrase négative.', [['Le chat', 'subject', 'gs'], ['ne', 'negation', 'gv'], ['dort', 'verb', 'gv'], ['pas', 'negation', 'gv'], ['.', 'punctuation']], [3, 0, 2, 1, 4], '« ne » et « pas » encadrent le verbe.', 'Place « ne » avant le verbe et « pas » après.', 'negation', 'Le chat dort.'),
@@ -237,10 +238,10 @@ export const GRAMMAR_LEVELS: GrammarLevel[] = [
     goal: 'Trouver un sujet long ou placé après le verbe.',
     prerequisite: 'Maîtriser sujet, pronom et accord sujet-verbe.',
     notions: ['sujet long', 'sujet inversé', 'accord à distance'],
-    theory: 'Le sujet n’est pas toujours juste avant le verbe. Pour le trouver, repère qui fait l’action et vérifie l’accord.',
+    theory: 'Le sujet n’est pas toujours juste avant le verbe. Pour le trouver, vérifie de qui ou de quoi on parle et avec quel groupe le verbe s’accorde.',
     categoriesVisible: ['subject', 'verb', 'place'],
     challenges: [
-      select('l13-a', 'Sélectionne tout le sujet.', [['Le petit garçon', 'subject', 'gs'], ['de la classe', 'subject', 'gs'], ['court', 'verb', 'gv'], ['rapidement', 'manner', 'gv']], [0, 1], 'Le sujet complet est « Le petit garçon de la classe ».', 'Qui est-ce qui court ?', 'sujet-long', 'Le petit garçon de la classe court rapidement.'),
+      select('l13-a', 'Sélectionne tout le sujet.', [['Le petit garçon', 'subject', 'gs'], ['de la classe', 'subject', 'gs'], ['court', 'verb', 'gv'], ['rapidement', 'manner', 'cp']], [0, 1], 'Le sujet complet est « Le petit garçon de la classe ».', 'Qui est-ce qui court ?', 'sujet-long', 'Le petit garçon de la classe court rapidement.'),
       select('l13-b', 'Quel groupe est le sujet du verbe « arrivent » ?', [['Dans la cour', 'place'], ['arrivent', 'verb'], ['les élèves', 'subject']], [2], 'Le sujet est placé après le verbe : ce sont les élèves qui arrivent.', 'Qui est-ce qui arrive ?', 'sujet-inverse', 'Dans la cour arrivent les élèves.'),
       select('l13-c', 'Choisis le verbe bien accordé.', [['pousse', 'verb'], ['poussent', 'verb'], ['poussons', 'verb']], [1], 'Le noyau du sujet est « fleurs », au pluriel : elles poussent.', 'Remplace « Les fleurs du jardin » par un pronom.', 'accord-sujet-long', 'Les fleurs du jardin … au printemps.')
     ]
@@ -250,13 +251,13 @@ export const GRAMMAR_LEVELS: GrammarLevel[] = [
     title: 'Construire des phrases enrichies', shortTitle: 'Maître bâtisseur', grade: '8H',
     goal: 'Réinvestir toutes les notions dans des phrases complexes.',
     prerequisite: 'Avoir travaillé les niveaux 1 à 13.',
-    notions: ['phrase enrichie', 'analyse complète', 'réinvestissement'],
-    theory: 'Une phrase enrichie reste organisée : un groupe sujet, un verbe bien accordé et des compléments qui précisent le sens.',
+    notions: ['phrase enrichie', 'complément de verbe direct (CVD)', 'complément de verbe indirect (CVI)', 'complément de phrase (CP)'],
+    theory: 'À la fin du parcours, distingue le complément de verbe direct (CVD), relié sans préposition, et le complément de verbe indirect (CVI), relié par une préposition. La préposition seule ne suffit pas : un complément de phrase (CP) peut généralement être déplacé ou supprimé.',
     categoriesVisible: ['determiner', 'noun', 'adjective', 'subject', 'verb', 'place', 'time', 'manner'],
     challenges: [
-      order('l14-a', 'Construis la phrase enrichie.', [['Le petit renard roux', 'subject', 'gs'], ['traverse', 'verb', 'gv'], ['rapidement', 'manner', 'gv'], ['la forêt', 'complement', 'gv'], ['au lever du jour', 'time', 'gv'], ['.', 'punctuation']], [3, 0, 4, 2, 1, 5], 'La phrase combine sujet enrichi, verbe, manière, complément et temps.', 'Commence par le groupe sujet, puis le verbe.', 'phrase-enrichie'),
-      order('l14-b', 'Construis une phrase avec un sujet inversé.', [['Au sommet de la colline', 'place'], ['se dressent', 'verb', 'gv'], ['deux grands sapins', 'subject', 'gs'], ['.', 'punctuation']], [2, 1, 0, 3], 'Le groupe sujet « deux grands sapins » est placé après le verbe.', 'La phrase commence par le lieu.', 'sujet-inverse'),
-      order('l14-c', 'Construis la phrase négative enrichie.', [['Les jeunes explorateurs', 'subject', 'gs'], ['ne', 'negation', 'gv'], ['traversent', 'verb', 'gv'], ['jamais', 'negation', 'gv'], ['la rivière', 'complement', 'gv'], ['sans prudence', 'manner', 'gv'], ['.', 'punctuation']], [4, 0, 5, 2, 3, 1, 6], 'La négation encadre le verbe dans une phrase enrichie.', 'Construis d’abord « Les jeunes explorateurs traversent la rivière ».', 'phrase-enrichie')
+      order('l14-a', 'Construis la phrase enrichie.', [['Le petit renard roux', 'subject', 'gs'], ['traverse', 'verb', 'gv'], ['rapidement', 'manner', 'cp'], ['la forêt', 'complement', 'gv'], ['au lever du jour', 'time', 'cp'], ['.', 'punctuation']], [3, 0, 4, 2, 1, 5], 'La phrase combine sujet enrichi, verbe, manière, complément et temps.', 'Commence par le groupe sujet, puis le verbe.', 'phrase-enrichie'),
+      order('l14-b', 'Construis une phrase avec un sujet inversé.', [['Au sommet de la colline', 'place', 'cp'], ['se dressent', 'verb', 'gv'], ['deux grands sapins', 'subject', 'gs'], ['.', 'punctuation']], [2, 1, 0, 3], 'Le groupe sujet « deux grands sapins » est placé après le verbe.', 'La phrase commence par le lieu.', 'sujet-inverse'),
+      order('l14-c', 'Construis la phrase négative enrichie.', [['Les jeunes explorateurs', 'subject', 'gs'], ['ne', 'negation', 'gv'], ['traversent', 'verb', 'gv'], ['jamais', 'negation', 'gv'], ['la rivière', 'complement', 'gv'], ['sans prudence', 'manner', 'cp'], ['.', 'punctuation']], [4, 0, 5, 2, 3, 1, 6], 'La négation encadre le verbe dans une phrase enrichie.', 'Construis d’abord « Les jeunes explorateurs traversent la rivière ».', 'phrase-enrichie')
     ]
   }
 ];
@@ -269,23 +270,35 @@ function addAcceptedOrders(challengeId: string, alternatives: number[][]): void 
   challenge.acceptedSolutions = alternatives.map((order) => order.map((index) => challenge.solution[index]));
 }
 addAcceptedOrders('l9-c', [[0, 1, 3, 2, 4]]);
-addAcceptedOrders('l14-a', [[0, 1, 3, 2, 4, 5], [0, 1, 4, 2, 3, 5]]);
-addAcceptedOrders('l14-c', [[0, 1, 2, 4, 3, 5, 6]]);
+addAcceptedOrders('l14-a', [[0, 1, 3, 2, 4, 5]]);
+
+for (const level of GRAMMAR_LEVELS) {
+  level.challenges.push(...(EXTRA_CHALLENGES[level.id] ?? []));
+  level.challenges.push(...(INTERACTIVE_CHALLENGES[level.id] ?? []));
+}
+GRAMMAR_LEVELS[13].requiredErrorFamilies = ['complement-verbe-direct', 'complement-verbe-indirect', 'complement-phrase'];
+
+const questionTypes = GRAMMAR_LEVELS[10].challenges.find((challenge) => challenge.id === 'l11-c');
+if (questionTypes) {
+  questionTypes.blocks[0].label = 'TYPE DÉCLARATIF · FORME POSITIVE';
+  questionTypes.blocks[1].label = 'TYPE INTERROGATIF · FORME POSITIVE';
+  questionTypes.blocks[2].label = 'TYPE DÉCLARATIF · FORME NÉGATIVE';
+}
 
 export const CATEGORY_LABELS: Record<GrammarCategory, string> = {
   phrase: 'PHRASE',
   'non-phrase': 'NON-PHRASE',
   determiner: 'DÉTERMINANT',
-  noun: 'NOM',
+  noun: 'NOM COMMUN',
   adjective: 'ADJECTIF',
   subject: 'SUJET',
   verb: 'VERBE',
-  complement: 'COMPLÉMENT',
-  place: 'LIEU',
-  time: 'TEMPS',
-  manner: 'MANIÈRE',
-  pronoun: 'PRONOM',
-  negation: 'NÉGATION',
+  complement: 'COMPLÉMENT DE VERBE (CV)',
+  place: 'INDICATION DE LIEU',
+  time: 'INDICATION DE TEMPS',
+  manner: 'INDICATION DE MANIÈRE',
+  pronoun: 'PRONOM PERSONNEL',
+  negation: 'MARQUE DE NÉGATION',
   punctuation: 'PONCTUATION',
   neutral: 'BLOC'
 };

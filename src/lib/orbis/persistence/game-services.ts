@@ -34,8 +34,8 @@ export function createGameProgressService<TState>(
         return { ok: true, value: local ? local.record as SaveRecord<TState> : null };
       }
     },
-    async saveProgress(state: TState, formatVersion: number): Promise<OrbisResult<SaveRecord<TState>>> {
-      const saved = saveLocalGameState(studentName, gameId, state, formatVersion);
+    async saveProgress(state: TState, formatVersion: number, progressSummary?: { label: string; completed?: number; total?: number }): Promise<OrbisResult<SaveRecord<TState>>> {
+      const saved = saveLocalGameState(studentName, gameId, state, formatVersion, progressSummary);
       if (!saved) return { ok: false, error: 'storage-unavailable', message: 'Le navigateur refuse le stockage local.' };
       installOrbisOnlineSync();
       void syncPendingOrbisData();

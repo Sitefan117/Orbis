@@ -3,6 +3,7 @@
   import { worldLabels } from '$lib/orbis/catalog/games';
   import { clearLocalActivityEvents, getLocalActivityEvents, getLocalGameSaves, type LocalSaveEnvelope } from '$lib/orbis/persistence/local-store';
   import type { ActivityEvent } from '$lib/orbis/results/contract';
+  import { studentStorageScope } from '$lib/orbis/identity/local-student';
 
   let events = $state<ActivityEvent[]>([]);
   let saves = $state<LocalSaveEnvelope[]>([]);
@@ -25,6 +26,22 @@
 
   const sortedEvents = $derived([...events].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)));
   const sortedSaves = $derived([...saves].sort((a, b) => b.record.updatedAt.localeCompare(a.record.updatedAt)));
+  const grammarRows = $derived.by(() => saves.filter((save) => save.gameId === 'grammaire_lab').map((save) => {
+    const state = save.record.state as { unlockedLevel?: number; completedLevels?: number[] };
+    const matching = events.filter((event) => event.gameId === 'grammaire_lab' && studentStorageScope(event.studentName) === save.studentScope);
+    const errors = new Map<string, number>();
+    for (const event of matching) for (const entry of event.errorFamilies) {
+      const [family, rawCount] = entry.split(':');
+      errors.set(family, (errors.get(family) ?? 0) + (Number(rawCount) || 1));
+    }
+    return {
+      name: save.studentName || save.studentScope,
+      level: Math.min(14, Math.max(1, Number(state.unlockedLevel) || 1)),
+      mastered: Array.isArray(state.completedLevels) ? state.completedLevels.length : 0,
+      duration: matching.reduce((sum, event) => sum + (event.durationSeconds ?? 0), 0),
+      errors: [...errors].sort((a, b) => b[1] - a[1]).slice(0, 5)
+    };
+  }));
 
   onMount(refresh);
 
@@ -109,6 +126,23 @@
     </div>
   {/if}
 
+  {#if grammarRows.length}
+    <div class="grammar-followup">
+      <h3>Grammaire · progression par élève</h3>
+      <p>Niveaux maîtrisés, temps et erreurs par notion. Aucun détail des déplacements ou des stratégies n’est enregistré.</p>
+      <div class="grammar-grid">
+        {#each grammarRows as row}
+          <article>
+            <strong>{row.name}</strong>
+            <span>Niveau atteint : {row.level} · Maîtrisés : {row.mastered}/14</span>
+            <small>Temps d’activité : {Math.round(row.duration / 60)} min</small>
+            {#if row.errors.length}<small>À revoir : {row.errors.map(([family, count]) => `${family.replaceAll('-', ' ')} (${count})`).join(', ')}</small>{/if}
+          </article>
+        {/each}
+      </div>
+    </div>
+  {/if}
+
   <div class="summary" aria-label="Résumé du suivi">
     <article><strong>{totals.students}</strong><span>élève(s)</span></article>
     <article><strong>{totals.activities}</strong><span>activité(s)</span></article>
@@ -144,6 +178,7 @@
 </section>
 
 <style>
+  .grammar-followup{margin:1rem 0;padding:1rem;background:#eaf5ee;color:#183c2c;border-left:5px solid #3b9860}.grammar-followup h3{margin:0 0 .3rem}.grammar-followup p{margin:.2rem 0 .8rem}.grammar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.7rem}.grammar-grid article{display:grid;gap:.2rem;padding:.7rem;background:white;border:1px solid #b9d4c3}.grammar-grid small{color:#365a46}
   .panel { background: #1e1e1e; border: 1px solid #3a3a3a; border-radius: 16px; padding: 1.25rem; margin-bottom: 2rem; box-shadow: 0 8px 25px rgb(0 0 0 / .22); }
   .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
   .eyebrow { margin: 0 0 .25rem; color: #ffcc00; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; font-size: .75rem; }

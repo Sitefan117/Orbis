@@ -21,5 +21,5 @@ export type OrbisResult<T> =
 /** Interface optionnelle préparée pour l’intégration progressive des jeux. */
 export interface GameProgressService<TState> {
   loadProgress(): Promise<OrbisResult<SaveRecord<TState> | null>>;
-  saveProgress(state: TState, formatVersion: number): Promise<OrbisResult<SaveRecord<TState>>>;
+  saveProgress(state: TState, formatVersion: number, progressSummary?: { label: string; completed?: number; total?: number }): Promise<OrbisResult<SaveRecord<TState>>>;
 }
