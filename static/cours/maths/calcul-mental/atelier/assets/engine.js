@@ -59,7 +59,7 @@ function makeProblem(code,spec){
  const s=byCode.get(code),{a,b,op,kind='number',unit=0}=spec;
  const result=clean(op==='+'?a+b:op==='-'?a-b:op==='*'?a*b:a/b);
  let answers=[result], labels=['Réponse'],prompt=`${fmt(a)} ${signs[op]} ${fmt(b)}`;
- if(kind==='complement')prompt=`${fmt(b)} + □ = ${fmt(a)}`;
+ if(kind==='complement')prompt=`${fmt(b)} + ____ = ${fmt(a)}`;
  if(kind==='remainder'){answers=[Math.floor(a/b),a%b];labels=['Quotient','Reste'];prompt=`${fmt(a)} : ${fmt(b)}`;}
  if(kind==='estimate'){const ra=Math.round(a/unit)*unit,rb=Math.round(b/unit)*unit;answers=[op==='+'?ra+rb:ra-rb,result];labels=['Estimation','Résultat exact'];}
  return {code,family:s.family,a,b,op,kind,unit,answers,labels,prompt,key:`${code}:${a}:${op}:${b}:${kind}`};
@@ -194,35 +194,64 @@ function strategy(p){
   h3=b>1?`Retire d’abord 1 : ${A} − 1 = ${a-1}. Retire encore ${b-1}.`:`Retire une unité de ${A}. Quel nombre vient juste avant ?`;
   steps=[`Je retire ${B} de ${A}.`,`${A} − ${B} = ${R}.`,`Vérification : ${R} + ${B} = ${A}.`];
  }
- return {h2,h3,steps};
+ return {h2:h2.replaceAll('□','____'),h3:h3.replaceAll('□','____'),steps:steps.map(step=>step.replaceAll('□','____'))};
 }
 function diagram(p){
  const {a,b,op,kind,unit}=p;let content='',label='',height=136;
  const text=(x,y,t,anchor='middle')=>`<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="Arial,sans-serif" font-size="18" fill="#20332e">${esc(t)}</text>`;
+ const dots=(count,x,y,width,heightLimit,max=24,color='#36765c')=>{
+  const shown=Math.min(Math.max(0,Math.floor(count)),max),cols=Math.max(1,Math.min(12,Math.ceil(Math.sqrt(Math.max(1,shown)*width/Math.max(1,heightLimit))))),rows=Math.max(1,Math.ceil(shown/cols));
+  const dx=width/(cols+1),dy=heightLimit/(rows+1);let out='';
+  for(let i=0;i<shown;i++)out+=`<circle cx="${x+dx*(i%cols+1)}" cy="${y+dy*(Math.floor(i/cols)+1)}" r="6" fill="${color}"/>`;
+  if(count>max)out+=text(x+width-7,y+heightLimit-5,`… ${fmt(count)} objets`,'end');
+  return out;
+ };
+ const divisionPicture=()=>{
+  const groups=Math.max(1,Math.floor(b)),quotient=Math.floor(a/b),remainder=Math.round((a-quotient*b)*1e8)/1e8,shownGroups=Math.min(groups,8),gap=7,areaWidth=500,boxWidth=(areaWidth-gap*(shownGroups-1))/shownGroups;
+  height=remainder>0?306:270;
+  let out=text(30,22,`1 · Le tas de ${fmt(a)} objets`,'start');
+  out+=`<rect x="30" y="32" width="500" height="72" rx="12" fill="#f8f4e8" stroke="#326c58" stroke-width="2"/>${dots(a,35,37,490,62,30)}`;
+  out+=`<path d="M280 108 V126" stroke="#326c58" stroke-width="3"/><path d="M272 119 L280 128 L288 119" fill="none" stroke="#326c58" stroke-width="3"/>`;
+  out+=text(30,151,`2 · Je partage en ${fmt(b)} groupes égaux`,'start');
+  for(let i=0;i<shownGroups;i++){
+   const x=30+i*(boxWidth+gap);out+=`<rect x="${x}" y="162" width="${boxWidth}" height="72" rx="9" fill="${i%2?'#f8ead1':'#e4eee7'}" stroke="#326c58"/>`;
+   out+=dots(quotient,x+4,168,boxWidth-8,54,6,i%2?'#a86420':'#326c58');
+   if(quotient>6)out+=text(x+boxWidth/2,229,'…');
+  }
+  if(groups>shownGroups)out+=text(530,254,`Quelques groupes sont dessinés sur ${fmt(groups)}.`,'end');
+  if(remainder>0){
+   out+=text(30,269,'Objets qui restent à part :','start');out+=dots(remainder,245,248,170,45,12,'#9a4638');
+  }
+  return out;
+ };
+ const graduatedLine=()=>{
+  const finish=kind==='complement'?a:op==='+'?a+b:a-b,start=kind==='complement'?b:a,largest=Math.max(start,finish,a,b,1);
+  let step=p.code.startsWith('CD')?(largest<=2?0.1:1):p.code.startsWith('DC')?(largest>120?100:10):1;
+  let axisMax=Math.ceil(largest/step)*step;if(axisMax===largest)axisMax+=step;
+  const tickLimit=p.code.startsWith('PC')?22:12;while(axisMax/step>tickLimit)step*=p.code.startsWith('CD')?10:2;
+  axisMax=Math.max(step,Math.ceil(largest/step)*step);const x=v=>45+470*v/axisMax;
+  const sx=x(start),fx=x(finish),same=Math.abs(start-finish)<1e-8,closeLabels=!same&&Math.abs(sx-fx)<115;height=closeLabels?194:174;let out=`<defs><marker id="arrow-${esc(p.code)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#9a4638"/></marker></defs>`;
+  out+=`<line x1="45" x2="515" y1="92" y2="92" stroke="#20332e" stroke-width="3"/>`;
+  const tickCount=Math.round(axisMax/step);for(let i=0;i<=tickCount;i++){const value=clean(i*step),px=x(value);out+=`<line x1="${px}" x2="${px}" y1="83" y2="101" stroke="#20332e" stroke-width="2"/>${text(px,124,fmt(value))}`;}
+  const operation=kind==='complement'?`+ ${fmt(a-b)}`:`${op==='+'?'+':'−'} ${fmt(b)}`;
+  if(same)out+=`<circle cx="${sx}" cy="61" r="13" fill="none" stroke="#9a4638" stroke-width="3"/>${text(sx,38,'Je reste ici')}`;
+  else out+=`<path d="M${sx} 76 Q${(sx+fx)/2} 25 ${fx} 76" fill="none" stroke="#9a4638" stroke-width="4" marker-end="url(#arrow-${esc(p.code)})"/>${text((sx+fx)/2,34,operation)}`;
+  out+=same?`<circle cx="${sx}" cy="92" r="6" fill="#9a4638"/>${text(sx,151,fmt(start))}`:`<circle cx="${sx}" cy="92" r="6" fill="#205f89"/><circle cx="${fx}" cy="92" r="6" fill="#9a4638"/>${text(sx,151,`départ ${fmt(start)}`)}${text(fx,closeLabels?178:151,`arrivée ${fmt(finish)}`)}`;
+  const unitLabel=step===0.1?'un dixième':step===1?'une unité':step===10?'une dizaine':step===100?'une centaine':fmt(step)+' unités';
+  label=`Droite graduée : chaque graduation vaut ${unitLabel}. Je pars de ${fmt(start)} et j’arrive à ${fmt(finish)}.`;
+  return out;
+ };
  if(kind==='estimate'){
   const lo=Math.floor(a/unit)*unit,hi=lo+unit,pos=55+450*(a-lo)/unit;
   content=`<line x1="55" x2="505" y1="74" y2="74" stroke="#326c58" stroke-width="3"/><circle cx="${pos}" cy="74" r="7" fill="#b1691d"/>${text(55,108,lo)}${text(505,108,hi)}${text(pos,45,fmt(a))}`;
   label=`${fmt(a)} se situe entre ${lo} et ${hi}. Quel repère est le plus proche ?`;
- }else if(kind==='remainder'){
-  content=`<rect x="25" y="20" width="210" height="72" rx="12" fill="#e4eee7" stroke="#326c58"/>${text(130,62,fmt(a)+' objets')}<path d="M250 57 H300" stroke="#326c58" stroke-width="3"/><rect x="315" y="20" width="220" height="72" rx="12" fill="#fff0d6" stroke="#967037"/>${text(425,51,'groupes de '+fmt(b))}${text(425,76,'et des objets restants')}`;
-  label=`Répartis ${a} objets en groupes de ${b}. Combien de groupes complets et d’objets restants ?`;
+ }else if(op==='/'){
+  content=divisionPicture();label=`Deux étapes : je vois d’abord ${fmt(a)} objets, puis je les partage en ${fmt(b)} groupes égaux${kind==='remainder'?' en laissant les objets restants à part':''}.`;
  }else if(op==='*'&&Number.isInteger(a)&&Number.isInteger(b)&&a>0&&b>0&&a<=10&&b<=10){
   height=54+a*25;for(let row=0;row<a;row++)for(let col=0;col<b;col++)content+=`<circle cx="${35+col*30}" cy="${25+row*25}" r="8" fill="#36765c"/>`;
   content+=text(385,Math.min(70,height-20),`${a} groupes de ${b}`);label=`${a} lignes de ${b} jetons. Compte ou utilise un produit connu.`;
- }else if(op==='/'&&kind!=='remainder'&&b<=10){
-  const w=480/b;for(let i=0;i<b;i++)content+=`<rect x="${40+i*w}" y="40" width="${w}" height="44" fill="${i%2?'#f8ead1':'#e4eee7'}" stroke="#326c58"/>${text(40+(i+.5)*w,69,'?')}`;
-  content+=text(280,25,fmt(a)+' à partager en '+fmt(b));label=`${fmt(a)} à partager en ${b} parts égales. Que contient une part ?`;
  }else if((op==='+'||op==='-')&&a+b>0){
-  let total,known,missing,sub;
-  if(kind==='complement'){total=a;known=b;missing=a-b;sub=false;}
-  else if(op==='+'){total=a+b;known=a;missing=b;sub=false;}
-  else{total=a;known=a-b;missing=b;sub=true;}
-  const w1=total?480*known/total:0,w2=480-w1;
-  content=`<rect x="40" y="42" width="${w1}" height="42" fill="#d9ebdf" stroke="#326c58"/><rect x="${40+w1}" y="42" width="${w2}" height="42" fill="${sub?'#f5ded7':'#fff0d6'}" stroke="#967037"/>`;
-  content+=text(40+w1/2,31,sub?'?':fmt(known))+text(40+w1+w2/2,31,kind==='complement'?'?':fmt(missing));
-  if(sub)content+=`<path d="M${40+w1+3} 48 L517 78" stroke="#9a4638" stroke-width="2"/>`;
-  content+=text(280,116,kind==='complement'?'Total : '+fmt(total):sub?'Au départ : '+fmt(a)+' ; retirer '+fmt(b):'Total à trouver');
-  label=kind==='complement'?`Il faut compléter ${fmt(b)} pour atteindre ${fmt(a)}.`:sub?`On retire ${fmt(b)} de ${fmt(a)}. La partie restante est à trouver.`:`On réunit ${fmt(a)} et ${fmt(b)}. Le total est à trouver.`;
+  content=graduatedLine();
  }else{
   content=`<rect x="40" y="26" width="480" height="64" rx="10" fill="#e4eee7" stroke="#326c58"/>${text(280,66,p.prompt+' = ?')}`;
   label=`Représente ${p.prompt} avec des groupes ou un tableau de numération.`;

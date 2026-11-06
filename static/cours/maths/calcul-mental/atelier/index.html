@@ -7,6 +7,10 @@
 <script defer src="assets/catalogue.js"></script><script defer src="assets/engine.js"></script><script defer src="assets/app.js"></script>
 </head>
 <body>
+<aside class="rotate-notice" role="alert" aria-label="Orientation portrait nécessaire">
+ <div class="turn-symbol" aria-hidden="true"><span class="phone-shape"></span><span class="turn-arrow">↻</span></div>
+ <h2>Tourne ton appareil</h2><p>Place le téléphone ou l’iPad à la verticale pour continuer.</p>
+</aside>
 <a class="skip-link" href="#configuration">Aller à la sélection</a>
 <header class="site-header">
  <a class="back-link" href="../../../../?vue=cours" data-orbis-catalog-return>← Cours Orbis</a>
@@ -31,7 +35,7 @@
    <p class="muted">Le niveau change les nombres proposés.<br>Il ne dépend pas de ta vitesse.</p>
   </div>
  </div>
- <div class="selection-head"><div><p class="eyebrow">2 · JE CHOISIS MES COMPÉTENCES</p><h2>Mon programme</h2></div><button id="clear-selection" type="button" class="text-button">Tout décocher</button></div>
+ <div class="selection-head"><div><p class="eyebrow">2 · JE CHOISIS MES COMPÉTENCES</p><h2>Mon programme</h2></div><div class="selection-actions"><button id="select-all" type="button" class="text-button">Tout cocher</button><button id="clear-selection" type="button" class="text-button">Tout décocher</button></div></div>
  <div id="chapters" class="chapters"></div>
  <div class="selection-bar"><div><strong id="selection-count" aria-live="polite">0 compétence sélectionnée</strong><p class="muted">Certaines petites tables reviennent plusieurs fois pour les mémoriser.</p><p id="setup-error" class="error" role="alert"></p></div><button id="start" type="button" class="primary">Valider ma sélection →</button></div>
  <p class="small-note">En ligne : des corrections expliquées et un bilan de fin de séance. Les réponses ne sont pas enregistrées.</p>
