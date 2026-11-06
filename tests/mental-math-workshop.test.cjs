@@ -10,7 +10,9 @@ for(const s of E.catalog.skills){assert(s.method1&&s.method2&&s.manipulation);fo
  else if(p.kind==='estimate'){const a=Math.round(p.a/p.unit)*p.unit,b=Math.round(p.b/p.unit)*p.unit;assert.equal(p.answers[0],p.op==='+'?a+b:a-b);assert.equal(p.answers[1],expected);}
  else assert(Math.abs(expected-p.answers[0])<1e-7,p.key);
  assert(E.grade(p,p.answers.map(E.fmt)).correct,p.key);assert(!E.grade(p,p.answers.map(n=>String(n+1))).correct,p.key);assert(!E.grade(p,p.answers.map(()=>'' )).valid);
- const a=E.strategy(p);assert(a.h2&&a.h3&&a.steps.length>=2);for(const text of [a.h2,a.h3,...a.steps,E.diagram(p)])assert(!/undefined|NaN|Infinity/.test(text),p.key);
+ const a=E.strategy(p),diagram=E.diagram(p);assert(a.h2&&a.h3&&a.steps.length>=2);for(const text of [p.prompt,a.h2,a.h3,...a.steps,diagram]){assert(!/undefined|NaN|Infinity/.test(text),p.key);assert(!text.includes('□'),p.key);}
+ if(p.op==='/'){assert(diagram.includes('1 · Le tas de'),p.key);assert(diagram.includes('2 · Je partage en'),p.key);}
+ if((p.op==='+'||p.op==='-')&&p.kind!=='estimate')assert(diagram.includes('Droite graduée'),p.key);
  }
  for(const n of [10,20,30])for(const mode of ['print','drill']){const qs=E.generate([s.code],level,n,mode);assert.equal(qs.length,n);assert(qs.every(q=>q.code===s.code));}
 }}
@@ -22,4 +24,6 @@ assert.equal(E.numeric(' 2,5 '),2.5);for(const raw of ['','2e3','1/2','NaN','2,3
 const qs=E.generate(['PC01','DM02'],1,10);const sum=E.summary(qs,[{code:'PC01',correct:true,hints:0},{code:'PC01',correct:true,hints:2},{code:'DM02',correct:false,hints:0}]);
 assert.equal(sum.done,3);assert.equal(sum.independent,1);assert.equal(sum.aided,1);assert.equal(sum.corrected,1);assert.equal(sum.planned,10);
 const memo=fs.readFileSync(path.join(root,'aide-memoire.html'),'utf8');for(const s of E.catalog.skills)assert(memo.includes('id="'+s.code+'"'));
+assert(!memo.includes('□'));assert(memo.includes('Orientation portrait nécessaire'));
+const app=fs.readFileSync(path.join(root,'assets','app.js'),'utf8');assert(app.includes('Clavier numérique intégré'));assert(app.includes("$('#select-all')"));assert(!app.includes('class="chapter" open'));
 console.log(`Calcul mental : ${cases} calculs vérifiés, 52 compétences × 3 niveaux, séries équilibrées, corrections, aides et bilans.`);
