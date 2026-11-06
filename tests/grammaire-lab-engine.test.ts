@@ -24,7 +24,7 @@ assert.ok(GRAMMAR_LEVELS.every((level) => new Set(level.challenges.map((challeng
 assert.ok(GRAMMAR_LEVELS.every((level) => level.challenges.some((challenge) => challenge.solution.length > 1)), 'Chaque niveau doit proposer au moins une question à réponses multiples ou à blocs ordonnés.');
 
 const challenges = GRAMMAR_LEVELS.flatMap((level) => level.challenges);
-assert.equal(challenges.length, 171);
+assert.equal(challenges.length, 173);
 for (const levelId of [1, 2, 4]) {
   const kinds = new Set(GRAMMAR_LEVELS[levelId - 1].challenges.map((challenge) => challenge.kind));
   assert.ok(kinds.has('highlight') && kinds.has('repair'), `niveau ${levelId}: surlignage et réparation`);
@@ -75,11 +75,11 @@ assert.equal(isAutonomousSuccess(1, true), false);
 assert.equal(isAutonomousSuccess(2, false), false);
 
 for (const level of GRAMMAR_LEVELS) {
-  const first = pickChallenges(level, 6, [], () => 0.37);
-  assert.equal(first.length, 6, `niveau ${level.id}: six défis dans une série`);
-  assert.equal(new Set(first.map((challenge) => challenge.id)).size, 6, `niveau ${level.id}: aucun doublon`);
-  const second = pickChallenges(level, 4, first.map((challenge) => challenge.id), () => 0.63);
-  assert.ok(second.every((challenge) => !first.some((previous) => previous.id === challenge.id)), `niveau ${level.id}: consolidation nouvelle`);
+  const first = pickChallenges(level, 10, [], () => 0.37);
+  assert.equal(first.length, 10, `niveau ${level.id}: dix défis dans une série`);
+  assert.equal(new Set(first.map((challenge) => challenge.id)).size, 10, `niveau ${level.id}: aucun doublon`);
+  const second = pickChallenges(level, 10, first.map((challenge) => challenge.id), () => 0.63);
+  if (level.challenges.length >= 20) assert.ok(second.every((challenge) => !first.some((previous) => previous.id === challenge.id)), `niveau ${level.id}: consolidation nouvelle`);
   for (const challenge of first) assert.equal(sameSelection(challenge, challenge.solution), true, `${challenge.id}: la réponse reste correcte après mélange des blocs`);
 }
 
@@ -90,9 +90,9 @@ const negation = challenges.find((challenge) => challenge.id === 'l14-c')!;
 assert.equal(negation.acceptedSolutions?.length ?? 0, 0, 'La variante peu naturelle avec « jamais » après le complément est retirée.');
 const multiple = challenges.find((challenge) => challenge.id === 'l2-a')!;
 assert.equal(sameSelection(multiple, [multiple.solution[0], multiple.solution[0]]), false, 'Une réponse répétée ne vaut pas deux réponses.');
-assert.equal(levelMastered(0, 6), false);
-assert.equal(levelMastered(4, 6), false);
-assert.equal(levelMastered(5, 6), true);
+assert.equal(levelMastered(0, 10), false);
+assert.equal(levelMastered(7, 10), false);
+assert.equal(levelMastered(8, 10), true);
 const testedUpperLevel = completeLevel(createInitialProgress(), 14, 3, 6, 0);
 assert.equal(testedUpperLevel.unlockedLevel, 1, 'Tester un niveau supérieur ne saute pas le parcours commun.');
 assert.deepEqual(testedUpperLevel.completedLevels, [14]);

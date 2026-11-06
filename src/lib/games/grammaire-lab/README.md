@@ -2,13 +2,13 @@
 
 Le jeu sépare les contenus pédagogiques (`curriculum.ts`), les règles pures et la progression (`engine.ts`) de l’écran Svelte (`routes/grammaire_lab`).
 
-Les 14 niveaux couvrent la phrase, l’ordre des mots, le sujet, le verbe, les groupes nominaux, les compléments, les transformations, les accords et les sujets complexes jusqu’à la 8H. `practice.ts` complète le parcours initial : 171 défis au total, avec au moins 11 par niveau. Une partie Lego en tire 6 ; une consolidation en tire 4 autres. Le tirage garantit CVD, CVI et CP dans chaque série de 8H. Il faut 5 réussites autonomes sur 6, puis 3 sur 4 en consolidation, pour marquer un niveau maîtrisé. Une réponse trouvée après erreur ou indice est comptée comme entraînement, sans valider la maîtrise. Les seuils servent au jeu ; ils ne certifient pas à eux seuls les attentes du PER.
+Les 14 niveaux couvrent la phrase, l’ordre des mots, le sujet, le verbe, les groupes nominaux, les compléments, les transformations, les accords et les sujets complexes jusqu’à la 8H. `practice.ts` complète le parcours initial : 171 défis au total, avec au moins 11 par niveau. Une série comporte 10 questions. Le tirage garantit CVD, CVI et CP dans chaque série de 8H. Il faut 8 réussites autonomes sur 10 pour marquer un niveau maîtrisé. Une réponse trouvée après erreur ou indice est comptée comme entraînement, sans valider la maîtrise. Les seuils servent au jeu ; ils ne certifient pas à eux seuls les attentes du PER.
 
 La page enregistre seulement la progression agrégée, les réussites, la durée, les aides et les familles d’erreurs dans le contrat Orbis. Elle ne conserve pas les déplacements ni les stratégies détaillées de l’élève.
 
-Les solutions alternatives explicites sont partagées par Lego et Tetris. `TEST_ALL_LEVELS_UNLOCKED` ouvre temporairement tous les niveaux pour la recette, mais une réussite à un niveau supérieur ne saute pas les prérequis du parcours normal.
+Les solutions alternatives explicites sont partagées par le mode Construction et le mode Blocs en chute. `TEST_ALL_LEVELS_UNLOCKED` ouvre temporairement tous les niveaux pour la recette, mais une réussite à un niveau supérieur ne saute pas les prérequis du parcours normal.
 
-Tetris propose la construction de phrases avec intrus et une série rapide de cinq questions de reconnaissance. Les deux variantes disposent d’un chronomètre facultatif et de trois vitesses. La série rapide indique le nombre de réponses attendues et affiche une explication après chaque question.
+Le mode Construction propose des phrases guidées par les classes grammaticales, ainsi que du surlignage, de la réparation et des phrases à trous. Le mode Blocs en chute propose la construction de phrases, la reconnaissance de classes grammaticales, les phrases à trous et les séries rapides. Les variantes disposent d’un chronomètre facultatif et de trois vitesses.
 
 La mascotte Noireau provient de la [bibliothèque Orbis](https://sitefan117.github.io/Orbis/mascotte-noireau/) et de son [index](https://sitefan117.github.io/Orbis/mascotte-noireau/index.json). Deux illustrations individuelles sont copiées localement dans `static/mascotte-noireau/illustrations/` pour le jeu et les supports imprimables. Les planches de poses sont écartées car leurs cellules demandent une vérification manuelle avant découpage.
 

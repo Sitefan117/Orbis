@@ -39,14 +39,13 @@
   let draggedId = '';
   let largeText = false;
   let reducedMotion = false;
-  let speechAvailable = false;
   let showTheory = false;
   let showAnalysis = false;
   let tetrisChallenge: GrammarChallenge | null = null;
   let tetrisRemaining: GrammarBlock[] = [];
   let tetrisPlaced: string[] = [];
   let tetrisTimed = false;
-  let tetrisMode: 'construction' | 'flash' = 'construction';
+  let tetrisMode: 'construction' | 'flash' | 'categories' | 'blanks' = 'construction';
   let tetrisTimeLeft = 60;
   let tetrisSpeed: 'doux' | 'normal' | 'rapide' = 'normal';
   let tetrisMessage = '';
@@ -84,26 +83,13 @@
 
   onMount(async () => {
     reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    speechAvailable = 'speechSynthesis' in window;
     studentName = getStudentName();
     const loaded = await createGameProgressService<GrammarProgress>(studentName, 'grammaire_lab').loadProgress();
     if (loaded.ok && loaded.value) progress = sanitizeProgress(loaded.value.state);
     selectedLevelId = Math.min(14, Math.max(1, progress.unlockedLevel));
     loading = false;
   });
-  onDestroy(() => { stopTimer(); if (speechAvailable) window.speechSynthesis.cancel(); });
-
-  function speakCurrent() {
-    if (!speechAvailable) return;
-    window.speechSynthesis.cancel();
-    const spokenContent = current.kind === 'repair'
-      ? `${current.repair?.before ?? ''}${current.repair?.wrong ?? ''}${current.repair?.after ?? ''}`
-      : `${current.context ?? ''} Blocs disponibles : ${current.blocks.map((block) => block.text).join('. ')}`;
-    const utterance = new SpeechSynthesisUtterance(`${current.prompt} ${spokenContent}`);
-    utterance.lang = 'fr-CH';
-    utterance.rate = 0.88;
-    window.speechSynthesis.speak(utterance);
-  }
+  onDestroy(() => { stopTimer(); });
 
   function isUnlocked(levelId: number) { return TEST_ALL_LEVELS_UNLOCKED || levelId <= progress.unlockedLevel; }
   function chooseLevel(levelId: number) {
@@ -113,7 +99,7 @@
   function startLego(levelId = selectedLevelId, practice = false) {
     if (!isUnlocked(levelId)) return;
     selectedLevelId = levelId; consolidation = practice;
-    activeChallenges = pickChallenges(getGrammarLevel(levelId), practice ? 4 : 6, lastSessionIds[levelId] ?? []);
+    activeChallenges = pickChallenges(getGrammarLevel(levelId), 10, lastSessionIds[levelId] ?? []);
     lastSessionIds = { ...lastSessionIds, [levelId]: activeChallenges.map((challenge) => challenge.id) };
     challengeIndex = 0; stats = freshStats(); reportStatus = 'idle'; showAnalysis = false; screen = 'lego'; resetChallenge();
   }
@@ -201,7 +187,7 @@
   async function finishLevel() {
     if (finishing) return;
     finishing = true;
-    summaryMastered = consolidation ? stats.autonomousCorrect >= 3 : levelMastered(stats.autonomousCorrect, activeChallenges.length);
+    summaryMastered = levelMastered(stats.autonomousCorrect, activeChallenges.length);
     summaryStars = starsForLevel(stats.autonomousCorrect, activeChallenges.length, stats.hints);
     progress = summaryMastered
       ? completeLevel(progress, level.id, summaryStars, stats.autonomousCorrect, stats.errors)
@@ -222,8 +208,9 @@
     screen = 'summary'; finishing = false;
   }
   function findTetrisChallenge(): GrammarChallenge | null {
-    if (tetrisMode === 'flash') {
-      const candidates = GRAMMAR_LEVELS.filter((item) => item.id <= selectedLevelId && item.id >= selectedLevelId - 2).flatMap((item) => item.challenges.filter((challenge) => challenge.kind === 'select'));
+    if (tetrisMode === 'flash' || tetrisMode === 'categories' || tetrisMode === 'blanks') {
+      const wantedKind = tetrisMode === 'blanks' ? 'repair' : 'select';
+      const candidates = GRAMMAR_LEVELS.filter((item) => item.id <= selectedLevelId && item.id >= selectedLevelId - 2).flatMap((item) => item.challenges.filter((challenge) => challenge.kind === wantedKind && (tetrisMode !== 'categories' || challenge.errorFamily === 'classe-grammaticale')));
       const fresh = candidates.filter((item) => !flashUsedIds.includes(item.id));
       const source = fresh.length ? fresh : candidates;
       return source[Math.floor(Math.random() * source.length)] ?? null;
@@ -256,7 +243,7 @@
     const challenge = findTetrisChallenge();
     if (!challenge) return;
     prepareTetrisChallenge(challenge);
-    tetrisMessage = tetrisMode === 'flash' ? flashInstruction(challenge, 1) : 'Attrape les blocs dans l’ordre pour construire la phrase.';
+    tetrisMessage = ['flash', 'categories', 'blanks'].includes(tetrisMode) ? flashInstruction(challenge, 1) : 'Attrape les blocs dans l’ordre pour construire la phrase.';
     tetrisTimeLeft = 60; tetrisStartedAt = Date.now(); screen = 'tetris';
     if (tetrisTimed) startTimer();
   }
@@ -265,7 +252,7 @@
     timerId = setInterval(() => {
       tetrisTimeLeft -= 1;
       if (tetrisTimeLeft <= 0) {
-        stopTimer(); tetrisFinished = true; tetrisMessage = tetrisMode === 'flash' ? 'Temps écoulé. Relis les questions et essaie sans chronomètre.' : 'Temps écoulé. Observe le début de ta phrase et recommence à ton rythme.'; void reportTetris(false);
+        stopTimer(); tetrisFinished = true; tetrisMessage = ['flash', 'categories', 'blanks'].includes(tetrisMode) ? 'Temps écoulé. Relis les questions et essaie sans chronomètre.' : 'Temps écoulé. Observe le début de ta phrase et recommence à ton rythme.'; void reportTetris(false);
       }
     }, 1000);
   }
@@ -273,11 +260,11 @@
   function recordTetrisError(family: string) {
     tetrisErrors += 1;
     tetrisErrorFamilies = { ...tetrisErrorFamilies, [family]: (tetrisErrorFamilies[family] ?? 0) + 1 };
-    if (tetrisMode === 'flash') flashRoundErrors += 1;
+    if (['flash', 'categories', 'blanks'].includes(tetrisMode)) flashRoundErrors += 1;
   }
   function catchTetrisBlock(block: GrammarBlock) {
     if (!tetrisChallenge || tetrisFinished) return;
-    if (tetrisMode === 'flash') {
+    if (['flash', 'categories', 'blanks'].includes(tetrisMode)) {
       if (!tetrisChallenge.solution.includes(block.id)) {
         recordTetrisError(tetrisChallenge.errorFamily);
         tetrisRemaining = tetrisRemaining.filter((item) => item.id !== block.id);
@@ -317,7 +304,7 @@
   function missedTetrisBlock(block: GrammarBlock) {
     if (!tetrisTimed || reducedMotion || tetrisFinished || !tetrisChallenge) return;
     if (tetrisMissedIds.includes(block.id)) return;
-    if (tetrisMode === 'flash') {
+    if (['flash', 'categories', 'blanks'].includes(tetrisMode)) {
       if (tetrisChallenge.solution.includes(block.id) && !tetrisPlaced.includes(block.id)) {
         tetrisMissedIds = [...tetrisMissedIds, block.id];
         recordTetrisError(tetrisChallenge.errorFamily);
@@ -334,10 +321,10 @@
   async function reportTetris(success: boolean) {
     if (!tetrisChallenge) return;
     await recordGameActivity({
-      studentName, gameId: 'grammaire_lab', activityId: tetrisMode === 'flash' ? 'tetris-reconnaissance' : 'tetris-phrase', skillId: tetrisMode === 'flash' ? 'reconnaissance-rapide' : tetrisChallenge.errorFamily,
-      correctCount: tetrisMode === 'flash' ? flashCorrect : success ? 1 : 0,
-      questionCount: tetrisMode === 'flash' ? FLASH_ROUNDS : 1,
-      errorCount: tetrisErrors + (success ? 0 : tetrisMode === 'flash' ? FLASH_ROUNDS - flashRound : 1),
+      studentName, gameId: 'grammaire_lab', activityId: ['flash', 'categories', 'blanks'].includes(tetrisMode) ? 'blocs-reconnaissance' : 'blocs-phrase', skillId: tetrisMode === 'categories' ? 'classes-grammaticales' : tetrisMode === 'blanks' ? 'phrases-a-trous' : tetrisChallenge.errorFamily,
+      correctCount: ['flash', 'categories', 'blanks'].includes(tetrisMode) ? flashCorrect : success ? 1 : 0,
+      questionCount: ['flash', 'categories', 'blanks'].includes(tetrisMode) ? FLASH_ROUNDS : 1,
+      errorCount: tetrisErrors + (success ? 0 : ['flash', 'categories', 'blanks'].includes(tetrisMode) ? FLASH_ROUNDS - flashRound : 1),
       errorFamilies: Object.entries(tetrisErrorFamilies).map(([family, count]) => `${family}:${count}`),
       durationSeconds: Math.max(1, Math.round((Date.now() - tetrisStartedAt) / 1000)), metadata: { mode: 'tetris', variant: tetrisMode, timed: tetrisTimed, speed: tetrisSpeed, level: selectedLevelId }
     });
@@ -347,7 +334,7 @@
 
 <svelte:head>
   <title>L’Atelier des phrases — Orbis</title>
-  <meta name="description" content="Un jeu Lego et Tetris pour construire et comprendre les phrases jusqu’à la 8H." />
+  <meta name="description" content="Un jeu de construction et de blocs en chute pour comprendre les phrases jusqu’à la 8H." />
 </svelte:head>
 
 <div class:large-text={largeText} class:reduced-motion={reducedMotion} class="grammar-lab">
@@ -384,16 +371,14 @@
         <div class="notions" aria-label="Notions du niveau">{#each level.notions as notion}<span>{notion}</span>{/each}</div>
         <button class="theory-toggle" on:click={() => showTheory = !showTheory} aria-expanded={showTheory}>🟢 {showTheory ? 'Masquer le repère' : 'Voir le repère théorique'}</button>
         {#if showTheory}<div class="theory-box">{level.theory}</div>{/if}
-        <button class="primary-action" on:click={() => startLego(level.id)}>Jouer en mode Lego <span>→</span></button>
-        <div class="tetris-setup"><strong>Défi Tetris</strong><label>Type <select bind:value={tetrisMode}><option value="construction">Construire une phrase</option><option value="flash">Reconnaître vite · 5 questions</option></select></label><label><input type="checkbox" bind:checked={tetrisTimed} /> Avec chronomètre</label><label>Vitesse <select bind:value={tetrisSpeed}><option value="doux">Douce</option><option value="normal">Normale</option><option value="rapide">Rapide</option></select></label></div>
-        <button class="tetris-action" disabled={!tetrisUnlocked} on:click={startTetris}>Mode Tetris {tetrisUnlocked ? 'débloqué' : 'après le niveau 3'}</button>
+        <div class="mode-choice"><strong>Choisis ton atelier</strong><button class="primary-action" on:click={() => startLego(level.id)}>Mode Construction <span>→</span></button><div class="tetris-setup"><strong>Mode Blocs en chute</strong><label>Type <select bind:value={tetrisMode}><option value="construction">Construire une phrase</option><option value="categories">Reconnaître une classe grammaticale</option><option value="blanks">Compléter une phrase à trous</option><option value="flash">Reconnaître vite · 5 questions</option></select></label><label><input type="checkbox" bind:checked={tetrisTimed} /> Avec chronomètre</label><label>Vitesse <select bind:value={tetrisSpeed}><option value="doux">Douce</option><option value="normal">Normale</option><option value="rapide">Rapide</option></select></label></div><button class="tetris-action" disabled={!tetrisUnlocked} on:click={startTetris}>Blocs en chute {tetrisUnlocked ? 'débloqué' : 'après le niveau 3'}</button></div>
       </aside>
     </main>
   {:else if screen === 'lego'}
     <main class="play-shell">
-      <div class="play-topline"><button class="back-button" on:click={() => screen = 'map'}>← Parcours</button><div class="challenge-progress" aria-label={`Exercice ${challengeIndex + 1} sur ${activeChallenges.length}`}><span class="challenge-number">{consolidation ? 'Consolidation' : 'Série variée'} · {challengeIndex + 1}/{activeChallenges.length}</span>{#each activeChallenges as _, index}<span class:done={index < challengeIndex} class:current={index === challengeIndex}></span>{/each}</div><span class="score-chip">{stats.autonomousCorrect} autonome{stats.autonomousCorrect > 1 ? 's' : ''}</span></div>
+      <div class="play-topline"><button class="back-button" on:click={() => screen = 'map'}>← Parcours</button><div class="challenge-progress" aria-label={`Question ${challengeIndex + 1} sur ${activeChallenges.length}`}><span class="challenge-number">{consolidation ? 'Consolidation' : 'Série de 10'} · {challengeIndex + 1}/{activeChallenges.length}</span>{#each activeChallenges as _, index}<span class:done={index < challengeIndex} class:current={index === challengeIndex}></span>{/each}</div><span class="score-chip">{stats.autonomousCorrect} autonome{stats.autonomousCorrect > 1 ? 's' : ''}</span></div>
       <section class="workbench" aria-labelledby="challenge-title">
-        <div class="challenge-heading"><div><span class="level-tag">NIVEAU {level.id} · {TASK_LABELS[current.task ?? (current.kind === 'order' ? 'construire' : 'analyser')]}</span><h2 id="challenge-title">{current.prompt}</h2><p class="instruction-note">{current.kind === 'order' ? 'Clique les blocs dans l’ordre ou glisse-les dans la zone. Clique un bloc posé pour le retirer. Vérifie ensuite.' : current.kind === 'highlight' ? 'Touche les mots à surligner dans la phrase, puis vérifie.' : current.kind === 'repair' ? 'Écris le remplacement du mot souligné, puis vérifie.' : current.kind === 'move' ? 'Touche le groupe à retirer ou à déplacer. Lis la phrase obtenue, puis vérifie.' : `Lis ${current.context ? 'la phrase' : 'les propositions'}, choisis ${current.solution.length > 1 ? `${current.solution.length} réponses` : 'une réponse'}, puis vérifie.`}</p></div><div class="heading-actions">{#if speechAvailable}<button class="analysis-toggle" on:click={speakCurrent}>🔊 Écouter la consigne</button>{/if}{#if current.kind !== 'repair' || resolved}<button class="analysis-toggle" on:click={() => showAnalysis = !showAnalysis} aria-expanded={showAnalysis}>🔎 {showAnalysis ? 'Cacher les blocs' : 'Observer les blocs'}</button>{/if}<button class="hint-button" on:click={showHint} disabled={resolved}>💡 Indice</button></div></div>
+        <div class="challenge-heading"><div><span class="level-tag">NIVEAU {level.id} · {TASK_LABELS[current.task ?? (current.kind === 'order' ? 'construire' : 'analyser')]}</span><h2 id="challenge-title">{current.prompt}</h2><p class="instruction-note">{current.kind === 'order' ? 'Construis ta phrase avec les blocs. La consigne indique les classes ou groupes à utiliser ; plusieurs formulations peuvent être acceptées.' : current.kind === 'highlight' ? 'Touche les mots à surligner dans la phrase, puis vérifie.' : current.kind === 'repair' ? 'Écris le remplacement du mot souligné, puis vérifie.' : current.kind === 'move' ? 'Touche le groupe à retirer ou à déplacer. Lis la phrase obtenue, puis vérifie.' : `Lis ${current.context ? 'la phrase' : 'les propositions'}, choisis ${current.solution.length > 1 ? `${current.solution.length} réponses` : 'une réponse'}, puis vérifie.`}</p></div><div class="heading-actions">{#if current.kind !== 'repair' || resolved}<button class="analysis-toggle" on:click={() => showAnalysis = !showAnalysis} aria-expanded={showAnalysis}>🔎 {showAnalysis ? 'Cacher les blocs' : 'Observer les blocs'}</button>{/if}<button class="hint-button" on:click={showHint} disabled={resolved}>💡 Indice</button></div></div>
         {#if current.context && current.kind !== 'highlight' && current.kind !== 'move'}<p class="context-sentence">{current.context}</p>{/if}
         {#if showAnalysis && (current.kind !== 'repair' || resolved)}
           <div class="analysis-panel" aria-label="Analyse grammaticale de la phrase">
@@ -442,15 +427,15 @@
       <aside class="teacher-tip"><img src={`${base}/mascotte-noireau/illustrations/noireau-guide-complice.png`} alt="" /><div><strong>Noireau · repère vert</strong><p>{feedback === 'error' ? current.hint : level.theory}</p></div></aside>
     </main>
   {:else if screen === 'summary'}
-    <main class="summary-card"><img class="summary-noireau" src={`${base}/mascotte-noireau/illustrations/noireau-guide-complice.png`} alt="Noireau" /><span class="kicker">NIVEAU {level.id} · {summaryMastered ? 'MAÎTRISÉ' : 'À CONSOLIDER'}</span><div class="big-stars" aria-label={`${summaryStars} étoiles sur 3`}>{'★'.repeat(summaryStars)}{'☆'.repeat(3 - summaryStars)}</div><h2>{summaryMastered ? 'Construction solide !' : 'Encore un peu de pratique'}</h2><p>{stats.autonomousCorrect} réussite{stats.autonomousCorrect > 1 ? 's' : ''} autonome{stats.autonomousCorrect > 1 ? 's' : ''} sur {activeChallenges.length} · {stats.correct - stats.autonomousCorrect} avec aide · {stats.errors} erreur{stats.errors > 1 ? 's' : ''} · {stats.hints} indice{stats.hints > 1 ? 's' : ''}</p><p>{summaryMastered ? 'Noireau : tu peux poursuivre le parcours.' : 'Noireau : entraîne-toi avec une nouvelle série. Il faut 5 réussites autonomes sur 6, ou 3 sur 4 en consolidation, pour maîtriser ce niveau.'}</p><p class="save-state">{reportStatus === 'saved' ? 'Bilan synchronisé avec Orbis.' : reportStatus === 'local' ? 'Bilan conservé sur cet appareil.' : reportStatus === 'error' ? 'La sauvegarde ou le bilan a échoué sur cet appareil.' : 'Enregistrement en cours…'}</p><div class="summary-actions"><button class="secondary-action" on:click={() => startLego(level.id, !summaryMastered)}>{summaryMastered ? 'Nouvelle série' : 'Faire la consolidation'}</button>{#if summaryMastered && level.id < 14 && isUnlocked(level.id + 1)}<button class="primary-action compact" on:click={() => { selectedLevelId = level.id + 1; screen = 'map'; }}>Niveau suivant →</button>{/if}<button class="tetris-action" disabled={!tetrisUnlocked} on:click={startTetris}>{tetrisUnlocked ? 'Défi Tetris' : 'Tetris après le niveau 3'}</button></div></main>
+    <main class="summary-card"><img class="summary-noireau" src={`${base}/mascotte-noireau/illustrations/noireau-guide-complice.png`} alt="Noireau" /><span class="kicker">NIVEAU {level.id} · {summaryMastered ? 'MAÎTRISÉ' : 'À CONSOLIDER'}</span><div class="big-stars" aria-label={`${summaryStars} étoiles sur 3`}>{'★'.repeat(summaryStars)}{'☆'.repeat(3 - summaryStars)}</div><h2>{summaryMastered ? 'Construction solide !' : 'Encore un peu de pratique'}</h2><p>{stats.autonomousCorrect} réussite{stats.autonomousCorrect > 1 ? 's' : ''} autonome{stats.autonomousCorrect > 1 ? 's' : ''} sur {activeChallenges.length} · {stats.correct - stats.autonomousCorrect} avec aide · {stats.errors} erreur{stats.errors > 1 ? 's' : ''} · {stats.hints} indice{stats.hints > 1 ? 's' : ''}</p><p>{summaryMastered ? 'Noireau : tu peux poursuivre le parcours.' : 'Noireau : entraîne-toi avec une nouvelle série. Il faut 8 réussites autonomes sur 10 pour maîtriser ce niveau.'}</p><p class="save-state">{reportStatus === 'saved' ? 'Bilan synchronisé avec Orbis.' : reportStatus === 'local' ? 'Bilan conservé sur cet appareil.' : reportStatus === 'error' ? 'La sauvegarde ou le bilan a échoué sur cet appareil.' : 'Enregistrement en cours…'}</p><div class="summary-actions"><button class="secondary-action" on:click={() => startLego(level.id, !summaryMastered)}>{summaryMastered ? 'Nouvelle série' : 'Faire la consolidation'}</button>{#if summaryMastered && level.id < 14 && isUnlocked(level.id + 1)}<button class="primary-action compact" on:click={() => { selectedLevelId = level.id + 1; screen = 'map'; }}>Niveau suivant →</button>{/if}<button class="tetris-action" disabled={!tetrisUnlocked} on:click={startTetris}>{tetrisUnlocked ? 'Blocs en chute' : 'Blocs en chute après le niveau 3'}</button></div></main>
   {:else if screen === 'tetris'}
     <main class="tetris-shell">
       <div class="play-topline tetris-topline"><button class="back-button" on:click={() => { stopTimer(); screen = 'map'; }}>← Parcours</button><div class="tetris-settings">{tetrisMode === 'flash' ? 'Reconnaissance' : 'Construction'} · {tetrisTimed ? 'Avec chronomètre' : 'Sans chronomètre'} · Vitesse {tetrisSpeedLabel} · <button class="settings-link" on:click={() => { stopTimer(); screen = 'map'; }}>Réglages</button></div>{#if tetrisTimed}<span class="timer" class:urgent={tetrisTimeLeft <= 10}>{tetrisTimeLeft}s</span>{/if}</div>
       <section class="tetris-board" aria-labelledby="tetris-title">
-        <div class="tetris-copy"><img class="tetris-noireau" src={`${base}/mascotte-noireau/illustrations/noireau-guide-complice.png`} alt="" /><span class="level-tag">DÉFI TETRIS · {tetrisSpeed.toUpperCase()}</span><h2 id="tetris-title">{tetrisMode === 'flash' ? 'Reconnais vite' : 'Attrape la phrase'}</h2><p role="status">{tetrisMessage}</p><p class="tetris-goal">{tetrisMode === 'flash' ? tetrisChallenge?.prompt : `Construis : ${tetrisChallenge?.sentence}`}</p>{#if tetrisMode === 'flash' && tetrisChallenge?.context}<p class="context-sentence">{tetrisChallenge.context}</p>{/if}</div>
-        <div class="sky" class:static={reducedMotion || tetrisFinished} aria-label={reducedMotion ? 'Blocs à choisir' : 'Blocs qui descendent'}><div class="grid-lines" aria-hidden="true"></div>{#each tetrisRemaining as block, index (block.id)}<button class="falling-block" data-category="neutral" style={`--lane:${index % 4};--duration:${tetrisDuration(index)};--delay:${index * 0.65}s`} on:click={() => catchTetrisBlock(block)} on:animationiteration={() => missedTetrisBlock(block)} disabled={tetrisFinished}>{block.text}</button>{/each}{#if tetrisRemaining.length === 0}<div class="confetti-message">{tetrisMode === 'flash' ? 'RÉPONSE COMPLÈTE !' : 'PHRASE COMPLÈTE !'}</div>{/if}</div>
-        <div class="tetris-build"><span class="build-label">{tetrisMode === 'flash' ? 'TES RÉPONSES' : 'TA PHRASE'}</span><div>{tetrisSentence || (tetrisMode === 'flash' ? 'Les réponses choisies apparaissent ici…' : 'Les blocs capturés s’emboîtent ici…')}</div></div>
-        <div class="tetris-footer"><span>{tetrisMode === 'flash' ? `Question ${Math.min(flashRound + 1, FLASH_ROUNDS)}/${FLASH_ROUNDS} · ${flashCorrect} juste${flashCorrect > 1 ? 's' : ''} du premier coup · ` : ''}{tetrisErrors} erreur{tetrisErrors > 1 ? 's' : ''}</span><button class="secondary-action" on:click={startTetris}>{tetrisFinished ? 'Rejouer' : 'Nouvelle série'}</button></div>
+        <div class="tetris-copy"><img class="tetris-noireau" src={`${base}/mascotte-noireau/illustrations/noireau-guide-complice.png`} alt="" /><span class="level-tag">BLOCS EN CHUTE · {tetrisSpeed.toUpperCase()}</span><h2 id="tetris-title">{tetrisMode === 'categories' ? 'Attrape la classe grammaticale' : tetrisMode === 'blanks' ? 'Complète la phrase à trous' : tetrisMode === 'flash' ? 'Reconnais vite' : 'Construis avec les blocs'}</h2><p role="status">{tetrisMessage}</p><p class="tetris-goal">{['flash', 'categories', 'blanks'].includes(tetrisMode) ? tetrisChallenge?.prompt : `Construis une phrase : ${tetrisChallenge?.sentence}`}</p>{#if ['flash', 'categories', 'blanks'].includes(tetrisMode) && tetrisChallenge?.context}<p class="context-sentence">{tetrisChallenge.context}</p>{/if}</div>
+        <div class="sky" class:static={reducedMotion || tetrisFinished} aria-label={reducedMotion ? 'Blocs à choisir' : 'Blocs qui descendent'}><div class="grid-lines" aria-hidden="true"></div>{#each tetrisRemaining as block, index (block.id)}<button class="falling-block" data-category={tetrisMode === 'categories' ? block.category : 'neutral'} style={`--lane:${index % 4};--duration:${tetrisDuration(index)};--delay:${index * 0.65}s`} on:click={() => catchTetrisBlock(block)} on:animationiteration={() => missedTetrisBlock(block)} disabled={tetrisFinished}>{block.text}</button>{/each}{#if tetrisRemaining.length === 0}<div class="confetti-message">{['flash', 'categories', 'blanks'].includes(tetrisMode) ? 'RÉPONSE COMPLÈTE !' : 'PHRASE COMPLÈTE !'}</div>{/if}</div>
+        <div class="tetris-build"><span class="build-label">{['flash', 'categories', 'blanks'].includes(tetrisMode) ? 'TES RÉPONSES' : 'TA PHRASE'}</span><div>{tetrisSentence || (['flash', 'categories', 'blanks'].includes(tetrisMode) ? 'Les réponses choisies apparaissent ici…' : 'Les blocs capturés s’emboîtent ici…')}</div></div>
+        <div class="tetris-footer"><span>{['flash', 'categories', 'blanks'].includes(tetrisMode) ? `Question ${Math.min(flashRound + 1, FLASH_ROUNDS)}/${FLASH_ROUNDS} · ${flashCorrect} juste${flashCorrect > 1 ? 's' : ''} du premier coup · ` : ''}{tetrisErrors} erreur{tetrisErrors > 1 ? 's' : ''}</span><button class="secondary-action" on:click={startTetris}>{tetrisFinished ? 'Rejouer' : 'Nouvelle série'}</button></div>
       </section>
     </main>
   {/if}
@@ -482,7 +467,7 @@
   .tetris-topline{grid-template-columns:auto 1fr auto}.tetris-settings{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;font-size:.85rem;font-weight:800}.tetris-board{overflow:hidden;border-top:7px solid #7551b6}.tetris-copy{padding:1.2rem 1.5rem}.tetris-copy p{margin:.3rem 0;color:#53655c}.tetris-noireau{float:right;width:3.5rem;height:4.5rem;object-fit:contain;object-position:top}.sky{position:relative;height:min(54vh,32rem);overflow:hidden;background:linear-gradient(#0e1720,#182d35);border-block:5px solid #314853}.grid-lines{position:absolute;inset:0;background-image:linear-gradient(#fff1 1px,transparent 1px),linear-gradient(90deg,#fff1 1px,transparent 1px);background-size:25% 3.2rem}.falling-block{position:absolute;z-index:2;left:calc(var(--lane) * 25% + 2%);top:-5rem;width:21%;min-height:3.5rem;padding:.55rem .3rem;border:2px solid #f8f8ef;background:#f0a443;color:#17231e;font-size:clamp(.68rem,2vw,.92rem);font-weight:900;box-shadow:0 5px 0 #9f5c15;animation:fall var(--duration) linear var(--delay) infinite;animation-fill-mode:backwards;cursor:pointer}.falling-block:nth-of-type(3n){background:#58c29b}.falling-block:nth-of-type(4n){background:#92b6f3}@keyframes fall{from{transform:translateY(-5rem)}to{transform:translateY(38rem)}}.confetti-message{position:absolute;inset:0;display:grid;place-items:center;color:#f5c057;font-size:clamp(1.5rem,5vw,3rem);font-weight:1000;letter-spacing:.08em}.tetris-build{min-height:6.5rem;padding:1rem 1.5rem;background:#f4f0ff;border-bottom:1px solid #d0c4e7}.build-label{display:block;color:#7551b6;font:900 .68rem ui-monospace,monospace;letter-spacing:.14em}.tetris-build div{margin-top:.45rem;font-size:1.2rem;font-weight:900}.tetris-footer{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.5rem}
   .tetris-copy .tetris-goal{margin-top:.7rem;padding:.45rem .65rem;background:#f3f0ff;color:#49347b;font-weight:800}.settings-link{border:0;background:transparent;color:#47308a;text-decoration:underline;font-weight:900;cursor:pointer}.sky.static{height:auto;min-height:14rem;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:.6rem;padding:1rem;overflow:visible}.sky.static .grid-lines{display:none}.sky.static .falling-block{position:static;width:100%;animation:none;transform:none;font-size:.9rem}.sky.static .confetti-message{position:static;grid-column:1/-1;min-height:10rem}
   button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #f0a443;outline-offset:3px}button:disabled{cursor:not-allowed}.reduced-motion *{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition:none!important}
-  @media(max-width:850px){.map-layout{grid-template-columns:1fr}.mission-panel{position:static;grid-row:1}.level-grid{grid-template-columns:1fr 1fr}.topbar{align-items:flex-start}.play-topline{grid-template-columns:1fr auto}.challenge-progress{grid-column:1/-1;grid-row:2;justify-content:center}.score-chip{grid-column:2}.tetris-topline{grid-template-columns:auto auto}.tetris-settings{grid-column:1/-1;grid-row:2}}
+  @media(max-width:850px){.map-layout{grid-template-columns:1fr}.mission-panel{position:static}.level-grid{grid-template-columns:1fr 1fr}.topbar{align-items:flex-start}.play-topline{grid-template-columns:1fr auto}.challenge-progress{grid-column:1/-1;grid-row:2;justify-content:center}.score-chip{grid-column:2}.tetris-topline{grid-template-columns:auto auto}.tetris-settings{grid-column:1/-1;grid-row:2}}
   @media(max-width:590px){.topbar,.utility-bar,.challenge-heading{display:block}.topbar nav{justify-content:flex-start;margin-top:1rem}.utility-bar .accessibility{margin-top:.6rem}.test-chip{display:inline-block;margin:.55rem 0}.heading-actions{align-items:flex-start;margin-top:.7rem}.level-grid{grid-template-columns:1fr}.map-layout,.play-shell,.tetris-shell{padding-inline:.65rem}.journey,.mission-panel,.workbench{box-shadow:4px 4px 0 #dbe3dc}.grammar-block{max-width:100%;font-size:.9rem}.falling-block{width:22%;font-size:.62rem;padding:.3rem .15rem}.sky.static{grid-template-columns:repeat(2,minmax(0,1fr))}.workbench-actions>*{flex:1}.summary-card{margin:1rem}.play-topline{font-size:.85rem}.challenge-progress{flex-wrap:wrap}}
   @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition:none!important}}
 </style>

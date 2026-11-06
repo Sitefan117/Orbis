@@ -66,7 +66,9 @@ export const INTERACTIVE_CHALLENGES: Record<number, GrammarChallenge[]> = {
   4: [
     H('i4-a', 'Surligne le verbe dans la phrase.', [b('Les enfants', 'subject'), b('chantent', 'verb'), n('.')], [1], '« chantent » est le verbe ; il s’accorde avec « Les enfants ».', 'Que font les enfants ?', 'verbe'),
     R('i4-b', 'Répare l’accord du verbe.', 'Les chiens ', 'aboie', '.', 'aboient', 'Plusieurs chiens : ils aboient.', 'Remplace « Les chiens » par « ils ».', 'accord-sujet-verbe'),
-    M('i4-c', 'Enlève le groupe qui précise le moment. La phrase doit rester complète.', [b('Le soleil', 'subject', 'gs'), b('brille', 'verb', 'gv'), b('ce matin', 'time', 'cp'), n('.')], 2, '« Le soleil brille. » reste une phrase complète.', 'Essaie de retirer « ce matin ».', 'complement-phrase')
+    M('i4-c', 'Enlève le groupe qui précise le moment. La phrase doit rester complète.', [b('Le soleil', 'subject', 'gs'), b('brille', 'verb', 'gv'), b('ce matin', 'time', 'cp'), n('.')], 2, '« Le soleil brille. » reste une phrase complète.', 'Essaie de retirer « ce matin ».', 'complement-phrase'),
+    S('i4-d', 'analyser', 'Quelle est la classe grammaticale de « rapide » ?', [b('sujet', 'subject'), b('verbe', 'verb'), b('adjectif', 'adjective')], [2], '« rapide » est un adjectif : il précise un nom.', 'Quel mot donne une précision sur un nom ?', 'classe-grammaticale', 'Le train rapide arrive.'),
+    S('i4-e', 'analyser', 'Quelle est la classe grammaticale de « les » ?', [b('déterminant', 'determiner'), b('nom', 'noun'), b('verbe', 'verb')], [0], '« les » est un déterminant : il accompagne un nom.', 'Quel mot accompagne le nom ?', 'classe-grammaticale', 'Les enfants jouent.')
   ],
   9: [
     M('i9-a', 'Enlève le complément de phrase : garde une phrase complète.', [b('Mila', 'subject', 'gs'), b('ouvre', 'verb', 'gv'), b('la fenêtre', 'complement', 'gv'), b('ce matin', 'time', 'cp'), n('.')], 3, '« ce matin » est un CP : on peut le supprimer. « la fenêtre » complète le verbe.', 'Cherche le groupe que l’on peut retirer.', 'complement-phrase'),
