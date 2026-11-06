@@ -24,6 +24,8 @@ export const coursePaths = {
     grammarAnswers: '/cours/francais/grammaire/corrige-des-phrases.html'
   },
   mentalMath: {
+    workshop: '/cours/maths/calcul-mental/atelier/index.html',
+    memory: '/cours/maths/calcul-mental/atelier/aide-memoire.html',
     course: '/cours/maths/calcul-mental/mathracer.html',
     workbook: '/cours/maths/calcul-mental/cahier-mathracer.html',
     answers: '/cours/maths/calcul-mental/corrige-mathracer.html'

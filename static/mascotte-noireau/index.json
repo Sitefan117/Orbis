@@ -1,0 +1,392 @@
+{
+  "version": 1,
+  "personnage": "Noireau",
+  "chemins_relatifs_a": "dossier contenant ce fichier",
+  "conventions": {
+    "positions": "rangée et colonne à partir de 1, de gauche à droite et de haut en bas",
+    "statut": "illustrations générées, poses fixes à examiner avant intégration; aucune planche n'est une animation complète",
+    "decoupage": "les grilles sont indicatives : contrôler les débordements, la transparence et les marges de chaque pose avant utilisation",
+    "orbis_depot": "racine du dépôt Orbis"
+  },
+  "planches": [
+    {
+      "id": "manga-general",
+      "fichier": "planches/manga-general-4x4.png",
+      "style": "manga couleur",
+      "usage": [
+        "fiches",
+        "cours",
+        "jeux"
+      ],
+      "grille": [
+        4,
+        4
+      ],
+      "dimensions_px": [
+        1222,
+        1287
+      ],
+      "cellule_px": null,
+      "remarque": "Grille visuelle non régulière; découpage manuel ou normalisation nécessaire.",
+      "poses": [
+        [
+          "attente",
+          "salut",
+          "explication",
+          "pointer"
+        ],
+        [
+          "reflechir",
+          "perplexe",
+          "decouverte",
+          "celebrer"
+        ],
+        [
+          "encourager",
+          "plaisanter",
+          "oups",
+          "determination"
+        ],
+        [
+          "lire",
+          "victoire",
+          "inviter",
+          "ecouter"
+        ]
+      ]
+    },
+    {
+      "id": "manga-noir-blanc",
+      "fichier": "planches/manga-noir-blanc-4x2.png",
+      "style": "manga noir et blanc",
+      "usage": [
+        "fiches imprimables",
+        "cours",
+        "evaluations"
+      ],
+      "grille": [
+        4,
+        2
+      ],
+      "dimensions_px": [
+        1536,
+        1024
+      ],
+      "cellule_px": [
+        384,
+        512
+      ],
+      "poses": [
+        [
+          "accueillir",
+          "saluer",
+          "reflechir",
+          "presenter"
+        ],
+        [
+          "pointer bas",
+          "oups",
+          "encourager",
+          "celebrer"
+        ]
+      ]
+    },
+    {
+      "id": "collage-editorial",
+      "fichier": "planches/collage-editorial-4x2.png",
+      "style": "collage éditorial",
+      "usage": [
+        "fiches",
+        "cours",
+        "catalogue"
+      ],
+      "grille": [
+        4,
+        2
+      ],
+      "dimensions_px": [
+        1536,
+        1024
+      ],
+      "cellule_px": [
+        384,
+        512
+      ],
+      "poses": [
+        [
+          "accueillir",
+          "saluer",
+          "reflechir",
+          "presenter"
+        ],
+        [
+          "pointer bas",
+          "oups",
+          "encourager",
+          "celebrer"
+        ]
+      ]
+    },
+    {
+      "id": "pixel-pedagogique",
+      "fichier": "planches/pixel-pedagogique-4x2.png",
+      "style": "pixel art pédagogique",
+      "usage": [
+        "fiches numeriques",
+        "jeux",
+        "catalogue arcade"
+      ],
+      "grille": [
+        4,
+        2
+      ],
+      "dimensions_px": [
+        1536,
+        1024
+      ],
+      "cellule_px": [
+        384,
+        512
+      ],
+      "poses": [
+        [
+          "accueillir",
+          "saluer",
+          "reflechir",
+          "presenter"
+        ],
+        [
+          "pointer bas",
+          "oups",
+          "encourager",
+          "celebrer"
+        ]
+      ]
+    },
+    {
+      "id": "catalogue-guide",
+      "fichier": "planches/catalogue-guide-4x2.png",
+      "style": "guide complice",
+      "usage": [
+        "Orbis catalogue jeux",
+        "Orbis catalogue cours"
+      ],
+      "grille": [
+        4,
+        2
+      ],
+      "dimensions_px": [
+        1536,
+        1024
+      ],
+      "cellule_px": [
+        384,
+        512
+      ],
+      "poses": [
+        [
+          "accueillir",
+          "saluer",
+          "reflechir",
+          "presenter"
+        ],
+        [
+          "pointer bas",
+          "oups",
+          "encourager",
+          "celebrer"
+        ]
+      ]
+    },
+    {
+      "id": "catalogue-manga",
+      "fichier": "planches/catalogue-manga-4x2.png",
+      "style": "manga dynamique",
+      "usage": [
+        "Orbis catalogue jeux",
+        "fiches numeriques"
+      ],
+      "grille": [
+        4,
+        2
+      ],
+      "dimensions_px": [
+        1536,
+        1024
+      ],
+      "cellule_px": [
+        384,
+        512
+      ],
+      "poses": [
+        [
+          "accueillir",
+          "saluer",
+          "reflechir",
+          "presenter"
+        ],
+        [
+          "pointer bas",
+          "oups",
+          "encourager",
+          "celebrer"
+        ]
+      ]
+    },
+    {
+      "id": "mathracer",
+      "fichier": "planches/mathracer-reactions-4x2.png",
+      "style": "manga arcade",
+      "usage": [
+        "MathRacer menus",
+        "MathRacer feedback",
+        "MathRacer bilan"
+      ],
+      "route_orbis": "/race",
+      "grille": [
+        4,
+        2
+      ],
+      "dimensions_px": [
+        1536,
+        1024
+      ],
+      "cellule_px": [
+        384,
+        512
+      ],
+      "remarque": "Pour l'interface 2D; ce n'est pas un modèle 3D de conducteur.",
+      "poses": [
+        [
+          "accueillir",
+          "reflechir",
+          "pointer",
+          "celebrer"
+        ],
+        [
+          "oups",
+          "encourager",
+          "boost",
+          "arrivee"
+        ]
+      ]
+    },
+    {
+      "id": "mesurovia",
+      "fichier": "planches/mesurovia-noireau-6x1.png",
+      "style": "illustration aventure",
+      "usage": [
+        "Mesurovia choix avatar"
+      ],
+      "route_orbis": "/mesurovia",
+      "grille": [
+        6,
+        1
+      ],
+      "dimensions_px": [
+        2172,
+        724
+      ],
+      "cellule_px": [
+        362,
+        724
+      ],
+      "remarque": "Six variantes d'un personnage; l'atlas actuel contient six autres personnages. La sélection et les identifiants doivent être adaptés pour conserver ces choix.",
+      "poses": [
+        [
+          "accueil turquoise",
+          "salut bleu",
+          "reflechir moutarde",
+          "pointer rouille",
+          "encourager vert",
+          "clin oeil gris"
+        ]
+      ]
+    },
+    {
+      "id": "conju-lab",
+      "fichier": "planches/conju-lab-combat-4x3.png",
+      "style": "pixel combat",
+      "usage": [
+        "ConjuFighter",
+        "Conju Lab"
+      ],
+      "route_orbis": "/conju_lab",
+      "grille": [
+        4,
+        3
+      ],
+      "dimensions_px": [
+        1448,
+        1086
+      ],
+      "cellule_px": [
+        362,
+        362
+      ],
+      "remarque": "Le sprite actuel du jeu contient aussi le boss; cette planche ne contient que Noireau. Adapter la composition et les positions CSS avant intégration.",
+      "poses": [
+        [
+          "garde",
+          "frappe rapide",
+          "coup puissant",
+          "coup de pied"
+        ],
+        [
+          "mouvement special",
+          "recul",
+          "recuperation",
+          "victoire"
+        ],
+        [
+          "attente",
+          "defaite",
+          "esquive",
+          "victoire finale"
+        ]
+      ]
+    }
+  ],
+  "illustrations": [
+    {
+      "id": "reference-couleur",
+      "fichier": "illustrations/mascotte-couleur.png",
+      "usage": "identité et apparence couleur"
+    },
+    {
+      "id": "reference-noir-blanc",
+      "fichier": "illustrations/mascotte-manga-noir-blanc.png",
+      "usage": "manga et impression noir et blanc; illustration unique"
+    },
+    {
+      "id": "style-manga",
+      "fichier": "illustrations/propositions-style-manga-couleur.png",
+      "usage": "référence visuelle manga"
+    },
+    {
+      "id": "style-pixel",
+      "fichier": "illustrations/propositions-style-pixel-art.png",
+      "usage": "référence visuelle pixel"
+    },
+    {
+      "id": "style-collage",
+      "fichier": "illustrations/propositions-style-collage-editorial.png",
+      "usage": "référence visuelle collage"
+    },
+    {
+      "id": "catalogue-guide-seul",
+      "fichier": "illustrations/noireau-guide-complice.png",
+      "usage": "accueil du catalogue"
+    },
+    {
+      "id": "catalogue-manga-seul",
+      "fichier": "illustrations/noireau-manga-dynamique.png",
+      "usage": "accueil du catalogue, accent expressif"
+    },
+    {
+      "id": "catalogue-pixel-seul",
+      "fichier": "illustrations/noireau-pixel-arcade.png",
+      "usage": "petit visuel pour catalogue arcade"
+    }
+  ]
+}

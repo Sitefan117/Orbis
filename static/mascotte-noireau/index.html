@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Noireau — bibliothèque de la mascotte Orbis</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #20231f; background: #f1f2ee; font: 1rem/1.55 system-ui, sans-serif; }
+    main { max-width: 1200px; margin: auto; padding: 1.5rem; }
+    a { color: #9c3c1b; }
+    header { border-bottom: 1px solid #bac0b7; padding: 1rem 0 2rem; }
+    .eyebrow { font-size: .8rem; text-transform: uppercase; letter-spacing: .12em; }
+    h1 { margin: .2rem 0; font-size: clamp(2.4rem, 6vw, 4.5rem); line-height: 1.1; }
+    h2 { margin: 2.5rem 0 1rem; }
+    .intro { max-width: 65ch; }
+    .notice { padding: 1rem; background: #fff; border-left: 4px solid #b84a26; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 1rem; }
+    article { min-width: 0; background: #fff; border: 1px solid #c5c9c2; }
+    article img { display: block; width: 100%; height: 220px; object-fit: contain; background: #e9ece6; }
+    .card-content { padding: 1rem; }
+    h3 { margin: 0 0 .25rem; font-size: 1.1rem; }
+    .meta { color: #525d51; margin: .3rem 0; }
+    .poses { font-size: .9rem; }
+    footer { margin: 3rem 0 1rem; padding-top: 1rem; border-top: 1px solid #bac0b7; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <a id="orbis-home" href="../">← Orbis</a>
+      <p class="eyebrow">Orbis / ressources visuelles</p>
+      <h1>La bibliothèque de Noireau.</h1>
+      <p class="intro">Des poses pour les fiches, les cours et les jeux. Ouvre une image pour l'afficher en grand; consulte l'index pour retrouver une pose et son usage.</p>
+      <p><a href="index.json">Index détaillé pour une IA (JSON)</a> · <a href="README.md">Guide des images (Markdown)</a></p>
+    </header>
+    <p class="notice">Ces planches présentent des poses fixes. Les grilles servent de repères : vérifier les bords et les marges avant de les découper. Dans Conju Lab, la composition du jeu devra être adaptée, car la planche de Noireau ne contient pas le boss.</p>
+    <h2>Planches de poses</h2>
+    <div id="sheets" class="grid" aria-live="polite"><p>Chargement des images…</p></div>
+    <h2>Illustrations individuelles</h2>
+    <div id="illustrations" class="grid" aria-live="polite"></div>
+    <noscript><p>Active JavaScript pour afficher la galerie. Les fichiers restent accessibles via <a href="index.json">l’index</a>.</p></noscript>
+    <footer>Orbis · Bibliothèque de Noireau</footer>
+  </main>
+  <script>
+    if (location.pathname.includes('/static/mascotte-noireau/')) {
+      document.querySelector('#orbis-home').href = '../../';
+    }
+    function card(item, sheet) {
+      const article = document.createElement('article');
+      const link = document.createElement('a');
+      link.href = item.fichier;
+      const img = document.createElement('img');
+      img.src = item.fichier;
+      img.alt = sheet ? `Planche : ${item.style}` : item.usage;
+      img.loading = 'lazy';
+      link.append(img);
+      const content = document.createElement('div');
+      content.className = 'card-content';
+      const title = document.createElement('h3');
+      title.textContent = sheet ? item.style : item.usage;
+      content.append(title);
+      const info = document.createElement('p');
+      info.className = 'meta';
+      info.textContent = sheet ? `${item.grille[0]} × ${item.grille[1]} · ${item.usage.join(', ')}` : item.id;
+      content.append(info);
+      if (sheet) {
+        const poses = document.createElement('p');
+        poses.className = 'poses';
+        poses.textContent = `Poses : ${item.poses.map(row => row.join(' · ')).join(' / ')}`;
+        content.append(poses);
+      }
+      const open = document.createElement('a');
+      open.href = item.fichier;
+      open.textContent = 'Ouvrir l’image';
+      content.append(open);
+      article.append(link, content);
+      return article;
+    }
+    fetch('index.json').then(response => {
+      if (!response.ok) throw new Error('Index indisponible');
+      return response.json();
+    }).then(data => {
+      const sheets = document.querySelector('#sheets');
+      sheets.replaceChildren(...data.planches.map(item => card(item, true)));
+      document.querySelector('#illustrations').replaceChildren(...data.illustrations.map(item => card(item, false)));
+    }).catch(() => {
+      document.querySelector('#sheets').textContent = 'Impossible de charger la galerie. Réessaie plus tard.';
+    });
+  </script>
+</body>
+</html>

@@ -18,3 +18,5 @@ node tests/geometry-engine-smoke.cjs
 node tests/numeria-engine-smoke.cjs
 node tests/numeria-progress-smoke.cjs
 bash tests/run-conju-lab-smoke.sh
+
+node tests/mental-math-workshop.test.cjs
