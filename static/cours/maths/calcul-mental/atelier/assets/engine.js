@@ -81,6 +81,18 @@ function generate(codes,level,count,mode='drill',rng=Math.random){
  if(mode==='drill'){qs=shuffled(qs,rng);for(let i=1;i<qs.length;i++)if(qs[i].key===qs[i-1].key){const j=qs.findIndex((q,j)=>j>i&&q.key!==qs[i-1].key&&(j===qs.length-1||qs[j+1].key!==qs[i].key));if(j>i)[qs[i],qs[j]]=[qs[j],qs[i]];}}
  return qs;
 }
+function completeSession(code,rng=Math.random){
+ if(!byCode.has(code))throw Error('Choisis une compétence connue.');
+ const seen=new Set(),questions=[];
+ const take=(level,count,phase)=>{
+  let bag=shuffled(poolFor(code,level),rng),chosen=[];
+  for(const spec of bag){const p=makeProblem(code,spec,level);if(!seen.has(p.key)){seen.add(p.key);chosen.push({...p,phase});if(chosen.length===count)break;}}
+  if(chosen.length<count){for(const spec of bag){const p=makeProblem(code,spec,level);chosen.push({...p,phase});if(chosen.length===count)break;}}
+  questions.push(...chosen);
+ };
+ take(1,2,'practice');take(2,2,'practice');take(3,2,'practice');take(3,3,'validation');
+ return questions;
+}
 function numeric(raw){const s=String(raw).trim().replace(',','.');if(!/^-?(?:\d+(?:\.\d*)?|\.\d+)$/.test(s))return null;const n=Number(s);return Number.isFinite(n)?n:null;}
 function grade(p,raw){
  const values=raw.map(numeric);const invalid=values.length!==p.answers.length||values.some(v=>v===null)||(p.kind==='remainder'&&values.some(v=>!Number.isInteger(v)||v<0));
@@ -227,7 +239,7 @@ function diagram(p){
  };
  const divisionPicture=()=>{
   const groups=Math.max(1,Math.floor(b)),quotient=Math.floor(a/b),remainder=Math.round((a-quotient*b)*1e8)/1e8,shownGroups=Math.min(groups,8),gap=7,areaWidth=500,boxWidth=(areaWidth-gap*(shownGroups-1))/shownGroups;
-  height=remainder>0?306:270;
+  height=remainder>0?350:270;
   let out=text(30,22,`1 · Le tas de ${fmt(a)} objets`,'start');
   out+=`<rect x="30" y="32" width="500" height="72" rx="12" fill="#f8f4e8" stroke="#326c58" stroke-width="2"/>${dots(a,35,37,490,62,30)}`;
   out+=`<path d="M280 108 V126" stroke="#326c58" stroke-width="3"/><path d="M272 119 L280 128 L288 119" fill="none" stroke="#326c58" stroke-width="3"/>`;
@@ -240,6 +252,7 @@ function diagram(p){
   if(groups>shownGroups)out+=text(530,254,`Quelques groupes sont dessinés sur ${fmt(groups)}.`,'end');
   if(remainder>0){
    out+=text(30,269,'Objets qui restent à part :','start');out+=dots(remainder,245,248,170,45,12,'#9a4638');
+   out+=`<rect x="80" y="302" width="400" height="38" rx="9" fill="#fff0da" stroke="#9a4638"/>${text(280,328,`${fmt(a)} = ${fmt(b)} × ${fmt(quotient)} + ${fmt(remainder)}`)}`;
   }
   return out;
  };
@@ -262,6 +275,25 @@ function diagram(p){
   out+=`<rect x="305" y="48" width="220" height="52" rx="10" fill="#f8ead1" stroke="#9a4638"/>${text(415,80,`${fmt(ones)} × ${fmt(b)} = ${fmt(ones*b)}`)}`;
   out+=text(280,132,'J’additionne les deux produits')+text(280,166,`${fmt(tens*b)} + ${fmt(ones*b)} = ${fmt(p.answers[0])}`);
   label=`Décomposition : ${fmt(a)} devient ${fmt(tens)} plus ${fmt(ones)}. Je multiplie chaque partie par ${fmt(b)}, puis j’additionne.`;return out;
+ };
+ const hundredsPicture=()=>{
+  const result=p.answers[0],parts=n=>[Math.floor(n/100),Math.floor((n%100)/10),clean(n%10)],rows=[[fmt(a),...parts(a)],[`${signs[op]} ${fmt(b)}`,...parts(b)],[`= ${fmt(result)}`,...parts(result)]];height=235;
+  let out=text(280,24,'Je regarde la valeur de chaque chiffre');
+  const cols=[70,235,350,465],heads=['Nombre','C','D','U'];
+  for(let i=0;i<4;i++){out+=`<rect x="${cols[i]-(i?48:62)}" y="42" width="${i?96:124}" height="36" fill="#dfece4" stroke="#326c58"/>${text(cols[i],67,heads[i])}`;}
+  rows.forEach((row,r)=>{const y=78+r*44,fill=r===2?'#f8ead1':'#fffdf7';for(let i=0;i<4;i++){out+=`<rect x="${cols[i]-(i?48:62)}" y="${y}" width="${i?96:124}" height="44" fill="${fill}" stroke="#9baea3"/>${text(cols[i],y+29,String(row[i]))}`;}});
+  out+=text(280,226,'C = centaines · D = dizaines · U = unités');
+  label=`Tableau de numération : ${fmt(a)} ${signs[op]} ${fmt(b)} = ${fmt(result)}. Les centaines, dizaines et unités gardent leur valeur.`;return out;
+ };
+ const tenthsPicture=()=>{
+  const result=p.answers[0],parts=n=>[Math.floor(n),Math.round((n-Math.floor(n))*10)%10],rows=[[fmt(a),...parts(a)],[`${signs[op]} ${fmt(b)}`,...parts(b)],[`= ${fmt(result)}`,...parts(result)]],tenths=parts(result)[1];height=270;
+  let out=text(280,24,'Je calcule avec les unités et les dixièmes');
+  const cols=[105,300,450],heads=['Nombre','unités','dixièmes'];
+  for(let i=0;i<3;i++){out+=`<rect x="${cols[i]-70}" y="42" width="140" height="36" fill="#dfece4" stroke="#326c58"/>${text(cols[i],67,heads[i])}`;}
+  rows.forEach((row,r)=>{const y=78+r*40,fill=r===2?'#f8ead1':'#fffdf7';for(let i=0;i<3;i++){out+=`<rect x="${cols[i]-70}" y="${y}" width="140" height="40" fill="${fill}" stroke="#9baea3"/>${text(cols[i],y+27,String(row[i]))}`;}});
+  for(let i=0;i<10;i++)out+=`<rect x="80" y="212" width="40" height="32" transform="translate(${i*40} 0)" fill="${i<tenths?'#9fc7ad':'#fff'}" stroke="#326c58"/>`;
+  out+=text(280,264,`${tenths} dixième${tenths>1?'s':''} colorié${tenths>1?'s':''} dans l’unité suivante`);
+  label=`Tableau unités-dixièmes : ${fmt(a)} ${signs[op]} ${fmt(b)} = ${fmt(result)}. La bande partage une unité en dix parts égales.`;return out;
  };
  const graduatedLine=()=>{
   const finish=kind==='complement'?a:op==='+'?a+b:a-b,start=kind==='complement'?b:a,largest=Math.max(start,finish,a,b,1);
@@ -289,15 +321,20 @@ function diagram(p){
   content=powerShiftPicture();
  }else if(op==='/'){
   content=divisionPicture();label=`Deux étapes : je vois d’abord ${fmt(a)} objets, puis je les partage en ${fmt(b)} groupes égaux${kind==='remainder'?' en laissant les objets restants à part':''}.`;
+  if(kind==='remainder')label+=` Je vérifie avec ${fmt(a)} = ${fmt(b)} × ${fmt(p.answers[0])} + ${fmt(p.answers[1])}.`;
  }else if(p.family==='mental-multiply'){
   content=decompositionPicture();
  }else if(p.family==='times25'){
-  height=180;content=text(280,25,'25 est le quart de 100')+`<rect x="45" y="48" width="190" height="52" rx="10" fill="#e4eee7" stroke="#326c58"/>${text(140,80,`${fmt(a)} × 100 = ${fmt(a*100)}`)}<path d="M250 74 H335" stroke="#9a4638" stroke-width="4"/><path d="M325 66 L337 74 L325 82" fill="none" stroke="#9a4638" stroke-width="4"/><rect x="350" y="48" width="165" height="52" rx="10" fill="#f8ead1" stroke="#9a4638"/>${text(432,80,`${fmt(a*100)} : 4`)}`+text(280,140,`Résultat : ${fmt(p.answers[0])}`);label=`Pour multiplier ${fmt(a)} par 25, je multiplie par 100 puis je divise par 4.`;
+  height=225;content=text(280,25,'Quatre groupes de 25 forment 100');for(let i=0;i<4;i++)content+=`<rect x="${55+i*115}" y="48" width="95" height="54" rx="10" fill="${i%2?'#f8ead1':'#e4eee7'}" stroke="#326c58"/>${text(102+i*115,82,'25')}`;content+=text(280,128,'25 + 25 + 25 + 25 = 100')+`<rect x="80" y="150" width="400" height="46" rx="10" fill="#fff0da" stroke="#9a4638"/>${text(280,181,`${fmt(a)} × 25 = (${fmt(a)} × 100) : 4 = ${fmt(p.answers[0])}`)}`;label=`Quatre groupes de 25 forment 100. Pour multiplier ${fmt(a)} par 25, je multiplie par 100 puis je divise par 4.`;
  }else if(p.family==='zero-multiply'){
   height=145;content=text(280,28,b===0?'Chaque groupe est vide':'Un seul exemplaire de chaque objet')+`<rect x="80" y="48" width="400" height="58" rx="12" fill="#e4eee7" stroke="#326c58"/>`+(b===0?text(280,83,'0 objet'):dots(a,90,53,380,48,20))+text(280,135,`${fmt(a)} × ${fmt(b)} = ${fmt(p.answers[0])}`);label=b===0?'Multiplier par zéro donne une collection vide.':'Multiplier par un conserve la quantité.';
  }else if(op==='*'&&Number.isInteger(a)&&Number.isInteger(b)&&a>0&&b>0&&a<=10&&b<=10){
   height=54+a*25;for(let row=0;row<a;row++)for(let col=0;col<b;col++)content+=`<circle cx="${35+col*30}" cy="${25+row*25}" r="8" fill="#36765c"/>`;
   content+=text(385,Math.min(70,height-20),`${a} groupes de ${b}`);label=`${a} lignes de ${b} jetons. Compte ou utilise un produit connu.`;
+ }else if(['hundreds-add','hundreds-sub'].includes(p.family)){
+  content=hundredsPicture();
+ }else if(['decimal-add','decimal-sub'].includes(p.family)){
+  content=tenthsPicture();
  }else if((op==='+'||op==='-')&&a+b>0){
   content=graduatedLine();
  }else{
@@ -307,9 +344,10 @@ function diagram(p){
  return `<figure class="hint-figure"><svg viewBox="0 0 560 ${height}" role="img" aria-label="${esc(label)}">${content}</svg><figcaption>${esc(label)}</figcaption></figure>`;
 }
 function summary(questions,records){
- const list=catalog.skills.filter(s=>questions.some(q=>q.code===s.code)).map(s=>{const planned=questions.filter(q=>q.code===s.code).length;const done=records.filter(r=>r.code===s.code);return {code:s.code,title:s.title,planned,done:done.length,independent:done.filter(r=>r.correct&&r.hints===0).length,aided:done.filter(r=>r.correct&&r.hints>0).length,corrected:done.filter(r=>!r.correct).length};});
- return {planned:questions.length,done:records.length,independent:list.reduce((n,r)=>n+r.independent,0),aided:list.reduce((n,r)=>n+r.aided,0),corrected:list.reduce((n,r)=>n+r.corrected,0),skills:list};
+ const list=catalog.skills.filter(s=>questions.some(q=>q.code===s.code)).map(s=>{const planned=questions.filter(q=>q.code===s.code).length,done=records.filter(r=>r.code===s.code),practice=done.filter(r=>r.phase!=='validation'),validation=done.filter(r=>r.phase==='validation');return {code:s.code,title:s.title,planned,done:done.length,independent:practice.filter(r=>r.correct&&r.hints===0).length,aided:practice.filter(r=>r.correct&&r.hints>0).length,corrected:practice.filter(r=>!r.correct).length,validationDone:validation.length,validationCorrect:validation.filter(r=>r.correct).length};});
+ const validation=records.filter(r=>r.phase==='validation');
+ return {planned:questions.length,done:records.length,independent:list.reduce((n,r)=>n+r.independent,0),aided:list.reduce((n,r)=>n+r.aided,0),corrected:list.reduce((n,r)=>n+r.corrected,0),validationDone:validation.length,validationCorrect:validation.filter(r=>r.correct).length,skills:list};
 }
-const api={catalog,byCode,fmt,esc,poolFor,makeProblem,generate,grade,answerText,strategy,diagram,summary,numeric};
+const api={catalog,byCode,fmt,esc,poolFor,makeProblem,generate,completeSession,grade,answerText,strategy,diagram,summary,numeric};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else g.MentalEngine=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

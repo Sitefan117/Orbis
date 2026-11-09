@@ -28,17 +28,18 @@
   <fieldset class="mode-picker"><legend class="visually-hidden">Mode de travail</legend>
    <label><input type="radio" name="mode" value="print" checked><span><strong>Fiches imprimables</strong><small>Les calculs sont regroupés par compétence.</small></span></label>
    <label><input type="radio" name="mode" value="drill"><span><strong>Entraînement en ligne</strong><small>Les compétences sont mélangées dans la série.</small></span></label>
+   <label><input type="radio" name="mode" value="course"><span><strong>Séance complète</strong><small>Une théorie courte, 6 exercices progressifs et 3 validations.</small></span></label>
   </fieldset>
   <div class="settings">
    <label for="count">Nombre total de calculs<select id="count"><option value="10">10 calculs</option><option value="20">20 calculs</option><option value="30">30 calculs</option><option value="52">52 calculs · toutes les compétences</option></select></label>
    <label for="level">Niveau choisi<select id="level"><option value="1">1 · Je démarre</option><option value="2">2 · Je consolide</option><option value="3">3 · Je progresse</option></select></label>
-   <p class="muted">Le niveau change les nombres proposés.<br>Il ne dépend pas de ta vitesse.</p>
+   <p class="muted" id="settings-note">Le niveau change les nombres proposés.<br>Il ne dépend pas de ta vitesse.</p>
   </div>
  </div>
  <div class="selection-head"><div><p class="eyebrow">2 · JE CHOISIS MES COMPÉTENCES</p><h2>Mon programme</h2></div><div class="selection-actions"><button id="select-all" type="button" class="text-button">Tout cocher</button><button id="clear-selection" type="button" class="text-button">Tout décocher</button></div></div>
  <div id="chapters" class="chapters"></div>
  <div class="selection-bar"><div><strong id="selection-count" aria-live="polite">0 compétence sélectionnée</strong><p class="muted">Certaines petites tables reviennent plusieurs fois pour les mémoriser.</p><p id="setup-error" class="error" role="alert"></p></div><button id="start" type="button" class="primary">Valider ma sélection →</button></div>
- <p class="small-note">En ligne : des corrections expliquées et un bilan de fin de séance. Les réponses ne sont pas enregistrées.</p>
+ <p class="small-note">En ligne : des corrections expliquées et un bilan de fin de séance. La séance complète demande une seule compétence. Les réponses ne sont pas enregistrées.</p>
 </section>
 <section id="workspace" hidden aria-live="off"></section>
 </main>
