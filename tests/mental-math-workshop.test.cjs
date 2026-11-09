@@ -33,7 +33,7 @@ const memo=fs.readFileSync(path.join(root,'aide-memoire.html'),'utf8');for(const
 assert(!memo.includes('□'));assert(memo.includes('Orientation portrait nécessaire'));
 const app=fs.readFileSync(path.join(root,'assets','app.js'),'utf8');assert(app.includes('Clavier numérique intégré'));assert(app.includes("$('#select-all')"));assert(!app.includes('class="chapter" open'));
 assert(app.includes("$('#count').value='52'"));assert(app.includes('Imprimer ce calcul'));assert(app.includes("mode==='course'"));assert(app.includes('Imprimer la théorie'));assert(app.includes('validation finale'));
-const index=fs.readFileSync(path.join(root,'index.html'),'utf8');assert(index.includes('name="mode" value="course"'));
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');assert(index.includes('name="mode" value="course"'));assert(index.includes('name="mode" value="theory-print"'));assert(app.includes("location.href='aide-memoire.html#course-builder'"));
 assert(E.poolFor('LM07',3).some(p=>p.b===1000));assert(E.poolFor('DM06',3).some(p=>p.b===1000));assert(E.poolFor('CD03',3).some(p=>p.b===1000));assert(E.poolFor('CD04',3).some(p=>p.b===1000));
 for(const code of ['TM01','TM02','TM03','TM04','TM05','TM06','TM07','TM08']){const p=E.makeProblem(code,E.poolFor(code,2).find(x=>x.a===5),2),a=E.strategy(p);assert(!a.h3.includes('0 groupe'),code);}
 assert(!E.catalog.skills.find(s=>s.code==='PC02').manipulation.includes('Retires-en'));
