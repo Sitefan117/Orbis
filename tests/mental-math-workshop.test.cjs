@@ -29,7 +29,7 @@ assert.equal(E.numeric(' 2,5 '),2.5);for(const raw of ['','2e3','1/2','NaN','2,3
 const qs=E.generate(['PC01','DM02'],1,10);const sum=E.summary(qs,[{code:'PC01',correct:true,hints:0},{code:'PC01',correct:true,hints:2},{code:'DM02',correct:false,hints:0}]);
 assert.equal(sum.done,3);assert.equal(sum.independent,1);assert.equal(sum.aided,1);assert.equal(sum.corrected,1);assert.equal(sum.planned,10);
 const courseQs=E.completeSession('PC01',()=>0.25),courseRecords=courseQs.map((q,i)=>({code:q.code,correct:i!==7,hints:0,phase:q.phase})),courseSum=E.summary(courseQs,courseRecords);assert.equal(courseSum.validationDone,3);assert.equal(courseSum.validationCorrect,2);assert.equal(courseSum.skills[0].validationCorrect,2);
-const memo=fs.readFileSync(path.join(root,'aide-memoire.html'),'utf8');for(const s of E.catalog.skills)assert(memo.includes('id="'+s.code+'"'));
+const memo=fs.readFileSync(path.join(root,'aide-memoire.html'),'utf8');for(const s of E.catalog.skills)assert(memo.includes('id="'+s.code+'"'));assert(memo.includes('data-course-skill'));assert(memo.includes('course-print'));assert(memo.includes('Créer un cours imprimable avec la théorie'));
 assert(!memo.includes('□'));assert(memo.includes('Orientation portrait nécessaire'));
 const app=fs.readFileSync(path.join(root,'assets','app.js'),'utf8');assert(app.includes('Clavier numérique intégré'));assert(app.includes("$('#select-all')"));assert(!app.includes('class="chapter" open'));
 assert(app.includes("$('#count').value='52'"));assert(app.includes('Imprimer ce calcul'));assert(app.includes("mode==='course'"));assert(app.includes('Imprimer la théorie'));assert(app.includes('validation finale'));
