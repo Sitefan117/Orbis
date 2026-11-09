@@ -11,12 +11,13 @@ for(const s of E.catalog.skills){assert(s.method1&&s.method2&&s.manipulation);fo
  else assert(Math.abs(expected-p.answers[0])<1e-7,p.key);
  assert(E.grade(p,p.answers.map(E.fmt)).correct,p.key);assert(!E.grade(p,p.answers.map(n=>String(n+1))).correct,p.key);assert(!E.grade(p,p.answers.map(()=>'' )).valid);
  const a=E.strategy(p),diagram=E.diagram(p);assert(a.h2&&a.h3&&a.steps.length>=2);for(const text of [p.prompt,a.h2,a.h3,...a.steps,diagram]){assert(!/undefined|NaN|Infinity/.test(text),p.key);assert(!text.includes('□'),p.key);}
- if(p.op==='/'){assert(diagram.includes('1 · Le tas de'),p.key);assert(diagram.includes('2 · Je partage en'),p.key);}
- if((p.op==='+'||p.op==='-')&&p.kind!=='estimate')assert(diagram.includes('Droite graduée'),p.key);
+ if(p.op==='/'&&!['divide-power','decimal-divide10'].includes(p.family)){assert(diagram.includes('1 · Le tas de'),p.key);assert(diagram.includes('2 · Je partage en'),p.key);}
+ if(['times-power','divide-power','decimal-times10','decimal-divide10'].includes(p.family))assert(diagram.includes('Valeur de position'),p.key);
+ if((p.op==='+'||p.op==='-')&&p.kind!=='estimate'){assert(diagram.includes('Droite graduée'),p.key);if(p.code.startsWith('CD'))assert(diagram.includes('un dixième'),p.key);}
  }
- for(const n of [10,20,30])for(const mode of ['print','drill']){const qs=E.generate([s.code],level,n,mode);assert.equal(qs.length,n);assert(qs.every(q=>q.code===s.code));}
+ for(const n of [10,20,30,52])for(const mode of ['print','drill']){const qs=E.generate([s.code],level,n,mode);assert.equal(qs.length,n);assert(qs.every(q=>q.code===s.code));}
 }}
-for(const size of [1,3,7,10,20,30])for(const n of [10,20,30]){const codes=E.catalog.skills.slice(0,size).map(s=>s.code);if(size>n){assert.throws(()=>E.generate(codes,2,n));continue;}
+for(const size of [1,3,7,10,20,30,52])for(const n of [10,20,30,52]){const codes=E.catalog.skills.slice(0,size).map(s=>s.code);if(size>n){assert.throws(()=>E.generate(codes,2,n));continue;}
  const qs=E.generate(codes,2,n,'print');assert.equal(qs.length,n);const counts=codes.map(c=>qs.filter(q=>q.code===c).length);assert(Math.max(...counts)-Math.min(...counts)<=1);assert(counts.every(n=>n>=1));assert.equal(new Set(qs.map(q=>q.code)).size,size);
  const indices=qs.map(q=>codes.indexOf(q.code));assert(indices.every((n,i)=>i===0||n>=indices[i-1]));}
 for(const codes of [[],['UNKNOWN']])assert.throws(()=>E.generate(codes,1,10));
@@ -26,4 +27,8 @@ assert.equal(sum.done,3);assert.equal(sum.independent,1);assert.equal(sum.aided,
 const memo=fs.readFileSync(path.join(root,'aide-memoire.html'),'utf8');for(const s of E.catalog.skills)assert(memo.includes('id="'+s.code+'"'));
 assert(!memo.includes('□'));assert(memo.includes('Orientation portrait nécessaire'));
 const app=fs.readFileSync(path.join(root,'assets','app.js'),'utf8');assert(app.includes('Clavier numérique intégré'));assert(app.includes("$('#select-all')"));assert(!app.includes('class="chapter" open'));
+assert(app.includes("$('#count').value='52'"));assert(app.includes('Imprimer ce calcul'));
+assert(E.poolFor('LM07',3).some(p=>p.b===1000));assert(E.poolFor('DM06',3).some(p=>p.b===1000));assert(E.poolFor('CD03',3).some(p=>p.b===1000));assert(E.poolFor('CD04',3).some(p=>p.b===1000));
+for(const code of ['TM01','TM02','TM03','TM04','TM05','TM06','TM07','TM08']){const p=E.makeProblem(code,E.poolFor(code,2).find(x=>x.a===5),2),a=E.strategy(p);assert(!a.h3.includes('0 groupe'),code);}
+assert(!E.catalog.skills.find(s=>s.code==='PC02').manipulation.includes('Retires-en'));
 console.log(`Calcul mental : ${cases} calculs vérifiés, 52 compétences × 3 niveaux, séries équilibrées, corrections, aides et bilans.`);
