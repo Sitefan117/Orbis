@@ -3,10 +3,12 @@ function filter(){document.querySelectorAll('.memo-page').forEach(p=>p.hidden=(c
 chapter.onchange=()=>{skill.value='all';filter();};skill.onchange=filter;
 document.querySelector('#memo-print').onclick=()=>window.print();
 function updateCourseCount(){const n=courseChecks.filter(c=>c.checked).length;courseCount.textContent=`${n} compétence${n>1?'s':''} sélectionnée${n>1?'s':''}`;courseError.textContent='';}
-courseChecks.forEach(c=>c.onchange=updateCourseCount);
+const requestedSkills=new Set((new URLSearchParams(location.search).get('skills')||'').split(',').filter(code=>/^([A-Z]{2}\d{2})$/.test(code)));
+courseChecks.forEach(c=>{if(requestedSkills.has(c.value))c.checked=true;c.onchange=updateCourseCount;});
+updateCourseCount();
 document.querySelector('#course-all').onclick=()=>{courseChecks.forEach(c=>c.checked=true);updateCourseCount();};
 document.querySelector('#course-none').onclick=()=>{courseChecks.forEach(c=>c.checked=false);updateCourseCount();};
-function printCourse(kind){const selected=new Set(courseChecks.filter(c=>c.checked).map(c=>c.value));if(!selected.size){courseError.textContent='Choisis au moins une compétence pour créer le dossier.';return;}document.querySelectorAll('.memo-page').forEach(p=>p.hidden=!selected.has(p.id));document.querySelector('#course-cover-count').textContent=`${selected.size} compétence${selected.size>1?'s':''} sélectionnée${selected.size>1?'s':''}`;document.querySelector('#course-cover-title').textContent=kind==='course-answers'?'Corrigé du dossier':'Mon dossier de calcul mental';document.querySelector('#course-cover-subtitle').textContent=kind==='course-answers'?'Réponses et démarches expliquées.':'Théorie, méthodes, manipulation et exercices progressifs.';document.body.dataset.printKind=kind;window.print();}
+function printCourse(kind){const selected=new Set(courseChecks.filter(c=>c.checked).map(c=>c.value));if(!selected.size){courseError.textContent='Choisis au moins une compétence pour créer le dossier.';return;}document.querySelectorAll('.memo-page').forEach(p=>p.hidden=!selected.has(p.id));document.querySelector('#course-cover-count').textContent=`${selected.size} compétence${selected.size>1?'s':''} sélectionnée${selected.size>1?'s':''}`;document.querySelector('#course-cover-title').textContent=kind==='course-answers'?'Corrigé du dossier':'Mon dossier de calcul mental';document.querySelector('#course-cover-subtitle').textContent=kind==='course-answers'?'Réponses et démarches expliquées, exercices et validations.':'Théorie verte, exercices bleus et validation rouge pour chaque compétence.';document.body.dataset.printKind=kind;window.print();}
 document.querySelector('#course-print').onclick=()=>printCourse('course');
 document.querySelector('#course-answers').onclick=()=>printCourse('course-answers');
 window.addEventListener('afterprint',()=>{if(['course','course-answers'].includes(document.body.dataset.printKind)){document.body.removeAttribute('data-print-kind');filter();}});

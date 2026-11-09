@@ -1,14 +1,17 @@
 .course-exercises,
+.course-validation,
 .course-answer-key {
   display: none;
 }
 
 .course-exercises > ol,
+.course-validation > ol,
 .course-answer-key > ol {
   padding-left: 24px;
 }
 
 .course-exercises > ol > li,
+.course-validation > ol > li,
 .course-answer-key > ol > li {
   margin: 12px 0;
   padding: 8px 0;
@@ -17,6 +20,40 @@
 
 .course-exercises small {
   color: #52645b;
+}
+
+.course-theory {
+  border: 3px solid var(--green);
+  border-radius: 12px;
+  padding: 12px;
+  background: #f0f6ed;
+}
+
+.course-theory .manipulate,
+.course-theory .memo-example {
+  background: #f7fbf5;
+  border-left-color: var(--green);
+}
+
+.course-exercises {
+  border: 3px solid var(--blue);
+  border-radius: 12px;
+  padding: 18px;
+  background: #edf5fb;
+}
+
+.course-validation {
+  border: 3px solid var(--red);
+  border-radius: 12px;
+  padding: 18px;
+  background: #fff1ef;
+}
+
+.validation-result {
+  margin-top: 24px;
+  border-top: 2px solid var(--red);
+  padding-top: 14px;
+  font-size: 1.1rem;
 }
 
 @media print {
@@ -60,8 +97,21 @@
     break-before: page;
   }
 
+  body[data-print-kind="course"] .course-validation {
+    display: block;
+    break-before: page;
+    break-after: page;
+  }
+
   body[data-print-kind="course"] .course-answer-key {
     display: none;
+  }
+
+  body[data-print-kind="course"] .course-theory,
+  body[data-print-kind="course"] .course-exercises,
+  body[data-print-kind="course"] .course-validation {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
   body[data-print-kind="course-answers"] .memo-page > :not(.course-answer-key) {
