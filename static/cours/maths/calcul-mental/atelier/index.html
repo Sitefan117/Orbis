@@ -29,7 +29,7 @@
    <label><input type="radio" name="mode" value="print" checked><span><strong>Fiches imprimables</strong><small>Les calculs sont regroupés par compétence.</small></span></label>
    <label><input type="radio" name="mode" value="drill"><span><strong>Entraînement en ligne</strong><small>Les compétences sont mélangées dans la série.</small></span></label>
    <label><input type="radio" name="mode" value="course"><span><strong>Séance complète</strong><small>Une théorie courte, 6 exercices progressifs et 3 validations.</small></span></label>
-   <label><input type="radio" name="mode" value="theory-print"><span><strong>Cours imprimable</strong><small>Je coche des compétences et j’imprime leur théorie.</small></span></label>
+   <label><input type="radio" name="mode" value="theory-print"><span><strong>Cours + exercices</strong><small>Je coche des compétences et j’imprime un dossier complet.</small></span></label>
   </fieldset>
   <div class="settings">
    <label for="count">Nombre total de calculs<select id="count"><option value="10">10 calculs</option><option value="20">20 calculs</option><option value="30">30 calculs</option><option value="52">52 calculs · toutes les compétences</option></select></label>
@@ -40,7 +40,7 @@
  <div class="selection-head"><div><p class="eyebrow">2 · JE CHOISIS MES COMPÉTENCES</p><h2>Mon programme</h2></div><div class="selection-actions"><button id="select-all" type="button" class="text-button">Tout cocher</button><button id="clear-selection" type="button" class="text-button">Tout décocher</button></div></div>
  <div id="chapters" class="chapters"></div>
  <div class="selection-bar"><div><strong id="selection-count" aria-live="polite">0 compétence sélectionnée</strong><p class="muted">Certaines petites tables reviennent plusieurs fois pour les mémoriser.</p><p id="setup-error" class="error" role="alert"></p></div><button id="start" type="button" class="primary">Valider ma sélection →</button></div>
- <p class="small-note">En ligne : des corrections expliquées et un bilan de fin de séance. Le cours imprimable ouvre le choix des compétences théoriques.</p>
+ <p class="small-note">En ligne : des corrections expliquées et un bilan de fin de séance. Le dossier imprimable réunit théorie et exercices ; le corrigé s’imprime séparément.</p>
 </section>
 <section id="workspace" hidden aria-live="off"></section>
 </main>

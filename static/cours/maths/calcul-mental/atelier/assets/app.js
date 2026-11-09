@@ -11,7 +11,7 @@ $('#chapters').addEventListener('click',e=>{const b=e.target.closest('[data-togg
 $('#clear-selection').addEventListener('click',()=>{document.querySelectorAll('input[name="skill"]').forEach(i=>i.checked=false);updateSelection();});
 $('#select-all').addEventListener('click',()=>{document.querySelectorAll('input[name="skill"]').forEach(i=>i.checked=true);$('#count').value='52';updateSelection();});
 $('#count').addEventListener('change',updateSelection);
-function updateMode(){const mode=$('input[name="mode"]:checked').value,course=mode==='course',theory=mode==='theory-print';$('#count').disabled=course||theory;$('#level').disabled=course||theory;$('#settings-note').innerHTML=course?'La séance complète traverse automatiquement les niveaux 1, 2 et 3.<br>Choisis une seule compétence.':theory?'Le cours imprimable permet de réunir plusieurs théories dans un seul document.':'Le niveau change les nombres proposés.<br>Il ne dépend pas de ta vitesse.';}
+function updateMode(){const mode=$('input[name="mode"]:checked').value,course=mode==='course',theory=mode==='theory-print';$('#count').disabled=course||theory;$('#level').disabled=course||theory;$('#settings-note').innerHTML=course?'La séance complète traverse automatiquement les niveaux 1, 2 et 3.<br>Choisis une seule compétence.':theory?'Le dossier réunit la théorie et six exercices progressifs par compétence.':'Le niveau change les nombres proposés.<br>Il ne dépend pas de ta vitesse.';}
 document.querySelectorAll('input[name="mode"]').forEach(input=>input.addEventListener('change',updateMode));updateMode();
 const preset=new URLSearchParams(location.search).get('skill');
 if(E.byCode.has(preset)){document.querySelector(`input[name="skill"][value="${preset}"]`).checked=true;updateSelection();}

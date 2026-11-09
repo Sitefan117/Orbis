@@ -1,0 +1,78 @@
+.course-exercises,
+.course-answer-key {
+  display: none;
+}
+
+.course-exercises > ol,
+.course-answer-key > ol {
+  padding-left: 24px;
+}
+
+.course-exercises > ol > li,
+.course-answer-key > ol > li {
+  margin: 12px 0;
+  padding: 8px 0;
+  break-inside: avoid;
+}
+
+.course-exercises small {
+  color: #52645b;
+}
+
+@media print {
+  body[data-print-kind="course"] .course-builder,
+  body[data-print-kind="course"] .memo-tools,
+  body[data-print-kind="course"] .memo-toc,
+  body[data-print-kind="course"] .memo-intro,
+  body[data-print-kind="course"] .memo-bottom,
+  body[data-print-kind="course"] .site-header,
+  body[data-print-kind="course"] .site-footer,
+  body[data-print-kind="course-answers"] .course-builder,
+  body[data-print-kind="course-answers"] .memo-tools,
+  body[data-print-kind="course-answers"] .memo-toc,
+  body[data-print-kind="course-answers"] .memo-intro,
+  body[data-print-kind="course-answers"] .memo-bottom,
+  body[data-print-kind="course-answers"] .site-header,
+  body[data-print-kind="course-answers"] .site-footer {
+    display: none !important;
+  }
+
+  body[data-print-kind="course"] .course-cover,
+  body[data-print-kind="course-answers"] .course-cover {
+    display: block;
+    break-after: page;
+  }
+
+  body[data-print-kind="course"] .memo-page,
+  body[data-print-kind="course-answers"] .memo-page {
+    display: block !important;
+    break-before: page;
+    break-inside: auto;
+  }
+
+  body[data-print-kind="course"] .memo-page[hidden],
+  body[data-print-kind="course-answers"] .memo-page[hidden] {
+    display: none !important;
+  }
+
+  body[data-print-kind="course"] .course-exercises {
+    display: block;
+    break-before: page;
+  }
+
+  body[data-print-kind="course"] .course-answer-key {
+    display: none;
+  }
+
+  body[data-print-kind="course-answers"] .memo-page > :not(.course-answer-key) {
+    display: none !important;
+  }
+
+  body[data-print-kind="course-answers"] .course-answer-key {
+    display: block;
+  }
+
+  body[data-print-kind="course-answers"] .course-answer-key ol {
+    font-size: 10pt;
+  }
+}
