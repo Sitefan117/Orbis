@@ -1,0 +1,178 @@
+.course-exercises,
+.course-validation,
+.course-answer-key {
+  display: none;
+}
+
+.course-exercises > ol,
+.course-validation > ol,
+.course-answer-key > ol {
+  padding-left: 24px;
+}
+
+.course-exercises > ol,
+.course-validation > ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 34px;
+  align-items: start;
+}
+
+.course-exercises > ol > li,
+.course-validation > ol > li,
+.course-answer-key > ol > li {
+  margin: 12px 0;
+  padding: 8px 0;
+  break-inside: avoid;
+}
+
+.course-exercises small {
+  color: #52645b;
+}
+
+.course-theory {
+  border: 3px solid var(--green);
+  border-radius: 12px;
+  padding: 12px;
+  background: #f0f6ed;
+}
+
+.course-theory .manipulate,
+.course-theory .memo-example {
+  background: #f7fbf5;
+  border-left-color: var(--green);
+}
+
+.course-exercises {
+  border: 3px solid var(--blue);
+  border-radius: 12px;
+  padding: 18px;
+  background: #edf5fb;
+}
+
+.course-validation {
+  border: 3px solid var(--red);
+  border-radius: 12px;
+  padding: 18px;
+  background: #fff1ef;
+}
+
+.validation-result {
+  margin-top: 24px;
+  border-top: 2px solid var(--red);
+  padding-top: 14px;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 680px) {
+  .course-exercises > ol,
+  .course-validation > ol {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  body[data-print-kind="course"] .course-builder,
+  body[data-print-kind="course"] .memo-tools,
+  body[data-print-kind="course"] .memo-toc,
+  body[data-print-kind="course"] .memo-intro,
+  body[data-print-kind="course"] .memo-bottom,
+  body[data-print-kind="course"] .site-header,
+  body[data-print-kind="course"] .site-footer,
+  body[data-print-kind="course-answers"] .course-builder,
+  body[data-print-kind="course-answers"] .memo-tools,
+  body[data-print-kind="course-answers"] .memo-toc,
+  body[data-print-kind="course-answers"] .memo-intro,
+  body[data-print-kind="course-answers"] .memo-bottom,
+  body[data-print-kind="course-answers"] .site-header,
+  body[data-print-kind="course-answers"] .site-footer {
+    display: none !important;
+  }
+
+  body[data-print-kind="course"] .course-cover,
+  body[data-print-kind="course-answers"] .course-cover {
+    display: block;
+    break-after: page;
+  }
+
+  body[data-print-kind="course"] .memo-page,
+  body[data-print-kind="course-answers"] .memo-page {
+    display: block !important;
+    break-before: page;
+    break-inside: auto;
+  }
+
+  body[data-print-kind="course"] .memo-page[hidden],
+  body[data-print-kind="course-answers"] .memo-page[hidden] {
+    display: none !important;
+  }
+
+  body[data-print-kind="course"] .course-exercises {
+    display: block;
+    break-before: page;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+    padding: 10px 14px;
+    font-size: 9.5pt;
+    line-height: 1.25;
+  }
+
+  body[data-print-kind="course"] .course-exercises .memo-chapter,
+  body[data-print-kind="course"] .course-exercises h3,
+  body[data-print-kind="course"] .course-exercises > p,
+  body[data-print-kind="course"] .course-exercises > ol {
+    margin-top: 3px;
+    margin-bottom: 5px;
+  }
+
+  body[data-print-kind="course"] .course-exercises > ol > li {
+    margin: 0;
+    padding: 3px 0;
+  }
+
+  body[data-print-kind="course"] .course-exercises .paper-answers {
+    gap: 8px;
+    margin-top: 3px;
+  }
+
+  body[data-print-kind="course"] .course-exercises .paper-blank {
+    height: 14px;
+  }
+
+  body[data-print-kind="course"] .course-exercises .paper-work {
+    height: 6mm;
+  }
+
+  body[data-print-kind="course"] .course-exercises small {
+    font-size: 8pt;
+  }
+
+  body[data-print-kind="course"] .course-validation {
+    display: block;
+    break-before: page;
+    break-after: page;
+  }
+
+  body[data-print-kind="course"] .course-answer-key {
+    display: none;
+  }
+
+  body[data-print-kind="course"] .course-theory,
+  body[data-print-kind="course"] .course-exercises,
+  body[data-print-kind="course"] .course-validation {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body[data-print-kind="course-answers"] .memo-page > :not(.course-answer-key) {
+    display: none !important;
+  }
+
+  body[data-print-kind="course-answers"] .course-answer-key {
+    display: block;
+  }
+
+  body[data-print-kind="course-answers"] .course-answer-key ol {
+    font-size: 10pt;
+  }
+}

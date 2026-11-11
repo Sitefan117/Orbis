@@ -52,7 +52,7 @@
       "example1": "Pour 7 − 3, je pars de 7 et je recule de 3 : 6, 5, 4.",
       "method2": "Chercher ce qui manque",
       "example2": "Je cherche 3 + combien = 7 ; il manque 4.",
-      "manipulation": "Pose 7 jetons. Retires-en 3. Compte ceux qui restent.",
+      "manipulation": "Pose 7 jetons. Retire-en 3. Compte ceux qui restent.",
       "visual": "7 − 3 = 4",
       "sourceId": "02",
       "code": "PC02",
@@ -382,14 +382,14 @@
       "family": "mental-multiply"
     },
     {
-      "title": "Multiplier un entier par 10 ou 100",
-      "objective": "Multiplier un entier par 10 ou par 100.",
-      "method1": "Compter les dizaines",
-      "example1": "23 × 10, ce sont 23 dizaines, soit 230.",
-      "method2": "Décomposer le nombre",
-      "example2": "23 × 10 = 20 × 10 + 3 × 10 = 200 + 30 = 230.",
-      "manipulation": "Avec des cartes de valeur, transforme 23 unités en 23 dizaines, puis fais l’inverse.",
-      "visual": "23 × 10 = 230 ; 230 : 10 = 23",
+      "title": "Multiplier un entier par 10, 100 ou 1 000",
+      "objective": "Multiplier un entier par une puissance de 10 en comprenant la valeur de chaque chiffre.",
+      "method1": "Déplacer les chiffres vers une valeur plus grande",
+      "example1": "23 × 100 : le 2 passe des dizaines aux milliers et le 3 des unités aux centaines. On obtient 2 300.",
+      "method2": "Ajouter les zéros nécessaires",
+      "example2": "Avec un entier, × 10 ajoute un zéro, × 100 en ajoute deux et × 1 000 en ajoute trois : 23 × 100 = 2 300.",
+      "manipulation": "Place 23 dans un tableau de numération. Décale chaque chiffre de deux colonnes vers la gauche pour multiplier par 100, puis complète les places vides avec des zéros.",
+      "visual": "23 × 100 = 2 300",
       "sourceId": "14",
       "code": "LM07",
       "chapter": "LM",
@@ -586,14 +586,14 @@
       "family": "division-decompose"
     },
     {
-      "title": "Diviser un entier par 10 ou 100",
-      "objective": "Diviser des dizaines ou centaines entières par 10 ou 100.",
-      "method1": "Partager les dizaines",
-      "example1": "Pour 230 : 10, je partage 23 dizaines en 10 groupes : chaque groupe reçoit 23 unités.",
-      "method2": "Utiliser la multiplication inverse",
-      "example2": "Je sais que 23 × 10 = 230, donc 230 : 10 = 23.",
-      "manipulation": "Forme 10 groupes égaux avec 230 jetons ou représente 23 dizaines par des cartes.",
-      "visual": "230 : 10 = 23",
+      "title": "Diviser un entier par 10, 100 ou 1 000",
+      "objective": "Diviser un entier par une puissance de 10 en comprenant la valeur de chaque chiffre.",
+      "method1": "Déplacer les chiffres vers une valeur plus petite",
+      "example1": "2 300 : 100 : le 2 passe des milliers aux dizaines et le 3 des centaines aux unités. On obtient 23.",
+      "method2": "Retirer les zéros lorsque le partage est exact",
+      "example2": "Si le nombre se termine par assez de zéros, : 10 en retire un, : 100 en retire deux et : 1 000 en retire trois.",
+      "manipulation": "Place 2 300 dans un tableau de numération. Décale chaque chiffre de deux colonnes vers la droite pour diviser par 100.",
+      "visual": "2 300 : 100 = 23",
       "sourceId": "28",
       "code": "DM06",
       "chapter": "DM",
@@ -748,32 +748,61 @@
       "family": "decimal-sub"
     },
     {
-      "title": "Multiplier des dixièmes par 10",
-      "objective": "Multiplier un nombre décimal simple par 10.",
-      "method1": "Raisonner en dixièmes",
-      "example1": "2,4 représente 24 dixièmes ; 2,4 × 10 = 24.",
-      "method2": "Décomposer le nombre",
-      "example2": "2,4 × 10 = 2 × 10 + 0,4 × 10 = 20 + 4 = 24.",
-      "manipulation": "Utilise 24 jetons pour représenter 24 dixièmes. Échange chaque groupe de 10 dixièmes contre une unité.",
-      "visual": "2,4 × 10 = 24 ; 24 : 10 = 2,4",
+      "title": "Multiplier un décimal par 10, 100 ou 1 000",
+      "objective": "Multiplier un nombre décimal par une puissance de 10.",
+      "method1": "Changer la valeur de chaque chiffre",
+      "example1": "2,4 × 10 = 24 : les 2 unités deviennent 2 dizaines et les 4 dixièmes deviennent 4 unités.",
+      "method2": "Déplacer la virgule vers la droite",
+      "example2": "× 10 : un rang ; × 100 : deux rangs ; × 1 000 : trois rangs. J’ajoute des zéros si une place est vide.",
+      "manipulation": "Écris 2,4 dans un tableau de numération. Pour × 100, déplace la virgule de deux places vers la droite et complète la place vide par un zéro : 240.",
+      "visual": "2,4 × 100 = 240",
       "sourceId": "25",
       "code": "CD03",
       "chapter": "CD",
       "family": "decimal-times10"
     },
     {
-      "title": "Diviser par 10 : les dixièmes",
-      "objective": "Diviser mentalement par 10 avec un résultat pouvant contenir des dixièmes.",
-      "method1": "Partager en dix",
-      "example1": "Pour 24 : 10, je partage 24 unités en 10 groupes : 2 unités et 4 dixièmes par groupe, soit 2,4.",
-      "method2": "Utiliser la multiplication inverse",
-      "example2": "Puisque 2,4 × 10 = 24, alors 24 : 10 = 2,4.",
-      "manipulation": "Partage 24 jetons entre 10 personnes : donne 2 jetons à chacune, puis partage les 4 restants en dixièmes.",
-      "visual": "24 : 10 = 2,4",
+      "title": "Diviser par 10, 100 ou 1 000",
+      "objective": "Diviser un nombre par une puissance de 10, avec un résultat décimal si nécessaire.",
+      "method1": "Changer la valeur de chaque chiffre",
+      "example1": "24 : 10 = 2,4 : les 2 dizaines deviennent 2 unités et les 4 unités deviennent 4 dixièmes.",
+      "method2": "Déplacer la virgule vers la gauche",
+      "example2": ": 10 : un rang ; : 100 : deux rangs ; : 1 000 : trois rangs. J’ajoute des zéros devant si une place est vide.",
+      "manipulation": "Écris 24 dans un tableau de numération avec sa virgule après les unités. Pour : 100, déplace la virgule de deux places vers la gauche : 0,24.",
+      "visual": "24 : 100 = 0,24",
       "sourceId": "36",
       "code": "CD04",
       "chapter": "CD",
       "family": "decimal-divide10"
     }
   ]
-};if(typeof module!=="undefined"&&module.exports)module.exports=data;else g.MentalCatalogue=data;})(typeof globalThis!=="undefined"?globalThis:this);
+};
+const multiplicationGuides={
+  2:['Doubler le nombre','7 × 2 = 7 + 7 = 14.','Forme 7 paires de jetons, puis réunis les deux colonnes.'],
+  3:['Doubler puis ajouter encore le nombre','7 × 3 = 7 × 2 + 7 = 14 + 7 = 21.','Construis deux rangées de 7 jetons, puis ajoute une troisième rangée.'],
+  4:['Doubler deux fois','7 × 4 : double 7 pour obtenir 14, puis double 14 pour obtenir 28.','Fais 7 groupes de 4 et partage chaque groupe en deux paires.'],
+  5:['Prendre la moitié du produit par 10','7 × 5 est la moitié de 7 × 10 : 70 : 2 = 35.','Aligne 7 groupes de 10 jetons et garde la moitié de chaque groupe.'],
+  6:['Utiliser × 5 puis ajouter un groupe','7 × 6 = 7 × 5 + 7 = 35 + 7 = 42.','Construis 5 rangées de 7 jetons, puis ajoute une rangée.'],
+  7:['Utiliser × 5 et × 2','7 × 7 = 7 × 5 + 7 × 2 = 35 + 14 = 49.','Sépare 7 rangées en un paquet de 5 rangées et un paquet de 2.'],
+  8:['Doubler trois fois','7 × 8 : 7 devient 14, puis 28, puis 56.','Partage 8 rangées en deux, puis encore en deux pour voir les doubles successifs.'],
+  9:['Utiliser × 10 puis retirer un groupe','7 × 9 = 7 × 10 − 7 = 70 − 7 = 63.','Construis 7 rangées de 10 jetons et retire un jeton dans chaque rangée.']
+};
+const divisionGuides={
+  2:['Prendre la moitié','18 : 2 = 9 : je partage 18 en deux groupes égaux.'],
+  3:['Chercher le produit du livret de 3','21 : 3 = 7 car 3 × 7 = 21.'],
+  4:['Prendre deux moitiés','28 : 4 : moitié de 28 = 14, puis moitié de 14 = 7.'],
+  5:['Doubler puis diviser par 10','35 : 5 = 70 : 10 = 7.'],
+  6:['Diviser par 3 puis par 2','42 : 6 : 42 : 3 = 14, puis 14 : 2 = 7.'],
+  7:['Chercher le produit du livret de 7','49 : 7 = 7 car 7 × 7 = 49.'],
+  8:['Prendre trois moitiés','56 : 8 : 56 devient 28, puis 14, puis 7.'],
+  9:['Utiliser le livret de 9','63 : 9 = 7 car 7 × 10 − 7 = 63.']
+};
+for(const skill of data.skills){
+ if(skill.family==='fixed-multiply'){
+  const guide=multiplicationGuides[skill.factor];skill.method2=guide[0];skill.example2=guide[1];skill.manipulation=guide[2];
+ }
+ if(skill.family==='fixed-divide'){
+  const guide=divisionGuides[skill.factor];skill.method2=guide[0];skill.example2=guide[1];skill.manipulation=`Représente le partage avec des jetons, puis vérifie avec cette stratégie : ${guide[1]}`;
+ }
+}
+if(typeof module!=="undefined"&&module.exports)module.exports=data;else g.MentalCatalogue=data;})(typeof globalThis!=="undefined"?globalThis:this);

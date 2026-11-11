@@ -39,34 +39,34 @@ function poolFor(code,level){
  case 'derive-table':pairs(range(6,[6,8,9][L]),range(2,[5,8,9][L]),'*');break;
  case 'times5':case 'times9':case 'times25':{const factor={times5:5,times9:9,times25:25}[f];for(const n of range(2,[5,10,16][L]))add(n,factor,'*');break;}
  case 'mental-multiply':pairs(range([11,12,25][L],[24,49,99][L]),range(2,[3,5,6][L]),'*');break;
- case 'times-power':for(const n of range([1,10,10][L],[9,39,99][L]))for(const d of (L===0?[10]:[10,100]))add(n,d,'*');break;
+ case 'times-power':for(const n of range([1,10,10][L],[9,39,99][L]))for(const d of (L===0?[10]:L===1?[10,100]:[10,100,1000]))add(n,d,'*');break;
  case 'fixed-multiply':for(const n of range([1,1,4][L],[5,9,10][L]))add(n,s.factor,'*');break;
  case 'fixed-divide':for(const n of range([1,1,4][L],[5,9,10][L]))add(n*s.factor,s.factor,'/');break;
  case 'division-table':for(const d of range(2,[4,6,9][L]))for(const q of range(1,[5,9,9][L]))add(q*d,d,'/');break;
  case 'remainder':for(const d of range(2,[4,6,9][L]))for(const q of range(1,[4,8,12][L]))for(const r of range(1,d-1))add(q*d+r,d,'/','remainder');break;
  case 'divide4':case 'divide5': {const d=f==='divide4'?4:5;for(const q of range([2,5,10][L],[6,12,25][L]))add(q*d,d,'/');break;}
  case 'division-decompose':for(const d of range(2,[3,5,6][L]))for(const q of range([11,12,15][L],[19,29,49][L]))add(q*d,d,'/');break;
- case 'divide-power':for(const n of range([1,10,10][L],[9,39,99][L]))for(const d of (L===0?[10]:[10,100]))add(n*d,d,'/');break;
+ case 'divide-power':for(const n of range([1,10,10][L],[9,39,99][L]))for(const d of (L===0?[10]:L===1?[10,100]:[10,100,1000]))add(n*d,d,'/');break;
  case 'decimal-add':for(const a of range([1,11,15][L],[8,29,75][L]))for(const b of range([1,1,5][L],[8,9,35][L]))if(L!==0||a+b<=10)add(a/10,b/10,'+');break;
  case 'decimal-sub':for(const a of range([2,10,15][L],[9,39,79][L]))for(const b of range([1,1,5][L],[8,9,39][L]))if(a>b)add(a/10,b/10,'-');break;
- case 'decimal-times10':for(const n of range([1,11,11][L],[9,49,99][L]))add(n/10,10,'*');break;
- case 'decimal-divide10':for(const n of range([1,11,11][L],[9,49,99][L]))add(n,10,'/');break;
+ case 'decimal-times10':for(const n of range([1,11,11][L],[9,49,99][L]))for(const d of (L===0?[10]:L===1?[10,100]:[10,100,1000]))add(n/10,d,'*');break;
+ case 'decimal-divide10':for(const n of range([1,11,11][L],[9,49,99][L]))for(const d of (L===0?[10]:L===1?[10,100]:[10,100,1000]))add(n,d,'/');break;
  default:throw Error('Famille non gérée : '+f);
  }
  if(!p.length)throw Error('Aucun calcul disponible.');cache.set(key,p);return p;
 }
-function makeProblem(code,spec){
+function makeProblem(code,spec,level=2){
  const s=byCode.get(code),{a,b,op,kind='number',unit=0}=spec;
  const result=clean(op==='+'?a+b:op==='-'?a-b:op==='*'?a*b:a/b);
  let answers=[result], labels=['Réponse'],prompt=`${fmt(a)} ${signs[op]} ${fmt(b)}`;
  if(kind==='complement')prompt=`${fmt(b)} + ____ = ${fmt(a)}`;
  if(kind==='remainder'){answers=[Math.floor(a/b),a%b];labels=['Quotient','Reste'];prompt=`${fmt(a)} : ${fmt(b)}`;}
  if(kind==='estimate'){const ra=Math.round(a/unit)*unit,rb=Math.round(b/unit)*unit;answers=[op==='+'?ra+rb:ra-rb,result];labels=['Estimation','Résultat exact'];}
- return {code,family:s.family,a,b,op,kind,unit,answers,labels,prompt,key:`${code}:${a}:${op}:${b}:${kind}`};
+ return {code,family:s.family,factor:s.factor||0,level,a,b,op,kind,unit,answers,labels,prompt,key:`${code}:${a}:${op}:${b}:${kind}`};
 }
 function shuffled(xs,rng=Math.random){const a=[...xs];for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function generate(codes,level,count,mode='drill',rng=Math.random){
- if(![10,20,30].includes(count))throw Error('Choisis 10, 20 ou 30 calculs.');
+ if(![10,20,30,52].includes(count))throw Error('Choisis 10, 20, 30 ou 52 calculs.');
  if(![1,2,3].includes(level))throw Error('Choisis un niveau de 1 à 3.');
  if(!['print','drill'].includes(mode))throw Error('Choisis un mode de travail.');
  const selected=catalog.skills.filter(s=>codes.includes(s.code));
@@ -75,11 +75,23 @@ function generate(codes,level,count,mode='drill',rng=Math.random){
  if(selected.length>count)throw Error(`Tu as coché ${selected.length} compétences pour ${count} calculs. Augmente le nombre de calculs ou réduis la sélection.`);
  const extras=new Set(shuffled(selected.map(s=>s.code),rng).slice(0,count%selected.length));let qs=[];
  for(const s of selected){const n=Math.floor(count/selected.length)+(extras.has(s.code)?1:0);let bag=[],last='';for(let i=0;i<n;i++){
-  if(!bag.length){bag=shuffled(poolFor(s.code,level),rng);if(bag.length>1){let item=makeProblem(s.code,bag[bag.length-1]);if(item.key===last)[bag[0],bag[bag.length-1]]=[bag[bag.length-1],bag[0]];}}
-  const p=makeProblem(s.code,bag.pop());qs.push(p);last=p.key;
+  if(!bag.length){bag=shuffled(poolFor(s.code,level),rng);if(bag.length>1){let item=makeProblem(s.code,bag[bag.length-1],level);if(item.key===last)[bag[0],bag[bag.length-1]]=[bag[bag.length-1],bag[0]];}}
+  const p=makeProblem(s.code,bag.pop(),level);qs.push(p);last=p.key;
  }}
  if(mode==='drill'){qs=shuffled(qs,rng);for(let i=1;i<qs.length;i++)if(qs[i].key===qs[i-1].key){const j=qs.findIndex((q,j)=>j>i&&q.key!==qs[i-1].key&&(j===qs.length-1||qs[j+1].key!==qs[i].key));if(j>i)[qs[i],qs[j]]=[qs[j],qs[i]];}}
  return qs;
+}
+function completeSession(code,rng=Math.random){
+ if(!byCode.has(code))throw Error('Choisis une compétence connue.');
+ const seen=new Set(),questions=[];
+ const take=(level,count,phase)=>{
+  let bag=shuffled(poolFor(code,level),rng),chosen=[];
+  for(const spec of bag){const p=makeProblem(code,spec,level);if(!seen.has(p.key)){seen.add(p.key);chosen.push({...p,phase});if(chosen.length===count)break;}}
+  if(chosen.length<count){for(const spec of bag){const p=makeProblem(code,spec,level);chosen.push({...p,phase});if(chosen.length===count)break;}}
+  questions.push(...chosen);
+ };
+ take(1,2,'practice');take(2,2,'practice');take(3,2,'practice');take(3,3,'validation');
+ return questions;
 }
 function numeric(raw){const s=String(raw).trim().replace(',','.');if(!/^-?(?:\d+(?:\.\d*)?|\.\d+)$/.test(s))return null;const n=Number(s);return Number.isFinite(n)?n:null;}
 function grade(p,raw){
@@ -130,6 +142,25 @@ function strategy(p){
  }else if(f==='times25'){
   h2=`Calcule d’abord ${A} × 100 = □.`;h3=`${A} × 100 = ${a*100}. Partage ${a*100} en 4 parts égales.`;
   steps=[`25 est le quart de 100.`,`${A} × 100 = ${a*100}.`,`${a*100} : 4 = ${R}.`];
+ }else if(f==='fixed-multiply'){
+  const factor=b;
+  if(factor===2){h2=`Double ${A}.`;h3=`${A} × 2, c’est ${A} + ${A} = ____.`;steps=[`${A} + ${A} = ${R}.`,`${A} × 2 = ${R}.`];}
+  else if(factor===3){h2=`Calcule d’abord ${A} × 2.`;h3=`${A} × 2 = ${a*2}. Ajoute encore ${A} : ${a*2} + ${A} = ____.`;steps=[`${A} × 2 = ${a*2}.`,`${a*2} + ${A} = ${R}.`];}
+  else if(factor===4){h2=`Double ${A} une première fois.`;h3=`${A} × 2 = ${a*2}. Double encore ${a*2}.`;steps=[`${A} × 2 = ${a*2}.`,`${a*2} × 2 = ${R}. Deux doubles reviennent à multiplier par 4.`];}
+  else if(factor===5){h2=`Calcule ${A} × 10.`;h3=`${A} × 10 = ${a*10}. Prends la moitié.`;steps=[`${A} × 10 = ${a*10}.`,`${a*10} : 2 = ${R}.`];}
+  else if(factor===6){h2=`Calcule ${A} × 5.`;h3=`${A} × 5 = ${a*5}. Ajoute encore un groupe de ${A}.`;steps=[`${A} × 5 = ${a*5}.`,`${a*5} + ${A} = ${R}.`];}
+  else if(factor===7){h2=`Sépare 7 en 5 + 2.`;h3=`${A} × 5 = ${a*5} et ${A} × 2 = ${a*2}. Additionne les deux résultats.`;steps=[`${A} × 5 = ${a*5}.`,`${A} × 2 = ${a*2}.`,`${a*5} + ${a*2} = ${R}.`];}
+  else if(factor===8){h2=`Double ${A}.`;h3=`Continue les doubles : ${A} → ${a*2} → ${a*4} → ____.`;steps=[`${A} × 2 = ${a*2}.`,`${a*2} × 2 = ${a*4}.`,`${a*4} × 2 = ${R}.`];}
+  else {h2=`Calcule ${A} × 10.`;h3=`${A} × 10 = ${a*10}. Retire un groupe de ${A}.`;steps=[`${A} × 10 = ${a*10}.`,`${a*10} − ${A} = ${R}.`];}
+ }else if(f==='fixed-divide'){
+  const factor=b,q=p.answers[0];
+  if(factor===2){h2=`Partage ${A} en deux groupes égaux.`;h3=`Cherche la moitié de ${A}.`;steps=[`La moitié de ${A} est ${R}.`,`${A} : 2 = ${R}.`];}
+  else if(factor===4){h2=`Prends la moitié de ${A}.`;h3=`La moitié de ${A} est ${a/2}. Prends encore la moitié.`;steps=[`${A} : 2 = ${a/2}.`,`${a/2} : 2 = ${R}.`];}
+  else if(factor===5){h2=`Double ${A}.`;h3=`${A} × 2 = ${a*2}. Divise ce résultat par 10.`;steps=[`${A} × 2 = ${a*2}.`,`${a*2} : 10 = ${R}.`];}
+  else if(factor===6){h2=`Divise d’abord ${A} par 3.`;h3=`${A} : 3 = ${a/3}. Prends ensuite la moitié.`;steps=[`${A} : 3 = ${a/3}.`,`${a/3} : 2 = ${R}.`];}
+  else if(factor===8){h2=`Prends la moitié de ${A}.`;h3=`Continue les moitiés : ${A} → ${a/2} → ${a/4} → ____.`;steps=[`${A} : 2 = ${a/2}.`,`${a/2} : 2 = ${a/4}.`,`${a/4} : 2 = ${R}.`];}
+  else if(factor===9){h2=`Cherche un nombre qui, multiplié par 10 puis diminué de lui-même, donne ${A}.`;h3=`____ × 10 − ____ = ${A}.`;steps=[`${q} × 10 = ${q*10}.`,`${q*10} − ${q} = ${A}.`,`Donc ${A} : 9 = ${R}.`];}
+  else {h2=`Cherche ${factor} × ____ = ${A}.`;h3=`Utilise le livret de ${factor} pour retrouver le facteur manquant.`;steps=[`${factor} × ${R} = ${A}.`,`Donc ${A} : ${factor} = ${R}.`];}
  }else if(f==='divide4'){
   h2=`Prends d’abord la moitié de ${A}.`;h3=`La moitié de ${A} est ${fmt(a/2)}. Prends encore la moitié de ${fmt(a/2)}.`;
   steps=[`${A} : 2 = ${fmt(a/2)}.`,`${fmt(a/2)} : 2 = ${R}. Prendre deux moitiés revient à diviser par 4.`];
@@ -145,13 +176,17 @@ function strategy(p){
   const at=Math.round(a*10),bt=Math.round(b*10);h2=`${A}, c’est ${at} dixièmes. ${B}, c’est ${bt} dixièmes.`;
   h3=`Calcule ${at} ${signs[op]} ${bt} = □ dixièmes. Puis écris le nombre décimal.`;
   const total=op==='+'?at+bt:at-bt;steps=[`Je calcule en dixièmes : ${at} ${signs[op]} ${bt} = ${total}.`,`${total} dixièmes = ${R}.`];
- }else if(f==='decimal-times10'){
-  h2=`${A} correspond à ${Math.round(a*10)} dixièmes. Que devient un dixième multiplié par 10 ?`;
-  h3=`Chaque dixième devient une unité. ${Math.round(a*10)} dixièmes deviennent □ unités.`;
-  steps=[`${A} = ${Math.round(a*10)} dixièmes.`,`Multipliés par 10, ils deviennent ${R} unités. ${A} × 10 = ${R}.`];
- }else if(f==='decimal-divide10'){
-  h2=`Partage ${A} en 10. Une unité partagée en 10 donne des dixièmes.`;h3=`${A} : 10 donne ${A} dixièmes. Écris ce nombre avec une virgule si nécessaire.`;
-  steps=[`${A} unités partagées en 10 parts égales donnent ${A} dixièmes par part.`,`${A} dixièmes = ${R}.`];
+ }else if(f==='decimal-times10'||f==='decimal-divide10'||f==='times-power'||f==='divide-power'){
+  const places=Math.round(Math.log10(b)),plural=places>1?'s':'',multiply=op==='*',direction=multiply?'droite':'gauche',zeros='0'.repeat(places);
+  if((f==='times-power'||f==='divide-power')&&p.level===1){
+   h2=multiply?`Multiplier par 10 rend chaque chiffre 10 fois plus grand.`:`Diviser par 10 rend chaque chiffre 10 fois plus petit.`;
+   h3=multiply?`Comme ${A} est entier, ajoute ${places} zéro${plural} à sa droite : ${A}${zeros}.`:`Le partage est exact : retire ${places} zéro${plural} à droite de ${A}.`;
+  }else{
+   h2=`Repère la virgule de ${A}${Number.isInteger(a)?', placée après les unités':''}.`;
+   h3=`Pour ${multiply?'multiplier':'diviser'} par ${B}, déplace la virgule de ${places} place${plural} vers la ${direction}. Complète les places vides avec des zéros.`;
+  }
+  const action=multiply?'vers une valeur plus grande':'vers une valeur plus petite';
+  steps=[`Chaque chiffre se déplace de ${places} rang${plural} ${action}.`,`La virgule se retrouve ${places} place${plural} plus à ${direction}.`,`${A} ${signs[op]} ${B} = ${R}.`];
  }else if(f==='tens-add'||f==='tens-sub'){
   h2=`Compte les dizaines : ${a/10} ${signs[op]} ${b/10} = □ dizaines.`;
   h3=`Effectue le petit calcul, puis transforme les dizaines en unités.`;
@@ -170,12 +205,8 @@ function strategy(p){
   const tens=Math.floor(a/10)*10,ones=a-tens;h2=`Sépare ${A} en ${tens} et ${ones}. Calcule ${tens} × ${B}.`;
   h3=`${tens} × ${B} = ${tens*b}. Ajoute le résultat de ${ones} × ${B}.`;
   steps=[`${A} = ${tens} + ${ones}.`,`${tens} × ${B} = ${tens*b} et ${ones} × ${B} = ${ones*b}.`,`${tens*b} + ${ones*b} = ${R}.`];
- }else if(f==='times-power'){
-  h2=`${A} × ${B} représente ${A} ${b===10?'dizaines':'centaines'}.`;
-  h3=`Une ${b===10?'dizaine vaut 10':'centaine vaut 100'} unités. Convertis ${A} ${b===10?'dizaines':'centaines'} en unités.`;
-  steps=[`${A} × ${B} = ${A} ${b===10?'dizaines':'centaines'}.`,`Cela fait ${R} unités.`];
  }else if(op==='*'){
-  const first=a>=5?5:Math.max(1,a-1),rest=a-first;
+  const first=a>5?5:Math.max(1,a-1),rest=a-first;
   h2=`Calcule d’abord ${first} × ${B}. Combien de groupes restent à compter ?`;
   h3=`${first} × ${B} = ${first*b}. Ajoute ${rest} groupe(s) de ${B} : ${first*b} + ${rest} × ${B} = □.`;
   steps=[`${A} groupes = ${first} groupes + ${rest} groupe(s).`,`${first} × ${B} = ${first*b} ; ${rest} × ${B} = ${rest*b}.`,`${first*b} + ${rest*b} = ${R}.`];
@@ -208,7 +239,7 @@ function diagram(p){
  };
  const divisionPicture=()=>{
   const groups=Math.max(1,Math.floor(b)),quotient=Math.floor(a/b),remainder=Math.round((a-quotient*b)*1e8)/1e8,shownGroups=Math.min(groups,8),gap=7,areaWidth=500,boxWidth=(areaWidth-gap*(shownGroups-1))/shownGroups;
-  height=remainder>0?306:270;
+  height=remainder>0?350:270;
   let out=text(30,22,`1 · Le tas de ${fmt(a)} objets`,'start');
   out+=`<rect x="30" y="32" width="500" height="72" rx="12" fill="#f8f4e8" stroke="#326c58" stroke-width="2"/>${dots(a,35,37,490,62,30)}`;
   out+=`<path d="M280 108 V126" stroke="#326c58" stroke-width="3"/><path d="M272 119 L280 128 L288 119" fill="none" stroke="#326c58" stroke-width="3"/>`;
@@ -221,18 +252,59 @@ function diagram(p){
   if(groups>shownGroups)out+=text(530,254,`Quelques groupes sont dessinés sur ${fmt(groups)}.`,'end');
   if(remainder>0){
    out+=text(30,269,'Objets qui restent à part :','start');out+=dots(remainder,245,248,170,45,12,'#9a4638');
+   out+=`<rect x="80" y="302" width="400" height="38" rx="9" fill="#fff0da" stroke="#9a4638"/>${text(280,328,`${fmt(a)} = ${fmt(b)} × ${fmt(quotient)} + ${fmt(remainder)}`)}`;
   }
   return out;
  };
+ const powerShiftPicture=()=>{
+  const places=Math.round(Math.log10(b)),multiply=op==='*',direction=multiply?'droite':'gauche',result=fmt(p.answers[0]);height=190;
+  let out=text(280,25,`${multiply?'Je multiplie':'Je divise'} par ${fmt(b)} : ${places} déplacement${places>1?'s':''}`);
+  out+=`<rect x="40" y="48" width="170" height="58" rx="12" fill="#e4eee7" stroke="#326c58" stroke-width="2"/>${text(125,84,fmt(a))}`;
+  out+=`<path d="M225 77 H335" stroke="#9a4638" stroke-width="4" marker-end="url(#power-arrow-${esc(p.code)})"/><defs><marker id="power-arrow-${esc(p.code)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9a4638"/></marker></defs>`;
+  out+=text(280,59,`${places} place${places>1?'s':''} vers la ${direction}`);
+  out+=`<rect x="350" y="48" width="170" height="58" rx="12" fill="#f8ead1" stroke="#9a4638" stroke-width="2"/>${text(435,84,result)}`;
+  const zeroRule=Number.isInteger(a)&&Number.isInteger(p.answers[0])?(multiply?`Entier : j’ajoute ${places} zéro${places>1?'s':''}.`:`Partage exact : je retire ${places} zéro${places>1?'s':''}.`):`Je complète avec des zéros si une place est vide.`;
+  out+=text(280,140,`La virgule se déplace vers la ${direction}.`)+text(280,171,zeroRule);
+  label=`Valeur de position : pour ${multiply?'multiplier':'diviser'} par ${fmt(b)}, la virgule se déplace de ${places} place${places>1?'s':''} vers la ${direction}. ${zeroRule}`;
+  return out;
+ };
+ const decompositionPicture=()=>{
+  const tens=Math.floor(a/10)*10,ones=a-tens;height=185;
+  let out=text(280,24,`Je décompose ${fmt(a)} en ${fmt(tens)} + ${fmt(ones)}`);
+  out+=`<rect x="35" y="48" width="220" height="52" rx="10" fill="#e4eee7" stroke="#326c58"/>${text(145,80,`${fmt(tens)} × ${fmt(b)} = ${fmt(tens*b)}`)}`;
+  out+=`<rect x="305" y="48" width="220" height="52" rx="10" fill="#f8ead1" stroke="#9a4638"/>${text(415,80,`${fmt(ones)} × ${fmt(b)} = ${fmt(ones*b)}`)}`;
+  out+=text(280,132,'J’additionne les deux produits')+text(280,166,`${fmt(tens*b)} + ${fmt(ones*b)} = ${fmt(p.answers[0])}`);
+  label=`Décomposition : ${fmt(a)} devient ${fmt(tens)} plus ${fmt(ones)}. Je multiplie chaque partie par ${fmt(b)}, puis j’additionne.`;return out;
+ };
+ const hundredsPicture=()=>{
+  const result=p.answers[0],parts=n=>[Math.floor(n/100),Math.floor((n%100)/10),clean(n%10)],rows=[[fmt(a),...parts(a)],[`${signs[op]} ${fmt(b)}`,...parts(b)],[`= ${fmt(result)}`,...parts(result)]];height=235;
+  let out=text(280,24,'Je regarde la valeur de chaque chiffre');
+  const cols=[70,235,350,465],heads=['Nombre','C','D','U'];
+  for(let i=0;i<4;i++){out+=`<rect x="${cols[i]-(i?48:62)}" y="42" width="${i?96:124}" height="36" fill="#dfece4" stroke="#326c58"/>${text(cols[i],67,heads[i])}`;}
+  rows.forEach((row,r)=>{const y=78+r*44,fill=r===2?'#f8ead1':'#fffdf7';for(let i=0;i<4;i++){out+=`<rect x="${cols[i]-(i?48:62)}" y="${y}" width="${i?96:124}" height="44" fill="${fill}" stroke="#9baea3"/>${text(cols[i],y+29,String(row[i]))}`;}});
+  out+=text(280,226,'C = centaines · D = dizaines · U = unités');
+  label=`Tableau de numération : ${fmt(a)} ${signs[op]} ${fmt(b)} = ${fmt(result)}. Les centaines, dizaines et unités gardent leur valeur.`;return out;
+ };
+ const tenthsPicture=()=>{
+  const result=p.answers[0],parts=n=>[Math.floor(n),Math.round((n-Math.floor(n))*10)%10],rows=[[fmt(a),...parts(a)],[`${signs[op]} ${fmt(b)}`,...parts(b)],[`= ${fmt(result)}`,...parts(result)]],tenths=parts(result)[1];height=270;
+  let out=text(280,24,'Je calcule avec les unités et les dixièmes');
+  const cols=[105,300,450],heads=['Nombre','unités','dixièmes'];
+  for(let i=0;i<3;i++){out+=`<rect x="${cols[i]-70}" y="42" width="140" height="36" fill="#dfece4" stroke="#326c58"/>${text(cols[i],67,heads[i])}`;}
+  rows.forEach((row,r)=>{const y=78+r*40,fill=r===2?'#f8ead1':'#fffdf7';for(let i=0;i<3;i++){out+=`<rect x="${cols[i]-70}" y="${y}" width="140" height="40" fill="${fill}" stroke="#9baea3"/>${text(cols[i],y+27,String(row[i]))}`;}});
+  for(let i=0;i<10;i++)out+=`<rect x="80" y="212" width="40" height="32" transform="translate(${i*40} 0)" fill="${i<tenths?'#9fc7ad':'#fff'}" stroke="#326c58"/>`;
+  out+=text(280,264,`${tenths} dixième${tenths>1?'s':''} colorié${tenths>1?'s':''} dans l’unité suivante`);
+  label=`Tableau unités-dixièmes : ${fmt(a)} ${signs[op]} ${fmt(b)} = ${fmt(result)}. La bande partage une unité en dix parts égales.`;return out;
+ };
  const graduatedLine=()=>{
   const finish=kind==='complement'?a:op==='+'?a+b:a-b,start=kind==='complement'?b:a,largest=Math.max(start,finish,a,b,1);
-  let step=p.code.startsWith('CD')?(largest<=2?0.1:1):p.code.startsWith('DC')?(largest>120?100:10):1;
-  let axisMax=Math.ceil(largest/step)*step;if(axisMax===largest)axisMax+=step;
-  const tickLimit=p.code.startsWith('PC')?22:12;while(axisMax/step>tickLimit)step*=p.code.startsWith('CD')?10:2;
-  axisMax=Math.max(step,Math.ceil(largest/step)*step);const x=v=>45+470*v/axisMax;
+  const decimal=p.code.startsWith('CD'),integerJump=Number.isInteger(start)&&Number.isInteger(finish)&&Number.isInteger(b),unitZoom=!decimal&&p.code.startsWith('DC')&&integerJump&&Math.abs(finish-start)<=40&&(Math.abs(finish-start)%10!==0||start%10!==0||finish%10!==0);let step=decimal?0.1:unitZoom?1:p.code.startsWith('DC')?(largest>120?100:10):1;
+  let axisMin=decimal?Math.floor(Math.min(start,finish)*10)/10:unitZoom?Math.max(0,Math.floor((Math.min(start,finish)-2)/10)*10):0,axisMax=decimal?Math.ceil(Math.max(start,finish)*10)/10:unitZoom?Math.ceil((Math.max(start,finish)+2)/10)*10:Math.ceil(largest/step)*step;
+  if(decimal){axisMin=clean(Math.max(0,axisMin-0.1));axisMax=clean(axisMax+0.1);}else if(axisMax===largest)axisMax+=step;
+  const tickLimit=unitZoom?50:p.code.startsWith('PC')?22:12;if(!decimal&&!unitZoom)while((axisMax-axisMin)/step>tickLimit)step*=2;
+  axisMax=Math.max(axisMin+step,Math.ceil(axisMax/step)*step);const x=v=>45+470*(v-axisMin)/(axisMax-axisMin);
   const sx=x(start),fx=x(finish),same=Math.abs(start-finish)<1e-8,closeLabels=!same&&Math.abs(sx-fx)<115;height=closeLabels?194:174;let out=`<defs><marker id="arrow-${esc(p.code)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#9a4638"/></marker></defs>`;
   out+=`<line x1="45" x2="515" y1="92" y2="92" stroke="#20332e" stroke-width="3"/>`;
-  const tickCount=Math.round(axisMax/step);for(let i=0;i<=tickCount;i++){const value=clean(i*step),px=x(value);out+=`<line x1="${px}" x2="${px}" y1="83" y2="101" stroke="#20332e" stroke-width="2"/>${text(px,124,fmt(value))}`;}
+  const tickCount=Math.round((axisMax-axisMin)/step),labelEvery=decimal?Math.max(1,Math.ceil(tickCount/10)):unitZoom?5:1;for(let i=0;i<=tickCount;i++){const value=clean(axisMin+i*step),px=x(value),showLabel=i%labelEvery===0||Math.abs(value-start)<1e-8||Math.abs(value-finish)<1e-8,major=showLabel||unitZoom&&value%10===0;out+=`<line x1="${px}" x2="${px}" y1="${major?81:86}" y2="${major?103:98}" stroke="#20332e" stroke-width="${major?2:1}"/>${showLabel?text(px,124,fmt(value)):''}`;}
   const operation=kind==='complement'?`+ ${fmt(a-b)}`:`${op==='+'?'+':'−'} ${fmt(b)}`;
   if(same)out+=`<circle cx="${sx}" cy="61" r="13" fill="none" stroke="#9a4638" stroke-width="3"/>${text(sx,38,'Je reste ici')}`;
   else out+=`<path d="M${sx} 76 Q${(sx+fx)/2} 25 ${fx} 76" fill="none" stroke="#9a4638" stroke-width="4" marker-end="url(#arrow-${esc(p.code)})"/>${text((sx+fx)/2,34,operation)}`;
@@ -245,11 +317,24 @@ function diagram(p){
   const lo=Math.floor(a/unit)*unit,hi=lo+unit,pos=55+450*(a-lo)/unit;
   content=`<line x1="55" x2="505" y1="74" y2="74" stroke="#326c58" stroke-width="3"/><circle cx="${pos}" cy="74" r="7" fill="#b1691d"/>${text(55,108,lo)}${text(505,108,hi)}${text(pos,45,fmt(a))}`;
   label=`${fmt(a)} se situe entre ${lo} et ${hi}. Quel repère est le plus proche ?`;
+ }else if(['times-power','divide-power','decimal-times10','decimal-divide10'].includes(p.family)){
+  content=powerShiftPicture();
  }else if(op==='/'){
   content=divisionPicture();label=`Deux étapes : je vois d’abord ${fmt(a)} objets, puis je les partage en ${fmt(b)} groupes égaux${kind==='remainder'?' en laissant les objets restants à part':''}.`;
+  if(kind==='remainder')label+=` Je vérifie avec ${fmt(a)} = ${fmt(b)} × ${fmt(p.answers[0])} + ${fmt(p.answers[1])}.`;
+ }else if(p.family==='mental-multiply'){
+  content=decompositionPicture();
+ }else if(p.family==='times25'){
+  height=225;content=text(280,25,'Quatre groupes de 25 forment 100');for(let i=0;i<4;i++)content+=`<rect x="${55+i*115}" y="48" width="95" height="54" rx="10" fill="${i%2?'#f8ead1':'#e4eee7'}" stroke="#326c58"/>${text(102+i*115,82,'25')}`;content+=text(280,128,'25 + 25 + 25 + 25 = 100')+`<rect x="80" y="150" width="400" height="46" rx="10" fill="#fff0da" stroke="#9a4638"/>${text(280,181,`${fmt(a)} × 25 = (${fmt(a)} × 100) : 4 = ${fmt(p.answers[0])}`)}`;label=`Quatre groupes de 25 forment 100. Pour multiplier ${fmt(a)} par 25, je multiplie par 100 puis je divise par 4.`;
+ }else if(p.family==='zero-multiply'){
+  height=145;content=text(280,28,b===0?'Chaque groupe est vide':'Un seul exemplaire de chaque objet')+`<rect x="80" y="48" width="400" height="58" rx="12" fill="#e4eee7" stroke="#326c58"/>`+(b===0?text(280,83,'0 objet'):dots(a,90,53,380,48,20))+text(280,135,`${fmt(a)} × ${fmt(b)} = ${fmt(p.answers[0])}`);label=b===0?'Multiplier par zéro donne une collection vide.':'Multiplier par un conserve la quantité.';
  }else if(op==='*'&&Number.isInteger(a)&&Number.isInteger(b)&&a>0&&b>0&&a<=10&&b<=10){
   height=54+a*25;for(let row=0;row<a;row++)for(let col=0;col<b;col++)content+=`<circle cx="${35+col*30}" cy="${25+row*25}" r="8" fill="#36765c"/>`;
   content+=text(385,Math.min(70,height-20),`${a} groupes de ${b}`);label=`${a} lignes de ${b} jetons. Compte ou utilise un produit connu.`;
+ }else if(['hundreds-add','hundreds-sub'].includes(p.family)){
+  content=hundredsPicture();
+ }else if(['decimal-add','decimal-sub'].includes(p.family)){
+  content=tenthsPicture();
  }else if((op==='+'||op==='-')&&a+b>0){
   content=graduatedLine();
  }else{
@@ -259,9 +344,10 @@ function diagram(p){
  return `<figure class="hint-figure"><svg viewBox="0 0 560 ${height}" role="img" aria-label="${esc(label)}">${content}</svg><figcaption>${esc(label)}</figcaption></figure>`;
 }
 function summary(questions,records){
- const list=catalog.skills.filter(s=>questions.some(q=>q.code===s.code)).map(s=>{const planned=questions.filter(q=>q.code===s.code).length;const done=records.filter(r=>r.code===s.code);return {code:s.code,title:s.title,planned,done:done.length,independent:done.filter(r=>r.correct&&r.hints===0).length,aided:done.filter(r=>r.correct&&r.hints>0).length,corrected:done.filter(r=>!r.correct).length};});
- return {planned:questions.length,done:records.length,independent:list.reduce((n,r)=>n+r.independent,0),aided:list.reduce((n,r)=>n+r.aided,0),corrected:list.reduce((n,r)=>n+r.corrected,0),skills:list};
+ const list=catalog.skills.filter(s=>questions.some(q=>q.code===s.code)).map(s=>{const planned=questions.filter(q=>q.code===s.code).length,done=records.filter(r=>r.code===s.code),practice=done.filter(r=>r.phase!=='validation'),validation=done.filter(r=>r.phase==='validation');return {code:s.code,title:s.title,planned,done:done.length,independent:practice.filter(r=>r.correct&&r.hints===0).length,aided:practice.filter(r=>r.correct&&r.hints>0).length,corrected:practice.filter(r=>!r.correct).length,validationDone:validation.length,validationCorrect:validation.filter(r=>r.correct).length};});
+ const validation=records.filter(r=>r.phase==='validation');
+ return {planned:questions.length,done:records.length,independent:list.reduce((n,r)=>n+r.independent,0),aided:list.reduce((n,r)=>n+r.aided,0),corrected:list.reduce((n,r)=>n+r.corrected,0),validationDone:validation.length,validationCorrect:validation.filter(r=>r.correct).length,skills:list};
 }
-const api={catalog,byCode,fmt,esc,poolFor,makeProblem,generate,grade,answerText,strategy,diagram,summary,numeric};
+const api={catalog,byCode,fmt,esc,poolFor,makeProblem,generate,completeSession,grade,answerText,strategy,diagram,summary,numeric};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else g.MentalEngine=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
