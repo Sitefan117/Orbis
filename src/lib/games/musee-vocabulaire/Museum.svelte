@@ -1,0 +1,625 @@
+<script lang="ts">
+  import { base } from '$app/paths';
+  import { onMount } from 'svelte';
+  import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
+  import { getStudentName } from '$lib/orbis/identity/local-student';
+  import lexique from '../../../../static/vocabulaire/lexique.csv?raw';
+  import poses from '../../../../static/mascotte-noireau/index.json';
+  import { gridSize, gridWord, makeGrid, normalize, readLexique, shuffle, spriteStyle, type Word } from './lexique';
+
+  export let initialMode = 'whack-image';
+  const modes = [
+    ['pendu', 'Pendu restaurateur'], ['whack-image', 'Image → mot'],
+    ['whack-word', 'Mot → image'], ['millionaire', 'Qui veut gagner des mots ?'],
+    ['letters', 'Reconstruire le mot'], ['search', 'Mots cachés'],
+    ['match', 'Associer à l’image'], ['syllables', 'Récolte des syllabes']
+  ] as const;
+  type Mode = typeof modes[number][0];
+  type Reaction = 'ready' | 'correct' | 'retry' | 'hint' | 'progress' | 'complete';
+  type Tile = { id: number; text: string; decoy: boolean };
+  const modeLabels = Object.fromEntries(modes);
+  const frenchAlphabet = Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZÀÂÄÆÇÉÈÊËÎÏÔŒÙÛÜŸ');
+  const original = readLexique(lexique);
+  const sheet = poses.planches.find((entry) => entry.id === 'catalogue-guide')!;
+  const poseByReaction: Record<Reaction, string> = {
+    ready: 'presenter', correct: 'celebrer', retry: 'oups', hint: 'pointer bas',
+    progress: 'reflechir', complete: 'saluer'
+  };
+  const opening: Record<Mode, string> = {
+    pendu: 'Devine le mot à partir de sa définition. Essaie des lettres.',
+    'whack-image': 'Quel mot correspond à l’image ?',
+    'whack-word': 'Quelle image correspond au mot ?',
+    millionaire: 'Choisis la réponse qui convient.',
+    letters: 'Choisis les lettres dans le bon ordre.',
+    search: 'Sélectionne les lettres d’un mot, de gauche à droite ou de haut en bas.',
+    match: 'Glisse un mot sur son image ou touche le mot puis l’image.',
+    syllables: 'Reconstruis le mot en choisissant un morceau dans chaque colonne.'
+  };
+
+  let bank = original;
+  let selectedThemes = ['ecole'];
+  let categories = getCategories(bank);
+  let mode: Mode = 'whack-image';
+  let playing: Word[] = [];
+  let queue: Word[] = [];
+  let seriesSize = 0;
+  let target: Word | undefined;
+  let options: Word[] = [];
+  let ready = false;
+  let student = '';
+  let message = '';
+  let reaction: Reaction = 'ready';
+  let solved = false;
+  let skipped = false;
+  let attempts = 0;
+  let hinted = false;
+  let eliminated: string[] = [];
+  let gallery: Word[] = [];
+  let tiles: Tile[] = [];
+  let typed: Tile[] = [];
+  let guesses: string[] = [];
+  let syllableOptions: string[][] = [];
+  let vignettes: Word[] = [];
+  let parts: string[] = [];
+  let grid = { cells: [] as string[], targets: [] as ReturnType<typeof makeGrid>['targets'] };
+  let selectedCells: number[] = [];
+  let greenCells: number[] = [];
+  let fadedCells: number[] = [];
+  let found: string[] = [];
+  let matched: string[] = [];
+  let picked: Word | undefined;
+  let matchWords: Word[] = [];
+  let importMessage = '';
+  let settingsOpen = false;
+  let printWords: Word[] = [];
+  let showKey = false;
+
+  $: categories = getCategories(bank);
+  $: selectedCount = bank.filter((entry) => selectedThemes.includes(entry.theme)).length;
+  $: isImageMode = mode === 'whack-image' || mode === 'whack-word' || mode === 'match';
+  $: pose = reaction === 'ready' && mode === 'syllables' ? 'pointer bas'
+    : reaction === 'progress' && mode === 'match' ? 'encourager'
+    : reaction === 'ready' && mode === 'millionaire' ? 'accueillir' : poseByReaction[reaction];
+  $: poseRow = sheet.poses.findIndex((row) => row.includes(pose));
+  $: poseCol = sheet.poses[poseRow].indexOf(pose);
+  $: alphabet = Array.from(new Set([...frenchAlphabet, ...gridWord(target?.word ?? '')]));
+  $: matchImages = options;
+
+  function getCategories(entries: Word[]) {
+    return Array.from(new Map(entries.map((word) => [word.theme, word])).values());
+  }
+
+  onMount(() => {
+    const requested = new URLSearchParams(window.location.search).get('mode') ?? initialMode;
+    student = getStudentName('');
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem('orbis-musee-themes') ?? 'null');
+      if (Array.isArray(saved) && saved.length && saved.every((id) => categories.some((word) => word.theme === id))) selectedThemes = saved;
+    } catch { /* The default theme works without storage. */ }
+    start(modes.find(([id]) => id === requested)?.[0] ?? 'whack-image');
+    ready = true;
+  });
+
+  function report(text: string, state: Reaction = 'progress') {
+    message = text;
+    reaction = state;
+  }
+
+  function rememberThemes() {
+    try { localStorage.setItem('orbis-musee-themes', JSON.stringify(selectedThemes)); } catch { /* Optional. */ }
+  }
+
+  function toggleTheme(theme: string) {
+    selectedThemes = selectedThemes.includes(theme) ? selectedThemes.filter((item) => item !== theme) : [...selectedThemes, theme];
+  }
+
+  function start(next: Mode) {
+    mode = next;
+    settingsOpen = false;
+    playing = bank.filter((entry) => selectedThemes.includes(entry.theme));
+    rememberThemes();
+    const eligible = playing.filter((entry) => {
+      if (next === 'syllables') return entry.syllables.length >= 2;
+      if (next === 'whack-image' || next === 'whack-word' || next === 'match') return Boolean(entry.sprite);
+      if (next === 'letters' || next === 'pendu') return gridWord(entry.word).length >= 2;
+      return true;
+    });
+    queue = shuffle(eligible);
+    seriesSize = queue.length;
+    nextRound();
+  }
+
+  function distinctWords(entries: Word[]) {
+    return Array.from(new Map(entries.map((entry) => [normalize(entry.word), entry])).values());
+  }
+
+  function nextRound() {
+    target = undefined;
+    options = [];
+    eliminated = [];
+    guesses = [];
+    tiles = [];
+    typed = [];
+    parts = [];
+    vignettes = [];
+    picked = undefined;
+    solved = false;
+    skipped = false;
+    hinted = false;
+    attempts = 0;
+    report(opening[mode], 'ready');
+
+    if (mode === 'search') {
+      grid = makeGrid(distinctWords(playing));
+      selectedCells = [];
+      greenCells = [];
+      fadedCells = [];
+      found = [];
+      return;
+    }
+    if (mode === 'match') {
+      matchWords = Array.from(new Map(distinctWords(queue).map((entry) => [entry.sprite, entry])).values()).slice(0, 6);
+      options = shuffle(matchWords);
+      matched = [];
+      return;
+    }
+
+    if (!queue.length) {
+      if (seriesSize) report('Série terminée. Tu peux en lancer une autre.', 'complete');
+      return;
+    }
+    const [entry, ...rest] = queue;
+    target = entry;
+    queue = rest;
+    const distractors = distinctWords(playing.filter((item) =>
+      normalize(item.word) !== normalize(entry.word) && (mode !== 'whack-word' || (item.sprite && item.sprite !== entry.sprite))));
+    const nearby = shuffle(distractors.filter((item) => item.theme === entry.theme));
+    const others = shuffle(distractors.filter((item) => item.theme !== entry.theme));
+    options = shuffle([entry, ...[...nearby, ...others].slice(0, mode === 'millionaire' ? 3 : 2)]);
+    if (mode === 'letters') {
+      const letters = Array.from(gridWord(entry.word));
+      const extras = shuffle(frenchAlphabet.slice(0, 26).filter((letter) => !letters.includes(letter))).slice(0, 3);
+      tiles = shuffle([...letters, ...extras].map((text, id) => ({ id, text, decoy: id >= letters.length })));
+    }
+    if (mode === 'syllables') {
+      if (entry.sprite) {
+        const others = shuffle(distinctWords(playing.filter((item) => item.sprite && item.sprite !== entry.sprite)));
+        vignettes = shuffle([entry, ...others.slice(0, 2)]);
+      }
+      parts = entry.syllables.map(() => '');
+      syllableOptions = entry.syllables.map((part, index) => {
+        const candidates = new Set(playing.map((item) => item.syllables[index]).filter((item) => item && item !== part));
+        return shuffle([part, ...shuffle([...candidates]).slice(0, 2)]);
+      });
+    }
+  }
+
+  function collect(entry: Word) {
+    if (!gallery.some((item) => item.id === entry.id)) gallery = [...gallery, entry];
+  }
+
+  function success(entry: Word) {
+    collect(entry);
+    solved = true;
+    report(`Bien joué ! « ${entry.word} » rejoint la collection.`, 'correct');
+  }
+
+  function choose(entry: Word) {
+    if (!target || solved || eliminated.includes(entry.id)) return;
+    if (entry.id === target.id) success(target);
+    else {
+      eliminated = [...eliminated, entry.id];
+      report('Cette proposition ne convient pas. Essaie encore.', 'retry');
+    }
+  }
+
+  function addGuess(letter: string) {
+    if (!target || solved || skipped || guesses.includes(letter) || eliminated.includes(letter)) return;
+    guesses = [...guesses, letter];
+    const answer = gridWord(target.word);
+    if (Array.from(answer).every((char) => guesses.includes(char))) success(target);
+    else if (!answer.includes(letter)) {
+      attempts++;
+      report('Cette lettre ne figure pas dans le mot.', 'retry');
+      if (attempts === 6) {
+        skipped = true;
+        report(`Le mot était « ${target.word} ». Passe au suivant quand tu veux.`, 'retry');
+      }
+    } else report('Une lettre du mot a été retrouvée.');
+  }
+
+  function displayTiles(word: string, chosen: Tile[]) {
+    let position = 0;
+    return Array.from(word.toLocaleUpperCase('fr'), (char) =>
+      /\p{L}/u.test(char) ? chosen[position++]?.text ?? '＿' : char).join(' ');
+  }
+
+  function addTile(tile: Tile) {
+    if (!target || solved || typed.length >= gridWord(target.word).length) return;
+    typed = [...typed, tile];
+    const guess = typed.map((item) => item.text).join('');
+    if (guess === gridWord(target.word)) success(target);
+    else if (guess.length === gridWord(target.word).length) report('L’ordre des lettres ne convient pas. Corrige ta proposition.', 'retry');
+    else report('Continue à chercher les lettres.');
+  }
+
+  function checkParts() {
+    if (!target || solved || parts.some((part) => !part)) return;
+    if (parts.join('') === target.word) success(target);
+    else report('Au moins un morceau ne convient pas. Relis ta proposition.', 'retry');
+  }
+
+  function selectCell(index: number) {
+    if (greenCells.includes(index) || fadedCells.includes(index)) return;
+    selectedCells = selectedCells.includes(index) ? selectedCells.filter((item) => item !== index) : [...selectedCells, index];
+    const match = grid.targets.filter(({ entry }) => !found.includes(entry.id)).map(({ entry, paths }) =>
+      ({ entry, path: paths.find((path) => path.every((cell) => selectedCells.includes(cell) || greenCells.includes(cell))) }))
+      .find((item) => item.path?.includes(index));
+    if (match?.path) {
+      found = [...found, match.entry.id];
+      greenCells = [...new Set([...greenCells, ...match.path])];
+      selectedCells = selectedCells.filter((cell) => !greenCells.includes(cell));
+      collect(match.entry);
+      report(`« ${match.entry.word} » trouvé ! ${found.length}/${grid.targets.length}.`, found.length === grid.targets.length ? 'complete' : 'correct');
+    } else report('Les cases bleues sont sélectionnées.');
+  }
+
+  function selectMatch(entry: Word) {
+    if (picked?.id !== entry.id) {
+      eliminated = [];
+      hinted = false;
+    }
+    picked = entry;
+  }
+
+  function matchImage(entry: Word) {
+    if (!picked || matched.includes(entry.id) || eliminated.includes(entry.id)) return;
+    if (picked.id !== entry.id) {
+      eliminated = [...eliminated, entry.id];
+      report('Cette image ne correspond pas au mot choisi.', 'retry');
+      return;
+    }
+    matched = [...matched, entry.id];
+    collect(entry);
+    picked = undefined;
+    eliminated = [];
+    hinted = false;
+    report('Association correcte !', matched.length === matchWords.length ? 'complete' : 'correct');
+  }
+
+  function useHint() {
+    if (hinted || solved || skipped) return;
+    let text = '';
+    if (mode === 'search') {
+      const useful = new Set(grid.targets.flatMap(({ paths }) => paths.flat()));
+      fadedCells = shuffle(grid.cells.map((_, i) => i).filter((i) => !useful.has(i))).slice(0, 8);
+      selectedCells = selectedCells.filter((i) => !fadedCells.includes(i));
+      if (fadedCells.length) text = `${fadedCells.length} cases inutiles ont été grisées.`;
+    } else if (mode === 'match') {
+      if (!picked) return report('Choisis d’abord un mot.', 'hint');
+      const candidate = options.find((entry) => entry.id !== picked?.id && !matched.includes(entry.id) && !eliminated.includes(entry.id));
+      if (candidate && options.filter((entry) => !matched.includes(entry.id) && !eliminated.includes(entry.id)).length > 2) {
+        eliminated = [...eliminated, candidate.id];
+        text = 'Une image a été écartée pour ce mot.';
+      }
+    } else if (target) {
+      if (mode === 'pendu') {
+        const extra = shuffle(alphabet.filter((letter) => !gridWord(target!.word).includes(letter) && !guesses.includes(letter))).slice(0, 5);
+        eliminated = extra;
+        if (extra.length) text = 'Des lettres inutiles ont été retirées.';
+      } else if (mode === 'letters') {
+        const decoy = tiles.find((item) => item.decoy && !typed.includes(item));
+        if (decoy) {
+          tiles = tiles.filter((item) => item.id !== decoy.id);
+          text = 'Une lettre inutile a été retirée.';
+        }
+      } else if (mode === 'syllables') {
+        const index = syllableOptions.findIndex((choices) => choices.length > 2);
+        if (index >= 0) {
+          const wrong = syllableOptions[index].find((item) => item !== target?.syllables[index] && item !== parts[index]);
+          syllableOptions = syllableOptions.map((choices, position) => position === index ? choices.filter((item) => item !== wrong) : choices);
+          text = 'Un morceau inutile a été retiré.';
+        }
+      } else if (options.filter((item) => !eliminated.includes(item.id)).length > 2) {
+        const wrong = options.find((item) => item.id !== target?.id && !eliminated.includes(item.id));
+        if (wrong) {
+          eliminated = [...eliminated, wrong.id];
+          text = mode === 'whack-word' ? 'Une image a été écartée.' : 'Une proposition a été écartée.';
+        }
+      }
+    }
+    hinted = Boolean(text);
+    report(text || 'Il reste trop peu de choix pour en retirer un.', 'hint');
+  }
+
+  async function importCsv(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      if (file.size > 2_000_000) throw new Error('Le fichier dépasse 2 Mo.');
+      const entries = readLexique(await file.text());
+      bank = Array.from(new Map([...bank, ...entries].map((word) => [word.id, word])).values());
+      selectedThemes = [...new Set(entries.map((word) => word.theme))];
+      importMessage = `${entries.length} entrées chargées pour cette session. Valide les thèmes pour les utiliser.`;
+    } catch (error) {
+      importMessage = error instanceof Error ? error.message : 'Impossible de lire ce CSV.';
+    } finally {
+      input.value = '';
+    }
+  }
+
+  function printSheet(key: boolean) {
+    const choices = bank.filter((entry) => selectedThemes.includes(entry.theme));
+    if (!choices.length) return;
+    if (!key || !printWords.length) printWords = shuffle(choices).slice(0, 10);
+    showKey = key;
+    setTimeout(() => window.print(), 0);
+  }
+</script>
+
+<svelte:head><title>Le musée des mots · Orbis</title></svelte:head>
+
+<div class="museum">
+  <header class="no-print">
+    <div class="shell">
+      <a href={catalogHref(base, 'jeux', student)} use:restoreCatalogReturn={base}>← Arcade Orbis</a>
+      <h1>Le musée des mots</h1>
+      <p>Français du quotidien et de la vie scolaire</p>
+    </div>
+  </header>
+  <main class="shell no-print">
+    <section class="settings" aria-label="Thèmes de vocabulaire">
+      <button class="secondary" aria-expanded={settingsOpen} on:click={() => settingsOpen = !settingsOpen}>Choisir les thèmes</button>
+      <span>{selectedThemes.length} thème{selectedThemes.length > 1 ? 's' : ''} · {selectedCount} entrées</span>
+      {#if settingsOpen}
+        <div class="filters">
+          {#each [['base', 'Les essentiels'], ['avance', 'Pour aller plus loin']] as [tier, title]}
+            <fieldset>
+              <legend>{title}</legend>
+              {#each categories.filter((entry) => entry.tier === tier) as theme (theme.theme)}
+                <label><input type="checkbox" checked={selectedThemes.includes(theme.theme)} on:change={() => toggleTheme(theme.theme)} /> {theme.label}</label>
+              {/each}
+            </fieldset>
+          {/each}
+        </div>
+        <div class="actions">
+          <button class="primary" disabled={!selectedCount} on:click={() => { printWords = []; start(mode); }}>Utiliser ces thèmes</button>
+          <button on:click={() => selectedThemes = categories.map((entry) => entry.theme)}>Tout cocher</button>
+          <button on:click={() => selectedThemes = []}>Tout décocher</button>
+        </div>
+        <details>
+          <summary>Lexique CSV et fiches</summary>
+          <div class="actions">
+            <a href={`${base}/vocabulaire/lexique.csv`} download>Télécharger le lexique CSV</a>
+            <label>Ajouter un CSV <input type="file" accept=".csv,text/csv" on:change={importCsv} /></label>
+            <button disabled={!selectedCount} on:click={() => printSheet(false)}>Générer et imprimer une fiche</button>
+            <button disabled={!printWords.length} on:click={() => printSheet(true)}>Imprimer le corrigé</button>
+          </div>
+          <p role="status">{importMessage}</p>
+        </details>
+      {/if}
+    </section>
+
+    <nav aria-label="Choisir un jeu">
+      {#each modes as [id, label]}
+        <button aria-pressed={mode === id} disabled={!ready || !selectedCount} on:click={() => start(id)}>{label}</button>
+      {/each}
+    </nav>
+
+    <section class="game" aria-label={modeLabels[mode]}>
+      <h2>{modeLabels[mode]}</h2>
+      {#if ready}
+        <div class="coach">
+          <span class="noireau" role="img" aria-label="Noireau"
+            style:background-image={`url('${base}/mascotte-noireau/${sheet.fichier}')`}
+            style:background-position={`${poseCol * 100 / 3}% ${poseRow * 100}%`}></span>
+          <p aria-live="polite">{message}</p>
+        </div>
+        {#if mode === 'search' && grid.targets.length}
+          <div class="search">
+            <div class="grid" style:grid-template-columns={`repeat(${gridSize}, minmax(0, 1fr))`} aria-label="Grille des mots cachés">
+              {#each grid.cells as letter, index}
+                <button aria-label={`${letter}, ligne ${Math.floor(index / gridSize) + 1}, colonne ${index % gridSize + 1}`}
+                  aria-pressed={selectedCells.includes(index) || greenCells.includes(index)}
+                  class:blue={selectedCells.includes(index)} class:green={greenCells.includes(index)}
+                  class:faded={fadedCells.includes(index)} disabled={fadedCells.includes(index) || greenCells.includes(index)}
+                  on:click={() => selectCell(index)}>{letter}</button>
+              {/each}
+            </div>
+            <ul>
+              {#each grid.targets as { entry }}
+                <li class:green={found.includes(entry.id)}>{found.includes(entry.id) ? '✓ ' : ''}{entry.word}</li>
+              {/each}
+            </ul>
+          </div>
+          <button disabled={!selectedCells.length} on:click={() => { selectedCells = []; report(opening.search, 'ready'); }}>Effacer le bleu</button>
+        {:else if mode === 'match' && matchWords.length >= 2}
+          <div class="matches">
+            <div class="choices">
+              {#each matchWords as entry (entry.id)}
+                <button draggable={!matched.includes(entry.id)} disabled={matched.includes(entry.id)}
+                  aria-pressed={picked?.id === entry.id}
+                  on:dragstart={(event) => { event.dataTransfer?.setData('text/plain', entry.id); selectMatch(entry); }}
+                  on:click={() => selectMatch(entry)}>{entry.word}</button>
+              {/each}
+            </div>
+            <div class="choices">
+              {#each matchImages as entry (entry.id)}
+                <button class:green={matched.includes(entry.id)} class:faded={eliminated.includes(entry.id)}
+                  disabled={matched.includes(entry.id) || eliminated.includes(entry.id)}
+                  aria-label={matched.includes(entry.id) ? entry.word : entry.definition}
+                  on:click={() => matchImage(entry)} on:dragover|preventDefault on:drop|preventDefault={() => matchImage(entry)}>
+                  <span class="sprite" style={spriteStyle(base, entry.sprite)}></span>
+                  {#if matched.includes(entry.id)}✓ {entry.word}{/if}
+                </button>
+              {/each}
+            </div>
+          </div>
+        {:else if target && (!(isImageMode || mode === 'millionaire') || options.length >= 2)}
+          {#if mode === 'syllables' && vignettes.length}
+            <div class="vignettes" aria-label="Vignettes du collectionneur">
+              {#each vignettes as entry (entry.id)}
+                <div class:chosen={entry.id === target.id}>
+                  <span class="sprite" role="img" aria-label={entry.definition} style={spriteStyle(base, entry.sprite)}></span>
+                  {#if entry.id === target.id}<small>Choisie par Noireau</small>{/if}
+                </div>
+              {/each}
+            </div>
+          {:else if mode === 'whack-image'}
+            <span class="sprite large" role="img" aria-label={target.definition} style={spriteStyle(base, target.sprite)}></span>
+          {:else if mode === 'whack-word'}
+            <p class="prompt">{target.word}</p>
+          {:else}
+            <p class="prompt">{mode === 'millionaire' && target.sentence ? target.sentence : target.definition}</p>
+          {/if}
+
+          {#if mode === 'pendu'}
+            <p>Essais restants · {6 - attempts}</p>
+            <p class="slots">{Array.from(target.word.toLocaleUpperCase('fr'), (char) => !/\p{L}/u.test(char) || guesses.includes(char) || skipped ? char : '＿').join(' ')}</p>
+            <div class="tiles">
+              {#each alphabet as letter}
+                <button class:faded={eliminated.includes(letter)} disabled={guesses.includes(letter) || eliminated.includes(letter) || solved || skipped} on:click={() => addGuess(letter)}>{letter}</button>
+              {/each}
+            </div>
+          {:else if mode === 'letters'}
+            <p class="slots">{displayTiles(target.word, typed)}</p>
+            <div class="tiles">
+              {#each tiles as tile (tile.id)}
+                <button disabled={typed.includes(tile) || solved} on:click={() => addTile(tile)}>{tile.text}</button>
+              {/each}
+            </div>
+            <button disabled={!typed.length || solved} on:click={() => { typed = typed.slice(0, -1); report(opening.letters); }}>Enlever la dernière lettre</button>
+          {:else if mode === 'syllables'}
+            <div class="syllables">
+              {#each syllableOptions as group, index}
+                <fieldset>
+                  <legend>{index === 0 ? 'Début' : index === parts.length - 1 ? 'Fin' : `Milieu ${parts.length > 3 ? index : ''}`}</legend>
+                  {#each group as part}
+                    <button aria-pressed={parts[index] === part} disabled={solved}
+                      on:click={() => { parts = parts.map((item, position) => position === index ? part : item); }}>{part}</button>
+                  {/each}
+                </fieldset>
+              {/each}
+            </div>
+            <p class="slots">{parts.map((part) => part || '＿').join(' · ')}</p>
+            <button class="primary" disabled={solved || parts.some((part) => !part)} on:click={checkParts}>Vérifier le mot</button>
+          {:else}
+            <div class="choices">
+              {#each options as entry (entry.id)}
+                <button class:green={solved && entry.id === target.id} class:faded={eliminated.includes(entry.id)}
+                  disabled={solved || eliminated.includes(entry.id)}
+                  aria-label={mode === 'whack-word' ? entry.definition : entry.word}
+                  on:click={() => choose(entry)}>
+                  {#if mode === 'whack-word'}
+                    <span class="sprite" style={spriteStyle(base, entry.sprite)}></span>
+                  {:else}{entry.word}{/if}
+                </button>
+              {/each}
+            </div>
+          {/if}
+        {:else if reaction !== 'complete'}
+          <p>{mode === 'whack-image' ? 'Ce jeu demande un mot illustré et au moins deux mots différents.'
+            : isImageMode ? 'Ce jeu demande au moins deux mots illustrés dans les thèmes choisis.'
+            : 'Ce jeu demande plusieurs mots compatibles avec cette activité.'}</p>
+          <div class="actions">
+            <button on:click={() => settingsOpen = true}>Changer les thèmes</button>
+            <button on:click={() => start('millionaire')} disabled={mode === 'millionaire'}>Jouer au quiz de définitions</button>
+          </div>
+        {/if}
+        <div class="actions controls">
+          {#if (target && (!(isImageMode || mode === 'millionaire') || options.length >= 2)) || (mode === 'match' && matchWords.length >= 2) || (mode === 'search' && grid.targets.length)}
+            <button disabled={hinted || solved || skipped || reaction === 'complete'} on:click={useHint}>Aide · écarter un choix</button>
+            <button class="primary" on:click={nextRound}>{mode === 'search' ? 'Nouvelle grille' : mode === 'match' ? 'Nouvelle série' : 'Mot suivant'}</button>
+          {:else if reaction === 'complete'}
+            <button class="primary" on:click={() => start(mode)}>Rejouer</button>
+          {/if}
+        </div>
+      {/if}
+    </section>
+    <aside class="game">
+      <h2>Ma collection · {gallery.length}</h2>
+      {#if gallery.length}
+        <ul class="collection">
+          {#each gallery as entry (entry.id)}
+            <li>
+              {#if entry.sprite}<span class="sprite" style={spriteStyle(base, entry.sprite)}></span>{/if}
+              {entry.word}
+            </li>
+          {/each}
+        </ul>
+      {:else}<p>Retrouve un mot pour l’ajouter à ta collection.</p>{/if}
+    </aside>
+  </main>
+  {#if printWords.length}
+    <section class="print-only">
+      <h1>{showKey ? 'Corrigé · Le musée des mots' : 'Le musée des mots'}</h1>
+      {#if !showKey}
+        <p>Prénom _____________________ Date _____________________</p>
+        <p>Écris le mot ou l’expression qui correspond à chaque définition.</p>
+        <p>{[...printWords].map((word) => word.word).sort((a, b) => a.localeCompare(b, 'fr')).join(' · ')}</p>
+      {/if}
+      <ol>{#each printWords as entry}<li>{entry.definition} <br />{showKey ? entry.word : '________________________________________'}</li>{/each}</ol>
+    </section>
+  {/if}
+</div>
+
+<style>
+  .museum { min-height: 100vh; background: #f5efe3; color: #322820; }
+  .shell { width: min(72rem, 100%); margin: auto; padding: 1.25rem; }
+  header { background: #25453c; color: #fff9ee; }
+  header a { color: #eee5d3; }
+  h1 { font-size: clamp(2rem, 5vw, 3.5rem); margin: .45rem 0; }
+  h2 { margin-top: 0; }
+  .settings, .game { background: #fffaf0; border: 1px solid #d8c9ae; padding: clamp(.9rem, 3vw, 1.6rem); border-radius: 1rem; margin-bottom: 1rem; }
+  .settings > span { margin-inline-start: .75rem; }
+  .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .75rem; margin-block: .9rem; }
+  fieldset { border: 1px solid #d8c9ae; border-radius: .7rem; min-width: 0; }
+  legend { font-weight: 750; }
+  fieldset label { display: block; padding: .3rem; }
+  input[type=checkbox] { accent-color: #25453c; }
+  details { margin-top: .8rem; }
+  details .actions { margin-top: .6rem; }
+  nav, .actions, .tiles, .choices { display: flex; flex-wrap: wrap; gap: .55rem; }
+  nav { margin-bottom: 1rem; }
+  button { border: 1px solid #bda77e; border-radius: .6rem; padding: .65rem .85rem; background: #fffdf7; font-weight: 700; }
+  button:hover:not(:disabled) { border-color: #25453c; background: #e9f0e8; }
+  button:focus-visible, a:focus-visible { outline: 3px solid #38749a; outline-offset: 2px; }
+  button.primary, button[aria-pressed=true]:not(.grid button) { background: #25453c; border-color: #25453c; color: white; }
+  .secondary { background: #ede1c8; }
+  .game { text-align: center; }
+  .coach { display: flex; justify-content: center; align-items: center; gap: .8rem; min-height: 7rem; background: #efe6d3; border-radius: .85rem; margin-bottom: 1rem; padding: .3rem .65rem; }
+  .coach p { font-weight: 700; }
+  .noireau { display: block; width: 4.8rem; aspect-ratio: 3/4; flex: 0 0 auto; background-size: 400% 200%; background-repeat: no-repeat; }
+  .sprite { display: block; width: min(6rem, 100%); aspect-ratio: 1; margin: auto; background-repeat: no-repeat; }
+  .sprite.large { width: min(11rem, 100%); }
+  .prompt { font-size: clamp(1.1rem, 3vw, 1.65rem); font-weight: 750; }
+  .controls, .game .choices, .tiles, .game .actions { justify-content: center; margin-top: .85rem; }
+  .choices button { min-width: min(7rem, 100%); text-align: center; }
+  .slots { overflow-wrap: anywhere; font-weight: 800; }
+  .syllables { display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem; }
+  .syllables button { display: block; width: 100%; margin-block: .3rem; text-align: center; }
+  .vignettes { display: flex; flex-wrap: wrap; justify-content: center; gap: .55rem; margin-bottom: .9rem; }
+  .vignettes > div { width: min(8rem, 30%); border: 2px solid #d8c9ae; border-radius: .65rem; padding: .35rem; }
+  .vignettes .chosen { border-color: #25453c; background: #e9f0e8; }
+  .matches { display: grid; gap: .75rem; }
+  .search { display: grid; grid-template-columns: minmax(0, 30rem) minmax(0, 12rem); gap: 1rem; justify-content: center; margin-bottom: .75rem; }
+  .grid { display: grid; align-self: start; gap: 1px; }
+  .grid button { padding: 0; border-radius: .2rem; aspect-ratio: 1; min-width: 0; text-align: center; font-size: clamp(.68rem, 2.5vw, 1rem); }
+  .grid button.blue { background: #b5dcf7; border-color: #267297; }
+  button.green, .grid button.green, li.green { background: #bde6c8; color: #174c30; border-color: #387a50; opacity: 1; }
+  button.faded { opacity: .35; text-decoration: line-through; }
+  .search ul, .collection { list-style: none; padding: 0; margin: 0; }
+  .search li, .collection li { padding: .45rem; border-radius: .4rem; }
+  .collection { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
+  .collection li { background: #efe6d3; align-content: center; min-width: 5rem; }
+  .collection .sprite { width: 3.5rem; }
+  .print-only { display: none; }
+  @media (max-width: 580px) { .search { grid-template-columns: minmax(0, 1fr); } .search ul { display: flex; flex-wrap: wrap; justify-content: center; } .shell { padding: .65rem; } }
+  @media print {
+    .print-only { display: block; background: white; color: black; }
+    .print-only li { break-inside: avoid; padding-bottom: .6rem; line-height: 1.45; }
+    .print-only h1 { font-size: 1.65rem; }
+    .museum { background: white; min-height: auto; }
+  }
+</style>

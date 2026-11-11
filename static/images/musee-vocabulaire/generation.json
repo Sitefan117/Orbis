@@ -1,0 +1,116 @@
+{
+  "tool": "Built-in ImageGen",
+  "date": "2026-11-11",
+  "style": "Illustrative game art, dark outlines, warm muted natural colors and subtle paper grain. Subjects centered within equal cells with generous padding, transparent background requested, no legible text.",
+  "sheets": [
+    {
+      "file": "maison.png",
+      "requestedGrid": [
+        4,
+        3
+      ],
+      "subjects": "house facade, bed, dining table, chair / door, window, key, shower / fridge, washing machine, sofa, saucepan",
+      "source": "exec-a8b3c953-b9ae-48ec-8300-a7cccb99d980.png"
+    },
+    {
+      "file": "courses.png",
+      "requestedGrid": [
+        4,
+        3
+      ],
+      "subjects": "bread loaf, apple, banana, rice bowl / pasta bowl, milk carton and glass, wedge of cheese, egg / carrot, tomato, fish for cooking, clear glass of water",
+      "source": "exec-f1e4b979-5cb3-470e-bb2d-7e3c03a40f98.png"
+    },
+    {
+      "file": "ville.png",
+      "requestedGrid": [
+        4,
+        3
+      ],
+      "subjects": "city bus, train, bicycle, tram / train station with train at platform, zebra crossing, traffic lights, bridge / pharmacy storefront with green cross, bakery shopfront with bread in window, library reading room with shelves, bus stop with shelter",
+      "source": "exec-441b5afe-0f5c-417b-a5c4-f722aa023de9.png"
+    },
+    {
+      "file": "corps.png",
+      "requestedGrid": [
+        4,
+        3
+      ],
+      "subjects": "human hand, human foot, human ear, human eye / human nose, open mouth, tooth, knee / digital thermometer, adhesive bandage, crutches, wheelchair",
+      "source": "exec-0572d166-aaa4-48a7-8ff3-cd123a89ad8f.png"
+    },
+    {
+      "file": "loisirs.png",
+      "requestedGrid": [
+        4,
+        3
+      ],
+      "subjects": "football ball, guitar, camera, headphones / swimming pool, open novel, theater stage, film clapperboard / umbrella, mountain, lake, tree",
+      "source": "exec-3b34b558-5c55-41c8-bd28-16485d336eca.png"
+    },
+    {
+      "file": "quotidien.png",
+      "requestedGrid": [
+        4,
+        3
+      ],
+      "subjects": "school ruler, scissors, eraser, pencil / school agenda planner with blank lines, calculator, computer laptop, mobile phone / coat, shoes, T-shirt, cap",
+      "source": "exec-ff61c927-1684-4ae1-894a-b943dd77919d.png"
+    },
+    {
+      "file": "demarches.png",
+      "requestedGrid": [
+        4,
+        3
+      ],
+      "subjects": "application form with blank boxes, envelope, postage stamp, identity card with generic portrait and no readable text / payment receipt, bank card, paper price tag, parcel at a front door / ambulance, emergency exit pictogram with running figure, water leaking from a pipe, power or water meter",
+      "source": "exec-b18ff63f-9aa4-472d-9eb7-d1e6e7495de3.png"
+    },
+    {
+      "file": "numerique.png",
+      "requestedGrid": [
+        4,
+        3
+      ],
+      "subjects": "desktop monitor, computer keyboard, electrical charger with cable, removable battery / newspaper with columns of illegible print, microphone interview with two people, solar panels and wind turbine together, compost heap in wooden bin / cardboard packaging, public recycling centre with sorting bins, flood in a street, drought with cracked ground and dry vegetation",
+      "source": "exec-bb093582-0cb8-4d37-a994-e86bddde1631.png"
+    },
+    {
+      "file": "actions.png",
+      "requestedGrid": [
+        3,
+        3
+      ],
+      "subjects": "teen getting out of bed with both feet on floor, teen drinking from a clear glass, teen sleeping with eyes shut in bed / teen running on a track, teen opening a closed door by pulling its handle, teen sweeping a dirty floor / teen putting on a jacket, teen washing their hands at a sink, teen reading an open book",
+      "source": "exec-1b6a1776-27d4-47c4-9a17-8b69bc44adb9.png"
+    },
+    {
+      "file": "quotidien2.png",
+      "requestedGrid": [
+        3,
+        3
+      ],
+      "subjects": "cat, dog, small bird / yellow rain boots, school pen, lined sheet of paper / wall clock, desk calendar with blank squares, birthday cake with candles",
+      "source": "exec-a33699c2-2741-427c-9bff-de5a3f366433.png"
+    },
+    {
+      "file": "formation.png",
+      "requestedGrid": [
+        3,
+        3
+      ],
+      "subjects": "teen intern learning from a mechanic in an auto workshop, two people seated face to face having a job interview, rolled diploma with ribbon / closed paper folder containing documents, person adding a signature to a sheet, service counter with clerk and visitor / ballot going into a ballot box, two people sharing a car on a road, marked recycling containers with clearly separated materials",
+      "source": "exec-1a39f5a4-0e10-4057-b907-7102328c8f6f.png"
+    },
+    {
+      "file": "emotions.png",
+      "requestedGrid": [
+        3,
+        3
+      ],
+      "subjects": "teen with broad joyful smile holding up a finished project, teen with downturned mouth and tears after losing a favorite item, teen with wide eyes and raised eyebrows at an unexpected gift / teen with drooping eyelids yawning at a desk, teen crying with tears visibly streaming, teen laughing with their head tipped back / child with two adult parents shown as a small family portrait, elementary-age child with backpack clearly younger than a teenager, group of three teenage friends chatting",
+      "source": "exec-b224cedc-4390-4603-b665-fd822c041432.png"
+    }
+  ],
+  "inspection": "Formation has two wider frames on the last row, numerique combines several objects and uses wider frames on the last row. Only usable subjects are linked in lexique.csv. The crops are defined in lexique.ts. The original generated PNGs remain in the ImageGen output directory."
+}

@@ -20,3 +20,4 @@ node tests/numeria-progress-smoke.cjs
 bash tests/run-conju-lab-smoke.sh
 
 node tests/mental-math-workshop.test.cjs
+node --import tsx tests/musee-vocabulaire.test.ts
