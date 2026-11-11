@@ -47,6 +47,20 @@
   let target: Word | undefined;
   let options: Word[] = [];
   let ready = false;
+  let inHall = true;
+  let gameHeading: HTMLHeadingElement;
+  let hallNavigation: HTMLElement;
+  async function enterMachine(next: Mode) {
+    start(next);
+    inHall = false;
+    await tick();
+    gameHeading?.focus();
+  }
+  async function returnToHall() {
+    inHall = true;
+    await tick();
+    hallNavigation?.querySelector<HTMLButtonElement>(`button[data-mode="${mode}"]`)?.focus();
+  }
   let student = '';
   let message = '';
   let reaction: Reaction = 'ready';
@@ -96,6 +110,7 @@
   }
 
   onMount(() => {
+    inHall = !new URLSearchParams(window.location.search).has('mode');
     const requested = new URLSearchParams(window.location.search).get('mode') ?? initialMode;
     student = getStudentName('');
     try {
@@ -380,12 +395,12 @@
 
 <svelte:head><title>Le musée des mots · Orbis</title></svelte:head>
 
-<div class="museum">
+<div class="museum" class:studio={mode === 'millionaire'} class:workshop={mode === 'match'}>
   <header class="no-print">
     <div class="shell">
       <a href={catalogHref(base, 'jeux', student)} use:restoreCatalogReturn={base}>← Arcade Orbis</a>
       <h1>Le musée des mots</h1>
-      <p>Français du quotidien et de la vie scolaire</p>
+      <p>La salle des machines</p>
     </div>
   </header>
   <main class="shell no-print">
@@ -426,14 +441,17 @@
       {/if}
     </section>
 
-    <nav aria-label="Choisir un jeu">
-      {#each modes as [id, label]}
-        <button aria-pressed={mode === id} disabled={!ready || !selectedCount} on:click={() => start(id)}>{label}</button>
+    {#if inHall}
+    <div class="hall-guide"><span class="noireau" role="img" aria-label="Noireau, ton guide" style:background-image={`url('${base}/mascotte-noireau/${sheet.fichier}')`} style:background-position="0% 0%"></span><div><h2>Bienvenue au musée.</h2><p>Choisis une machine pour jouer.<br />Je suis là si tu as besoin d’aide.</p></div></div>
+    <nav class="machine-hall" aria-label="Choisir un jeu" bind:this={hallNavigation}>
+      {#each modes as [id, label], index}
+        <button data-mode={id} disabled={!ready || !selectedCount} on:click={() => enterMachine(id)}><span class="machine-art" aria-hidden="true" style:background-image={`url('${base}/images/musee-vocabulaire/machines.png')`} style:background-position={`${(index % 4) * 100 / 3}% ${Math.floor(index / 4) * 100}%`}></span><span class="machine-label"><small>{String(index + 1).padStart(2, '0')}</small>{label}</span></button>
       {/each}
     </nav>
-
+    {:else}
+    <button class="return-hall" on:click={returnToHall}>← Choisir une autre machine</button>
     <section class="game" aria-label={modeLabels[mode]}>
-      <h2>{modeLabels[mode]}</h2>
+      <div class="machine-heading"><span class="machine-art" aria-hidden="true" style:background-image={`url('${base}/images/musee-vocabulaire/machines.png')`} style:background-position={`${(modes.findIndex(([id]) => id === mode) % 4) * 100 / 3}% ${Math.floor(modes.findIndex(([id]) => id === mode) / 4) * 100}%`}></span><h2 tabindex="-1" bind:this={gameHeading}>{modeLabels[mode]}</h2></div>
       {#if ready}
         {#if mode === 'millionaire'}
           <label class="quiz-format">Type de question
@@ -574,6 +592,7 @@
         </div>
       {/if}
     </section>
+    {/if}
     <aside class="game">
       <h2>Ma collection · {gallery.length}</h2>
       {#if gallery.length}
@@ -671,6 +690,54 @@
   .worksheet h2 { margin: .8rem 0; }
   .worksheet li { margin-bottom: .55rem; line-height: 1.5; }
   @media (max-width: 580px) { .search { grid-template-columns: minmax(0, 1fr); } .search ul { display: flex; flex-wrap: wrap; justify-content: center; } .shell { padding: .65rem; } }
+  /* Museum signage, television stage and specimen table share a quiet typography. */
+  .museum { background: #eeeae1; color: #213735; font-family: Arial, sans-serif; }
+  header { position: relative; overflow: hidden; background: #183d3a; border-bottom: 12px solid #d9a358; }
+  header::after { content: ''; position: absolute; right: 7%; top: 22%; width: 23%; height: 140%; border: 1px solid #b5c9b05c; border-radius: 50% 50% 0 0; transform: rotate(18deg); pointer-events: none; }
+  header .shell { padding-block: 2rem 3rem; position: relative; z-index: 1; }
+  h1 { font-family: Georgia, serif; font-weight: 400; font-size: clamp(3rem, 7vw, 5.7rem); line-height: 1.02; letter-spacing: -.045em; margin-block: 1rem 1.8rem; }
+  .settings { background: transparent; border: 0; border-bottom: 1px solid #b5b8ab; border-radius: 0; padding-inline: 0; }
+  button { border-radius: 3px; min-height: 44px; transition: background .15s, border-color .15s; }
+  nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid #b5b8ab; margin-block: 1.5rem 2rem; }
+  nav button { display: flex; align-items: center; gap: .7rem; text-align: left; border-radius: 0; border: 0; border-bottom: 1px solid #b5b8ab; background: transparent; padding: 1rem; }
+  nav small { font-family: Georgia, serif; font-size: 1.3rem; font-weight: 400; opacity: .7; }
+  .game { border-radius: 0; border: 0; border-top: 4px solid #bd8b4f; padding: clamp(1rem, 4vw, 3rem); background: #faf8f1; }
+  .game h2 { font-family: Georgia, serif; font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 400; }
+  .coach { background: transparent; border-radius: 0; border-bottom: 1px solid #c5c6b8; }
+  .coach p { font-weight: 400; line-height: 1.6; max-width: 36rem; text-align: left; }
+  .prompt { max-width: 44rem; margin: 2rem auto; line-height: 1.5; }
+  .studio section.game { background: #182e44; color: #fff7e7; border-top-color: #e6b96f; }
+  .studio section.game .coach { border-color: #577083; }
+  .studio section.game .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 48rem; margin: 2rem auto; gap: 1rem; }
+  .studio section.game .choices button { padding: 1.3rem; border: 2px solid #cfad72; box-shadow: 0 5px 0 #0b1f31; }
+  .workshop section.game { background: #e1d5bc; border: 12px solid #9c7650; box-shadow: inset 0 0 0 1px #715c42; }
+  .workshop .matches { gap: 2rem; padding-block: 1rem; }
+  .workshop .matches .choices button { min-width: 8rem; padding: 1rem; border-radius: 0; box-shadow: 3px 4px 0 #aa96766b; }
+  .workshop .matches .choices + .choices { border-top: 1px dashed #887555; padding-top: 1.7rem; }
+  .collection li { border-radius: 0; border-bottom: 3px solid #b7905d; background: #ede9dd; padding: 1rem; }
+  @media (max-width: 650px) { nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } nav button { padding: .75rem; } .studio section.game .choices { grid-template-columns: 1fr; } header::after { right: -8%; width: 45%; } .workshop section.game { border-width: 5px; } }
+  h1, .game h2, nav small { font-family: Arial, sans-serif; letter-spacing: normal; }
+  h1 { font-size: clamp(1.7rem, 4vw, 2.6rem); font-weight: 750; margin: .8rem 0; }
+  header .shell { padding-block: 1rem; }
+  header::after { display: none; }
+  .hall-guide { display: flex; align-items: center; gap: 1.5rem; padding: 1rem 2rem; background: #faf4e7; border-left: 5px solid #b7603c; }
+  .hall-guide h2 { margin: 0; font-size: 1.4rem; }
+  .hall-guide p { line-height: 1.6; margin-bottom: 0; }
+  .hall-guide .noireau { width: 6rem; }
+  nav.machine-hall { gap: 1.5rem 1rem; padding: 1.5rem; background: #fbf1e2; border: 8px solid #d2b58f; box-shadow: 0 8px 0 #b59772; }
+  .machine-hall button { display: flex; flex-direction: column; padding: 0; border: 0; background: transparent; gap: 0; }
+  .machine-art { display: block; width: 100%; aspect-ratio: 3 / 4; background-size: 400% 200%; background-repeat: no-repeat; }
+  .machine-label { display: flex; align-items: center; gap: .5rem; width: 100%; min-height: 4.2rem; padding: .6rem; background: #fffaf1; border: 2px solid #9b7954; color: #213735; font-size: 1rem; line-height: 1.4; box-shadow: 0 4px 0 #b59772; }
+  .machine-hall button:hover:not(:disabled) .machine-label { background: #e4eee9; border-color: #25453c; }
+  .return-hall { margin-bottom: 1.25rem; }
+  .machine-heading { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1rem; }
+  .machine-heading .machine-art { width: 6rem; flex: 0 0 6rem; border-radius: .4rem; }
+  .machine-heading h2 { margin: 0; text-align: left; }
+  .museum button, .museum select, .museum input { font-family: Arial, sans-serif; }
+  .museum button:focus-visible, .museum h2:focus-visible { outline: 3px solid #d48628; outline-offset: 4px; }
+  @media (prefers-reduced-motion: reduce) { button { transition: none; } }
+  .coach p, .prompt { text-align: left; line-height: 1.6; }
+  @media (max-width: 650px) { nav.machine-hall { padding: .5rem; gap: 1rem .5rem; border-width: 4px; } .hall-guide { padding: 1rem; gap: .8rem; } .machine-label { font-size: .9rem; } }
   @media print {
     .worksheet { width: auto; margin: 0; padding: 0; color: black; border: 0; border-radius: 0; }
     .worksheet li { break-inside: avoid; line-height: 1.45; }
