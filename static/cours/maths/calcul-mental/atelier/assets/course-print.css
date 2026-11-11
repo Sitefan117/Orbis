@@ -110,6 +110,41 @@
   body[data-print-kind="course"] .course-exercises {
     display: block;
     break-before: page;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+    padding: 10px 14px;
+    font-size: 9.5pt;
+    line-height: 1.25;
+  }
+
+  body[data-print-kind="course"] .course-exercises .memo-chapter,
+  body[data-print-kind="course"] .course-exercises h3,
+  body[data-print-kind="course"] .course-exercises > p,
+  body[data-print-kind="course"] .course-exercises > ol {
+    margin-top: 3px;
+    margin-bottom: 5px;
+  }
+
+  body[data-print-kind="course"] .course-exercises > ol > li {
+    margin: 0;
+    padding: 3px 0;
+  }
+
+  body[data-print-kind="course"] .course-exercises .paper-answers {
+    gap: 8px;
+    margin-top: 3px;
+  }
+
+  body[data-print-kind="course"] .course-exercises .paper-blank {
+    height: 14px;
+  }
+
+  body[data-print-kind="course"] .course-exercises .paper-work {
+    height: 6mm;
+  }
+
+  body[data-print-kind="course"] .course-exercises small {
+    font-size: 8pt;
   }
 
   body[data-print-kind="course"] .course-validation {
