@@ -1,40 +1,40 @@
 id,theme,intitule,parcours,mot,definition,phrase_a_trou,syllabes_ecrites,sprite
 ecole-ecole,ecole,École et consignes,base,école,Lieu où l’on suit des cours,,é-cole,ecole-sprites-v1:8
 ecole-classe,ecole,École et consignes,base,classe,Groupe d’élèves qui suit les cours ensemble,,,
-ecole-cahier,ecole,École et consignes,base,cahier,Pages attachées dans lesquelles on écrit ses notes,J’écris la date dans mon ___.,ca-hier,ecole-sprites-v1:0
-ecole-cartable,ecole,École et consignes,base,cartable,Sac d’écolier destiné aux affaires de classe,Je mets mes affaires de classe dans mon ___.,car-ta-ble,ecole-sprites-v1:1
-ecole-tableau,ecole,École et consignes,base,tableau,Grande surface sur laquelle le professeur écrit,,ta-bleau,ecole-sprites-v1:2
-ecole-recreation,ecole,École et consignes,base,récréation,Pause entre les cours pendant laquelle on se détend,,ré-cré-a-tion,
-ecole-bibliotheque,ecole,École et consignes,base,bibliothèque,Lieu où l’on peut lire ou emprunter des livres,,bi-blio-thè-que,ville:10
-ecole-trousse,ecole,École et consignes,base,trousse,Étui dans lequel on range crayons et stylos,Je range mes crayons dans ma ___.,trous-se,ecole-sprites-v1:5
-ecole-regle,ecole,École et consignes,base,règle,Instrument droit et gradué pour mesurer ou tracer,,rè-gle,quotidien:0
+ecole-cahier,ecole,École et consignes,base,cahier,Objet fait de pages attachées où tu écris tes notes,J’écris la date dans mon ___.,ca-hier,ecole-sprites-v1:0
+ecole-cartable,ecole,École et consignes,base,cartable,Sac pour les affaires d’école,Je mets mes affaires de classe dans mon ___.,car-ta-ble,ecole-sprites-v1:1
+ecole-tableau,ecole,École et consignes,base,tableau,Grande surface où le professeur écrit pour toute la classe,,ta-bleau,ecole-sprites-v1:2
+ecole-recreation,ecole,École et consignes,base,récréation,Pause entre les cours,,ré-cré-a-tion,
+ecole-bibliotheque,ecole,École et consignes,base,bibliothèque,Endroit où tu peux lire des livres ou en prendre pour les lire chez toi,,bi-blio-thè-que,ville:10
+ecole-trousse,ecole,École et consignes,base,trousse,Petite pochette pour les crayons et les stylos,Je range mes crayons dans ma ___.,trous-se,ecole-sprites-v1:5
+ecole-regle,ecole,École et consignes,base,règle,Objet droit avec des marques pour mesurer ou tirer un trait,,rè-gle,quotidien:0
 ecole-ciseaux,ecole,École et consignes,base,ciseaux,Outil à deux lames qui sert à couper,,ci-seaux,quotidien:1
 ecole-gomme,ecole,École et consignes,base,gomme,Petit objet qui efface les traces de crayon,,gom-me,quotidien:2
-ecole-crayon,ecole,École et consignes,base,crayon,Outil à mine de graphite pour écrire ou dessiner,,cra-yon,quotidien:3
-ecole-agenda,ecole,École et consignes,base,agenda,Carnet où l’on note ses devoirs et ses rendez-vous,,a-gen-da,quotidien:4
-ecole-calculatrice,ecole,École et consignes,base,calculatrice,Appareil qui effectue des calculs,,cal-cu-la-tri-ce,quotidien:5
-ecole-ordinateur,ecole,École et consignes,base,ordinateur,Appareil qui permet de travailler avec des logiciels,,or-di-na-teur,quotidien:6
+ecole-crayon,ecole,École et consignes,base,crayon,Objet pour écrire ou dessiner. On peut effacer ses traits avec une gomme.,,cra-yon,quotidien:3
+ecole-agenda,ecole,École et consignes,base,agenda,Carnet où tu notes tes devoirs et tes rendez-vous,,a-gen-da,quotidien:4
+ecole-calculatrice,ecole,École et consignes,base,calculatrice,Petit appareil qui fait des calculs,,cal-cu-la-tri-ce,quotidien:5
+ecole-ordinateur,ecole,École et consignes,base,ordinateur,"Appareil avec un écran et un clavier. Il sert à écrire, à travailler ou à aller sur Internet.",,or-di-na-teur,quotidien:6
 ecole-stylo,ecole,École et consignes,base,stylo,Outil qui écrit avec de l’encre,,sty-lo,quotidien2:4
 ecole-feuille,ecole,École et consignes,base,feuille,Morceau de papier sur lequel on peut écrire,,feuil-le,quotidien2:5
-ecole-professeur,ecole,École et consignes,base,professeur,Personne qui enseigne une matière,,pro-fes-seur,
+ecole-professeur,ecole,École et consignes,base,professeur,Personne qui donne les cours,,pro-fes-seur,
 ecole-eleve,ecole,École et consignes,base,élève,Personne qui suit les cours dans une école,,é-lè-ve,
-ecole-devoir,ecole,École et consignes,base,devoir,Travail donné par le professeur à réaliser,,de-voir,
-ecole-exercice,ecole,École et consignes,base,exercice,Activité conçue pour s’entraîner,,,
-ecole-consigne,ecole,École et consignes,base,consigne,Indication qui explique ce qu’il faut faire,"Avant de répondre, lis bien la ___.",con-si-gne,
-ecole-question,ecole,École et consignes,base,question,Phrase utilisée pour demander une information,,,
-ecole-reponse,ecole,École et consignes,base,réponse,Ce qu’on dit ou écrit à la suite d’une question,,ré-pon-se,
+ecole-devoir,ecole,École et consignes,base,devoir,Travail que le professeur te demande de faire,,de-voir,
+ecole-exercice,ecole,École et consignes,base,exercice,Petit travail pour apprendre ou pour t’entraîner,,,
+ecole-consigne,ecole,École et consignes,base,consigne,Ce qui te dit ce que tu dois faire,"Avant de répondre, lis bien la ___.",con-si-gne,
+ecole-question,ecole,École et consignes,base,question,Ce que tu dis ou écris pour demander quelque chose,,,
+ecole-reponse,ecole,École et consignes,base,réponse,Ce que tu dis ou écris après une question,,ré-pon-se,
 ecole-lire,ecole,École et consignes,base,lire,Comprendre ce qui est écrit,,,actions:8
-ecole-ecrire,ecole,École et consignes,base,écrire,Former des lettres ou produire un texte,,,
+ecole-ecrire,ecole,École et consignes,base,écrire,Faire des lettres et des mots pour laisser un message ou raconter quelque chose,,,
 ecole-ecouter,ecole,École et consignes,base,écouter,Faire attention à ce que l’on entend,,,
-ecole-souligner,ecole,École et consignes,base,souligner,Tracer un trait sous des mots,,,
-ecole-entourer,ecole,École et consignes,base,entourer,Tracer un cercle autour d’un élément,,,
+ecole-souligner,ecole,École et consignes,base,souligner,Faire un trait sous un mot,,,
+ecole-entourer,ecole,École et consignes,base,entourer,Faire un cercle autour de quelque chose,,,
 ecole-completer,ecole,École et consignes,base,compléter,Ajouter ce qui manque,,,
-famille-famille,famille,Famille et relations,base,famille,Ensemble de personnes unies par des liens de parenté,,fa-mil-le,emotions:6
+famille-famille,famille,Famille et relations,base,famille,"Tes parents, tes frères, tes sœurs et tes grands-parents, par exemple",,fa-mil-le,emotions:6
 famille-parent,famille,Famille et relations,base,parent,Père ou mère d’une personne,,pa-rent,
 famille-mere,famille,Famille et relations,base,mère,Femme qui a un ou plusieurs enfants,,mè-re,
 famille-pere,famille,Famille et relations,base,père,Homme qui a un ou plusieurs enfants,,pè-re,
-famille-soeur,famille,Famille et relations,base,sœur,Fille ou femme qui a des parents en commun avec une autre personne,"La fille de mes parents est ma ___.",,
-famille-frere,famille,Famille et relations,base,frère,Garçon ou homme qui a des parents en commun avec une autre personne,,frè-re,
+famille-soeur,famille,Famille et relations,base,sœur,Fille qui a au moins un parent en commun avec toi,"La fille de mes parents est ma ___.",,
+famille-frere,famille,Famille et relations,base,frère,Garçon qui a au moins un parent en commun avec toi,,frè-re,
 famille-grand-mere,famille,Famille et relations,base,grand-mère,Mère de l’un de ses parents,,,
 famille-grand-pere,famille,Famille et relations,base,grand-père,Père de l’un de ses parents,,,
 famille-tante,famille,Famille et relations,base,tante,Sœur de son père ou de sa mère,,,
@@ -42,177 +42,177 @@ famille-oncle,famille,Famille et relations,base,oncle,Frère de son père ou de 
 famille-cousine,famille,Famille et relations,base,cousine,Fille de sa tante ou de son oncle,"La fille de ma tante est ma ___.",cou-si-ne,
 famille-cousin,famille,Famille et relations,base,cousin,Fils de sa tante ou de son oncle,,cou-sin,
 famille-enfant,famille,Famille et relations,base,enfant,Jeune personne qui n’est pas encore adulte,,en-fant,emotions:7
-famille-adolescent,famille,Famille et relations,base,adolescent,Jeune qui grandit entre l’enfance et l’âge adulte,,a-do-les-cent,
-famille-adulte,famille,Famille et relations,base,adulte,Personne qui a terminé son enfance et son adolescence,,a-dul-te,
-famille-ami,famille,Famille et relations,base,ami,Personne que l’on apprécie et que l’on connaît bien,,a-mi,emotions:8
+famille-adolescent,famille,Famille et relations,base,adolescent,"Jeune entre l’enfance et l’âge adulte, comme un jeune de 15 ans",,a-do-les-cent,
+famille-adulte,famille,Famille et relations,base,adulte,Personne qui n’est plus un enfant ni un adolescent,,a-dul-te,
+famille-ami,famille,Famille et relations,base,ami,Personne que tu connais bien et avec qui tu aimes passer du temps,,a-mi,emotions:8
 famille-voisin,famille,Famille et relations,base,voisin,Personne qui habite près de chez soi,"La personne qui habite dans l’appartement à côté du mien est mon ___.",voi-sin,
-famille-prenom,famille,Famille et relations,base,prénom,Nom personnel qui accompagne le nom de famille,,pré-nom,
-famille-nom-de-famille,famille,Famille et relations,base,nom de famille,Nom transmis dans la famille,,,
-famille-age,famille,Famille et relations,base,âge,Nombre d’années vécues depuis sa naissance,,,
-famille-anniversaire,famille,Famille et relations,base,anniversaire,Jour où l’on fête sa date de naissance,,an-ni-ver-sai-re,quotidien2:8
+famille-prenom,famille,Famille et relations,base,prénom,"Nom qu’on te donne à la naissance, comme Lina ou Adam",,pré-nom,
+famille-nom-de-famille,famille,Famille et relations,base,nom de famille,Nom que les membres d’une même famille peuvent avoir en commun,,,
+famille-age,famille,Famille et relations,base,âge,Nombre d’années depuis ta naissance,,,
+famille-anniversaire,famille,Famille et relations,base,anniversaire,"Jour où tu fêtes ta naissance, chaque année",,an-ni-ver-sai-re,quotidien2:8
 famille-inviter,famille,Famille et relations,base,inviter,Proposer à quelqu’un de venir,"Je vais ___ trois amis à venir fêter mon anniversaire.",in-vi-ter,
 famille-saluer,famille,Famille et relations,base,saluer,Dire bonjour ou faire un geste pour dire bonjour,,sa-lu-er,
 famille-rencontrer,famille,Famille et relations,base,rencontrer,"Voir quelqu’un, souvent pour la première fois",,,
 famille-remercier,famille,Famille et relations,base,remercier,Dire merci,,,
 famille-presenter,famille,Famille et relations,base,présenter,Faire connaître une personne à une autre,,,
 famille-partager,famille,Famille et relations,base,partager,Donner une partie de ce que l’on a,,,
-famille-s-entendre,famille,Famille et relations,base,s’entendre,Avoir de bonnes relations avec quelqu’un,,,
+famille-s-entendre,famille,Famille et relations,base,s’entendre,Être bien ensemble et avoir peu de disputes,,,
 famille-rendre-visite,famille,Famille et relations,base,rendre visite,Aller voir quelqu’un chez lui,,,
 famille-faire-connaissance,famille,Famille et relations,base,faire connaissance,Commencer à connaître une personne,,,
-corps-main,corps,Corps et santé,base,main,Partie du corps au bout du bras qui sert à saisir,,,corps:0
+corps-main,corps,Corps et santé,base,main,Partie au bout du bras qui sert à tenir des objets,,,corps:0
 corps-pied,corps,Corps et santé,base,pied,Partie du corps au bout de la jambe qui touche le sol,,,corps:1
 corps-oreille,corps,Corps et santé,base,oreille,Partie du corps qui permet d’entendre,,o-reil-le,corps:2
-corps-oeil,corps,Corps et santé,base,œil,Organe qui permet de voir,,,corps:3
-corps-nez,corps,Corps et santé,base,nez,Partie du visage qui permet de sentir les odeurs,,,corps:4
-corps-bouche,corps,Corps et santé,base,bouche,Ouverture du visage qui sert à manger et à parler,,bou-che,corps:5
-corps-dent,corps,Corps et santé,base,dent,Élément dur dans la bouche qui sert à mâcher,,,corps:6
-corps-genou,corps,Corps et santé,base,genou,Articulation au milieu de la jambe,,ge-nou,corps:7
-corps-thermometre,corps,Corps et santé,base,thermomètre,Instrument qui mesure la température,"Pour mesurer ma température, je prends un ___.",ther-mo-mè-tre,corps:8
-corps-pansement,corps,Corps et santé,base,pansement,Protection qu’on pose sur une petite blessure,"Je couvre cette petite coupure avec un ___.",pan-se-ment,corps:9
-corps-bequilles,corps,Corps et santé,base,béquilles,Supports sous les bras ou aux avant-bras pour aider à marcher,"Je ne peux pas poser le pied par terre. Je marche avec des ___.",bé-quil-les,corps:10
-corps-fauteuil-roulant,corps,Corps et santé,base,fauteuil roulant,Siège à roues conçu pour se déplacer assis,,,corps:11
-corps-tete,corps,Corps et santé,base,tête,Partie du corps qui contient le cerveau et porte le visage,,,
-corps-bras,corps,Corps et santé,base,bras,Membre qui va de l’épaule à la main,,,
-corps-jambe,corps,Corps et santé,base,jambe,Membre qui permet de marcher,,,
-corps-dos,corps,Corps et santé,base,dos,Partie arrière du corps entre le cou et les hanches,,,
-corps-ventre,corps,Corps et santé,base,ventre,Partie du corps sous la poitrine et devant le dos,,,
-corps-gorge,corps,Corps et santé,base,gorge,Partie intérieure du cou par laquelle on avale,,,
-corps-peau,corps,Corps et santé,base,peau,Enveloppe qui couvre le corps,,,
-corps-douleur,corps,Corps et santé,base,douleur,Sensation que l’on éprouve quand on a mal,,dou-leur,
-corps-fievre,corps,Corps et santé,base,fièvre,Température du corps plus élevée que d’habitude,"Le thermomètre indique 39 °C. J’ai de la ___.",fiè-vre,
-corps-toux,corps,Corps et santé,base,toux,Expulsion brusque et sonore d’air par la gorge,,,
+corps-oeil,corps,Corps et santé,base,œil,Partie du visage qui permet de voir,,,corps:3
+corps-nez,corps,Corps et santé,base,nez,Partie du visage qui sert à sentir les odeurs,,,corps:4
+corps-bouche,corps,Corps et santé,base,bouche,Partie du visage que tu ouvres pour parler et manger,,bou-che,corps:5
+corps-dent,corps,Corps et santé,base,dent,Petite partie dure dans la bouche qui sert à couper et à écraser la nourriture,,,corps:6
+corps-genou,corps,Corps et santé,base,genou,"Partie au milieu de la jambe, là où elle se plie",,ge-nou,corps:7
+corps-thermometre,corps,Corps et santé,base,thermomètre,Objet qui indique la température,"Pour mesurer ma température, je prends un ___.",ther-mo-mè-tre,corps:8
+corps-pansement,corps,Corps et santé,base,pansement,Petit morceau qu’on colle sur une coupure pour la protéger,"Je couvre cette petite coupure avec un ___.",pan-se-ment,corps:9
+corps-bequilles,corps,Corps et santé,base,béquilles,Deux bâtons sur lesquels tu t’appuies pour marcher quand tu as mal à la jambe,"Je ne peux pas poser le pied par terre. Je marche avec des ___.",bé-quil-les,corps:10
+corps-fauteuil-roulant,corps,Corps et santé,base,fauteuil roulant,Chaise avec des roues pour se déplacer en restant assis,,,corps:11
+corps-tete,corps,Corps et santé,base,tête,"Partie du corps au-dessus du cou, avec le visage",,,
+corps-bras,corps,Corps et santé,base,bras,Partie du corps entre l’épaule et la main,,,
+corps-jambe,corps,Corps et santé,base,jambe,Partie du corps qui va de la hanche au pied,,,
+corps-dos,corps,Corps et santé,base,dos,"Partie du corps derrière toi, entre le cou et le bas du corps",,,
+corps-ventre,corps,Corps et santé,base,ventre,"Partie du corps devant toi, sous la poitrine",,,
+corps-gorge,corps,Corps et santé,base,gorge,Intérieur du cou. L’eau y passe quand tu bois.,,,
+corps-peau,corps,Corps et santé,base,peau,Ce qui couvre ton corps,,,
+corps-douleur,corps,Corps et santé,base,douleur,Ce que tu sens quand tu as mal,,dou-leur,
+corps-fievre,corps,Corps et santé,base,fièvre,Ton corps est plus chaud que d’habitude parce que tu es malade,"Le thermomètre indique 39 °C. J’ai de la ___.",fiè-vre,
+corps-toux,corps,Corps et santé,base,toux,"Quand de l’air sort brusquement de ta bouche et que ça fait « kheu, kheu »",,,
 corps-rhume,corps,Corps et santé,base,rhume,Maladie courante qui donne le nez bouché ou qui coule,,,
-corps-blessure,corps,Corps et santé,base,blessure,Atteinte au corps causée par un choc ou une coupure,,,
-corps-medecin,corps,Corps et santé,base,médecin,Personne dont le métier est de soigner les malades,,mé-de-cin,
-corps-medicament,corps,Corps et santé,base,médicament,Produit utilisé pour soigner ou soulager un problème de santé,,mé-di-ca-ment,
-corps-pharmacie,corps,Corps et santé,base,pharmacie,Lieu où l’on se procure des médicaments,"Je vais à la ___ pour chercher le médicament de mon ordonnance.",phar-ma-cie,ville:8
-corps-avoir-mal,corps,Corps et santé,base,avoir mal,Ressentir une douleur,,,
-corps-se-reposer,corps,Corps et santé,base,se reposer,Arrêter un effort pour récupérer,,,
+corps-blessure,corps,Corps et santé,base,blessure,Coupure ou autre mal sur une partie du corps après un accident ou un coup,,,
+corps-medecin,corps,Corps et santé,base,médecin,Personne qui examine les malades et leur dit comment se soigner,,mé-de-cin,
+corps-medicament,corps,Corps et santé,base,médicament,Ce que tu prends pour aller mieux quand tu es malade,,mé-di-ca-ment,
+corps-pharmacie,corps,Corps et santé,base,pharmacie,Endroit où tu peux acheter ou chercher des médicaments,"Je vais à la ___ pour chercher le médicament de mon ordonnance.",phar-ma-cie,ville:8
+corps-avoir-mal,corps,Corps et santé,base,avoir mal,Sentir une douleur dans une partie du corps,,,
+corps-se-reposer,corps,Corps et santé,base,se reposer,Faire une pause pour être moins fatigué,,,
 corps-se-laver,corps,Corps et santé,base,se laver,Nettoyer son corps,,,actions:7
-alimentation-pain,alimentation,Alimentation et courses,base,pain,Aliment cuit à base de farine que l’on coupe souvent en tranches,,,courses:0
+alimentation-pain,alimentation,Alimentation et courses,base,pain,"Aliment fait avec de la farine et de l’eau, comme la baguette",,,courses:0
 alimentation-pomme,alimentation,Alimentation et courses,base,pomme,"Fruit rond qui peut être rouge, vert ou jaune",,,courses:1
 alimentation-banane,alimentation,Alimentation et courses,base,banane,Fruit allongé à peau jaune,,ba-na-ne,courses:2
-alimentation-riz,alimentation,Alimentation et courses,base,riz,Petits grains que l’on mange après cuisson,,,courses:3
-alimentation-pates,alimentation,Alimentation et courses,base,pâtes,"Aliment de farine et d’eau, comme les spaghettis",,pâ-tes,courses:4
-alimentation-lait,alimentation,Alimentation et courses,base,lait,Liquide blanc produit notamment par les vaches,,,courses:5
-alimentation-fromage,alimentation,Alimentation et courses,base,fromage,Aliment fabriqué à partir de lait,,fro-ma-ge,courses:6
-alimentation-oeuf,alimentation,Alimentation et courses,base,œuf,Aliment à coquille que pond la poule,,,courses:7
-alimentation-carotte,alimentation,Alimentation et courses,base,carotte,Légume-racine généralement orange,,ca-rot-te,courses:8
-alimentation-tomate,alimentation,Alimentation et courses,base,tomate,Fruit généralement rouge utilisé en salade ou en sauce,,to-ma-te,courses:9
-alimentation-poisson,alimentation,Alimentation et courses,base,poisson,Animal aquatique que l’on peut manger,,pois-son,courses:10
-alimentation-eau,alimentation,Alimentation et courses,base,eau,Liquide transparent que l’on boit,,,courses:11
-alimentation-viande,alimentation,Alimentation et courses,base,viande,Chair d’un animal consommée comme aliment,,,
-alimentation-poulet,alimentation,Alimentation et courses,base,poulet,Volaille couramment cuisinée et mangée,,,
-alimentation-legume,alimentation,Alimentation et courses,base,légume,Aliment végétal comme la carotte ou le poireau,,lé-gu-me,
-alimentation-fruit,alimentation,Alimentation et courses,base,fruit,Aliment végétal comme une pomme ou une poire,,,
-alimentation-huile,alimentation,Alimentation et courses,base,huile,Liquide gras utilisé pour cuire ou assaisonner,,,
-alimentation-sel,alimentation,Alimentation et courses,base,sel,Produit blanc utilisé pour donner un goût salé,,,
-alimentation-sucre,alimentation,Alimentation et courses,base,sucre,Produit utilisé pour donner un goût sucré,,,
-alimentation-farine,alimentation,Alimentation et courses,base,farine,Poudre obtenue en broyant des grains,,fa-ri-ne,
-alimentation-soupe,alimentation,Alimentation et courses,base,soupe,Plat liquide souvent préparé avec des légumes,,sou-pe,
+alimentation-riz,alimentation,Alimentation et courses,base,riz,Petits grains qu’on fait cuire dans l’eau avant de les manger,,,courses:3
+alimentation-pates,alimentation,Alimentation et courses,base,pâtes,Nourriture comme les spaghettis ou les macaronis,,pâ-tes,courses:4
+alimentation-lait,alimentation,Alimentation et courses,base,lait,Liquide blanc que la vache donne et qu’on peut boire,,,courses:5
+alimentation-fromage,alimentation,Alimentation et courses,base,fromage,"Aliment fait avec du lait, comme le gruyère",,fro-ma-ge,courses:6
+alimentation-oeuf,alimentation,Alimentation et courses,base,œuf,Aliment avec une coque dure que donne la poule,,,courses:7
+alimentation-carotte,alimentation,Alimentation et courses,base,carotte,Légume orange qui pousse dans la terre,,ca-rot-te,courses:8
+alimentation-tomate,alimentation,Alimentation et courses,base,tomate,Aliment souvent rouge qu’on met dans une salade ou une sauce,,to-ma-te,courses:9
+alimentation-poisson,alimentation,Alimentation et courses,base,poisson,Animal qui vit dans l’eau et qu’on peut manger,,pois-son,courses:10
+alimentation-eau,alimentation,Alimentation et courses,base,eau,Liquide sans couleur que tu peux boire,,,courses:11
+alimentation-viande,alimentation,Alimentation et courses,base,viande,Partie d’un animal qu’on prépare pour la manger,,,
+alimentation-poulet,alimentation,Alimentation et courses,base,poulet,Jeune poule ou jeune coq qu’on peut manger,,,
+alimentation-legume,alimentation,Alimentation et courses,base,légume,"Nourriture comme la carotte, le poireau ou la salade",,lé-gu-me,
+alimentation-fruit,alimentation,Alimentation et courses,base,fruit,"Nourriture comme la pomme, la poire ou la banane",,,
+alimentation-huile,alimentation,Alimentation et courses,base,huile,Liquide gras qu’on met dans la poêle ou dans une salade,,,
+alimentation-sel,alimentation,Alimentation et courses,base,sel,Petits grains blancs qui donnent le goût salé,,,
+alimentation-sucre,alimentation,Alimentation et courses,base,sucre,"Petits grains blancs qu’on ajoute, par exemple, pour rendre un thé sucré",,,
+alimentation-farine,alimentation,Alimentation et courses,base,farine,Poudre qu’on fait avec du blé. Elle sert à faire du pain ou des gâteaux.,,fa-ri-ne,
+alimentation-soupe,alimentation,Alimentation et courses,base,soupe,"Plat qu’on mange à la cuillère, souvent avec des légumes dans du liquide",,sou-pe,
 alimentation-repas,alimentation,Alimentation et courses,base,repas,Moment où l’on mange des aliments,,re-pas,
 alimentation-petit-dejeuner,alimentation,Alimentation et courses,base,petit-déjeuner,Premier repas de la journée,"Mon premier repas de la journée est le ___.",,
-alimentation-avoir-faim,alimentation,Alimentation et courses,base,avoir faim,Ressentir le besoin de manger,,,
-alimentation-avoir-soif,alimentation,Alimentation et courses,base,avoir soif,Ressentir le besoin de boire,"Après le sport, on peut ___ et avoir envie de boire.",,
+alimentation-avoir-faim,alimentation,Alimentation et courses,base,avoir faim,Avoir besoin de manger,,,
+alimentation-avoir-soif,alimentation,Alimentation et courses,base,avoir soif,Avoir besoin de boire,"Après le sport, on peut ___ et avoir envie de boire.",,
 alimentation-cuisiner,alimentation,Alimentation et courses,base,cuisiner,Préparer des plats à manger,,,
-alimentation-prix,alimentation,Alimentation et courses,base,prix,Somme demandée pour acheter quelque chose,"Le ___ indiqué sur l’étiquette est de trois francs.",,
+alimentation-prix,alimentation,Alimentation et courses,base,prix,Argent qu’il faut donner pour acheter quelque chose,"Le ___ indiqué sur l’étiquette est de trois francs.",,
 alimentation-payer,alimentation,Alimentation et courses,base,payer,Donner l’argent demandé pour un achat,,,
 alimentation-caisse,alimentation,Alimentation et courses,base,caisse,Endroit d’un magasin où l’on paie,"Je pose mes achats sur le tapis à la ___ pour payer.",,
-alimentation-boulangerie,alimentation,Alimentation et courses,base,boulangerie,Commerce qui vend du pain,"J’achète une baguette à la ___.",bou-lan-ge-rie,ville:9
+alimentation-boulangerie,alimentation,Alimentation et courses,base,boulangerie,Magasin où on achète du pain,"J’achète une baguette à la ___.",bou-lan-ge-rie,ville:9
 maison-maison,maison,Maison et vêtements,base,maison,Bâtiment dans lequel on habite,"Après le cours, je rentre à la ___.",mai-son,maison:0
 maison-lit,maison,Maison et vêtements,base,lit,Meuble sur lequel on dort,,,maison:1
-maison-table,maison,Maison et vêtements,base,table,Meuble avec un plateau horizontal pour manger ou travailler,,ta-ble,maison:2
+maison-table,maison,Maison et vêtements,base,table,Meuble plat sur lequel on pose son assiette ou ses affaires de travail,,ta-ble,maison:2
 maison-chaise,maison,Maison et vêtements,base,chaise,Siège avec un dossier pour une personne,,chai-se,maison:3
-maison-porte,maison,Maison et vêtements,base,porte,Élément mobile qui ferme l’entrée d’une pièce,,por-te,maison:4
-maison-fenetre,maison,Maison et vêtements,base,fenêtre,Ouverture vitrée qui laisse entrer la lumière,,fe-nê-tre,maison:5
-maison-cle,maison,Maison et vêtements,base,clé,Petit objet qui ouvre une serrure,,,maison:6
-maison-douche,maison,Maison et vêtements,base,douche,Équipement qui permet de se laver sous un jet d’eau,,dou-che,maison:7
+maison-porte,maison,Maison et vêtements,base,porte,Ce que tu ouvres pour entrer dans une pièce et que tu peux refermer,,por-te,maison:4
+maison-fenetre,maison,Maison et vêtements,base,fenêtre,Ouverture avec une vitre pour voir dehors et faire entrer la lumière,,fe-nê-tre,maison:5
+maison-cle,maison,Maison et vêtements,base,clé,Petit objet qu’on tourne dans la serrure pour ouvrir ou fermer une porte,,,maison:6
+maison-douche,maison,Maison et vêtements,base,douche,Endroit où tu te laves avec de l’eau qui tombe d’en haut,,dou-che,maison:7
 maison-refrigerateur,maison,Maison et vêtements,base,réfrigérateur,Appareil qui garde les aliments au froid,,ré-fri-gé-ra-teur,maison:8
 maison-machine-a-laver,maison,Maison et vêtements,base,machine à laver,Appareil qui nettoie le linge,,,maison:9
-maison-canape,maison,Maison et vêtements,base,canapé,Siège rembourré où plusieurs personnes peuvent s’asseoir,,ca-na-pé,maison:10
-maison-casserole,maison,Maison et vêtements,base,casserole,Récipient avec un manche pour faire cuire des aliments,,cas-se-ro-le,maison:11
+maison-canape,maison,Maison et vêtements,base,canapé,Grand siège doux où plusieurs personnes peuvent s’asseoir,,ca-na-pé,maison:10
+maison-casserole,maison,Maison et vêtements,base,casserole,Objet avec un manche pour faire cuire des aliments sur le feu ou sur une plaque,,cas-se-ro-le,maison:11
 maison-manteau,maison,Maison et vêtements,base,manteau,Vêtement chaud que l’on porte par-dessus les autres,,man-teau,quotidien:8
 maison-chaussures,maison,Maison et vêtements,base,chaussures,Ce que l’on porte aux pieds pour marcher dehors,,chaus-su-res,quotidien:9
-maison-tee-shirt,maison,Maison et vêtements,base,tee-shirt,Vêtement léger du haut du corps à manches courtes,,,quotidien:10
-maison-casquette,maison,Maison et vêtements,base,casquette,Coiffure avec une visière à l’avant,,cas-quet-te,quotidien:11
-maison-appartement,maison,Maison et vêtements,base,appartement,Logement situé dans un immeuble,,,
+maison-tee-shirt,maison,Maison et vêtements,base,tee-shirt,Haut léger avec des manches courtes,,,quotidien:10
+maison-casquette,maison,Maison et vêtements,base,casquette,"Ce qu’on met sur la tête, avec une partie dure devant pour cacher le soleil",,cas-quet-te,quotidien:11
+maison-appartement,maison,Maison et vêtements,base,appartement,Maison à l’intérieur d’un bâtiment où vivent aussi d’autres personnes,,,
 maison-chambre,maison,Maison et vêtements,base,chambre,Pièce où l’on dort,,cham-bre,
 maison-cuisine,maison,Maison et vêtements,base,cuisine,Pièce où l’on prépare les repas,,cui-si-ne,
 maison-salle-de-bains,maison,Maison et vêtements,base,salle de bains,Pièce de la maison où l’on se lave,,,
-maison-salon,maison,Maison et vêtements,base,salon,Pièce où l’on s’installe pour discuter ou se détendre,,,
-maison-escalier,maison,Maison et vêtements,base,escalier,Suite de marches entre deux niveaux,,,
-maison-lampe,maison,Maison et vêtements,base,lampe,Objet qui fournit de la lumière,,lam-pe,
+maison-salon,maison,Maison et vêtements,base,salon,Pièce de la maison où on s’assoit pour parler ou regarder la télévision,,,
+maison-escalier,maison,Maison et vêtements,base,escalier,Marches pour aller en haut ou en bas,,,
+maison-lampe,maison,Maison et vêtements,base,lampe,Objet qui donne de la lumière,,lam-pe,
 maison-armoire,maison,Maison et vêtements,base,armoire,Meuble fermé dans lequel on range ses affaires,,ar-moi-re,
-maison-pantalon,maison,Maison et vêtements,base,pantalon,Vêtement qui couvre séparément les deux jambes,,pan-ta-lon,
+maison-pantalon,maison,Maison et vêtements,base,pantalon,"Vêtement qui couvre les deux jambes, avec une partie pour chaque jambe",,pan-ta-lon,
 maison-pull,maison,Maison et vêtements,base,pull,Vêtement chaud que l’on enfile par la tête,,,
 maison-chaussettes,maison,Maison et vêtements,base,chaussettes,Vêtements qui couvrent les pieds dans les chaussures,,,
 maison-veste,maison,Maison et vêtements,base,veste,Vêtement du haut du corps qui s’ouvre sur le devant,,,
 maison-ranger,maison,Maison et vêtements,base,ranger,Mettre les choses à leur place,,ran-ger,
-maison-habiter,maison,Maison et vêtements,base,habiter,Vivre dans un lieu,,ha-bi-ter,
-actions-se-lever,actions,Actions du quotidien,base,se lever,Sortir de son lit ou quitter sa position assise,,,actions:0
-actions-se-reveiller,actions,Actions du quotidien,base,se réveiller,Sortir du sommeil,"Le réveil sonne : c’est l’heure de ___, de sortir du sommeil.",,
+maison-habiter,maison,Maison et vêtements,base,habiter,Vivre à un endroit,,ha-bi-ter,
+actions-se-lever,actions,Actions du quotidien,base,se lever,Se mettre debout après avoir été au lit ou assis,,,actions:0
+actions-se-reveiller,actions,Actions du quotidien,base,se réveiller,Ouvrir les yeux et ne plus dormir,"Le réveil sonne : c’est l’heure de ___, de sortir du sommeil.",,
 actions-s-habiller,actions,Actions du quotidien,base,s’habiller,Mettre ses vêtements,"Après la douche, il faut ___ : mettre un pantalon et un haut.",,actions:6
-actions-manger,actions,Actions du quotidien,base,manger,Prendre des aliments par la bouche,,man-ger,
+actions-manger,actions,Actions du quotidien,base,manger,Mettre de la nourriture dans sa bouche et l’avaler,,man-ger,
 actions-boire,actions,Actions du quotidien,base,boire,Avaler un liquide,,,actions:1
-actions-dormir,actions,Actions du quotidien,base,dormir,Être dans le sommeil,,dor-mir,actions:2
+actions-dormir,actions,Actions du quotidien,base,dormir,Se reposer avec les yeux fermés pendant le sommeil,,dor-mir,actions:2
 actions-marcher,actions,Actions du quotidien,base,marcher,Avancer à pied sans courir,,mar-cher,
 actions-courir,actions,Actions du quotidien,base,courir,Avancer à pied en allant plus vite qu’en marchant,,cou-rir,actions:3
-actions-entrer,actions,Actions du quotidien,base,entrer,Passer de l’extérieur à l’intérieur,,,
-actions-sortir,actions,Actions du quotidien,base,sortir,Passer de l’intérieur à l’extérieur,,,
-actions-partir,actions,Actions du quotidien,base,partir,Quitter le lieu où l’on se trouve,,par-tir,
-actions-arriver,actions,Actions du quotidien,base,arriver,Atteindre le lieu où l’on voulait aller,,ar-ri-ver,
+actions-entrer,actions,Actions du quotidien,base,entrer,Aller du dehors vers le dedans,,,
+actions-sortir,actions,Actions du quotidien,base,sortir,Aller du dedans vers le dehors,,,
+actions-partir,actions,Actions du quotidien,base,partir,S’en aller,,par-tir,
+actions-arriver,actions,Actions du quotidien,base,arriver,Être enfin à l’endroit où tu voulais aller,,ar-ri-ver,
 actions-attendre,actions,Actions du quotidien,base,attendre,Rester jusqu’à ce que quelque chose se passe,"Le bus n’est pas encore arrivé. Je dois ___ à l’arrêt.",at-ten-dre,
 actions-chercher,actions,Actions du quotidien,base,chercher,Essayer de trouver quelqu’un ou quelque chose,,,
-actions-trouver,actions,Actions du quotidien,base,trouver,Découvrir ce que l’on cherchait,,trou-ver,
-actions-prendre,actions,Actions du quotidien,base,prendre,Saisir quelque chose ou l’emporter,,,
-actions-donner,actions,Actions du quotidien,base,donner,Mettre quelque chose à la disposition d’une autre personne,,don-ner,
-actions-ouvrir,actions,Actions du quotidien,base,ouvrir,Faire en sorte qu’un passage ou un contenant soit accessible,,ou-vrir,actions:4
-actions-fermer,actions,Actions du quotidien,base,fermer,Mettre une porte ou un objet dans une position qui bloque l’ouverture,"Avant de partir, pense à ___ la fenêtre pour éviter que la pluie entre.",fer-mer,
-actions-acheter,actions,Actions du quotidien,base,acheter,Obtenir quelque chose en échange d’argent,,a-che-ter,
-actions-vendre,actions,Actions du quotidien,base,vendre,Donner quelque chose en échange d’argent,"Je vais ___ mon ancien vélo. L’acheteur me paiera cinquante francs.",ven-dre,
+actions-trouver,actions,Actions du quotidien,base,trouver,Voir ou obtenir ce que tu cherchais,,trou-ver,
+actions-prendre,actions,Actions du quotidien,base,prendre,Mettre quelque chose dans sa main ou l’emporter,,,
+actions-donner,actions,Actions du quotidien,base,donner,Faire passer quelque chose de toi à quelqu’un d’autre,,don-ner,
+actions-ouvrir,actions,Actions du quotidien,base,ouvrir,"Bouger une porte, une boîte ou un sac pour pouvoir passer ou voir dedans",,ou-vrir,actions:4
+actions-fermer,actions,Actions du quotidien,base,fermer,Remettre une porte ou le couvercle d’une boîte pour que tu ne puisses plus passer ou voir dedans,"Avant de partir, pense à ___ la fenêtre pour éviter que la pluie entre.",fer-mer,
+actions-acheter,actions,Actions du quotidien,base,acheter,Donner de l’argent pour avoir quelque chose,,a-che-ter,
+actions-vendre,actions,Actions du quotidien,base,vendre,Donner quelque chose à quelqu’un qui te paie,"Je vais ___ mon ancien vélo. L’acheteur me paiera cinquante francs.",ven-dre,
 actions-porter,actions,Actions du quotidien,base,porter,Transporter quelque chose sur soi ou dans ses mains,,,
 actions-nettoyer,actions,Actions du quotidien,base,nettoyer,Enlever la saleté,,net-to-yer,actions:5
-actions-mettre,actions,Actions du quotidien,base,mettre,Placer quelque chose à un endroit,,,
-actions-enlever,actions,Actions du quotidien,base,enlever,Retirer quelque chose de sa place,,,
+actions-mettre,actions,Actions du quotidien,base,mettre,Poser ou placer quelque chose,,,
+actions-enlever,actions,Actions du quotidien,base,enlever,Prendre quelque chose pour le retirer de l’endroit où il est,,,
 actions-commencer,actions,Actions du quotidien,base,commencer,Faire la première partie d’une activité,,,
 actions-finir,actions,Actions du quotidien,base,finir,Arriver au bout d’une activité,,,
 actions-oublier,actions,Actions du quotidien,base,oublier,Ne plus se souvenir de quelque chose,,,
-actions-aider,actions,Actions du quotidien,base,aider,Faire quelque chose pour faciliter la tâche d’une autre personne,,,
-actions-choisir,actions,Actions du quotidien,base,choisir,Sélectionner ce que l’on veut parmi plusieurs possibilités,,choi-sir,
-ville-bus,ville,Ville et transports,base,bus,Grand véhicule routier qui transporte des voyageurs,"Je monte dans le ___ à l’arrêt devant l’école.",,ville:0
-ville-train,ville,Ville et transports,base,train,Ensemble de véhicules qui circulent sur des rails entre des gares,"Le ___ roule sur des rails et s’arrête dans plusieurs gares.",,ville:1
-ville-velo,ville,Ville et transports,base,vélo,Véhicule à deux roues que l’on fait avancer en pédalant,"Je mets mon casque et je prends mon ___ : je pédale jusqu’à l’école.",vé-lo,ville:2
-ville-tram,ville,Ville et transports,base,tram,Transport en commun sur rails qui circule souvent en ville,"Le ___ circule sur des rails au milieu de la ville.",,ville:3
-ville-gare,ville,Ville et transports,base,gare,Lieu où les voyageurs montent dans le train ou en descendent,Le train part de la ___ à huit heures.,,ville:4
-ville-passage-pieton,ville,Ville et transports,base,passage piéton,Bandes peintes qui signalent où traverser à pied,"Traverse la rue sur le ___, là où les bandes blanches sont peintes.",,ville:5
-ville-feu-de-circulation,ville,Ville et transports,base,feu de circulation,"Signal lumineux rouge, orange et vert qui règle le trafic","Le ___ passe au rouge : les voitures doivent s’arrêter.",,ville:6
-ville-pont,ville,Ville et transports,base,pont,Construction qui permet de passer au-dessus d’une rivière ou d’une route,"Pour franchir la rivière, il faut passer sur le ___.",,ville:7
-ville-arret-de-bus,ville,Ville et transports,base,arrêt de bus,Endroit où l’on attend le bus et où il prend des voyageurs,"Attends le bus à l’___ devant le parc.",,ville:11
-ville-rue,ville,Ville et transports,base,rue,Voie en ville bordée de bâtiments,,,
-ville-route,ville,Ville et transports,base,route,Voie sur laquelle circulent des véhicules entre différents lieux,,,
-ville-trottoir,ville,Ville et transports,base,trottoir,Bord de rue réservé aux piétons,"Marche sur le ___, dans la partie de la rue réservée aux piétons.",trot-toir,trajets:2:3:3
-ville-carrefour,ville,Ville et transports,base,carrefour,Endroit où plusieurs voies se croisent,"Les deux rues se croisent au ___.",car-re-four,trajets:3:3:3
-ville-place,ville,Ville et transports,base,place,Espace ouvert entouré de bâtiments ou de rues,,,
+actions-aider,actions,Actions du quotidien,base,aider,Faire quelque chose pour que ce soit plus facile pour quelqu’un,,,
+actions-choisir,actions,Actions du quotidien,base,choisir,Dire ou prendre ce que tu veux parmi plusieurs choses,,choi-sir,
+ville-bus,ville,Ville et transports,base,bus,Grand véhicule qui prend beaucoup de personnes et s’arrête à plusieurs arrêts,"Je monte dans le ___ à l’arrêt devant l’école.",,ville:0
+ville-train,ville,Ville et transports,base,train,Véhicule qui roule sur des rails et s’arrête dans des gares,"Le ___ roule sur des rails et s’arrête dans plusieurs gares.",,ville:1
+ville-velo,ville,Ville et transports,base,vélo,Véhicule à deux roues qui avance quand tu pousses sur les pédales,"Je mets mon casque et je prends mon ___ : je pédale jusqu’à l’école.",vé-lo,ville:2
+ville-tram,ville,Ville et transports,base,tram,Véhicule qui roule sur des rails dans les rues et prend des voyageurs,"Le ___ circule sur des rails au milieu de la ville.",,ville:3
+ville-gare,ville,Ville et transports,base,gare,Endroit où les gens prennent le train,Le train part de la ___ à huit heures.,,ville:4
+ville-passage-pieton,ville,Ville et transports,base,passage piéton,Bandes blanches sur la rue pour montrer où passer à pied,"Traverse la rue sur le ___, là où les bandes blanches sont peintes.",,ville:5
+ville-feu-de-circulation,ville,Ville et transports,base,feu de circulation,"Lumières rouge, orange et verte qui disent aux voitures quand s’arrêter et quand passer","Le ___ passe au rouge : les voitures doivent s’arrêter.",,ville:6
+ville-pont,ville,Ville et transports,base,pont,Ce qui permet de passer au-dessus d’une rivière ou d’une route,"Pour franchir la rivière, il faut passer sur le ___.",,ville:7
+ville-arret-de-bus,ville,Ville et transports,base,arrêt de bus,Endroit où tu attends le bus,"Attends le bus à l’___ devant le parc.",,ville:11
+ville-rue,ville,Ville et transports,base,rue,"Chemin entre des bâtiments, dans une ville ou un village",,,
+ville-route,ville,Ville et transports,base,route,"Chemin où roulent les voitures, par exemple entre deux villes",,,
+ville-trottoir,ville,Ville et transports,base,trottoir,Partie sur le bord de la rue où les gens marchent,"Marche sur le ___, dans la partie de la rue réservée aux piétons.",trot-toir,trajets:2:3:3
+ville-carrefour,ville,Ville et transports,base,carrefour,Endroit où deux rues ou plus se croisent,"Les deux rues se croisent au ___.",car-re-four,trajets:3:3:3
+ville-place,ville,Ville et transports,base,place,"Grand espace ouvert dans une ville, souvent avec des bâtiments autour",,,
 ville-quartier,ville,Ville et transports,base,quartier,Partie d’une ville où vivent des gens,"J’habite dans le même ___ que mon amie, à deux rues de chez elle.",quar-tier,
-ville-ville,ville,Ville et transports,base,ville,Lieu où se concentrent de nombreux habitants et services,,,
-ville-village,ville,Ville et transports,base,village,Petite localité moins peuplée qu’une ville,,vil-la-ge,
+ville-ville,ville,Ville et transports,base,ville,"Grand endroit avec beaucoup d’habitants, de rues et de magasins",,,
+ville-village,ville,Ville et transports,base,village,Petit endroit où vivent moins de gens que dans une ville,,vil-la-ge,
 ville-magasin,ville,Ville et transports,base,magasin,Lieu où l’on vend des produits,,ma-ga-sin,
-ville-supermarche,ville,Ville et transports,base,supermarché,Grand magasin en libre-service où l’on fait surtout ses courses,"On achète le lait, les légumes et les pâtes au ___.",,trajets:4:3:3
-ville-hopital,ville,Ville et transports,base,hôpital,Lieu où l’on soigne des patients et où certains séjournent,"Après son accident, on l’a emmené à l’___ pour le soigner.",hô-pi-tal,trajets:5:3:3
-ville-billet,ville,Ville et transports,base,billet,Document qui permet de faire un trajet ou d’entrer à un événement,"J’achète un ___ valable pour un seul trajet.",bil-let,trajets:0:3:3
-ville-abonnement,ville,Ville et transports,base,abonnement,Droit d’utiliser un service pendant une période définie,"Avec mon ___ mensuel, je peux voyager tous les jours sans racheter un billet.",a-bon-ne-ment,
-ville-horaire,ville,Ville et transports,base,horaire,Liste des heures prévues pour un service ou une activité,"Je consulte l’___ du bus pour connaître l’heure du prochain départ.",ho-rai-re,trajets:1:3:3
+ville-supermarche,ville,Ville et transports,base,supermarché,Grand magasin où tu prends toi-même les aliments avant de payer,"On achète le lait, les légumes et les pâtes au ___.",,trajets:4:3:3
+ville-hopital,ville,Ville et transports,base,hôpital,Endroit où l’on soigne les malades ou les blessés. Certains y dorment pour être soignés.,"Après son accident, on l’a emmené à l’___ pour le soigner.",hô-pi-tal,trajets:5:3:3
+ville-billet,ville,Ville et transports,base,billet,Petit papier ou code qui te permet de prendre le train ou d’entrer à un spectacle,"J’achète un ___ valable pour un seul trajet.",bil-let,trajets:0:3:3
+ville-abonnement,ville,Ville et transports,base,abonnement,"Ce qui te permet d’utiliser quelque chose plusieurs fois pendant un mois ou un an, par exemple le bus","Avec mon ___ mensuel, je peux voyager tous les jours sans racheter un billet.",a-bon-ne-ment,
+ville-horaire,ville,Ville et transports,base,horaire,"Liste qui montre à quelle heure le bus part, le cours commence ou le magasin ouvre","Je consulte l’___ du bus pour connaître l’heure du prochain départ.",ho-rai-re,trajets:1:3:3
 ville-direction,ville,Ville et transports,base,direction,Côté vers lequel il faut aller,"Pour aller à Lausanne, prends le train en ___ de Lausanne.",,
 ville-a-gauche,ville,Ville et transports,base,à gauche,Du côté opposé à la droite,"Tourne ___ après la poste : la pharmacie sera du côté opposé à ta droite.",,
 ville-a-droite,ville,Ville et transports,base,à droite,Du côté opposé à la gauche,"Tourne ___ après la poste : la pharmacie sera du côté opposé à ta gauche.",,
 ville-tout-droit,ville,Ville et transports,base,tout droit,Dans la même direction sans tourner,"Continue ___ sur cette rue, sans tourner.",,
 ville-traverser,ville,Ville et transports,base,traverser,Passer d’un côté à l’autre,"Pour rejoindre l’autre côté de la rue, il faut ___ au passage piéton.",tra-ver-ser,
-ville-descendre,ville,Ville et transports,base,descendre,Quitter un véhicule ou aller vers un niveau plus bas,"Quand le bus arrive à mon arrêt, je dois ___ du véhicule.",des-cen-dre,
-ville-monter,ville,Ville et transports,base,monter,Entrer dans un véhicule ou aller vers un niveau plus haut,"Le bus arrive : je peux ___ à bord.",mon-ter,
-temps-jour,temps,Temps et organisation,base,jour,Durée d’environ vingt-quatre heures,,,
-temps-semaine,temps,Temps et organisation,base,semaine,Période de sept jours,,se-mai-ne,
+ville-descendre,ville,Ville et transports,base,descendre,Sortir d’un bus ou aller vers le bas,"Quand le bus arrive à mon arrêt, je dois ___ du véhicule.",des-cen-dre,
+ville-monter,ville,Ville et transports,base,monter,Entrer dans un bus ou aller vers le haut,"Le bus arrive : je peux ___ à bord.",mon-ter,
+temps-jour,temps,Temps et organisation,base,jour,"Vingt-quatre heures, du début d’une journée au début de la suivante",,,
+temps-semaine,temps,Temps et organisation,base,semaine,"Sept jours, du lundi au dimanche",,se-mai-ne,
 temps-mois,temps,Temps et organisation,base,mois,Une des douze parties de l’année,,,
-temps-annee,temps,Temps et organisation,base,année,Durée de douze mois,,an-née,
+temps-annee,temps,Temps et organisation,base,année,"Douze mois, de janvier à décembre",,an-née,
 temps-lundi,temps,Temps et organisation,base,lundi,Jour qui vient après le dimanche,,,
 temps-mardi,temps,Temps et organisation,base,mardi,Jour entre le lundi et le mercredi,,mar-di,
 temps-mercredi,temps,Temps et organisation,base,mercredi,Jour entre le mardi et le jeudi,,mer-cre-di,
@@ -225,377 +225,377 @@ temps-midi,temps,Temps et organisation,base,midi,Moment où il est douze heures 
 temps-apres-midi,temps,Temps et organisation,base,après-midi,Partie de la journée entre midi et le soir,,,
 temps-soir,temps,Temps et organisation,base,soir,Partie de la journée entre l’après-midi et la nuit,,,
 temps-nuit,temps,Temps et organisation,base,nuit,Période entre le soir et le matin,"Pendant la ___, il fait noir et la plupart des gens dorment.",,contextes:5:3:3
-temps-hier,temps,Temps et organisation,base,hier,Le jour qui précède celui où l’on parle,,,
-temps-aujourd-hui,temps,Temps et organisation,base,aujourd’hui,Le jour où l’on parle,,,
-temps-demain,temps,Temps et organisation,base,demain,Le jour qui suit celui où l’on parle,"Le contrôle a lieu ___, le jour après aujourd’hui.",de-main,
-temps-maintenant,temps,Temps et organisation,base,maintenant,Au moment où l’on parle,,,
+temps-hier,temps,Temps et organisation,base,hier,Le jour avant aujourd’hui,,,
+temps-aujourd-hui,temps,Temps et organisation,base,aujourd’hui,Le jour où nous sommes,,,
+temps-demain,temps,Temps et organisation,base,demain,Le jour après aujourd’hui,"Le contrôle a lieu ___, le jour après aujourd’hui.",de-main,
+temps-maintenant,temps,Temps et organisation,base,maintenant,En ce moment,,,
 temps-bientot,temps,Temps et organisation,base,bientôt,Dans peu de temps,,bien-tôt,
-temps-tot,temps,Temps et organisation,base,tôt,Avant l’heure habituelle ou prévue,,,
-temps-tard,temps,Temps et organisation,base,tard,Après l’heure habituelle ou prévue,,,
+temps-tot,temps,Temps et organisation,base,tôt,Avant l’heure prévue ou avant l’heure où cela arrive d’habitude,,,
+temps-tard,temps,Temps et organisation,base,tard,Après l’heure prévue ou après l’heure où cela arrive d’habitude,,,
 temps-minute,temps,Temps et organisation,base,minute,Durée de soixante secondes,,mi-nu-te,
 temps-heure,temps,Temps et organisation,base,heure,Durée de soixante minutes,,heu-re,
-temps-date,temps,Temps et organisation,base,date,"Indication du jour, du mois et parfois de l’année",,da-te,
-temps-duree,temps,Temps et organisation,base,durée,Temps pendant lequel quelque chose se passe,,du-rée,
-temps-rendez-vous,temps,Temps et organisation,base,rendez-vous,Rencontre prévue à un moment précis,"J’ai un ___ avec mon conseiller jeudi à 15 h.",,
+temps-date,temps,Temps et organisation,base,date,"Le numéro du jour et le mois, par exemple le 12 mai",,da-te,
+temps-duree,temps,Temps et organisation,base,durée,Le temps que prend quelque chose,,du-rée,
+temps-rendez-vous,temps,Temps et organisation,base,rendez-vous,Moment où tu as prévu de voir quelqu’un,"J’ai un ___ avec mon conseiller jeudi à 15 h.",,
 temps-a-l-heure,temps,Temps et organisation,base,à l’heure,Au moment prévu,,,
 temps-en-retard,temps,Temps et organisation,base,en retard,Après le moment prévu,,,
-emotions-content,emotions,Émotions et communication,base,content,Qui ressent du plaisir parce que quelque chose se passe bien,,con-tent,
-emotions-triste,emotions,Émotions et communication,base,triste,Qui éprouve du chagrin,,tris-te,emotions:1
-emotions-inquiet,emotions,Émotions et communication,base,inquiet,Qui craint qu’un problème arrive,"Je suis ___ : ma sœur devait rentrer il y a une heure et je n’ai aucune nouvelle.",in-quiet,
-emotions-surpris,emotions,Émotions et communication,base,surpris,Qui réagit à quelque chose qu’il n’avait pas prévu,"Il n’attendait aucun cadeau. Il a été très ___ en ouvrant la boîte.",sur-pris,emotions:2
+emotions-content,emotions,Émotions et communication,base,content,Heureux parce que quelque chose se passe bien,,con-tent,
+emotions-triste,emotions,Émotions et communication,base,triste,"Qui a de la peine, par exemple parce qu’une personne lui manque",,tris-te,emotions:1
+emotions-inquiet,emotions,Émotions et communication,base,inquiet,Qui pense qu’un problème pourrait arriver,"Je suis ___ : ma sœur devait rentrer il y a une heure et je n’ai aucune nouvelle.",in-quiet,
+emotions-surpris,emotions,Émotions et communication,base,surpris,Qui ne s’attendait pas à ce qui vient d’arriver,"Il n’attendait aucun cadeau. Il a été très ___ en ouvrant la boîte.",sur-pris,emotions:2
 emotions-fatigue,emotions,Émotions et communication,base,fatigué,Qui a besoin de repos,,fa-ti-gué,emotions:3
-emotions-calme,emotions,Émotions et communication,base,calme,Qui reste tranquille et garde son sang-froid,,cal-me,
-emotions-fier,emotions,Émotions et communication,base,fier,Qui est satisfait de ce que lui-même ou quelqu’un d’autre a accompli,,,emotions:0
+emotions-calme,emotions,Émotions et communication,base,calme,"Tranquille, sans être énervé",,cal-me,
+emotions-fier,emotions,Émotions et communication,base,fier,Heureux de ce que toi ou quelqu’un d’autre a réussi à faire,,,emotions:0
 emotions-gene,emotions,Émotions et communication,base,gêné,Qui se sent mal à l’aise dans une situation,,gê-né,
-emotions-decu,emotions,Émotions et communication,base,déçu,Qui espérait mieux que ce qui est arrivé,,dé-çu,
-emotions-soulage,emotions,Émotions et communication,base,soulagé,Qui sent qu’un souci vient de disparaître,"Le problème est enfin réglé. Je me sens ___.",sou-la-gé,
-emotions-peur,emotions,Émotions et communication,base,peur,Émotion éprouvée devant un danger réel ou imaginé,,,
-emotions-colere,emotions,Émotions et communication,base,colère,Émotion forte quand quelque chose nous paraît injuste ou nous énerve,,co-lè-re,
-emotions-joie,emotions,Émotions et communication,base,joie,Sentiment de grand plaisir,,,
-emotions-sourire,emotions,Émotions et communication,base,sourire,Mouvement du visage qui peut montrer la joie,,sou-ri-re,
-emotions-rire,emotions,Émotions et communication,base,rire,Faire des sons ou des mouvements du visage quand on trouve quelque chose drôle,,,emotions:5
-emotions-pleurer,emotions,Émotions et communication,base,pleurer,Verser des larmes,,pleu-rer,emotions:4
-emotions-parler,emotions,Émotions et communication,base,parler,S’exprimer avec des mots à voix haute,,par-ler,
-emotions-demander,emotions,Émotions et communication,base,demander,Dire que l’on veut obtenir une information ou quelque chose,,de-man-der,
+emotions-decu,emotions,Émotions et communication,base,déçu,Qui pensait que ça irait mieux et qui est triste du résultat,,dé-çu,
+emotions-soulage,emotions,Émotions et communication,base,soulagé,Qui se sent mieux parce que le problème est fini,"Le problème est enfin réglé. Je me sens ___.",sou-la-gé,
+emotions-peur,emotions,Émotions et communication,base,peur,Ce que tu ressens quand tu crois qu’un danger ou un problème peut arriver,,,
+emotions-colere,emotions,Émotions et communication,base,colère,Ce que tu ressens quand quelque chose t’énerve très fort,,co-lè-re,
+emotions-joie,emotions,Émotions et communication,base,joie,Ce que tu ressens quand quelque chose te rend très heureux,,,
+emotions-sourire,emotions,Émotions et communication,base,sourire,Faire un petit mouvement de la bouche vers le haut quand on est content,,sou-ri-re,
+emotions-rire,emotions,Émotions et communication,base,rire,Faire « ha ha » parce que quelque chose est drôle,,,emotions:5
+emotions-pleurer,emotions,Émotions et communication,base,pleurer,Avoir des larmes qui sortent des yeux,,pleu-rer,emotions:4
+emotions-parler,emotions,Émotions et communication,base,parler,Dire des mots à voix haute,,par-ler,
+emotions-demander,emotions,Émotions et communication,base,demander,Poser une question ou dire ce que tu veux recevoir,,de-man-der,
 emotions-repondre,emotions,Émotions et communication,base,répondre,Dire ou écrire quelque chose après une question,,,
-emotions-comprendre,emotions,Émotions et communication,base,comprendre,Saisir le sens de quelque chose,,com-pren-dre,
+emotions-comprendre,emotions,Émotions et communication,base,comprendre,Savoir ce que veulent dire des mots ou une idée,,com-pren-dre,
 emotions-repeter,emotions,Émotions et communication,base,répéter,Dire de nouveau ce qui a déjà été dit,"Je n’ai pas entendu le numéro. Peux-tu le ___ ?",,
 emotions-expliquer,emotions,Émotions et communication,base,expliquer,Rendre une idée plus facile à comprendre,,ex-pli-quer,
-emotions-dire,emotions,Émotions et communication,base,dire,Exprimer quelque chose avec des mots,,,
-emotions-bonjour,emotions,Émotions et communication,base,bonjour,Mot utilisé pour saluer pendant la journée,,bon-jour,
-emotions-merci,emotions,Émotions et communication,base,merci,Mot utilisé pour montrer qu’on apprécie ce que quelqu’un a fait,"Quand mon amie me prête son cahier, je lui dis ___.",mer-ci,
-emotions-pardon,emotions,Émotions et communication,base,pardon,Mot qu’on peut dire pour s’excuser,,par-don,
-emotions-s-il-vous-plait,emotions,Émotions et communication,base,s’il vous plaît,Expression de politesse pour demander quelque chose,,,
-emotions-etre-d-accord,emotions,Émotions et communication,base,être d’accord,Partager l’avis de quelqu’un ou accepter une proposition,,,
-emotions-avoir-besoin,emotions,Émotions et communication,base,avoir besoin,Manquer de quelque chose qui est nécessaire,,,
+emotions-dire,emotions,Émotions et communication,base,dire,Utiliser des mots pour faire savoir quelque chose,,,
+emotions-bonjour,emotions,Émotions et communication,base,bonjour,Mot qu’on dit quand on rencontre quelqu’un dans la journée,,bon-jour,
+emotions-merci,emotions,Émotions et communication,base,merci,Mot qu’on dit quand quelqu’un nous aide ou nous donne quelque chose,"Quand mon amie me prête son cahier, je lui dis ___.",mer-ci,
+emotions-pardon,emotions,Émotions et communication,base,pardon,Mot qu’on dit quand on est désolé ou qu’on veut passer,,par-don,
+emotions-s-il-vous-plait,emotions,Émotions et communication,base,s’il vous plaît,Mots qu’on ajoute à une demande pour être poli,,,
+emotions-etre-d-accord,emotions,Émotions et communication,base,être d’accord,Penser la même chose que quelqu’un ou dire oui à son idée,,,
+emotions-avoir-besoin,emotions,Émotions et communication,base,avoir besoin,Devoir avoir quelque chose pour pouvoir faire ce qu’on veut,,,
 emotions-se-tromper,emotions,Émotions et communication,base,se tromper,Faire une erreur,,,
 nature-arbre,nature,"Nature, météo et loisirs",base,arbre,Grande plante avec un tronc et des branches,,ar-bre,loisirs:11
-nature-lac,nature,"Nature, météo et loisirs",base,lac,Grande étendue d’eau entourée de terre,,,loisirs:10
-nature-montagne,nature,"Nature, météo et loisirs",base,montagne,Relief naturel qui s’élève haut au-dessus du sol,,mon-ta-gne,loisirs:9
+nature-lac,nature,"Nature, météo et loisirs",base,lac,Beaucoup d’eau avec de la terre tout autour,,,loisirs:10
+nature-montagne,nature,"Nature, météo et loisirs",base,montagne,Grande forme de terre ou de pierre qui monte très haut,,mon-ta-gne,loisirs:9
 nature-parapluie,nature,"Nature, météo et loisirs",base,parapluie,Objet que l’on ouvre au-dessus de soi pour rester au sec,"Il pleut. J’ouvre mon ___ pour ne pas me mouiller.",pa-ra-pluie,loisirs:8
-nature-ballon,nature,"Nature, météo et loisirs",base,ballon,Objet rond gonflé d’air utilisé dans plusieurs sports,,bal-lon,loisirs:0
-nature-guitare,nature,"Nature, météo et loisirs",base,guitare,Instrument de musique à cordes que l’on pince ou gratte,"Elle pince les cordes de sa ___ pour jouer un accord.",gui-ta-re,loisirs:1
-nature-appareil-photo,nature,"Nature, météo et loisirs",base,appareil photo,Objet utilisé pour prendre des photographies,,,loisirs:2
-nature-casque-audio,nature,"Nature, météo et loisirs",base,casque audio,Équipement que l’on porte sur les oreilles pour écouter du son,,,loisirs:3
-nature-piscine,nature,"Nature, météo et loisirs",base,piscine,Bassin aménagé pour nager,"On va à la ___ : prends ton maillot pour nager dans le bassin.",pis-ci-ne,loisirs:4
-nature-roman,nature,"Nature, météo et loisirs",base,roman,Livre qui raconte une histoire généralement inventée,,ro-man,
-nature-theatre,nature,"Nature, météo et loisirs",base,théâtre,Art de jouer une histoire sur scène devant un public,,thé-â-tre,loisirs:6
-nature-film,nature,"Nature, météo et loisirs",base,film,Histoire ou documentaire composé d’images animées,,,
+nature-ballon,nature,"Nature, météo et loisirs",base,ballon,Objet rond rempli d’air qu’on lance ou qu’on frappe pour jouer,,bal-lon,loisirs:0
+nature-guitare,nature,"Nature, météo et loisirs",base,guitare,Objet pour faire de la musique avec des cordes qu’on touche avec les doigts,"Elle pince les cordes de sa ___ pour jouer un accord.",gui-ta-re,loisirs:1
+nature-appareil-photo,nature,"Nature, météo et loisirs",base,appareil photo,Objet qui sert à prendre des photos,,,loisirs:2
+nature-casque-audio,nature,"Nature, météo et loisirs",base,casque audio,Objet qu’on met sur les oreilles pour écouter de la musique,,,loisirs:3
+nature-piscine,nature,"Nature, météo et loisirs",base,piscine,Grand endroit rempli d’eau où l’on va nager,"On va à la ___ : prends ton maillot pour nager dans le bassin.",pis-ci-ne,loisirs:4
+nature-roman,nature,"Nature, météo et loisirs",base,roman,Livre qui raconte le plus souvent une histoire inventée,,ro-man,
+nature-theatre,nature,"Nature, météo et loisirs",base,théâtre,Spectacle où des personnes jouent une histoire devant des gens,,thé-â-tre,loisirs:6
+nature-film,nature,"Nature, météo et loisirs",base,film,"Histoire en images qui bougent, par exemple au cinéma",,,
 nature-soleil,nature,"Nature, météo et loisirs",base,soleil,Étoile qui éclaire et réchauffe la Terre,,so-leil,
 nature-pluie,nature,"Nature, météo et loisirs",base,pluie,Gouttes d’eau qui tombent des nuages,,,
 nature-neige,nature,"Nature, météo et loisirs",base,neige,Flocons blancs qui tombent quand il fait froid,,nei-ge,
 nature-vent,nature,"Nature, météo et loisirs",base,vent,Déplacement de l’air que l’on peut sentir,,,
-nature-nuage,nature,"Nature, météo et loisirs",base,nuage,Masse visible de petites gouttes ou de glace dans le ciel,,nua-ge,
+nature-nuage,nature,"Nature, météo et loisirs",base,nuage,"Forme blanche ou grise dans le ciel, faite de très petites gouttes d’eau ou de glace",,nua-ge,
 nature-orage,nature,"Nature, météo et loisirs",base,orage,Temps avec du tonnerre et des éclairs,"On entend le tonnerre et on voit des éclairs. C’est un ___.",o-ra-ge,
-nature-foret,nature,"Nature, météo et loisirs",base,forêt,Grande étendue couverte d’arbres,,fo-rêt,
-nature-riviere,nature,"Nature, météo et loisirs",base,rivière,Cours d’eau qui s’écoule dans un lit naturel,,ri-viè-re,
+nature-foret,nature,"Nature, météo et loisirs",base,forêt,Grand endroit avec beaucoup d’arbres,,fo-rêt,
+nature-riviere,nature,"Nature, météo et loisirs",base,rivière,Eau qui coule entre deux bords de terre,,ri-viè-re,
 nature-fleur,nature,"Nature, météo et loisirs",base,fleur,Partie souvent colorée d’une plante,,,
-nature-chien,nature,"Nature, météo et loisirs",base,chien,Animal domestique qui aboie,,,quotidien2:1
-nature-chat,nature,"Nature, météo et loisirs",base,chat,Animal domestique qui miaule,,,quotidien2:0
+nature-chien,nature,"Nature, météo et loisirs",base,chien,Animal qui fait « ouaf » et que beaucoup de gens ont chez eux,,,quotidien2:1
+nature-chat,nature,"Nature, météo et loisirs",base,chat,Animal qui fait « miaou » et que beaucoup de gens ont chez eux,,,quotidien2:0
 nature-oiseau,nature,"Nature, météo et loisirs",base,oiseau,Animal à plumes et à bec,,oi-seau,quotidien2:2
-nature-musique,nature,"Nature, météo et loisirs",base,musique,Art d’organiser les sons et les rythmes,,mu-si-que,
-nature-sport,nature,"Nature, météo et loisirs",base,sport,Activité physique pratiquée pour le plaisir ou la compétition,,,
-nature-jeu,nature,"Nature, météo et loisirs",base,jeu,Activité de loisir qui suit souvent des règles,,,
+nature-musique,nature,"Nature, météo et loisirs",base,musique,"Sons qu’on écoute ou qu’on joue, par exemple avec une guitare",,mu-si-que,
+nature-sport,nature,"Nature, météo et loisirs",base,sport,"Activité où tu bouges pour t’amuser, t’entraîner ou gagner, comme le foot",,,
+nature-jeu,nature,"Nature, météo et loisirs",base,jeu,"Activité qu’on fait pour s’amuser, souvent avec des règles",,,
 nature-nager,nature,"Nature, météo et loisirs",base,nager,Se déplacer dans l’eau grâce aux mouvements du corps,,na-ger,
-nature-dessiner,nature,"Nature, météo et loisirs",base,dessiner,Représenter quelque chose avec des lignes et des formes,"Je vais ___ le paysage au crayon, sur une feuille.",des-si-ner,
-nature-jouer,nature,"Nature, météo et loisirs",base,jouer,Participer à une activité pour s’amuser,,,
-formation-stage,formation,"Formation, stage et emploi",avance,stage,Période passée dans un milieu professionnel pour découvrir ou apprendre un métier,Je fais un ___ de trois jours dans un atelier.,sta-ge,formation:0
-formation-apprentissage,formation,"Formation, stage et emploi",avance,apprentissage,Formation professionnelle qui combine pratique en entreprise et cours,"Dans cet ___, je travaille en entreprise et je suis aussi des cours.",ap-pren-tis-sa-ge,
-formation-entreprise,formation,"Formation, stage et emploi",avance,entreprise,Organisation qui propose des biens ou des services,"Cette ___ fabrique des vélos et emploie vingt personnes.",en-tre-pri-se,
-formation-employeur,formation,"Formation, stage et emploi",avance,employeur,Personne ou organisation qui engage du personnel,"Mon ___ m’a engagée et me verse un salaire chaque mois.",em-ploy-eur,
-formation-employe,formation,"Formation, stage et emploi",avance,employé,Personne qui travaille pour un employeur,"Il travaille pour ce magasin et reçoit un salaire. C’est un ___ du magasin.",,
+nature-dessiner,nature,"Nature, météo et loisirs",base,dessiner,Faire une image avec un crayon ou un stylo,"Je vais ___ le paysage au crayon, sur une feuille.",des-si-ner,
+nature-jouer,nature,"Nature, météo et loisirs",base,jouer,Faire un jeu ou s’amuser avec quelque chose,,,
+formation-stage,formation,"Formation, stage et emploi",avance,stage,Quelques jours ou semaines dans un lieu de travail pour découvrir ou apprendre un métier,Je fais un ___ de trois jours dans un atelier.,sta-ge,formation:0
+formation-apprentissage,formation,"Formation, stage et emploi",avance,apprentissage,Façon d’apprendre un métier en travaillant et en suivant des cours,"Dans cet ___, je travaille en entreprise et je suis aussi des cours.",ap-pren-tis-sa-ge,
+formation-entreprise,formation,"Formation, stage et emploi",avance,entreprise,Groupe de personnes qui travaillent ensemble pour vendre des choses ou faire un travail pour des clients,"Cette ___ fabrique des vélos et emploie vingt personnes.",en-tre-pri-se,
+formation-employeur,formation,"Formation, stage et emploi",avance,employeur,Personne ou entreprise qui donne du travail et paie les personnes qui le font,"Mon ___ m’a engagée et me verse un salaire chaque mois.",em-ploy-eur,
+formation-employe,formation,"Formation, stage et emploi",avance,employé,Personne qui travaille pour quelqu’un ou pour une entreprise et reçoit un salaire,"Il travaille pour ce magasin et reçoit un salaire. C’est un ___ du magasin.",,
 formation-collegue,formation,"Formation, stage et emploi",avance,collègue,Personne avec laquelle on travaille,"Ma ___ travaille dans le même service que moi.",col-lè-gue,
-formation-metier,formation,"Formation, stage et emploi",avance,métier,Activité professionnelle que l’on apprend à exercer,"Elle veut devenir électricienne. Elle a choisi son futur ___.",mé-tier,
-formation-candidature,formation,"Formation, stage et emploi",avance,candidature,Demande présentée pour obtenir une place ou un poste,"Le secrétariat a reçu ma ___ pour la place de stage.",can-di-da-tu-re,
-formation-postuler,formation,"Formation, stage et emploi",avance,postuler,Présenter sa candidature pour une place ou un emploi,"Pour ___ à cette offre, envoie ton CV à l’adresse indiquée.",pos-tu-ler,
-formation-curriculum-vit,formation,"Formation, stage et emploi",avance,curriculum vitæ,"Document qui résume les études, les expériences et les compétences d’une personne","Sur mon ___, j’indique mes études, mes expériences et mes compétences.",,
-formation-lettre-de-motivation,formation,"Formation, stage et emploi",avance,lettre de motivation,Texte qui explique pourquoi on souhaite obtenir une place,"Dans ma ___, j’explique pourquoi ce stage m’intéresse.",,
-formation-entretien,formation,"Formation, stage et emploi",avance,entretien,Rencontre au cours de laquelle on échange pour évaluer une candidature,"Pendant l’___, la responsable me posera des questions sur ma candidature.",en-tre-tien,formation:1
-formation-competence,formation,"Formation, stage et emploi",avance,compétence,Capacité à utiliser ses connaissances pour réussir une tâche,"Savoir réparer une roue de vélo est une ___ utile dans cet atelier.",com-pé-ten-ce,
+formation-metier,formation,"Formation, stage et emploi",avance,métier,"Travail qu’on apprend à faire, comme cuisiner dans un restaurant","Elle veut devenir électricienne. Elle a choisi son futur ___.",mé-tier,
+formation-candidature,formation,"Formation, stage et emploi",avance,candidature,"Demande pour avoir une place, un stage ou un travail","Le secrétariat a reçu ma ___ pour la place de stage.",can-di-da-tu-re,
+formation-postuler,formation,"Formation, stage et emploi",avance,postuler,Envoyer une demande pour avoir un stage ou un travail,"Pour ___ à cette offre, envoie ton CV à l’adresse indiquée.",pos-tu-ler,
+formation-curriculum-vit,formation,"Formation, stage et emploi",avance,curriculum vitæ,"Papier ou fichier qui présente tes études, ce que tu sais faire et les endroits où tu as travaillé","Sur mon ___, j’indique mes études, mes expériences et mes compétences.",,
+formation-lettre-de-motivation,formation,"Formation, stage et emploi",avance,lettre de motivation,Lettre où tu expliques pourquoi tu veux ce travail ou ce stage,"Dans ma ___, j’explique pourquoi ce stage m’intéresse.",,
+formation-entretien,formation,"Formation, stage et emploi",avance,entretien,Rencontre où l’on te pose des questions avant de décider si tu peux avoir le travail,"Pendant l’___, la responsable me posera des questions sur ma candidature.",en-tre-tien,formation:1
+formation-competence,formation,"Formation, stage et emploi",avance,compétence,"Ce que tu sais faire, par exemple réparer un vélo","Savoir réparer une roue de vélo est une ___ utile dans cet atelier.",com-pé-ten-ce,
 formation-experience,formation,"Formation, stage et emploi",avance,expérience,Ce que l’on a appris en faisant une activité,"J’ai acquis de l’___ en m’occupant des commandes pendant deux stages.",ex-pé-rien-ce,
-formation-qualification,formation,"Formation, stage et emploi",avance,qualification,Aptitude reconnue pour exercer une activité professionnelle,"Ce poste demande une ___ reconnue dans le domaine de l’électricité.",,
-formation-formation,formation,"Formation, stage et emploi",avance,formation,Ensemble d’activités qui permettent d’apprendre des connaissances ou un métier,,for-ma-tion,
-formation-diplome,formation,"Formation, stage et emploi",avance,diplôme,Document officiel qui atteste la réussite d’études ou d’une formation,"À la fin de ses études, elle a reçu son ___.",di-plô-me,formation:2
-formation-contrat,formation,"Formation, stage et emploi",avance,contrat,Accord qui précise les engagements de chaque partie,"Je lis et je signe le ___ qui précise mes horaires et mon salaire.",con-trat,trajets:6:3:3
-formation-salaire,formation,"Formation, stage et emploi",avance,salaire,Argent versé en échange d’un travail,"La somme versée chaque mois pour mon travail est mon ___.",sa-lai-re,
-formation-temps-partiel,formation,"Formation, stage et emploi",avance,temps partiel,Organisation du travail avec une durée inférieure à la durée complète,"Elle travaille trois jours sur cinq. Elle est à ___.",,
-formation-responsabilite,formation,"Formation, stage et emploi",avance,responsabilité,Tâche ou décision dont on doit répondre,"Pendant le stage, j’ai la ___ de fermer l’atelier : je dois vérifier que tout est en ordre.",res-pon-sa-bi-li-té,
-formation-effectuer,formation,"Formation, stage et emploi",avance,effectuer,Réaliser une tâche ou une opération,"L’équipe doit ___ un contrôle des freins avant de rendre le vélo.",,
-formation-respecter-un-delai,formation,"Formation, stage et emploi",avance,respecter un délai,Terminer un travail avant ou à la date fixée,"Le travail doit être fini avant vendredi. Il faut ___.",,
-formation-ponctualite,formation,"Formation, stage et emploi",avance,ponctualité,Habitude d’arriver à l’heure prévue,"On apprécie sa ___ : elle arrive toujours à l’heure prévue.",,
-formation-initiative,formation,"Formation, stage et emploi",avance,initiative,Action entreprise par soi-même sans attendre une instruction,"Personne ne le lui a demandé. Elle a pris l’___ de ranger les outils.",,
-formation-autonomie,formation,"Formation, stage et emploi",avance,autonomie,Capacité à avancer et à prendre des décisions par soi-même,Je prépare mon matériel et je travaille en ___.,au-to-no-mie,
-formation-encadrement,formation,"Formation, stage et emploi",avance,encadrement,Accompagnement fourni par une personne responsable,,,
-formation-orientation,formation,"Formation, stage et emploi",avance,orientation,Choix d’une direction pour la suite de ses études ou de sa vie professionnelle,"Pour choisir la suite de mes études, je prends rendez-vous au service d’___.",o-rien-ta-tion,
-formation-se-renseigner,formation,"Formation, stage et emploi",avance,se renseigner,Chercher à obtenir des informations sur un sujet,"Avant de choisir un métier, il vaut mieux ___ sur les conditions de formation.",,
-formation-faire-un-bilan,formation,"Formation, stage et emploi",avance,faire un bilan,Examiner ce qui a été fait et ce qu’il reste à améliorer,"À la fin du stage, je vais ___ avec ma responsable pour parler de mes progrès.",,
-demarches-formulaire,demarches,Démarches et services publics,avance,formulaire,Document avec des cases ou des champs à remplir,Remplis le ___ avant de déposer ta demande.,for-mu-lai-re,demarches:0
-demarches-signature,demarches,Démarches et services publics,avance,signature,Marque personnelle utilisée pour confirmer son accord ou son identité,"Écris ton nom à la main au bas du document et ajoute ta ___ pour donner ton accord.",si-gna-tu-re,formation:3
-demarches-piece-d-identite,demarches,Démarches et services publics,avance,pièce d’identité,Document officiel qui permet de prouver qui l’on est,"Pour prouver qui je suis au guichet, je présente une ___, par exemple mon passeport.",,demarches:3
-demarches-permis-de-sejour,demarches,Démarches et services publics,avance,permis de séjour,Document qui autorise une personne étrangère à séjourner dans un pays selon certaines conditions,,,
-demarches-attestation,demarches,Démarches et services publics,avance,attestation,"Document qui certifie un fait, une situation ou une démarche","Le secrétariat délivre une ___ de scolarité qui confirme mon inscription.",at-tes-ta-tion,
-demarches-justificatif,demarches,Démarches et services publics,avance,justificatif,Document présenté pour prouver une information,"Pour prouver où j’habite, je joins un ___ de domicile.",,
-demarches-commune,demarches,Démarches et services publics,avance,commune,Collectivité locale qui gère des services pour ses habitants,"Je me rends au guichet de ma ___, l’administration locale de mon lieu de résidence.",com-mu-ne,
-demarches-administration,demarches,Démarches et services publics,avance,administration,Ensemble des services chargés d’appliquer les décisions publiques,,,
-demarches-guichet,demarches,Démarches et services publics,avance,guichet,Endroit où l’on s’adresse à un service et remet des documents,"J’attends mon tour au ___, puis je remets mes documents à l’employée.",gui-chet,formation:4
-demarches-inscription,demarches,Démarches et services publics,avance,inscription,Action de faire ajouter son nom à une liste officielle,"Je termine mon ___ au cours : mon nom figure maintenant sur la liste.",ins-crip-tion,
-demarches-dossier,demarches,Démarches et services publics,avance,dossier,Ensemble de documents réunis pour une même demande,"J’ai réuni toutes les pièces de ma demande dans un seul ___.",dos-sier,trajets:7:3:3
-demarches-demande-officielle,demarches,Démarches et services publics,avance,demande officielle,Requête adressée à un service selon ses procédures,"Je dois envoyer une ___ à la commune en suivant la procédure indiquée.",,
-demarches-renseignement,demarches,Démarches et services publics,avance,renseignement,Information donnée à quelqu’un qui en a besoin,"Il me manque une information. Je demande un ___ au secrétariat.",,
-demarches-coordonnees,demarches,Démarches et services publics,avance,coordonnées,Informations qui permettent de joindre quelqu’un,"Indique ton numéro et ton adresse électronique : ce sont tes ___.",,
-demarches-adresse-postale,demarches,Démarches et services publics,avance,adresse postale,Informations qui indiquent où faire livrer du courrier,"Écris ton ___ avec la rue, le numéro et la localité pour recevoir la lettre.",,
-demarches-courrier,demarches,Démarches et services publics,avance,courrier,Lettre ou ensemble de lettres envoyées ou reçues,"La poste distribue le ___ dans les boîtes aux lettres.",,trajets:8:3:3
-demarches-enveloppe,demarches,Démarches et services publics,avance,enveloppe,Pochette de papier dans laquelle on place une lettre,"Glisse la lettre dans l’___ avant de la fermer.",en-ve-lop-pe,demarches:1
-demarches-timbre,demarches,Démarches et services publics,avance,timbre,Étiquette qui indique que l’envoi postal a été payé,"Pour affranchir mon envoi, je colle un ___ sur l’enveloppe.",tim-bre,demarches:2
-demarches-copie,demarches,Démarches et services publics,avance,copie,Reproduction d’un document,"Je garde le document d’origine et je dépose une ___ au guichet.",co-pie,
-demarches-original,demarches,Démarches et services publics,avance,original,Document initial à partir duquel on fait des copies,"On me demande le document d’origine. Je dois apporter l’___.",,
-demarches-joindre,demarches,Démarches et services publics,avance,joindre,Ajouter une pièce à un message ou à une demande,"Pense à ___ une copie de ta carte au formulaire avant l’envoi.",,
-demarches-deposer,demarches,Démarches et services publics,avance,déposer,Remettre un document à un service pour qu’il le traite,"Je vais ___ mon dossier au guichet pour qu’il soit traité.",,
-demarches-renouveler,demarches,Démarches et services publics,avance,renouveler,Faire prolonger la validité d’un document ou d’un abonnement,"Mon abonnement se termine vendredi. Je dois le ___ pour continuer à voyager.",,
-demarches-valable,demarches,Démarches et services publics,avance,valable,Qui peut encore être utilisé officiellement,"Mon document n’est pas expiré : il est encore ___ jusqu’en juin.",,
-demarches-expirer,demarches,Démarches et services publics,avance,expirer,Arriver à la fin de sa période de validité,"La date de fin arrive demain : le document va ___.",,
-demarches-confirmer,demarches,Démarches et services publics,avance,confirmer,Indiquer qu’une demande ou un rendez-vous est bien maintenu,"Réponds au message pour ___ que tu viendras au rendez-vous prévu.",,
-demarches-annuler,demarches,Démarches et services publics,avance,annuler,Décider que ce qui était prévu n’aura pas lieu,"Je ne pourrai pas venir et aucun autre jour n’est proposé. Je dois ___ le rendez-vous.",an-nu-ler,
-demarches-reporter,demarches,Démarches et services publics,avance,reporter,Déplacer une activité prévue à une date ultérieure,"Je ne peux pas venir lundi. Peut-on ___ le rendez-vous à jeudi ?",re-por-ter,
-demarches-autorisation,demarches,Démarches et services publics,avance,autorisation,Accord donné pour faire quelque chose,"Pour participer à cette sortie, je dois obtenir l’___ écrite de mon responsable.",au-to-ri-sa-tion,
-demarches-obligatoire,demarches,Démarches et services publics,avance,obligatoire,Que l’on est tenu de faire ou de fournir,"Sans signature, le dossier est refusé. La signature est ___.",,
-budget-budget,budget,"Budget, achats et consommation",avance,budget,Plan des sommes que l’on prévoit de recevoir et de dépenser,,bud-get,
-budget-depense,budget,"Budget, achats et consommation",avance,dépense,Somme d’argent que l’on utilise pour payer quelque chose,,dé-pen-se,
-budget-revenu,budget,"Budget, achats et consommation",avance,revenu,Argent reçu de manière ponctuelle ou régulière,,re-ve-nu,
-budget-economie,budget,"Budget, achats et consommation",avance,économie,Somme que l’on a évité de dépenser,,,
+formation-qualification,formation,"Formation, stage et emploi",avance,qualification,Preuve que tu as appris ce qu’il faut pour faire un métier,"Ce poste demande une ___ reconnue dans le domaine de l’électricité.",,
+formation-formation,formation,"Formation, stage et emploi",avance,formation,Cours et exercices pour apprendre quelque chose ou apprendre un métier,,for-ma-tion,
+formation-diplome,formation,"Formation, stage et emploi",avance,diplôme,Papier officiel qui montre que tu as réussi des études ou des cours,"À la fin de ses études, elle a reçu son ___.",di-plô-me,formation:2
+formation-contrat,formation,"Formation, stage et emploi",avance,contrat,"Accord entre deux personnes ou groupes, souvent écrit. Il dit ce que chacun doit faire.","Je lis et je signe le ___ qui précise mes horaires et mon salaire.",con-trat,trajets:6:3:3
+formation-salaire,formation,"Formation, stage et emploi",avance,salaire,Argent que tu reçois pour ton travail,"La somme versée chaque mois pour mon travail est mon ___.",sa-lai-re,
+formation-temps-partiel,formation,"Formation, stage et emploi",avance,temps partiel,Travailler moins d’heures qu’une personne qui travaille à plein temps,"Elle travaille trois jours sur cinq. Elle est à ___.",,
+formation-responsabilite,formation,"Formation, stage et emploi",avance,responsabilité,Travail dont tu dois t’occuper et dont tu dois expliquer le résultat,"Pendant le stage, j’ai la ___ de fermer l’atelier : je dois vérifier que tout est en ordre.",res-pon-sa-bi-li-té,
+formation-effectuer,formation,"Formation, stage et emploi",avance,effectuer,Faire quelque chose qu’on te demande,"L’équipe doit ___ un contrôle des freins avant de rendre le vélo.",,
+formation-respecter-un-delai,formation,"Formation, stage et emploi",avance,respecter un délai,Finir un travail au plus tard le jour prévu,"Le travail doit être fini avant vendredi. Il faut ___.",,
+formation-ponctualite,formation,"Formation, stage et emploi",avance,ponctualité,Habitude d’arriver à l’heure,"On apprécie sa ___ : elle arrive toujours à l’heure prévue.",,
+formation-initiative,formation,"Formation, stage et emploi",avance,initiative,"Commencer à faire quelque chose de toi-même, sans que quelqu’un te le demande","Personne ne le lui a demandé. Elle a pris l’___ de ranger les outils.",,
+formation-autonomie,formation,"Formation, stage et emploi",avance,autonomie,Pouvoir travailler et faire des choix par toi-même,Je prépare mon matériel et je travaille en ___.,au-to-no-mie,
+formation-encadrement,formation,"Formation, stage et emploi",avance,encadrement,Aide et suivi d’une personne qui te guide pendant ton travail,,,
+formation-orientation,formation,"Formation, stage et emploi",avance,orientation,Choix des études ou du métier que tu veux faire ensuite,"Pour choisir la suite de mes études, je prends rendez-vous au service d’___.",o-rien-ta-tion,
+formation-se-renseigner,formation,"Formation, stage et emploi",avance,se renseigner,Chercher des réponses à tes questions,"Avant de choisir un métier, il vaut mieux ___ sur les conditions de formation.",,
+formation-faire-un-bilan,formation,"Formation, stage et emploi",avance,faire un bilan,"Regarder ce qui a été fait, ce qui a bien marché et ce qu’on peut améliorer","À la fin du stage, je vais ___ avec ma responsable pour parler de mes progrès.",,
+demarches-formulaire,demarches,Démarches et services publics,avance,formulaire,Papier ou page avec des cases à remplir,Remplis le ___ avant de déposer ta demande.,for-mu-lai-re,demarches:0
+demarches-signature,demarches,Démarches et services publics,avance,signature,Ton nom ou ton signe écrit à la main pour dire que c’est bien toi ou que tu es d’accord,"Écris ton nom à la main au bas du document et ajoute ta ___ pour donner ton accord.",si-gna-tu-re,formation:3
+demarches-piece-d-identite,demarches,Démarches et services publics,avance,pièce d’identité,"Papier officiel qui montre qui tu es, par exemple un passeport","Pour prouver qui je suis au guichet, je présente une ___, par exemple mon passeport.",,demarches:3
+demarches-permis-de-sejour,demarches,Démarches et services publics,avance,permis de séjour,Papier officiel qui te donne le droit de rester dans un pays si tu viens d’un autre pays,,,
+demarches-attestation,demarches,Démarches et services publics,avance,attestation,"Papier qui confirme quelque chose, par exemple que tu es inscrit à l’école","Le secrétariat délivre une ___ de scolarité qui confirme mon inscription.",at-tes-ta-tion,
+demarches-justificatif,demarches,Démarches et services publics,avance,justificatif,"Papier qui sert à prouver ce que tu dis, par exemple où tu habites","Pour prouver où j’habite, je joins un ___ de domicile.",,
+demarches-commune,demarches,Démarches et services publics,avance,commune,"Lieu où tu habites et services qui s’occupent des besoins de ce lieu, comme la mairie","Je me rends au guichet de ma ___, l’administration locale de mon lieu de résidence.",com-mu-ne,
+demarches-administration,demarches,Démarches et services publics,avance,administration,Bureaux et personnes qui s’occupent des papiers et des demandes du public,,,
+demarches-guichet,demarches,Démarches et services publics,avance,guichet,Endroit où tu parles à une personne derrière une table ou une vitre pour avoir de l’aide ou donner un papier,"J’attends mon tour au ___, puis je remets mes documents à l’employée.",gui-chet,formation:4
+demarches-inscription,demarches,Démarches et services publics,avance,inscription,Moment où tu donnes ton nom pour pouvoir suivre un cours ou faire une activité,"Je termine mon ___ au cours : mon nom figure maintenant sur la liste.",ins-crip-tion,
+demarches-dossier,demarches,Démarches et services publics,avance,dossier,Tous les papiers que tu réunis pour la même demande,"J’ai réuni toutes les pièces de ma demande dans un seul ___.",dos-sier,trajets:7:3:3
+demarches-demande-officielle,demarches,Démarches et services publics,avance,demande officielle,Demande faite à un service en suivant les règles qu’il donne,"Je dois envoyer une ___ à la commune en suivant la procédure indiquée.",,
+demarches-renseignement,demarches,Démarches et services publics,avance,renseignement,Réponse qui te donne l’information que tu cherches,"Il me manque une information. Je demande un ___ au secrétariat.",,
+demarches-coordonnees,demarches,Démarches et services publics,avance,coordonnées,"Ce qui permet de te contacter, comme ton numéro de téléphone et ton adresse e-mail","Indique ton numéro et ton adresse électronique : ce sont tes ___.",,
+demarches-adresse-postale,demarches,Démarches et services publics,avance,adresse postale,"Rue, numéro et localité où la poste peut t’envoyer une lettre","Écris ton ___ avec la rue, le numéro et la localité pour recevoir la lettre.",,
+demarches-courrier,demarches,Démarches et services publics,avance,courrier,Lettres que tu envoies ou reçois,"La poste distribue le ___ dans les boîtes aux lettres.",,trajets:8:3:3
+demarches-enveloppe,demarches,Démarches et services publics,avance,enveloppe,Pochette en papier dans laquelle tu mets une lettre pour l’envoyer,"Glisse la lettre dans l’___ avant de la fermer.",en-ve-lop-pe,demarches:1
+demarches-timbre,demarches,Démarches et services publics,avance,timbre,Petit papier qu’on colle sur une enveloppe pour montrer que l’envoi a été payé,"Pour affranchir mon envoi, je colle un ___ sur l’enveloppe.",tim-bre,demarches:2
+demarches-copie,demarches,Démarches et services publics,avance,copie,"Autre version du même papier, avec le même texte","Je garde le document d’origine et je dépose une ___ au guichet.",co-pie,
+demarches-original,demarches,Démarches et services publics,avance,original,"Premier papier, celui qu’on utilise pour faire les copies","On me demande le document d’origine. Je dois apporter l’___.",,
+demarches-joindre,demarches,Démarches et services publics,avance,joindre,Ajouter un papier à ta demande ou un fichier à ton message,"Pense à ___ une copie de ta carte au formulaire avant l’envoi.",,
+demarches-deposer,demarches,Démarches et services publics,avance,déposer,Donner ton papier à un bureau pour qu’il s’en occupe,"Je vais ___ mon dossier au guichet pour qu’il soit traité.",,
+demarches-renouveler,demarches,Démarches et services publics,avance,renouveler,Faire durer plus longtemps un document ou un abonnement,"Mon abonnement se termine vendredi. Je dois le ___ pour continuer à voyager.",,
+demarches-valable,demarches,Démarches et services publics,avance,valable,"Que tu peux encore utiliser, par exemple parce que la date de fin n’est pas passée","Mon document n’est pas expiré : il est encore ___ jusqu’en juin.",,
+demarches-expirer,demarches,Démarches et services publics,avance,expirer,Arriver à sa date de fin et ne plus pouvoir être utilisé,"La date de fin arrive demain : le document va ___.",,
+demarches-confirmer,demarches,Démarches et services publics,avance,confirmer,Dire que tu es d’accord pour garder le rendez-vous ou que tu viendras bien,"Réponds au message pour ___ que tu viendras au rendez-vous prévu.",,
+demarches-annuler,demarches,Démarches et services publics,avance,annuler,Décider que ce qui était prévu ne se fera pas,"Je ne pourrai pas venir et aucun autre jour n’est proposé. Je dois ___ le rendez-vous.",an-nu-ler,
+demarches-reporter,demarches,Démarches et services publics,avance,reporter,"Déplacer à un autre jour ou à une autre heure, plus tard","Je ne peux pas venir lundi. Peut-on ___ le rendez-vous à jeudi ?",re-por-ter,
+demarches-autorisation,demarches,Démarches et services publics,avance,autorisation,Ce que quelqu’un te donne quand il dit que tu as le droit de faire quelque chose,"Pour participer à cette sortie, je dois obtenir l’___ écrite de mon responsable.",au-to-ri-sa-tion,
+demarches-obligatoire,demarches,Démarches et services publics,avance,obligatoire,Que tu dois faire ou donner,"Sans signature, le dossier est refusé. La signature est ___.",,
+budget-budget,budget,"Budget, achats et consommation",avance,budget,Plan de l’argent que tu vas recevoir et de ce que tu vas payer,,bud-get,
+budget-depense,budget,"Budget, achats et consommation",avance,dépense,Argent que tu donnes pour payer quelque chose,,dé-pen-se,
+budget-revenu,budget,"Budget, achats et consommation",avance,revenu,"Argent que tu reçois, par exemple ton salaire",,re-ve-nu,
+budget-economie,budget,"Budget, achats et consommation",avance,économie,Argent que tu gardes parce que tu n’as pas eu besoin de le dépenser,,,
 budget-epargner,budget,"Budget, achats et consommation",avance,épargner,Mettre de l’argent de côté pour plus tard,,,
-budget-facture,budget,"Budget, achats et consommation",avance,facture,Document indiquant des biens ou des services et le montant à payer,,fac-tu-re,
-budget-recu,budget,"Budget, achats et consommation",avance,reçu,Document qui confirme qu’un paiement a été effectué,,re-çu,demarches:4
-budget-monnaie,budget,"Budget, achats et consommation",avance,monnaie,Petite somme en pièces ou montant rendu après un paiement,,mon-naie,
-budget-especes,budget,"Budget, achats et consommation",avance,espèces,Argent sous forme de billets ou de pièces,,,
-budget-carte-bancaire,budget,"Budget, achats et consommation",avance,carte bancaire,Carte liée à un compte et utilisée pour payer ou retirer de l’argent,,,demarches:5
-budget-compte-bancaire,budget,"Budget, achats et consommation",avance,compte bancaire,Service où une banque enregistre l’argent reçu ou payé,,,
-budget-virement,budget,"Budget, achats et consommation",avance,virement,Transfert d’argent entre deux comptes,,vi-re-ment,
-budget-montant,budget,"Budget, achats et consommation",avance,montant,Somme d’argent exprimée par un nombre,,mon-tant,
-budget-total,budget,"Budget, achats et consommation",avance,total,Somme obtenue en ajoutant tous les montants,,to-tal,
-budget-reduction,budget,"Budget, achats et consommation",avance,réduction,Diminution du prix d’un produit ou d’un service,,ré-duc-tion,
-budget-promotion,budget,"Budget, achats et consommation",avance,promotion,Offre commerciale limitée qui rend un achat plus avantageux,,,
-budget-garantie,budget,"Budget, achats et consommation",avance,garantie,Engagement de réparer ou remplacer un produit sous certaines conditions,,ga-ran-tie,
-budget-defaut,budget,"Budget, achats et consommation",avance,défaut,Problème qui empêche un objet de fonctionner ou d’être comme prévu,,,
-budget-echanger,budget,"Budget, achats et consommation",avance,échanger,Rendre un article pour en prendre un autre à la place,,,
+budget-facture,budget,"Budget, achats et consommation",avance,facture,Papier qui dit ce que tu as acheté et combien tu dois payer,,fac-tu-re,
+budget-recu,budget,"Budget, achats et consommation",avance,reçu,Papier qui montre que tu as déjà payé,,re-çu,demarches:4
+budget-monnaie,budget,"Budget, achats et consommation",avance,monnaie,Pièces qu’on utilise pour payer ou qu’on te rend quand tu donnes trop d’argent,,mon-naie,
+budget-especes,budget,"Budget, achats et consommation",avance,espèces,Argent en billets ou en pièces,,,
+budget-carte-bancaire,budget,"Budget, achats et consommation",avance,carte bancaire,Carte que tu peux utiliser pour payer ou retirer de l’argent à la banque,,,demarches:5
+budget-compte-bancaire,budget,"Budget, achats et consommation",avance,compte bancaire,Endroit à la banque où tu gardes ton argent et où la banque note ce que tu paies,,,
+budget-virement,budget,"Budget, achats et consommation",avance,virement,Envoi d’argent d’un compte à un autre,,vi-re-ment,
+budget-montant,budget,"Budget, achats et consommation",avance,montant,Combien d’argent il y a ou combien tu dois payer,,mon-tant,
+budget-total,budget,"Budget, achats et consommation",avance,total,Ce que tu obtiens quand tu ajoutes tous les nombres,,to-tal,
+budget-reduction,budget,"Budget, achats et consommation",avance,réduction,Baisse du prix. Tu paies moins cher.,,ré-duc-tion,
+budget-promotion,budget,"Budget, achats et consommation",avance,promotion,Offre d’un magasin pour payer moins cher pendant un certain temps,,,
+budget-garantie,budget,"Budget, achats et consommation",avance,garantie,Promesse de réparer ou de changer un objet si un problème prévu arrive,,ga-ran-tie,
+budget-defaut,budget,"Budget, achats et consommation",avance,défaut,Problème sur un objet qui fait qu’il n’est pas comme prévu,,,
+budget-echanger,budget,"Budget, achats et consommation",avance,échanger,Rendre un objet et en prendre un autre à sa place,,,
 budget-rembourser,budget,"Budget, achats et consommation",avance,rembourser,Rendre l’argent qui avait été payé,Le vendeur va me ___ le montant de mon achat.,,
-budget-comparer-les-prix,budget,"Budget, achats et consommation",avance,comparer les prix,Examiner les tarifs de plusieurs offres avant de choisir,,,
-budget-prix-au-kilo,budget,"Budget, achats et consommation",avance,prix au kilo,Somme indiquée pour mille grammes d’un produit,,,
-budget-etiquette,budget,"Budget, achats et consommation",avance,étiquette,Petit support qui donne des informations sur un article,,é-ti-quet-te,demarches:6
-budget-date-limite,budget,"Budget, achats et consommation",avance,date limite,Date au-delà de laquelle une action ou un usage n’est plus prévu,,,
-budget-occasion,budget,"Budget, achats et consommation",avance,occasion,Bien déjà utilisé que l’on achète ou revend,,,
-budget-commande,budget,"Budget, achats et consommation",avance,commande,Demande d’achat adressée à un vendeur,,,
-budget-livraison,budget,"Budget, achats et consommation",avance,livraison,Transport d’un produit jusqu’au lieu indiqué par le client,,li-vrai-son,demarches:7
-budget-acompte,budget,"Budget, achats et consommation",avance,acompte,Partie du prix versée à l’avance,,,
-budget-dette,budget,"Budget, achats et consommation",avance,dette,Somme d’argent que l’on doit à quelqu’un,,det-te,
-budget-a-credit,budget,"Budget, achats et consommation",avance,à crédit,"En payant plus tard, souvent en plusieurs versements",,,
-securite-symptome,securite,Santé et sécurité,avance,symptôme,Signe ressenti ou observé qui peut indiquer un problème de santé,,symp-tô-me,
-securite-allergie,securite,Santé et sécurité,avance,allergie,Réaction du corps à une substance habituellement sans danger,,al-ler-gie,
-securite-ordonnance,securite,Santé et sécurité,avance,ordonnance,Document sur lequel un médecin indique un traitement,Le médecin m’a donné une ___ pour obtenir le médicament.,or-don-nan-ce,
-securite-traitement,securite,Santé et sécurité,avance,traitement,Ensemble des moyens utilisés pour soigner un problème de santé,,trai-te-ment,
-securite-dose,securite,Santé et sécurité,avance,dose,Quantité d’un produit à prendre ou à utiliser en une fois,,,
-securite-notice,securite,Santé et sécurité,avance,notice,Document qui explique comment utiliser un produit,,no-ti-ce,
-securite-effet-secondaire,securite,Santé et sécurité,avance,effet secondaire,Réaction qui survient en plus de l’effet recherché d’un traitement,,,
-securite-consultation,securite,Santé et sécurité,avance,consultation,Entretien avec un professionnel de santé pour examiner un problème,,con-sul-ta-tion,
-securite-examen-medical,securite,Santé et sécurité,avance,examen médical,"Vérification de l’état de santé par observation, mesure ou analyse",,,
-securite-vaccin,securite,Santé et sécurité,avance,vaccin,Produit qui prépare le corps à se défendre contre une maladie précise,,vac-cin,
-securite-infection,securite,Santé et sécurité,avance,infection,Pénétration et multiplication de microbes dans l’organisme,,in-fec-tion,
-securite-contagieux,securite,Santé et sécurité,avance,contagieux,Qui peut se transmettre d’une personne à une autre,,,
-securite-entorse,securite,Santé et sécurité,avance,entorse,Blessure autour d’une articulation due à un mouvement forcé,,en-tor-se,
-securite-fracture,securite,Santé et sécurité,avance,fracture,Rupture d’un os,,frac-tu-re,
-securite-brulure,securite,Santé et sécurité,avance,brûlure,Blessure provoquée notamment par la chaleur ou un produit corrosif,,,
-securite-saignement,securite,Santé et sécurité,avance,saignement,Écoulement de sang,,,
-securite-vertige,securite,Santé et sécurité,avance,vertige,Impression que soi-même ou ce qui nous entoure tourne,,,
-securite-nausee,securite,Santé et sécurité,avance,nausée,Sensation que l’on est sur le point de vomir,,,
-securite-urgence,securite,Santé et sécurité,avance,urgence,Situation grave qui exige une intervention rapide,,ur-gen-ce,
-securite-ambulance,securite,Santé et sécurité,avance,ambulance,Véhicule équipé pour transporter des personnes malades ou blessées,,am-bu-lan-ce,demarches:8
-securite-secours,securite,Santé et sécurité,avance,secours,Aide apportée rapidement à une personne en danger,,,
-securite-evacuer,securite,Santé et sécurité,avance,évacuer,Faire sortir des personnes d’un lieu dangereux,,é-va-cu-er,
-securite-issue-de-secours,securite,Santé et sécurité,avance,issue de secours,Sortie prévue pour quitter un bâtiment en cas de danger,,,demarches:9
-securite-danger,securite,Santé et sécurité,avance,danger,Situation ou élément qui peut causer du mal,,,
-securite-risque,securite,Santé et sécurité,avance,risque,Possibilité qu’un événement dommageable se produise,,,
-securite-prevenir,securite,Santé et sécurité,avance,prévenir,Avertir quelqu’un à l’avance d’un danger ou d’un changement,,,
-securite-proteger,securite,Santé et sécurité,avance,protéger,Mettre quelqu’un ou quelque chose à l’abri d’un danger,,pro-té-ger,
-securite-assurance-maladie,securite,Santé et sécurité,avance,assurance maladie,Couverture qui prend en charge certains frais liés à la santé,,,
-securite-carte-d-assurance,securite,Santé et sécurité,avance,carte d’assurance,Document qui indique les informations utiles sur sa couverture d’assurance,,,
-securite-avoir-un-malaise,securite,Santé et sécurité,avance,avoir un malaise,Se sentir brusquement très mal ou sur le point de perdre connaissance,,,
-numerique-telephone-portable,numerique,Numérique et vie privée,avance,téléphone portable,Appareil que l’on emporte pour appeler et utiliser des applications,,,quotidien:7
-numerique-ecran,numerique,Numérique et vie privée,avance,écran,Surface sur laquelle un appareil affiche des images ou des textes,,é-cran,numerique:0
-numerique-clavier,numerique,Numérique et vie privée,avance,clavier,Ensemble de touches qui permet d’écrire ou de donner des commandes,,cla-vier,numerique:1
-numerique-chargeur,numerique,Numérique et vie privée,avance,chargeur,Appareil qui recharge la batterie d’un équipement,,char-geur,numerique:2
-numerique-batterie,numerique,Numérique et vie privée,avance,batterie,Dispositif qui stocke de l’énergie pour faire fonctionner un appareil,,bat-te-rie,
-numerique-connexion,numerique,Numérique et vie privée,avance,connexion,Lien établi entre un appareil et un réseau,,con-nex-ion,
-numerique-reseau,numerique,Numérique et vie privée,avance,réseau,Ensemble d’appareils reliés pour échanger des informations,,ré-seau,
-numerique-application,numerique,Numérique et vie privée,avance,application,Programme conçu pour accomplir une tâche sur un appareil,,ap-pli-ca-tion,
-numerique-fichier,numerique,Numérique et vie privée,avance,fichier,Ensemble d’informations enregistré sous un nom,,fi-chier,
-numerique-dossier-numerique,numerique,Numérique et vie privée,avance,dossier numérique,Emplacement qui regroupe des fichiers sur un appareil,,,
-numerique-telecharger,numerique,Numérique et vie privée,avance,télécharger,Récupérer un fichier depuis Internet vers son appareil,,té-lé-char-ger,
-numerique-enregistrer,numerique,Numérique et vie privée,avance,enregistrer,Garder une copie d’un travail dans un fichier,,en-re-gis-trer,
-numerique-supprimer,numerique,Numérique et vie privée,avance,supprimer,"Retirer un fichier, un message ou un élément",,sup-pri-mer,
-numerique-mettre-a-jour,numerique,Numérique et vie privée,avance,mettre à jour,Installer une version plus récente ou corriger des informations,,,
-numerique-mot-de-passe,numerique,Numérique et vie privée,avance,mot de passe,Suite de caractères secrète qui protège l’accès à un compte,,,
-numerique-identifiant,numerique,Numérique et vie privée,avance,identifiant,Nom ou code qui permet de reconnaître l’utilisateur d’un service,,,
-numerique-se-connecter,numerique,Numérique et vie privée,avance,se connecter,Entrer dans un compte ou établir un accès à un réseau,,,
-numerique-se-deconnecter,numerique,Numérique et vie privée,avance,se déconnecter,Quitter une session ouverte sur un service,,,
-numerique-compte-utilisateur,numerique,Numérique et vie privée,avance,compte utilisateur,Espace personnel auquel on accède sur un service numérique,,,
-numerique-parametre,numerique,Numérique et vie privée,avance,paramètre,Option que l’on peut régler dans un appareil ou une application,,pa-ra-mè-tre,
-numerique-confidentialite,numerique,Numérique et vie privée,avance,confidentialité,Protection des informations contre les accès non souhaités,Vérifie les paramètres de ___ de ton compte.,,
-numerique-donnee-personnelle,numerique,Numérique et vie privée,avance,donnée personnelle,Information qui peut servir à identifier une personne,,,
-numerique-consentement,numerique,Numérique et vie privée,avance,consentement,Accord libre donné après avoir compris ce qui est proposé,,,
-numerique-geolocalisation,numerique,Numérique et vie privée,avance,géolocalisation,Repérage de la position d’un appareil ou d’une personne,,,
-numerique-capture-d-ecran,numerique,Numérique et vie privée,avance,capture d’écran,Image qui reproduit ce qui était affiché sur un écran,,,
-numerique-lien,numerique,Numérique et vie privée,avance,lien,Élément cliquable qui ouvre une page ou un document,,,
-numerique-courriel,numerique,Numérique et vie privée,avance,courriel,Message envoyé par voie électronique,,cour-riel,
-numerique-piece-jointe,numerique,Numérique et vie privée,avance,pièce jointe,Fichier ajouté à un message électronique,,,
-numerique-bloquer-un-contact,numerique,Numérique et vie privée,avance,bloquer un contact,Empêcher un compte de nous envoyer des messages ou de nous appeler,,,
-numerique-sauvegarde,numerique,Numérique et vie privée,avance,sauvegarde,Copie conservée pour retrouver des données après une perte,,sau-ve-gar-de,
-medias-actualite,medias,Médias et information,avance,actualité,Ensemble des événements récents dont on parle,,ac-tua-li-té,
-medias-article,medias,Médias et information,avance,article,Texte publié sur un sujet précis dans un média,,ar-ti-cle,
-medias-journal,medias,Médias et information,avance,journal,Publication qui rassemble des informations récentes,"J’achète le ___ imprimé pour lire les nouvelles du jour.",jour-nal,contextes:0:3:3
-medias-titre,medias,Médias et information,avance,titre,Mots placés en tête d’un texte pour annoncer son sujet,,ti-tre,
-medias-reportage,medias,Médias et information,avance,reportage,Récit journalistique qui présente un sujet avec des observations ou des témoignages,"Dans ce ___ filmé sur place, la journaliste montre ce qui s’est passé et recueille des témoignages.",re-por-ta-ge,contextes:1:3:3
-medias-interview,medias,Médias et information,avance,interview,Échange de questions et de réponses destiné à être publié ou diffusé,"Pendant l’___, la journaliste pose des questions et l’invitée y répond.",in-ter-view,numerique:4
-medias-temoignage,medias,Médias et information,avance,témoignage,Récit fait par quelqu’un qui a vécu ou observé un événement,,té-moi-gna-ge,
-medias-source,medias,Médias et information,avance,source,"Personne, document ou organisme d’où vient une information","Avant de partager la nouvelle, vérifie sa ___.",sour-ce,
-medias-auteur,medias,Médias et information,avance,auteur,Personne qui a écrit un texte ou créé une œuvre,,au-teur,
-medias-publication,medias,Médias et information,avance,publication,Contenu rendu accessible à un public,,,
+budget-comparer-les-prix,budget,"Budget, achats et consommation",avance,comparer les prix,Regarder combien coûte la même chose à plusieurs endroits avant de choisir,,,
+budget-prix-au-kilo,budget,"Budget, achats et consommation",avance,prix au kilo,Argent à payer pour un kilo de quelque chose,,,
+budget-etiquette,budget,"Budget, achats et consommation",avance,étiquette,Petit papier sur un objet qui donne son prix ou d’autres informations,,é-ti-quet-te,demarches:6
+budget-date-limite,budget,"Budget, achats et consommation",avance,date limite,Dernier jour pour faire ou utiliser quelque chose,,,
+budget-occasion,budget,"Budget, achats et consommation",avance,occasion,Objet qui a déjà été utilisé et que l’on vend ou achète,,,
+budget-commande,budget,"Budget, achats et consommation",avance,commande,Demande que tu fais à un magasin pour acheter quelque chose,,,
+budget-livraison,budget,"Budget, achats et consommation",avance,livraison,Quand le magasin apporte ton achat à l’endroit que tu as choisi,,li-vrai-son,demarches:7
+budget-acompte,budget,"Budget, achats et consommation",avance,acompte,Partie du prix que tu paies avant de recevoir ce que tu achètes,,,
+budget-dette,budget,"Budget, achats et consommation",avance,dette,Argent que tu dois rendre ou payer à quelqu’un,,det-te,
+budget-a-credit,budget,"Budget, achats et consommation",avance,à crédit,"Recevoir quelque chose maintenant et le payer plus tard, parfois en plusieurs fois",,,
+securite-symptome,securite,Santé et sécurité,avance,symptôme,"Ce que tu ressens ou vois quand tu es malade, comme la toux ou la fièvre",,symp-tô-me,
+securite-allergie,securite,Santé et sécurité,avance,allergie,"Quand ton corps réagit mal à quelque chose, comme certains aliments ou la poussière",,al-ler-gie,
+securite-ordonnance,securite,Santé et sécurité,avance,ordonnance,Papier sur lequel un médecin écrit quels médicaments ou quels soins il te faut,Le médecin m’a donné une ___ pour obtenir le médicament.,or-don-nan-ce,
+securite-traitement,securite,Santé et sécurité,avance,traitement,Ce qu’on fait ou ce qu’on te donne pour te soigner,,trai-te-ment,
+securite-dose,securite,Santé et sécurité,avance,dose,Combien de médicament ou de produit on prend à la fois,,,
+securite-notice,securite,Santé et sécurité,avance,notice,Papier qui explique comment utiliser un objet ou un médicament,,no-ti-ce,
+securite-effet-secondaire,securite,Santé et sécurité,avance,effet secondaire,Réaction à un médicament en plus de ce qu’il est censé faire,,,
+securite-consultation,securite,Santé et sécurité,avance,consultation,Rendez-vous avec un médecin ou une autre personne qui te soigne,,con-sul-ta-tion,
+securite-examen-medical,securite,Santé et sécurité,avance,examen médical,"Contrôle pour voir comment va ton corps, par exemple avec une prise de sang",,,
+securite-vaccin,securite,Santé et sécurité,avance,vaccin,Ce qu’on donne pour aider ton corps à se protéger contre une maladie,,vac-cin,
+securite-infection,securite,Santé et sécurité,avance,infection,Quand de petits êtres comme des bactéries entrent dans ton corps et s’y multiplient,,in-fec-tion,
+securite-contagieux,securite,Santé et sécurité,avance,contagieux,Qui peut passer d’une personne malade à une autre,,,
+securite-entorse,securite,Santé et sécurité,avance,entorse,Blessure qui peut arriver quand tu tords ta cheville ou une autre partie qui se plie,,en-tor-se,
+securite-fracture,securite,Santé et sécurité,avance,fracture,Os cassé,,frac-tu-re,
+securite-brulure,securite,Santé et sécurité,avance,brûlure,Blessure causée par quelque chose de très chaud ou par un produit qui attaque la peau,,,
+securite-saignement,securite,Santé et sécurité,avance,saignement,Quand du sang sort d’une blessure ou d’une partie du corps,,,
+securite-vertige,securite,Santé et sécurité,avance,vertige,Impression que tout tourne autour de toi,,,
+securite-nausee,securite,Santé et sécurité,avance,nausée,Envie de vomir,,,
+securite-urgence,securite,Santé et sécurité,avance,urgence,Problème grave qu’il faut régler très vite,,ur-gen-ce,
+securite-ambulance,securite,Santé et sécurité,avance,ambulance,Véhicule qui emmène les personnes malades ou blessées pour qu’on les soigne,,am-bu-lan-ce,demarches:8
+securite-secours,securite,Santé et sécurité,avance,secours,Aide rapide quand une personne est en danger,,,
+securite-evacuer,securite,Santé et sécurité,avance,évacuer,Faire sortir les gens d’un endroit où ils risquent d’être blessés,,é-va-cu-er,
+securite-issue-de-secours,securite,Santé et sécurité,avance,issue de secours,"Porte pour sortir vite d’un bâtiment s’il y a un problème, par exemple un feu",,,demarches:9
+securite-danger,securite,Santé et sécurité,avance,danger,Ce qui peut faire du mal ou causer un accident,,,
+securite-risque,securite,Santé et sécurité,avance,risque,Possibilité que quelque chose de mauvais arrive,,,
+securite-prevenir,securite,Santé et sécurité,avance,prévenir,Dire à quelqu’un à l’avance qu’il y a un problème ou un changement,,,
+securite-proteger,securite,Santé et sécurité,avance,protéger,Faire quelque chose pour que quelqu’un ou quelque chose soit en sécurité,,pro-té-ger,
+securite-assurance-maladie,securite,Santé et sécurité,avance,assurance maladie,Assurance qui paie une partie de ce que coûtent les soins,,,
+securite-carte-d-assurance,securite,Santé et sécurité,avance,carte d’assurance,Carte qui montre quelle assurance paie une partie de tes soins,,,
+securite-avoir-un-malaise,securite,Santé et sécurité,avance,avoir un malaise,"Se sentir soudain très mal, parfois comme si on allait tomber",,,
+numerique-telephone-portable,numerique,Numérique et vie privée,avance,téléphone portable,"Petit appareil que tu peux emporter pour appeler, écrire des messages ou aller sur Internet",,,quotidien:7
+numerique-ecran,numerique,Numérique et vie privée,avance,écran,Partie où tu vois les images et les mots sur un téléphone ou un ordinateur,,é-cran,numerique:0
+numerique-clavier,numerique,Numérique et vie privée,avance,clavier,Touches sur lesquelles tu appuies pour écrire sur un ordinateur,,cla-vier,numerique:1
+numerique-chargeur,numerique,Numérique et vie privée,avance,chargeur,Objet qu’on branche pour redonner de l’énergie à un téléphone ou à un autre appareil,,char-geur,numerique:2
+numerique-batterie,numerique,Numérique et vie privée,avance,batterie,Partie d’un appareil qui garde de l’énergie pour le faire marcher,,bat-te-rie,
+numerique-connexion,numerique,Numérique et vie privée,avance,connexion,"Lien qui permet, par exemple, à ton téléphone d’utiliser Internet",,con-nex-ion,
+numerique-reseau,numerique,Numérique et vie privée,avance,réseau,Groupe d’appareils reliés pour s’envoyer des messages ou d’autres informations,,ré-seau,
+numerique-application,numerique,Numérique et vie privée,avance,application,"Programme pour faire quelque chose sur un téléphone ou un ordinateur, comme envoyer un message",,ap-pli-ca-tion,
+numerique-fichier,numerique,Numérique et vie privée,avance,fichier,"Photo, texte ou autre chose que tu gardes sous un nom sur ton appareil",,fi-chier,
+numerique-dossier-numerique,numerique,Numérique et vie privée,avance,dossier numérique,Endroit sur un ordinateur ou un téléphone où tu ranges plusieurs fichiers,,,
+numerique-telecharger,numerique,Numérique et vie privée,avance,télécharger,Prendre un fichier sur Internet et le mettre sur ton appareil,,té-lé-char-ger,
+numerique-enregistrer,numerique,Numérique et vie privée,avance,enregistrer,Garder ton travail sur ton appareil pour le retrouver,,en-re-gis-trer,
+numerique-supprimer,numerique,Numérique et vie privée,avance,supprimer,Effacer un fichier ou un message,,sup-pri-mer,
+numerique-mettre-a-jour,numerique,Numérique et vie privée,avance,mettre à jour,Mettre une version plus récente d’un programme ou changer de vieilles informations,,,
+numerique-mot-de-passe,numerique,Numérique et vie privée,avance,mot de passe,"Lettres, chiffres ou signes que tu gardes secrets pour entrer dans ton compte",,,
+numerique-identifiant,numerique,Numérique et vie privée,avance,identifiant,Nom ou code que tu écris pour dire qui tu es sur un site,,,
+numerique-se-connecter,numerique,Numérique et vie privée,avance,se connecter,Entrer dans ton compte ou relier ton appareil à Internet,,,
+numerique-se-deconnecter,numerique,Numérique et vie privée,avance,se déconnecter,Sortir de ton compte sur un site ou une application,,,
+numerique-compte-utilisateur,numerique,Numérique et vie privée,avance,compte utilisateur,"Ton espace sur un site ou une application, où tu retrouves tes informations",,,
+numerique-parametre,numerique,Numérique et vie privée,avance,paramètre,Choix que tu peux changer sur un appareil ou dans une application,,pa-ra-mè-tre,
+numerique-confidentialite,numerique,Numérique et vie privée,avance,confidentialité,Le fait de garder des informations privées et de les montrer seulement aux personnes qui ont le droit de les voir,Vérifie les paramètres de ___ de ton compte.,,
+numerique-donnee-personnelle,numerique,Numérique et vie privée,avance,donnée personnelle,"Information qui permet de savoir qui tu es, comme ton nom ou ton numéro de téléphone",,,
+numerique-consentement,numerique,Numérique et vie privée,avance,consentement,Dire oui librement après avoir compris ce qu’on te demande,,,
+numerique-geolocalisation,numerique,Numérique et vie privée,avance,géolocalisation,Façon de trouver où est une personne ou un appareil sur une carte,,,
+numerique-capture-d-ecran,numerique,Numérique et vie privée,avance,capture d’écran,Photo de ce que tu vois à l’écran,,,
+numerique-lien,numerique,Numérique et vie privée,avance,lien,"Mot, image ou adresse sur lesquels tu peux cliquer pour ouvrir une page",,,
+numerique-courriel,numerique,Numérique et vie privée,avance,courriel,Message que tu envoies par e-mail,,cour-riel,
+numerique-piece-jointe,numerique,Numérique et vie privée,avance,pièce jointe,Photo ou fichier que tu ajoutes à ton e-mail,,,
+numerique-bloquer-un-contact,numerique,Numérique et vie privée,avance,bloquer un contact,Empêcher une personne de t’écrire ou de t’appeler sur une application,,,
+numerique-sauvegarde,numerique,Numérique et vie privée,avance,sauvegarde,Copie que tu gardes pour retrouver tes fichiers si tu les perds,,sau-ve-gar-de,
+medias-actualite,medias,Médias et information,avance,actualité,Ce qui s’est passé récemment et dont les gens parlent,,ac-tua-li-té,
+medias-article,medias,Médias et information,avance,article,"Texte sur un sujet, par exemple dans un journal ou sur un site",,ar-ti-cle,
+medias-journal,medias,Médias et information,avance,journal,Ensemble de nouvelles qu’on peut lire sur papier ou en ligne,"J’achète le ___ imprimé pour lire les nouvelles du jour.",jour-nal,contextes:0:3:3
+medias-titre,medias,Médias et information,avance,titre,Mots au-dessus d’un texte qui disent de quoi il parle,,ti-tre,
+medias-reportage,medias,Médias et information,avance,reportage,"Texte, vidéo ou enregistrement où une personne raconte ce qu’elle a vu ou appris sur place","Dans ce ___ filmé sur place, la journaliste montre ce qui s’est passé et recueille des témoignages.",re-por-ta-ge,contextes:1:3:3
+medias-interview,medias,Médias et information,avance,interview,"Rencontre où une personne pose des questions et l’autre répond pour un journal, une vidéo ou la radio","Pendant l’___, la journaliste pose des questions et l’invitée y répond.",in-ter-view,numerique:4
+medias-temoignage,medias,Médias et information,avance,témoignage,Ce qu’une personne raconte sur quelque chose qu’elle a vu ou vécu,,té-moi-gna-ge,
+medias-source,medias,Médias et information,avance,source,"Personne, livre ou site d’où vient ce que tu as appris","Avant de partager la nouvelle, vérifie sa ___.",sour-ce,
+medias-auteur,medias,Médias et information,avance,auteur,"Personne qui a écrit un texte ou créé quelque chose, comme un livre",,au-teur,
+medias-publication,medias,Médias et information,avance,publication,"Texte, photo ou vidéo qu’on a mis à la disposition des autres",,,
 medias-legende,medias,Médias et information,avance,légende,Court texte qui explique une image,,lé-gen-de,
-medias-fait,medias,Médias et information,avance,fait,Événement ou information que l’on peut vérifier,,,
-medias-opinion,medias,Médias et information,avance,opinion,Avis personnel porté sur un sujet,,o-pi-nion,
-medias-preuve,medias,Médias et information,avance,preuve,Élément qui permet d’établir qu’une affirmation est vraie,,preu-ve,
-medias-rumeur,medias,Médias et information,avance,rumeur,Information qui circule avant d’avoir été confirmée,,ru-meur,
-medias-desinformation,medias,Médias et information,avance,désinformation,Diffusion volontaire d’informations fausses pour tromper,,,
-medias-fiable,medias,Médias et information,avance,fiable,Sur lequel on peut raisonnablement compter,,,
-medias-verifier,medias,Médias et information,avance,vérifier,Contrôler si une information est exacte,,vé-ri-fier,
-medias-recouper,medias,Médias et information,avance,recouper,Comparer plusieurs sources pour vérifier une information,,,
-medias-citer,medias,Médias et information,avance,citer,Reproduire les mots d’une personne ou indiquer la source utilisée,,,
-medias-publicite,medias,Médias et information,avance,publicité,Message conçu pour inciter à acheter ou à s’intéresser à quelque chose,"Cette ___ présente une boisson pour donner envie de l’acheter.",,contextes:2:3:3
-medias-media,medias,Médias et information,avance,média,Moyen de communiquer des informations à un public,,,
-medias-reseau-social,medias,Médias et information,avance,réseau social,Service en ligne qui permet de publier des contenus et d’échanger,,,
-medias-commentaire,medias,Médias et information,avance,commentaire,Réaction écrite ou orale à un contenu,,,
-medias-partager-un-contenu,medias,Médias et information,avance,partager un contenu,Transmettre un contenu pour que d’autres personnes puissent le voir,,,
-medias-diffuser,medias,Médias et information,avance,diffuser,Faire parvenir un contenu à de nombreuses personnes,,,
-medias-nuancer,medias,Médias et information,avance,nuancer,Ajouter des précisions pour rendre une affirmation moins générale,,,
-medias-contexte,medias,Médias et information,avance,contexte,Ensemble des circonstances qui permettent de comprendre un fait ou une parole,,con-tex-te,
-medias-point-de-vue,medias,Médias et information,avance,point de vue,Manière dont une personne considère un sujet,,,
-medias-fait-divers,medias,Médias et information,avance,fait divers,Nouvelle sur un événement local ou inhabituel de la vie quotidienne,,,
-logement-loyer,logement,Logement et vie en commun,avance,loyer,Somme payée régulièrement pour occuper un logement,"Chaque mois, je paie le ___ de mon appartement.",lo-yer,
-logement-bail,logement,Logement et vie en commun,avance,bail,Contrat qui fixe les conditions de location d’un logement,,,
-logement-locataire,logement,Logement et vie en commun,avance,locataire,Personne qui paie pour occuper un logement qui ne lui appartient pas,,lo-ca-tai-re,
-logement-proprietaire,logement,Logement et vie en commun,avance,propriétaire,Personne à qui appartient un bien,,,
-logement-regie,logement,Logement et vie en commun,avance,régie,"En Suisse romande, entreprise qui gère des immeubles pour leurs propriétaires",,ré-gie,
-logement-garantie-de-loyer,logement,Logement et vie en commun,avance,garantie de loyer,Somme ou couverture réservée pour garantir certaines obligations liées à la location,,,
-logement-charges,logement,Logement et vie en commun,avance,charges,"Frais payés en plus du loyer de base, par exemple pour le chauffage",,char-ges,
-logement-etat-des-lieux,logement,Logement et vie en commun,avance,état des lieux,Vérification et description de l’état d’un logement à l’entrée ou à la sortie,,,
-logement-emmenager,logement,Logement et vie en commun,avance,emménager,Commencer à s’installer dans un nouveau logement,,,
-logement-demenager,logement,Logement et vie en commun,avance,déménager,Quitter son logement pour s’installer ailleurs,,,
-logement-colocation,logement,Logement et vie en commun,avance,colocation,Situation où plusieurs personnes partagent un logement,,co-lo-ca-tion,
-logement-menage,logement,Logement et vie en commun,avance,ménage,Personne seule ou groupe de personnes qui habitent ensemble,,,
-logement-entretien-du-logement,logement,Logement et vie en commun,avance,entretien du logement,Travaux réguliers nécessaires pour garder un logement propre et en bon état,,,
-logement-reparation,logement,Logement et vie en commun,avance,réparation,Action qui remet un objet ou une installation en état de fonctionner,,ré-pa-ra-tion,
-logement-panne,logement,Logement et vie en commun,avance,panne,Arrêt inattendu du fonctionnement d’un appareil ou d’une installation,,pan-ne,
-logement-fuite-d-eau,logement,Logement et vie en commun,avance,fuite d’eau,Écoulement d’eau à un endroit où elle ne devrait pas sortir,,,demarches:10
-logement-chauffage,logement,Logement et vie en commun,avance,chauffage,Installation qui maintient une température agréable dans un logement,,chauf-fa-ge,
-logement-electricite,logement,Logement et vie en commun,avance,électricité,Énergie qui fait fonctionner par exemple les prises et les lampes,,,
-logement-compteur,logement,Logement et vie en commun,avance,compteur,"Appareil qui mesure une consommation, par exemple d’eau ou d’énergie",,comp-teur,demarches:11
-logement-concierge,logement,Logement et vie en commun,avance,concierge,Personne qui s’occupe de certaines tâches dans un immeuble,,,
-logement-reglement-interieur,logement,Logement et vie en commun,avance,règlement intérieur,Ensemble des règles à suivre à l’intérieur d’un établissement ou d’un immeuble,,,
-logement-voisinage,logement,Logement et vie en commun,avance,voisinage,Personnes ou lieux situés près du domicile,,,
-logement-bruit,logement,Logement et vie en commun,avance,bruit,Son qui peut gêner parce qu’il est fort ou répété,,,
-logement-signaler,logement,Logement et vie en commun,avance,signaler,Informer un responsable d’un problème observé,,,
+medias-fait,medias,Médias et information,avance,fait,Ce qui s’est vraiment passé et qu’on peut contrôler,,,
+medias-opinion,medias,Médias et information,avance,opinion,Ce que tu penses de quelque chose,,o-pi-nion,
+medias-preuve,medias,Médias et information,avance,preuve,Ce qui montre que quelque chose est vrai,,preu-ve,
+medias-rumeur,medias,Médias et information,avance,rumeur,Nouvelle que les gens se racontent alors qu’on ne sait pas si elle est vraie,,ru-meur,
+medias-desinformation,medias,Médias et information,avance,désinformation,Partager exprès des informations fausses pour tromper les gens,,,
+medias-fiable,medias,Médias et information,avance,fiable,À qui ou à quoi tu peux faire confiance,,,
+medias-verifier,medias,Médias et information,avance,vérifier,Regarder si ce qu’on te dit est vrai,,vé-ri-fier,
+medias-recouper,medias,Médias et information,avance,recouper,"Regarder ce que disent plusieurs personnes, livres ou sites pour voir si leurs informations vont ensemble",,,
+medias-citer,medias,Médias et information,avance,citer,Redire les mots de quelqu’un ou dire d’où vient ce que tu as appris,,,
+medias-publicite,medias,Médias et information,avance,publicité,Message qui cherche à te donner envie d’acheter quelque chose ou de t’y intéresser,"Cette ___ présente une boisson pour donner envie de l’acheter.",,contextes:2:3:3
+medias-media,medias,Médias et information,avance,média,"Moyen de donner des nouvelles à beaucoup de gens, comme la radio, la télé ou un journal",,,
+medias-reseau-social,medias,Médias et information,avance,réseau social,Site ou application où tu peux mettre des photos et des messages et parler avec d’autres,,,
+medias-commentaire,medias,Médias et information,avance,commentaire,Ce que tu écris ou dis après avoir lu ou vu quelque chose,,,
+medias-partager-un-contenu,medias,Médias et information,avance,partager un contenu,"Envoyer une photo, une vidéo ou un texte pour que d’autres puissent le voir",,,
+medias-diffuser,medias,Médias et information,avance,diffuser,"Faire arriver un message, un son ou une vidéo à beaucoup de personnes",,,
+medias-nuancer,medias,Médias et information,avance,nuancer,Dire une idée avec plus de détails pour montrer que les choses ne sont pas toujours pareilles,,,
+medias-contexte,medias,Médias et information,avance,contexte,Ce qui se passe autour d’un fait ou d’une parole et qui aide à comprendre,,con-tex-te,
+medias-point-de-vue,medias,Médias et information,avance,point de vue,La façon dont une personne voit les choses,,,
+medias-fait-divers,medias,Médias et information,avance,fait divers,Courte nouvelle sur un accident ou un autre événement de la vie de tous les jours,,,
+logement-loyer,logement,Logement et vie en commun,avance,loyer,Argent que tu paies chaque mois pour vivre dans un logement,"Chaque mois, je paie le ___ de mon appartement.",lo-yer,
+logement-bail,logement,Logement et vie en commun,avance,bail,Accord écrit qui dit à quel prix et selon quelles règles tu peux vivre dans un logement,,,
+logement-locataire,logement,Logement et vie en commun,avance,locataire,Personne qui paie pour vivre dans un logement qui est à quelqu’un d’autre,,lo-ca-tai-re,
+logement-proprietaire,logement,Logement et vie en commun,avance,propriétaire,"Personne à qui appartient quelque chose, comme une maison",,,
+logement-regie,logement,Logement et vie en commun,avance,régie,Entreprise qui s’occupe des logements pour les personnes à qui ils appartiennent,,ré-gie,
+logement-garantie-de-loyer,logement,Logement et vie en commun,avance,garantie de loyer,Argent ou promesse de paiement prévu pour certains problèmes pendant la location d’un logement,,,
+logement-charges,logement,Logement et vie en commun,avance,charges,"Argent payé en plus du prix de base du logement, par exemple pour le chauffage",,char-ges,
+logement-etat-des-lieux,logement,Logement et vie en commun,avance,état des lieux,Papier qui décrit l’état du logement au début ou à la fin de la location,,,
+logement-emmenager,logement,Logement et vie en commun,avance,emménager,Aller vivre dans un nouveau logement et y mettre ses affaires,,,
+logement-demenager,logement,Logement et vie en commun,avance,déménager,Quitter un logement pour aller vivre ailleurs,,,
+logement-colocation,logement,Logement et vie en commun,avance,colocation,Partager un logement avec d’autres personnes qui y vivent aussi,,co-lo-ca-tion,
+logement-menage,logement,Logement et vie en commun,avance,ménage,Une personne seule ou plusieurs personnes qui habitent ensemble,,,
+logement-entretien-du-logement,logement,Logement et vie en commun,avance,entretien du logement,Travail régulier pour garder le logement propre et en bon état,,,
+logement-reparation,logement,Logement et vie en commun,avance,réparation,Travail pour refaire marcher quelque chose qui ne marche plus,,ré-pa-ra-tion,
+logement-panne,logement,Logement et vie en commun,avance,panne,Quand un appareil arrête de marcher tout à coup,,pan-ne,
+logement-fuite-d-eau,logement,Logement et vie en commun,avance,fuite d’eau,Eau qui sort à un endroit où elle devrait rester dans un tuyau ou un appareil,,,demarches:10
+logement-chauffage,logement,Logement et vie en commun,avance,chauffage,Ce qui sert à garder une pièce chaude,,chauf-fa-ge,
+logement-electricite,logement,Logement et vie en commun,avance,électricité,Énergie qui permet aux lampes et aux appareils de marcher quand on les branche,,,
+logement-compteur,logement,Logement et vie en commun,avance,compteur,Appareil qui montre combien d’eau ou d’électricité tu as utilisée,,comp-teur,demarches:11
+logement-concierge,logement,Logement et vie en commun,avance,concierge,Personne qui aide à s’occuper d’un immeuble et de ses espaces partagés,,,
+logement-reglement-interieur,logement,Logement et vie en commun,avance,règlement intérieur,"Règles à suivre à l’intérieur d’une école, d’un lieu de travail ou d’un immeuble",,,
+logement-voisinage,logement,Logement et vie en commun,avance,voisinage,Les gens qui vivent près de chez toi ou les lieux qui t’entourent,,,
+logement-bruit,logement,Logement et vie en commun,avance,bruit,"Son qu’on entend, parfois assez fort pour gêner",,,
+logement-signaler,logement,Logement et vie en commun,avance,signaler,Dire à la bonne personne qu’il y a un problème,,,
 logement-dechet,logement,Logement et vie en commun,avance,déchet,Objet ou matière que l’on jette,,dé-chet,
-logement-tri-des-dechets,logement,Logement et vie en commun,avance,tri des déchets,Séparation des matières jetées selon leur type,,,formation:8
-logement-dechetterie,logement,Logement et vie en commun,avance,déchetterie,Lieu où l’on apporte des déchets qui nécessitent une collecte séparée,,dé-chet-te-rie,numerique:7
-logement-communs,logement,Logement et vie en commun,avance,communs,Espaces d’un immeuble partagés par ses occupants,,,
-logement-preavis,logement,Logement et vie en commun,avance,préavis,Délai à respecter entre une annonce de départ et sa date d’effet,,pré-a-vis,
-logement-logement-meuble,logement,Logement et vie en commun,avance,logement meublé,Habitation louée avec des meubles déjà installés,,,
-argumentation-argument,argumentation,Argumenter et apprendre,avance,argument,Raison donnée pour défendre une idée,,ar-gu-ment,
-argumentation-exemple,argumentation,Argumenter et apprendre,avance,exemple,Cas précis utilisé pour illustrer une idée,,ex-em-ple,
-argumentation-justifier,argumentation,Argumenter et apprendre,avance,justifier,Donner les raisons qui soutiennent une réponse ou une décision,,jus-ti-fier,
-argumentation-resumer,argumentation,Argumenter et apprendre,avance,résumer,Redire en plus court les idées essentielles d’un texte ou d’un discours,,ré-su-mer,
-argumentation-reformuler,argumentation,Argumenter et apprendre,avance,reformuler,Exprimer la même idée avec d’autres mots,,re-for-mu-ler,
-argumentation-deduire,argumentation,Argumenter et apprendre,avance,déduire,Tirer une conclusion à partir d’informations connues,,dé-dui-re,
-argumentation-analyser,argumentation,Argumenter et apprendre,avance,analyser,Examiner les différentes parties d’un ensemble pour mieux le comprendre,,a-na-ly-ser,
-argumentation-interpreter,argumentation,Argumenter et apprendre,avance,interpréter,Proposer un sens à partir de ce que l’on observe ou lit,,,
-argumentation-comparer,argumentation,Argumenter et apprendre,avance,comparer,Rechercher des ressemblances et des différences,,com-pa-rer,
-argumentation-classer,argumentation,Argumenter et apprendre,avance,classer,Ranger selon un ordre ou par groupes,,clas-ser,
-argumentation-definir,argumentation,Argumenter et apprendre,avance,définir,Préciser le sens d’un mot ou d’une idée,,dé-fi-nir,
-argumentation-illustrer,argumentation,Argumenter et apprendre,avance,illustrer,Rendre une idée plus claire grâce à un exemple ou une image,,il-lus-trer,
-argumentation-decrire,argumentation,Argumenter et apprendre,avance,décrire,"Donner les caractéristiques d’une personne, d’un objet ou d’une situation",,dé-cri-re,
-argumentation-demontrer,argumentation,Argumenter et apprendre,avance,démontrer,Établir une réponse à l’aide de preuves ou d’un raisonnement,,,
-argumentation-conclure,argumentation,Argumenter et apprendre,avance,conclure,Formuler l’idée finale qui découle d’un raisonnement,,,
-argumentation-hypothese,argumentation,Argumenter et apprendre,avance,hypothèse,Explication ou réponse possible que l’on cherche à vérifier,,hy-po-thè-se,
-argumentation-cause,argumentation,Argumenter et apprendre,avance,cause,Ce qui provoque un événement,,,
-argumentation-consequence,argumentation,Argumenter et apprendre,avance,conséquence,Ce qui résulte d’un événement ou d’une action,,con-sé-quen-ce,
-argumentation-condition,argumentation,Argumenter et apprendre,avance,condition,Élément qui doit être rempli pour qu’une chose se produise,,,
-argumentation-objectif,argumentation,Argumenter et apprendre,avance,objectif,Résultat que l’on cherche à atteindre,,ob-jec-tif,
-argumentation-demarche,argumentation,Argumenter et apprendre,avance,démarche,Ensemble ordonné d’actions suivies pour atteindre un résultat,,,
-argumentation-critere,argumentation,Argumenter et apprendre,avance,critère,Caractéristique utilisée pour juger ou choisir,,cri-tè-re,
-argumentation-cependant,argumentation,Argumenter et apprendre,avance,cependant,Mot qui introduit une idée opposée ou une réserve,"J’aimerais venir. ___, je termine tard ce soir.",ce-pen-dant,
-argumentation-puisque,argumentation,Argumenter et apprendre,avance,puisque,Mot qui présente une raison considérée comme connue ou évidente,On peut commencer ___ tout le monde est arrivé.,,
-argumentation-donc,argumentation,Argumenter et apprendre,avance,donc,Mot qui introduit une conséquence ou une conclusion,Le bus est supprimé. Je vais ___ prendre le train.,,
-argumentation-en-revanche,argumentation,Argumenter et apprendre,avance,en revanche,Expression qui introduit une différence ou une opposition,,,
-argumentation-par-consequent,argumentation,Argumenter et apprendre,avance,par conséquent,Expression qui annonce ce qui découle de ce qui précède,,,
-argumentation-par-exemple,argumentation,Argumenter et apprendre,avance,par exemple,Expression qui introduit un cas précis pour éclairer une idée,,,
-argumentation-en-resume,argumentation,Argumenter et apprendre,avance,en résumé,Expression qui annonce la reprise des idées principales,,,
-argumentation-d-apres,argumentation,Argumenter et apprendre,avance,d’après,Expression qui introduit la personne ou le document à l’origine d’une information,,,
-citoyennete-droit,citoyennete,Citoyenneté et vie collective,avance,droit,Liberté ou possibilité reconnue à une personne par une règle commune,,,
-citoyennete-devoir-civique,citoyennete,Citoyenneté et vie collective,avance,devoir civique,Obligation liée à la vie en société,,,
-citoyennete-loi,citoyennete,Citoyenneté et vie collective,avance,loi,Règle générale adoptée par une autorité publique,,,
-citoyennete-regle-commune,citoyennete,Citoyenneté et vie collective,avance,règle commune,Consigne qui s’applique aux personnes d’un groupe,,,
-citoyennete-egalite,citoyennete,Citoyenneté et vie collective,avance,égalité,Principe selon lequel chacun bénéficie des mêmes droits,,é-ga-li-té,
-citoyennete-respect,citoyennete,Citoyenneté et vie collective,avance,respect,Attitude qui tient compte de la dignité ou des limites d’une personne,,res-pect,
-citoyennete-discrimination,citoyennete,Citoyenneté et vie collective,avance,discrimination,Traitement défavorable lié à une caractéristique comme l’origine ou le handicap,,,
-citoyennete-harcelement,citoyennete,Citoyenneté et vie collective,avance,harcèlement,"Comportements répétés qui humilient, menacent ou isolent une personne",,,
-citoyennete-solidarite,citoyennete,Citoyenneté et vie collective,avance,solidarité,Soutien que des personnes s’apportent lorsqu’elles rencontrent des difficultés,,so-li-da-ri-té,
-citoyennete-association,citoyennete,Citoyenneté et vie collective,avance,association,Groupe de personnes réunies autour d’un but commun,,as-so-cia-tion,
-citoyennete-benevolat,citoyennete,Citoyenneté et vie collective,avance,bénévolat,Activité exercée librement sans rémunération,Elle aide gratuitement une association. Elle fait du ___.,bé-né-vo-lat,contextes:6:3:3
-citoyennete-participer,citoyennete,Citoyenneté et vie collective,avance,participer,Prendre part à une activité ou à une décision,,par-ti-ci-per,
-citoyennete-s-engager,citoyennete,Citoyenneté et vie collective,avance,s’engager,Prendre activement part à une action ou à une cause,,,
-citoyennete-citoyen,citoyennete,Citoyenneté et vie collective,avance,citoyen,Personne reconnue comme membre d’une communauté politique,,ci-to-yen,
-citoyennete-election,citoyennete,Citoyenneté et vie collective,avance,élection,Choix de représentants par un vote,,é-lec-tion,
-citoyennete-vote,citoyennete,Citoyenneté et vie collective,avance,vote,Expression d’un choix dans une décision collective,,vo-te,formation:5
-citoyennete-majorite,citoyennete,Citoyenneté et vie collective,avance,majorité,Partie d’un groupe qui représente plus de la moitié des personnes comptées,,,
-citoyennete-minorite,citoyennete,Citoyenneté et vie collective,avance,minorité,Partie d’un groupe moins nombreuse que l’autre partie,,,
-citoyennete-debat,citoyennete,Citoyenneté et vie collective,avance,débat,Échange organisé au cours duquel plusieurs avis sont discutés,"Pendant le ___, les deux intervenants défendent des avis différents devant le public.",dé-bat,contextes:8:3:3
-citoyennete-compromis,citoyennete,Citoyenneté et vie collective,avance,compromis,Accord dans lequel chaque partie accepte de modifier certaines demandes,,,
-citoyennete-conflit,citoyennete,Citoyenneté et vie collective,avance,conflit,Opposition entre des personnes ou des groupes,,con-flit,
-citoyennete-mediation,citoyennete,Citoyenneté et vie collective,avance,médiation,Intervention d’une personne neutre pour faciliter la recherche d’un accord,,mé-dia-tion,
-citoyennete-plainte,citoyennete,Citoyenneté et vie collective,avance,plainte,Déclaration officielle par laquelle une personne signale une infraction,,plain-te,
-citoyennete-service-public,citoyennete,Citoyenneté et vie collective,avance,service public,Activité organisée pour répondre à un besoin d’intérêt général,,,
-citoyennete-canton,citoyennete,Citoyenneté et vie collective,avance,canton,"En Suisse, État membre de la Confédération",,can-ton,
-citoyennete-confederation,citoyennete,Citoyenneté et vie collective,avance,Confédération,"En Suisse, nom donné à l’État fédéral",,,
-citoyennete-accessibilite,citoyennete,Citoyenneté et vie collective,avance,accessibilité,Possibilité d’utiliser un lieu ou un service quelles que soient ses capacités,"La rampe améliore l’___ du bâtiment pour les personnes en fauteuil roulant.",,contextes:7:3:3
-citoyennete-inclusion,citoyennete,Citoyenneté et vie collective,avance,inclusion,Organisation qui permet à des personnes différentes de participer pleinement,,in-clu-sion,
-citoyennete-responsable,citoyennete,Citoyenneté et vie collective,avance,responsable,Personne chargée de décider ou de répondre d’une activité,,,
-citoyennete-regles-de-vie,citoyennete,Citoyenneté et vie collective,avance,règles de vie,Principes que des personnes suivent pour pouvoir vivre ensemble,,,
-environnement-environnement,environnement,Environnement et choix de société,avance,environnement,Ensemble des conditions naturelles et humaines qui entourent les êtres vivants,,en-vi-ron-ne-ment,
-environnement-climat,environnement,Environnement et choix de société,avance,climat,Caractéristiques du temps observées sur une longue durée dans une région,,cli-mat,
-environnement-rechauffement-climatique,environnement,Environnement et choix de société,avance,réchauffement climatique,Hausse durable de la température moyenne de la Terre,,,
-environnement-pollution,environnement,Environnement et choix de société,avance,pollution,Dégradation d’un milieu par des substances ou des nuisances,,pol-lu-tion,
-environnement-emission,environnement,Environnement et choix de société,avance,émission,Rejet d’un gaz ou d’une autre substance dans l’air,,é-mis-sion,
-environnement-energie-renouvelable,environnement,Environnement et choix de société,avance,énergie renouvelable,Énergie produite à partir d’une source qui se renouvelle naturellement,,,numerique:5
-environnement-consommation,environnement,Environnement et choix de société,avance,consommation,"Utilisation de biens, d’eau ou d’énergie",,,
-environnement-ressource-naturelle,environnement,Environnement et choix de société,avance,ressource naturelle,Élément fourni par la nature que les humains utilisent,,,
-environnement-gaspillage,environnement,Environnement et choix de société,avance,gaspillage,Utilisation inutile d’une ressource ou perte qui pouvait être évitée,,,
-environnement-recycler,environnement,Environnement et choix de société,avance,recycler,Transformer un déchet en matière pouvant servir à fabriquer autre chose,,re-cy-cler,
-environnement-reutiliser,environnement,Environnement et choix de société,avance,réutiliser,Se servir à nouveau d’un objet ou d’un matériau,,,
-environnement-reduire,environnement,Environnement et choix de société,avance,réduire,Rendre une quantité plus petite,,,
-environnement-compost,environnement,Environnement et choix de société,avance,compost,Matière obtenue par la décomposition de déchets organiques,,com-post,
-environnement-emballage,environnement,Environnement et choix de société,avance,emballage,Matière qui entoure et protège un produit,,em-bal-la-ge,
-environnement-plastique,environnement,Environnement et choix de société,avance,plastique,Matière généralement fabriquée à partir de substances que l’on peut mouler,,plas-ti-que,
-environnement-biodiversite,environnement,Environnement et choix de société,avance,biodiversité,Variété des êtres vivants dans un milieu,,bio-di-ver-si-té,
-environnement-espece,environnement,Environnement et choix de société,avance,espèce,Groupe d’êtres vivants qui partagent des caractéristiques communes,,,
-environnement-habitat-naturel,environnement,Environnement et choix de société,avance,habitat naturel,Milieu dans lequel une espèce vit habituellement,,,
-environnement-zone-protegee,environnement,Environnement et choix de société,avance,zone protégée,Espace où des règles particulières servent à préserver la nature,,,
-environnement-secheresse,environnement,Environnement et choix de société,avance,sécheresse,Période prolongée pendant laquelle il manque d’eau,Il n’a presque pas plu depuis des mois. La ___ touche toute la région.,sé-che-res-se,numerique:11
-environnement-inondation,environnement,Environnement et choix de société,avance,inondation,Envahissement d’un lieu par de l’eau,,i-non-da-tion,numerique:10
-environnement-canicule,environnement,Environnement et choix de société,avance,canicule,Période de forte chaleur qui se prolonge plusieurs jours,,ca-ni-cu-le,
-environnement-economiser-l-eau,environnement,Environnement et choix de société,avance,économiser l’eau,Utiliser seulement l’eau dont on a besoin,,,
-environnement-mobilite-douce,environnement,Environnement et choix de société,avance,mobilité douce,Déplacements comme la marche ou le vélo qui demandent peu d’énergie,,,
-environnement-covoiturage,environnement,Environnement et choix de société,avance,covoiturage,Trajet en voiture partagé par des personnes qui vont dans la même direction,,co-voi-tu-ra-ge,formation:7
-environnement-transport-public,environnement,Environnement et choix de société,avance,transport public,"Service de déplacement accessible à tous, comme le bus ou le train",,,
-environnement-produit-local,environnement,Environnement et choix de société,avance,produit local,Bien fabriqué ou cultivé près de l’endroit où il est vendu,,,
-environnement-saison-de-recolte,environnement,Environnement et choix de société,avance,saison de récolte,Période où un aliment est habituellement récolté,,,
-environnement-empreinte-carbone,environnement,Environnement et choix de société,avance,empreinte carbone,Estimation des gaz à effet de serre associés à une activité ou à un produit,,,
-environnement-developpement-durable,environnement,Environnement et choix de société,avance,développement durable,Façon de répondre aux besoins actuels en préservant les possibilités des générations futures,,,
+logement-tri-des-dechets,logement,Logement et vie en commun,avance,tri des déchets,"Mettre chaque chose que tu jettes dans le bon groupe, comme le papier ou le verre",,,formation:8
+logement-dechetterie,logement,Logement et vie en commun,avance,déchetterie,"Endroit où tu apportes des choses à jeter, comme un vieux meuble ou des piles",,dé-chet-te-rie,numerique:7
+logement-communs,logement,Logement et vie en commun,avance,communs,"Parties d’un bâtiment que plusieurs personnes utilisent, comme l’entrée ou l’escalier",,,
+logement-preavis,logement,Logement et vie en commun,avance,préavis,Temps entre le moment où tu annonces ton départ et le moment où tu peux partir,,pré-a-vis,
+logement-logement-meuble,logement,Logement et vie en commun,avance,logement meublé,Logement qui a déjà des meubles quand tu le loues,,,
+argumentation-argument,argumentation,Argumenter et apprendre,avance,argument,Raison que tu donnes pour expliquer pourquoi tu penses quelque chose,,ar-gu-ment,
+argumentation-exemple,argumentation,Argumenter et apprendre,avance,exemple,Cas concret qui aide à comprendre une idée,,ex-em-ple,
+argumentation-justifier,argumentation,Argumenter et apprendre,avance,justifier,Dire pourquoi tu as donné cette réponse ou fait ce choix,,jus-ti-fier,
+argumentation-resumer,argumentation,Argumenter et apprendre,avance,résumer,Redire un texte plus court en gardant les idées les plus importantes,,ré-su-mer,
+argumentation-reformuler,argumentation,Argumenter et apprendre,avance,reformuler,Redire la même idée avec d’autres mots,,re-for-mu-ler,
+argumentation-deduire,argumentation,Argumenter et apprendre,avance,déduire,Trouver une réponse grâce à ce que tu sais déjà,,dé-dui-re,
+argumentation-analyser,argumentation,Argumenter et apprendre,avance,analyser,Regarder les différentes parties d’une chose pour mieux la comprendre,,a-na-ly-ser,
+argumentation-interpreter,argumentation,Argumenter et apprendre,avance,interpréter,Dire ce que tu comprends de ce que tu vois ou lis,,,
+argumentation-comparer,argumentation,Argumenter et apprendre,avance,comparer,Chercher ce qui est pareil et ce qui est différent,,com-pa-rer,
+argumentation-classer,argumentation,Argumenter et apprendre,avance,classer,Mettre des choses dans un ordre ou dans des groupes,,clas-ser,
+argumentation-definir,argumentation,Argumenter et apprendre,avance,définir,Dire ce qu’un mot ou une idée veut dire,,dé-fi-nir,
+argumentation-illustrer,argumentation,Argumenter et apprendre,avance,illustrer,Donner un exemple ou montrer une image pour aider à comprendre une idée,,il-lus-trer,
+argumentation-decrire,argumentation,Argumenter et apprendre,avance,décrire,"Dire comment est une personne, un objet ou un lieu",,dé-cri-re,
+argumentation-demontrer,argumentation,Argumenter et apprendre,avance,démontrer,Montrer étape par étape pourquoi une idée est vraie,,,
+argumentation-conclure,argumentation,Argumenter et apprendre,avance,conclure,Dire pour finir ce que tu as compris ou retenu,,,
+argumentation-hypothese,argumentation,Argumenter et apprendre,avance,hypothèse,Réponse possible que tu veux vérifier,,hy-po-thè-se,
+argumentation-cause,argumentation,Argumenter et apprendre,avance,cause,Ce qui fait arriver quelque chose,,,
+argumentation-consequence,argumentation,Argumenter et apprendre,avance,conséquence,Ce qui arrive à cause d’une chose qui s’est passée avant,,con-sé-quen-ce,
+argumentation-condition,argumentation,Argumenter et apprendre,avance,condition,Ce qui doit être vrai ou fait pour que quelque chose puisse arriver,,,
+argumentation-objectif,argumentation,Argumenter et apprendre,avance,objectif,Ce que tu veux réussir,,ob-jec-tif,
+argumentation-demarche,argumentation,Argumenter et apprendre,avance,démarche,Les étapes que tu suis pour arriver à un résultat,,,
+argumentation-critere,argumentation,Argumenter et apprendre,avance,critère,"Point que tu regardes pour faire un choix, comme le prix ou la taille",,cri-tè-re,
+argumentation-cependant,argumentation,Argumenter et apprendre,avance,cependant,"Mot proche de « mais », pour ajouter une idée qui va dans un autre sens","J’aimerais venir. ___, je termine tard ce soir.",ce-pen-dant,
+argumentation-puisque,argumentation,Argumenter et apprendre,avance,puisque,"Mot proche de « parce que », quand la raison est déjà connue ou facile à voir",On peut commencer ___ tout le monde est arrivé.,,
+argumentation-donc,argumentation,Argumenter et apprendre,avance,donc,Mot qui montre ce qui arrive à cause de ce que tu viens de dire,Le bus est supprimé. Je vais ___ prendre le train.,,
+argumentation-en-revanche,argumentation,Argumenter et apprendre,avance,en revanche,Expression qui montre une différence avec ce qu’on vient de dire,,,
+argumentation-par-consequent,argumentation,Argumenter et apprendre,avance,par conséquent,"Expression proche de « donc », qui présente le résultat de ce qui vient d’être dit",,,
+argumentation-par-exemple,argumentation,Argumenter et apprendre,avance,par exemple,Expression qu’on met avant de donner un cas concret,,,
+argumentation-en-resume,argumentation,Argumenter et apprendre,avance,en résumé,Expression qu’on dit avant de répéter seulement les idées importantes,,,
+argumentation-d-apres,argumentation,Argumenter et apprendre,avance,d’après,Expression qui veut dire « selon ce que dit cette personne ou ce document »,,,
+citoyennete-droit,citoyennete,Citoyenneté et vie collective,avance,droit,Ce qu’une règle ou une loi te permet de faire ou d’avoir,,,
+citoyennete-devoir-civique,citoyennete,Citoyenneté et vie collective,avance,devoir civique,"Ce que tu dois faire pour la vie en commun, comme respecter les lois",,,
+citoyennete-loi,citoyennete,Citoyenneté et vie collective,avance,loi,Règle que le pays ou le canton décide et que les personnes doivent suivre,,,
+citoyennete-regle-commune,citoyennete,Citoyenneté et vie collective,avance,règle commune,Règle que toutes les personnes d’un groupe doivent suivre,,,
+citoyennete-egalite,citoyennete,Citoyenneté et vie collective,avance,égalité,Le fait d’avoir les mêmes droits que les autres,,é-ga-li-té,
+citoyennete-respect,citoyennete,Citoyenneté et vie collective,avance,respect,Écouter les autres et tenir compte de ce qu’ils ressentent ou refusent,,res-pect,
+citoyennete-discrimination,citoyennete,Citoyenneté et vie collective,avance,discrimination,"Traiter une personne moins bien à cause, par exemple, de son origine ou de son handicap",,,
+citoyennete-harcelement,citoyennete,Citoyenneté et vie collective,avance,harcèlement,"Faire du mal à la même personne plusieurs fois, par exemple en se moquant d’elle ou en la mettant à l’écart",,,
+citoyennete-solidarite,citoyennete,Citoyenneté et vie collective,avance,solidarité,S’aider quand quelqu’un a un problème,,so-li-da-ri-té,
+citoyennete-association,citoyennete,Citoyenneté et vie collective,avance,association,Groupe de personnes qui se réunissent pour faire quelque chose ensemble,,as-so-cia-tion,
+citoyennete-benevolat,citoyennete,Citoyenneté et vie collective,avance,bénévolat,Donner de son temps pour aider sans recevoir d’argent,Elle aide gratuitement une association. Elle fait du ___.,bé-né-vo-lat,contextes:6:3:3
+citoyennete-participer,citoyennete,Citoyenneté et vie collective,avance,participer,Faire quelque chose avec les autres ou donner son avis dans une décision,,par-ti-ci-per,
+citoyennete-s-engager,citoyennete,Citoyenneté et vie collective,avance,s’engager,Décider d’agir ou de donner de son temps pour une idée ou un projet,,,
+citoyennete-citoyen,citoyennete,Citoyenneté et vie collective,avance,citoyen,Personne qui fait partie d’un pays et qui y a des droits et des devoirs,,ci-to-yen,
+citoyennete-election,citoyennete,Citoyenneté et vie collective,avance,élection,Moment où l’on choisit une ou plusieurs personnes en votant,,é-lec-tion,
+citoyennete-vote,citoyennete,Citoyenneté et vie collective,avance,vote,"Quand tu fais connaître ton choix pour décider avec les autres, par exemple avec un bulletin",,vo-te,formation:5
+citoyennete-majorite,citoyennete,Citoyenneté et vie collective,avance,majorité,Plus de la moitié des personnes ou des voix comptées,,,
+citoyennete-minorite,citoyennete,Citoyenneté et vie collective,avance,minorité,Partie d’un groupe qui compte moins de personnes ou de voix que l’autre,,,
+citoyennete-debat,citoyennete,Citoyenneté et vie collective,avance,débat,Discussion organisée où des personnes expliquent leurs avis différents,"Pendant le ___, les deux intervenants défendent des avis différents devant le public.",dé-bat,contextes:8:3:3
+citoyennete-compromis,citoyennete,Citoyenneté et vie collective,avance,compromis,Accord où chacun accepte de changer un peu ce qu’il voulait,,,
+citoyennete-conflit,citoyennete,Citoyenneté et vie collective,avance,conflit,Désaccord important entre des personnes ou des groupes,,con-flit,
+citoyennete-mediation,citoyennete,Citoyenneté et vie collective,avance,médiation,Aide d’une personne qui ne prend pas parti pour que deux personnes trouvent un accord,,mé-dia-tion,
+citoyennete-plainte,citoyennete,Citoyenneté et vie collective,avance,plainte,Quand une personne dit à la police ou à la justice que quelqu’un a fait quelque chose d’interdit,,plain-te,
+citoyennete-service-public,citoyennete,Citoyenneté et vie collective,avance,service public,"Service organisé pour les habitants, comme une école publique",,,
+citoyennete-canton,citoyennete,Citoyenneté et vie collective,avance,canton,"Une des parties de la Suisse qui a ses propres autorités, comme Vaud ou Genève",,can-ton,
+citoyennete-confederation,citoyennete,Citoyenneté et vie collective,avance,Confédération,L’État qui s’occupe des questions qui concernent toute la Suisse,,,
+citoyennete-accessibilite,citoyennete,Citoyenneté et vie collective,avance,accessibilité,"Le fait de pouvoir entrer dans un lieu ou utiliser un service, même si l’on a un handicap","La rampe améliore l’___ du bâtiment pour les personnes en fauteuil roulant.",,contextes:7:3:3
+citoyennete-inclusion,citoyennete,Citoyenneté et vie collective,avance,inclusion,Faire en sorte que chacun ait sa place et puisse participer avec les autres,,in-clu-sion,
+citoyennete-responsable,citoyennete,Citoyenneté et vie collective,avance,responsable,Personne qui doit s’occuper d’un travail ou d’un groupe,,,
+citoyennete-regles-de-vie,citoyennete,Citoyenneté et vie collective,avance,règles de vie,Règles que les gens suivent pour vivre ensemble,,,
+environnement-environnement,environnement,Environnement et choix de société,avance,environnement,"Tout ce qui nous entoure, comme l’air, l’eau, les plantes et les lieux où l’on vit",,en-vi-ron-ne-ment,
+environnement-climat,environnement,Environnement et choix de société,avance,climat,Le temps qu’il fait d’habitude dans une région sur beaucoup d’années,,cli-mat,
+environnement-rechauffement-climatique,environnement,Environnement et choix de société,avance,réchauffement climatique,Le fait que la Terre devient plus chaude en moyenne pendant de nombreuses années,,,
+environnement-pollution,environnement,Environnement et choix de société,avance,pollution,"Ce qui salit ou abîme l’air, l’eau ou le sol, comme certaines fumées",,pol-lu-tion,
+environnement-emission,environnement,Environnement et choix de société,avance,émission,"Ce qui est envoyé dans l’air, par exemple un gaz qui sort d’une voiture",,é-mis-sion,
+environnement-energie-renouvelable,environnement,Environnement et choix de société,avance,énergie renouvelable,"Énergie qui vient d’une source que la nature renouvelle, comme le soleil ou le vent",,,numerique:5
+environnement-consommation,environnement,Environnement et choix de société,avance,consommation,"Ce qu’on utilise, par exemple l’eau ou l’électricité",,,
+environnement-ressource-naturelle,environnement,Environnement et choix de société,avance,ressource naturelle,"Ce que la nature nous donne et que nous pouvons utiliser, comme l’eau ou le bois",,,
+environnement-gaspillage,environnement,Environnement et choix de société,avance,gaspillage,Utiliser trop de choses ou en jeter alors qu’on pourrait encore s’en servir,,,
+environnement-recycler,environnement,Environnement et choix de société,avance,recycler,"Faire de nouvelles choses avec des matières qu’on a jetées, comme du verre ou du papier",,re-cy-cler,
+environnement-reutiliser,environnement,Environnement et choix de société,avance,réutiliser,Utiliser quelque chose une deuxième fois ou plus,,,
+environnement-reduire,environnement,Environnement et choix de société,avance,réduire,Faire devenir plus petit ou moins nombreux,,,
+environnement-compost,environnement,Environnement et choix de société,avance,compost,Matière qu’on obtient quand des restes de plantes ou de cuisine se défont. Elle sert à nourrir la terre.,,com-post,
+environnement-emballage,environnement,Environnement et choix de société,avance,emballage,"Ce qui couvre et protège ce que tu achètes, comme un sac ou une boîte",,em-bal-la-ge,
+environnement-plastique,environnement,Environnement et choix de société,avance,plastique,Matière qu’on peut former pour faire des objets comme des bouteilles ou des boîtes,,plas-ti-que,
+environnement-biodiversite,environnement,Environnement et choix de société,avance,biodiversité,"Le fait qu’il y ait beaucoup de sortes différentes d’animaux, de plantes et d’autres êtres vivants",,bio-di-ver-si-té,
+environnement-espece,environnement,Environnement et choix de société,avance,espèce,"Groupe d’êtres vivants de la même sorte, par exemple les chats",,,
+environnement-habitat-naturel,environnement,Environnement et choix de société,avance,habitat naturel,Endroit où un animal ou une plante vit d’habitude dans la nature,,,
+environnement-zone-protegee,environnement,Environnement et choix de société,avance,zone protégée,Endroit où des règles aident à protéger les animaux et les plantes,,,
+environnement-secheresse,environnement,Environnement et choix de société,avance,sécheresse,Long moment où il pleut trop peu et où l’eau vient à manquer,Il n’a presque pas plu depuis des mois. La ___ touche toute la région.,sé-che-res-se,numerique:11
+environnement-inondation,environnement,Environnement et choix de société,avance,inondation,"Quand l’eau couvre un endroit normalement sec, comme une rue ou un champ",,i-non-da-tion,numerique:10
+environnement-canicule,environnement,Environnement et choix de société,avance,canicule,Plusieurs jours de suite avec une chaleur très forte,,ca-ni-cu-le,
+environnement-economiser-l-eau,environnement,Environnement et choix de société,avance,économiser l’eau,Utiliser juste l’eau dont on a besoin,,,
+environnement-mobilite-douce,environnement,Environnement et choix de société,avance,mobilité douce,"Se déplacer, par exemple à pied ou à vélo, avec peu d’énergie",,,
+environnement-covoiturage,environnement,Environnement et choix de société,avance,covoiturage,Faire un même trajet dans la même voiture avec d’autres personnes,,co-voi-tu-ra-ge,formation:7
+environnement-transport-public,environnement,Environnement et choix de société,avance,transport public,Moyens de déplacement comme le bus et le train que tout le monde peut prendre,,,
+environnement-produit-local,environnement,Environnement et choix de société,avance,produit local,Chose fabriquée ou cultivée près de l’endroit où on l’achète,,,
+environnement-saison-de-recolte,environnement,Environnement et choix de société,avance,saison de récolte,"Moment de l’année où on ramasse un fruit, un légume ou du grain",,,
+environnement-empreinte-carbone,environnement,Environnement et choix de société,avance,empreinte carbone,Quantité estimée de gaz qui réchauffent la Terre et qu’un objet ou une activité a fait rejeter,,,
+environnement-developpement-durable,environnement,Environnement et choix de société,avance,développement durable,Répondre à nos besoins aujourd’hui en prenant soin de la nature et des ressources pour les personnes qui vivront plus tard,,,

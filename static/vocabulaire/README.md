@@ -44,7 +44,9 @@ Le CSV modifié dans le dépôt devient le lexique partagé au prochain déploie
 
 145 entrées disposent d’une illustration. Quatorze planches ont été générées avec l’outil intégré ImageGen, en plus de la planche école existante. Le fichier [generation.json](../images/musee-vocabulaire/generation.json) décrit les planches. Certains mots concrets et les sens abstraits restent proposés au moyen de définitions, de lettres et de phrases.
 
-Les jeux Image → mot, Mot → image et association utilisent les entrées illustrées. Une sélection trop petite affiche les possibilités de changer les thèmes ou de passer au quiz. Les mots cachés utilisent des mots simples de 3 à 11 lettres, avec leurs accents, dans des grilles de 14 × 14. Les aides retirent des distracteurs et restent limitées à une utilisation par mot, par association ou par grille.
+Les jeux Image → mot, Mot → image et association utilisent les entrées illustrées. Une sélection trop petite affiche les possibilités de changer les thèmes ou de passer au quiz. Les mots cachés utilisent des mots simples de 3 à 11 lettres, avec leurs accents, dans des grilles de 14 × 14. L’aide peut être utilisée autant de fois que nécessaire. Chaque clic retire de nouveaux mauvais choix s’il en reste. L’élève donne toujours sa réponse.
+
+Les définitions emploient des mots courants et des exemples concrets. Elles décrivent le sens travaillé dans le thème. Les définitions servent aussi d’indices dans les jeux et sur les fiches.
 
 Dans l’association, chaque série contient deux à six mots différents. « Nouvelle série » passe au groupe suivant. Une fois tous les groupes parcourus, le jeu revient au premier.
 

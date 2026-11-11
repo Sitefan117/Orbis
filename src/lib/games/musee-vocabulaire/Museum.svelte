@@ -27,14 +27,14 @@
     progress: 'reflechir', complete: 'saluer'
   };
   const opening: Record<Mode, string> = {
-    pendu: 'Devine le mot à partir de sa définition. Essaie des lettres.',
-    'whack-image': 'Quel mot correspond à l’image ?',
-    'whack-word': 'Quelle image correspond au mot ?',
+    pendu: 'Lis l’indice. Essaie des lettres pour trouver le mot.',
+    'whack-image': 'Regarde l’image. Choisis le bon mot.',
+    'whack-word': 'Lis le mot. Choisis la bonne image.',
     millionaire: 'Choisis la réponse qui convient.',
     letters: 'Choisis les lettres dans le bon ordre.',
-    search: 'Sélectionne les lettres d’un mot, de gauche à droite ou de haut en bas.',
-    match: 'Glisse un mot sur son image ou touche le mot puis l’image.',
-    syllables: 'Reconstruis le mot en choisissant un morceau dans chaque colonne.'
+    search: 'Clique sur les lettres du mot. Lis de gauche à droite ou de haut en bas.',
+    match: 'Choisis un mot, puis son image. Tu peux aussi glisser le mot sur l’image.',
+    syllables: 'Choisis un morceau par colonne pour former le mot.'
   };
 
   let bank = original;
@@ -53,7 +53,6 @@
   let solved = false;
   let skipped = false;
   let attempts = 0;
-  let hinted = false;
   let eliminated: string[] = [];
   let gallery: Word[] = [];
   let tiles: Tile[] = [];
@@ -156,7 +155,6 @@
     picked = undefined;
     solved = false;
     skipped = false;
-    hinted = false;
     attempts = 0;
     report(opening[mode], 'ready');
 
@@ -213,7 +211,7 @@
   function success(entry: Word) {
     collect(entry);
     solved = true;
-    report(`Bien joué ! « ${entry.word} » rejoint la collection.`, 'correct');
+    report(`Bien joué ! « ${entry.word} » est dans ta collection.`, 'correct');
   }
 
   function choose(entry: Word) {
@@ -221,7 +219,7 @@
     if (entry.id === target.id) success(target);
     else {
       eliminated = [...eliminated, entry.id];
-      report('Cette proposition ne convient pas. Essaie encore.', 'retry');
+      report('Ce n’est pas le bon choix. Essaie encore.', 'retry');
     }
   }
 
@@ -232,7 +230,7 @@
     if (Array.from(answer).every((char) => guesses.includes(char))) success(target);
     else if (!answer.includes(letter)) {
       attempts++;
-      report('Cette lettre ne figure pas dans le mot.', 'retry');
+      report('Cette lettre n’est pas dans le mot.', 'retry');
       if (attempts === 6) {
         skipped = true;
         report(`Le mot était « ${target.word} ». Passe au suivant quand tu veux.`, 'retry');
@@ -251,14 +249,14 @@
     typed = [...typed, tile];
     const guess = typed.map((item) => item.text).join('');
     if (guess === gridWord(target.word)) success(target);
-    else if (guess.length === gridWord(target.word).length) report('L’ordre des lettres ne convient pas. Corrige ta proposition.', 'retry');
+    else if (guess.length === gridWord(target.word).length) report('Vérifie les lettres et leur ordre. Essaie encore.', 'retry');
     else report('Continue à chercher les lettres.');
   }
 
   function checkParts() {
     if (!target || solved || parts.some((part) => !part)) return;
     if (parts.join('') === target.word) success(target);
-    else report('Au moins un morceau ne convient pas. Relis ta proposition.', 'retry');
+    else report('Relis ton mot. Il faut changer au moins un morceau.', 'retry');
   }
 
   function selectCell(index: number) {
@@ -273,13 +271,12 @@
       selectedCells = selectedCells.filter((cell) => !greenCells.includes(cell));
       collect(match.entry);
       report(`« ${match.entry.word} » trouvé ! ${found.length}/${grid.targets.length}.`, found.length === grid.targets.length ? 'complete' : 'correct');
-    } else report('Les cases bleues sont sélectionnées.');
+    } else report('Tes lettres sont en bleu.');
   }
 
   function selectMatch(entry: Word) {
     if (picked?.id !== entry.id) {
       eliminated = [];
-      hinted = false;
     }
     picked = entry;
   }
@@ -295,53 +292,59 @@
     collect(entry);
     picked = undefined;
     eliminated = [];
-    hinted = false;
     report('Association correcte !', matched.length === matchWords.length ? 'complete' : 'correct');
   }
 
   function useHint() {
-    if (hinted || solved || skipped) return;
+    if (solved || skipped || reaction === 'complete') return;
     let text = '';
     if (mode === 'search') {
       const useful = new Set(grid.targets.flatMap(({ paths }) => paths.flat()));
-      fadedCells = shuffle(grid.cells.map((_, i) => i).filter((i) => !useful.has(i))).slice(0, 8);
+      const faded = new Set(fadedCells);
+      const extra = shuffle(grid.cells.map((_, i) => i).filter((i) => !useful.has(i) && !faded.has(i))).slice(0, 8);
+      fadedCells = [...fadedCells, ...extra];
       selectedCells = selectedCells.filter((i) => !fadedCells.includes(i));
-      if (fadedCells.length) text = `${fadedCells.length} cases inutiles ont été grisées.`;
+      if (extra.length) text = `Noireau a mis ${extra.length} case${extra.length === 1 ? '' : 's'} en gris.`;
     } else if (mode === 'match') {
       if (!picked) return report('Choisis d’abord un mot.', 'hint');
       const candidate = options.find((entry) => entry.id !== picked?.id && !matched.includes(entry.id) && !eliminated.includes(entry.id));
-      if (candidate && options.filter((entry) => !matched.includes(entry.id) && !eliminated.includes(entry.id)).length > 2) {
+      if (candidate) {
         eliminated = [...eliminated, candidate.id];
-        text = 'Une image a été écartée pour ce mot.';
+        text = 'Noireau a retiré une image.';
       }
     } else if (target) {
       if (mode === 'pendu') {
-        const extra = shuffle(alphabet.filter((letter) => !gridWord(target!.word).includes(letter) && !guesses.includes(letter))).slice(0, 5);
-        eliminated = extra;
-        if (extra.length) text = 'Des lettres inutiles ont été retirées.';
+        const answer = gridWord(target.word);
+        const extra = shuffle(alphabet.filter((letter) =>
+          !answer.includes(letter) && !guesses.includes(letter) && !eliminated.includes(letter))).slice(0, 5);
+        eliminated = [...eliminated, ...extra];
+        if (extra.length) text = 'Noireau a retiré des lettres.';
       } else if (mode === 'letters') {
-        const decoy = tiles.find((item) => item.decoy && !typed.includes(item));
+        const decoy = typed.find((item) => item.decoy) ?? tiles.find((item) => item.decoy);
         if (decoy) {
           tiles = tiles.filter((item) => item.id !== decoy.id);
-          text = 'Une lettre inutile a été retirée.';
+          typed = typed.filter((item) => item.id !== decoy.id);
+          text = 'Noireau a retiré une lettre.';
         }
       } else if (mode === 'syllables') {
-        const index = syllableOptions.findIndex((choices) => choices.length > 2);
+        const answer = target.syllables;
+        const index = syllableOptions.findIndex((choices, position) => choices.some((part) => part !== answer[position]));
         if (index >= 0) {
-          const wrong = syllableOptions[index].find((item) => item !== target?.syllables[index] && item !== parts[index]);
+          const wrong = syllableOptions[index].includes(parts[index]) && parts[index] !== answer[index]
+            ? parts[index] : syllableOptions[index].find((part) => part !== answer[index]);
           syllableOptions = syllableOptions.map((choices, position) => position === index ? choices.filter((item) => item !== wrong) : choices);
-          text = 'Un morceau inutile a été retiré.';
+          if (parts[index] === wrong) parts = parts.map((part, position) => position === index ? '' : part);
+          text = 'Noireau a retiré un morceau.';
         }
-      } else if (options.filter((item) => !eliminated.includes(item.id)).length > 2) {
+      } else {
         const wrong = options.find((item) => item.id !== target?.id && !eliminated.includes(item.id));
         if (wrong) {
           eliminated = [...eliminated, wrong.id];
-          text = mode === 'whack-word' ? 'Une image a été écartée.' : 'Une proposition a été écartée.';
+          text = mode === 'whack-word' ? 'Noireau a retiré une image.' : 'Noireau a retiré un mot.';
         }
       }
     }
-    hinted = Boolean(text);
-    report(text || 'Il reste trop peu de choix pour en retirer un.', 'hint');
+    report(text || 'Noireau n’a plus de choix à retirer. À toi de jouer !', 'hint');
   }
 
   async function importCsv(event: Event) {
@@ -550,11 +553,11 @@
             </div>
           {/if}
         {:else if reaction !== 'complete'}
-          <p>{mode === 'whack-image' ? 'Ce jeu demande un mot illustré et au moins deux mots différents.'
-            : isImageMode ? 'Ce jeu demande au moins deux mots illustrés dans les thèmes choisis.'
+          <p>{mode === 'whack-image' ? 'Il faut au moins deux mots, dont un avec une image.'
+            : isImageMode ? 'Il faut au moins deux mots avec une image.'
             : mode === 'millionaire' && quizFormat === 'phrases' && !seriesSize
               ? 'Ces thèmes ne contiennent aucune phrase à compléter. Choisis « Définitions » ou ajoute un thème.'
-              : 'Ce jeu demande plusieurs mots compatibles avec cette activité.'}</p>
+              : 'Il manque des mots pour ce jeu. Essaie avec un autre thème.'}</p>
           <div class="actions">
             <button on:click={() => settingsOpen = true}>Changer les thèmes</button>
             {#if mode !== 'millionaire'}<button on:click={() => { quizFormat = 'definitions'; start('millionaire'); }}>Jouer au quiz de définitions</button>{/if}
@@ -562,7 +565,7 @@
         {/if}
         <div class="actions controls">
           {#if (target && (!(isImageMode || mode === 'millionaire') || options.length >= 2)) || (mode === 'match' && matchWords.length >= 2) || (mode === 'search' && grid.targets.length)}
-            <button disabled={hinted || solved || skipped || reaction === 'complete'} on:click={useHint}>Aide · écarter un choix</button>
+            <button disabled={solved || skipped || reaction === 'complete'} on:click={useHint}>Aide</button>
             <button class="primary" on:click={nextRound}>{mode === 'search' ? 'Nouvelle grille' : mode === 'match'
               ? matchSets.length === 1 ? 'Rejouer la série' : 'Nouvelle série' : 'Mot suivant'}</button>
           {:else if reaction === 'complete'}
@@ -594,7 +597,7 @@
       <h2 id="worksheet-title">{showKey ? 'Corrigé · Le musée des mots' : 'Fiche élève · Le musée des mots'}</h2>
       {#if !showKey}
         <p>Prénom _____________________ Date _____________________</p>
-        <p>{printedFormat === 'phrases' ? 'Complète chaque phrase avec un mot ou une expression de la liste.' : 'Écris le mot ou l’expression qui correspond à chaque définition.'}</p>
+        <p>{printedFormat === 'phrases' ? 'Pour chaque phrase, écris la bonne réponse de la liste dans le trou.' : 'Lis chaque indice. Écris la bonne réponse de la liste.'}</p>
         <p>{[...printWords].map((word) => word.word).sort((a, b) => a.localeCompare(b, 'fr')).join(' · ')}</p>
       {/if}
       <ol>
