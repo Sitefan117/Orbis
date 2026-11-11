@@ -11,7 +11,8 @@ export type WorldId =
   | 'shift'
   | 'mathhunt'
   | 'fractionstower2'
-  | 'grammaire_lab';
+  | 'grammaire_lab'
+  | 'musee_vocabulaire';
 
 export type WorldSubject =
   | 'MATHS'
@@ -139,6 +140,17 @@ export const worlds: World[] = [
     status: 'available'
   },
   {
+    id: 'musee_vocabulaire',
+    image: 'musee_vocabulaire.png',
+    title: 'Le musée des mots',
+    subtitle: 'Observe, associe et reconstruis les mots de l’école.',
+    route: '/musee_vocabulaire',
+    emoji: '🏛️',
+    color: 'amber',
+    subject: 'FRANÇAIS',
+    status: 'prototype'
+  },
+  {
     id: 'shift',
     title: 'Shift',
     subtitle: 'Arriveras-tu maîtriser petits et grands nombres ?',
@@ -184,5 +196,6 @@ export const worldLabels: Record<WorldId, string> = {
   shift: 'shift',
   mathhunt: 'mathhunt',
   fractionstower2: 'Tour des Fractions 2',
-  grammaire_lab: 'L’Atelier des phrases'
+  grammaire_lab: 'L’Atelier des phrases',
+  musee_vocabulaire: 'Le musée des mots'
 };

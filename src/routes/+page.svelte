@@ -42,8 +42,9 @@
     conju_lab: { notion: 'Conjugaison', goal: 'Choisis la bonne forme du verbe.' },
     shift: { notion: 'Numération', goal: 'Comprends la valeur de chaque chiffre.' },
     fractionstower2: { notion: 'Fractions', goal: 'Comprends les fractions, étape par étape.' },
-    mathhunt: { notion: 'Calcul mental', goal: 'Vise la bonne réponse.' }
-    ,grammaire_lab: { notion: 'Grammaire', goal: 'Construis des phrases correctes.' }
+    mathhunt: { notion: 'Calcul mental', goal: 'Vise la bonne réponse.' },
+    grammaire_lab: { notion: 'Grammaire', goal: 'Construis des phrases correctes.' },
+    musee_vocabulaire: { notion: 'Vocabulaire', goal: 'Observe, associe et reconstruis les mots.' }
   };
   $: selectedGameNotion = catalogParams.get('notion');
   $: visibleArcadeCategories = arcadeCategories.filter(category => category === 'TOUS' || worlds.some(world => world.subject === category));
