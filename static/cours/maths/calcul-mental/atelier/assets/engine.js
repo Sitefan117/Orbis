@@ -297,14 +297,14 @@ function diagram(p){
  };
  const graduatedLine=()=>{
   const finish=kind==='complement'?a:op==='+'?a+b:a-b,start=kind==='complement'?b:a,largest=Math.max(start,finish,a,b,1);
-  const decimal=p.code.startsWith('CD');let step=decimal?0.1:p.code.startsWith('DC')?(largest>120?100:10):1;
-  let axisMin=decimal?Math.floor(Math.min(start,finish)*10)/10:0,axisMax=decimal?Math.ceil(Math.max(start,finish)*10)/10:Math.ceil(largest/step)*step;
+  const decimal=p.code.startsWith('CD'),integerJump=Number.isInteger(start)&&Number.isInteger(finish)&&Number.isInteger(b),unitZoom=!decimal&&p.code.startsWith('DC')&&integerJump&&Math.abs(finish-start)<=40&&(Math.abs(finish-start)%10!==0||start%10!==0||finish%10!==0);let step=decimal?0.1:unitZoom?1:p.code.startsWith('DC')?(largest>120?100:10):1;
+  let axisMin=decimal?Math.floor(Math.min(start,finish)*10)/10:unitZoom?Math.max(0,Math.floor((Math.min(start,finish)-2)/10)*10):0,axisMax=decimal?Math.ceil(Math.max(start,finish)*10)/10:unitZoom?Math.ceil((Math.max(start,finish)+2)/10)*10:Math.ceil(largest/step)*step;
   if(decimal){axisMin=clean(Math.max(0,axisMin-0.1));axisMax=clean(axisMax+0.1);}else if(axisMax===largest)axisMax+=step;
-  const tickLimit=p.code.startsWith('PC')?22:12;if(!decimal)while((axisMax-axisMin)/step>tickLimit)step*=2;
+  const tickLimit=unitZoom?50:p.code.startsWith('PC')?22:12;if(!decimal&&!unitZoom)while((axisMax-axisMin)/step>tickLimit)step*=2;
   axisMax=Math.max(axisMin+step,Math.ceil(axisMax/step)*step);const x=v=>45+470*(v-axisMin)/(axisMax-axisMin);
   const sx=x(start),fx=x(finish),same=Math.abs(start-finish)<1e-8,closeLabels=!same&&Math.abs(sx-fx)<115;height=closeLabels?194:174;let out=`<defs><marker id="arrow-${esc(p.code)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#9a4638"/></marker></defs>`;
   out+=`<line x1="45" x2="515" y1="92" y2="92" stroke="#20332e" stroke-width="3"/>`;
-  const tickCount=Math.round((axisMax-axisMin)/step),labelEvery=decimal?Math.max(1,Math.ceil(tickCount/10)):1;for(let i=0;i<=tickCount;i++){const value=clean(axisMin+i*step),px=x(value),showLabel=i%labelEvery===0||Math.abs(value-start)<1e-8||Math.abs(value-finish)<1e-8;out+=`<line x1="${px}" x2="${px}" y1="83" y2="101" stroke="#20332e" stroke-width="${showLabel?2:1}"/>${showLabel?text(px,124,fmt(value)):''}`;}
+  const tickCount=Math.round((axisMax-axisMin)/step),labelEvery=decimal?Math.max(1,Math.ceil(tickCount/10)):unitZoom?5:1;for(let i=0;i<=tickCount;i++){const value=clean(axisMin+i*step),px=x(value),showLabel=i%labelEvery===0||Math.abs(value-start)<1e-8||Math.abs(value-finish)<1e-8,major=showLabel||unitZoom&&value%10===0;out+=`<line x1="${px}" x2="${px}" y1="${major?81:86}" y2="${major?103:98}" stroke="#20332e" stroke-width="${major?2:1}"/>${showLabel?text(px,124,fmt(value)):''}`;}
   const operation=kind==='complement'?`+ ${fmt(a-b)}`:`${op==='+'?'+':'−'} ${fmt(b)}`;
   if(same)out+=`<circle cx="${sx}" cy="61" r="13" fill="none" stroke="#9a4638" stroke-width="3"/>${text(sx,38,'Je reste ici')}`;
   else out+=`<path d="M${sx} 76 Q${(sx+fx)/2} 25 ${fx} 76" fill="none" stroke="#9a4638" stroke-width="4" marker-end="url(#arrow-${esc(p.code)})"/>${text((sx+fx)/2,34,operation)}`;
