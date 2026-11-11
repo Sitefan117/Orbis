@@ -110,7 +110,25 @@
       ],
       "subjects": "teen with broad joyful smile holding up a finished project, teen with downturned mouth and tears after losing a favorite item, teen with wide eyes and raised eyebrows at an unexpected gift / teen with drooping eyelids yawning at a desk, teen crying with tears visibly streaming, teen laughing with their head tipped back / child with two adult parents shown as a small family portrait, elementary-age child with backpack clearly younger than a teenager, group of three teenage friends chatting",
       "source": "exec-b224cedc-4390-4603-b665-fd822c041432.png"
+    },
+    {
+      "file": "contextes.png",
+      "requestedGrid": [
+        3,
+        3
+      ],
+      "prompt": "Create a square 3×3 French vocabulary sprite sheet for ages 15–16. Nine separate regular equal square tiles, centered artwork with generous gutters. From left to right, top to bottom, slash marks new row: folded printed newspaper with an illustrated front page (the newspaper alone), camera operator filming a reporter outdoors at a flooded street, commercial product poster with a bottle and a price tag on an advertising board / morning scene with teen at breakfast and sunrise through window, large analog clock showing twelve o’clock straight up and bright noon light, night scene with crescent moon stars and dark sky / three volunteers handing out food to people at a community table, wheelchair user moving up a broad accessible ramp beside stairs, town-hall style public meeting where two speakers exchange views at podiums. Warm editorial game illustration, realistic objects, fine dark outlines, subtle paper grain. No word labels, brand logos or captions. Large objects clear at thumbnail size. Keep each subject inside its own cell. Transparent background around tiles.",
+      "source": "exec-3a2f81d4-be7b-4752-bede-3b78270fa16a.png"
+    },
+    {
+      "file": "trajets.png",
+      "requestedGrid": [
+        3,
+        3
+      ],
+      "prompt": "Create a square 3×3 French vocabulary sprite sheet for ages 15–16. Nine separate regular equal square tiles, centered artwork with generous gutters. From left to right, top to bottom, slash marks new row: small rectangular public transport ticket with perforated edges and train pictogram, station departure display with rows of departure times and platforms, raised pedestrian sidewalk beside road and a pedestrian on the sidewalk / four-way street intersection from overhead, large supermarket storefront with shopping carts and grocery displays, clearly identifiable hospital entrance with blue H sign / signed work contract with two signatures, empty paper file folder with a stack of documents tucked inside, distinct paper envelope with a postage stamp being put into a mailbox. Warm editorial game illustration, realistic objects, fine dark outlines, subtle paper grain. No word labels, brand logos or captions. Large objects clear at thumbnail size. Keep each subject inside its own cell. Transparent background around tiles.",
+      "source": "exec-7bfe92b7-923b-4fd4-b083-6cef4cb8be72.png"
     }
   ],
-  "inspection": "Formation has two wider frames on the last row, numerique combines several objects and uses wider frames on the last row. Only usable subjects are linked in lexique.csv. The crops are defined in lexique.ts. The original generated PNGs remain in the ImageGen output directory."
+  "inspection": "Formation has two wider frames on the last row, numerique combines several objects and uses wider frames on the last row. Only usable subjects are linked in lexique.csv. The crops are defined in lexique.ts. The original generated PNGs remain in the ImageGen output directory. Contextes was center-cropped to remove empty side margins. Contextes and trajets were resized to 900 pixels on the longest side."
 }

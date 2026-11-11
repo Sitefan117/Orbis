@@ -15,6 +15,23 @@ const columns = ['id', 'theme', 'intitule', 'parcours', 'mot', 'definition', 'ph
 export const normalize = (value: string) => value.normalize('NFC').trim().toLocaleLowerCase('fr').replaceAll('’', "'");
 export const gridWord = (value: string) => value.toLocaleUpperCase('fr').replace(/[^\p{L}]/gu, '');
 
+export function matchRounds(words: readonly Word[]): Word[][] {
+  const pool: Word[] = [];
+  const names = new Set<string>();
+  const sprites = new Set<string>();
+  for (const word of words) {
+    const name = normalize(word.word);
+    if (!word.sprite || names.has(name) || sprites.has(word.sprite)) continue;
+    pool.push(word);
+    names.add(name);
+    sprites.add(word.sprite);
+  }
+  if (pool.length < 2) return [];
+  const count = Math.ceil(pool.length / 6);
+  return Array.from({ length: count }, (_, i) =>
+    pool.slice(Math.ceil(i * pool.length / count), Math.ceil((i + 1) * pool.length / count)));
+}
+
 const atlas: Record<string, [number, number]> = {
   'ecole-sprites-v1': [3, 3], actions: [3, 3], quotidien2: [3, 3], emotions: [3, 3],
   maison: [4, 3], courses: [4, 3], ville: [4, 3], corps: [4, 3], loisirs: [4, 3],

@@ -42,9 +42,15 @@ Le CSV modifié dans le dépôt devient le lexique partagé au prochain déploie
 
 ## Images et compatibilité des exercices
 
-127 entrées disposent d’une illustration reliée au lexique. Douze nouvelles planches ont été générées avec l’outil intégré ImageGen, puis redimensionnées à 768 pixels de grand côté. La planche école existante complète les visuels. Certains mots concrets et les sens abstraits restent proposés au moyen de définitions, de lettres et de phrases.
+145 entrées disposent d’une illustration. Quatorze planches ont été générées avec l’outil intégré ImageGen, en plus de la planche école existante. Le fichier [generation.json](../images/musee-vocabulaire/generation.json) décrit les planches. Certains mots concrets et les sens abstraits restent proposés au moyen de définitions, de lettres et de phrases.
 
 Les jeux Image → mot, Mot → image et association utilisent les entrées illustrées. Une sélection trop petite affiche les possibilités de changer les thèmes ou de passer au quiz. Les mots cachés utilisent des mots simples de 3 à 11 lettres, avec leurs accents, dans des grilles de 14 × 14. Les aides retirent des distracteurs et restent limitées à une utilisation par mot, par association ou par grille.
+
+Dans l’association, chaque série contient deux à six mots différents. « Nouvelle série » passe au groupe suivant. Une fois tous les groupes parcourus, le jeu revient au premier.
+
+Le quiz et la fiche permettent de choisir entre définitions et phrases à compléter. Le lexique propose 136 phrases, dont 24 sur les trajets et 28 pour chacun des thèmes démarches et formation. La fiche tire jusqu’à dix entrées des thèmes choisis. Son corrigé reprend les mêmes entrées dans le même ordre.
+
+Pour un essai de dix minutes, sélectionner « Ville et transports » et « Démarches et services publics », puis faire quelques phrases à compléter. Proposer ensuite une courte situation orale, par exemple demander un horaire à un guichet ou reporter un rendez-vous. Observer quels mots l’élève réemploie sans aide et lesquels méritent une reprise lors d’une séance suivante.
 
 Noireau utilise la planche existante `catalogue-guide-4x2.png` et la description des poses de `static/mascotte-noireau/index.json`. Les huit poses interviennent selon l’activité, l’aide et le retour de réponse.
 

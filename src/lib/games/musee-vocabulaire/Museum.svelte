@@ -1,11 +1,11 @@
 <script lang="ts">
   import { base } from '$app/paths';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { getStudentName } from '$lib/orbis/identity/local-student';
   import lexique from '../../../../static/vocabulaire/lexique.csv?raw';
   import poses from '../../../../static/mascotte-noireau/index.json';
-  import { gridSize, gridWord, makeGrid, normalize, readLexique, shuffle, spriteStyle, type Word } from './lexique';
+  import { gridSize, gridWord, makeGrid, matchRounds, normalize, readLexique, shuffle, spriteStyle, type Word } from './lexique';
 
   export let initialMode = 'whack-image';
   const modes = [
@@ -17,6 +17,7 @@
   type Mode = typeof modes[number][0];
   type Reaction = 'ready' | 'correct' | 'retry' | 'hint' | 'progress' | 'complete';
   type Tile = { id: number; text: string; decoy: boolean };
+  type ExerciseFormat = 'definitions' | 'phrases';
   const modeLabels = Object.fromEntries(modes);
   const frenchAlphabet = Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZÀÂÄÆÇÉÈÊËÎÏÔŒÙÛÜŸ');
   const original = readLexique(lexique);
@@ -69,6 +70,11 @@
   let matched: string[] = [];
   let picked: Word | undefined;
   let matchWords: Word[] = [];
+  let matchSets: Word[][] = [];
+  let matchIndex = -1;
+  let quizFormat: ExerciseFormat = 'definitions';
+  let sheetFormat: ExerciseFormat = 'definitions';
+  let printedFormat: ExerciseFormat = 'definitions';
   let importMessage = '';
   let settingsOpen = false;
   let printWords: Word[] = [];
@@ -76,6 +82,7 @@
 
   $: categories = getCategories(bank);
   $: selectedCount = bank.filter((entry) => selectedThemes.includes(entry.theme)).length;
+  $: selectedSentenceCount = bank.filter((entry) => entry.sentence && selectedThemes.includes(entry.theme)).length;
   $: isImageMode = mode === 'whack-image' || mode === 'whack-word' || mode === 'match';
   $: pose = reaction === 'ready' && mode === 'syllables' ? 'pointer bas'
     : reaction === 'progress' && mode === 'match' ? 'encourager'
@@ -122,10 +129,14 @@
       if (next === 'syllables') return entry.syllables.length >= 2;
       if (next === 'whack-image' || next === 'whack-word' || next === 'match') return Boolean(entry.sprite);
       if (next === 'letters' || next === 'pendu') return gridWord(entry.word).length >= 2;
-      return true;
+      return next !== 'millionaire' || quizFormat === 'definitions' || Boolean(entry.sentence);
     });
     queue = shuffle(eligible);
     seriesSize = queue.length;
+    if (next === 'match') {
+      matchSets = matchRounds(queue);
+      matchIndex = -1;
+    }
     nextRound();
   }
 
@@ -158,7 +169,8 @@
       return;
     }
     if (mode === 'match') {
-      matchWords = Array.from(new Map(distinctWords(queue).map((entry) => [entry.sprite, entry])).values()).slice(0, 6);
+      matchIndex = matchSets.length ? (matchIndex + 1) % matchSets.length : -1;
+      matchWords = shuffle(matchSets[matchIndex] ?? []);
       options = shuffle(matchWords);
       matched = [];
       return;
@@ -349,12 +361,17 @@
     }
   }
 
-  function printSheet(key: boolean) {
-    const choices = bank.filter((entry) => selectedThemes.includes(entry.theme));
+  let worksheet: HTMLElement;
+
+  async function prepareSheet() {
+    const choices = bank.filter((entry) => selectedThemes.includes(entry.theme) &&
+      (sheetFormat === 'definitions' || entry.sentence));
     if (!choices.length) return;
-    if (!key || !printWords.length) printWords = shuffle(choices).slice(0, 10);
-    showKey = key;
-    setTimeout(() => window.print(), 0);
+    printWords = shuffle(distinctWords(choices)).slice(0, 10);
+    printedFormat = sheetFormat;
+    showKey = false;
+    await tick();
+    worksheet.focus();
   }
 </script>
 
@@ -393,8 +410,13 @@
           <div class="actions">
             <a href={`${base}/vocabulaire/lexique.csv`} download>Télécharger le lexique CSV</a>
             <label>Ajouter un CSV <input type="file" accept=".csv,text/csv" on:change={importCsv} /></label>
-            <button disabled={!selectedCount} on:click={() => printSheet(false)}>Générer et imprimer une fiche</button>
-            <button disabled={!printWords.length} on:click={() => printSheet(true)}>Imprimer le corrigé</button>
+            <label>Type de fiche
+              <select bind:value={sheetFormat}>
+                <option value="definitions">Définitions</option>
+                <option value="phrases">Phrases à compléter</option>
+              </select>
+            </label>
+            <button disabled={sheetFormat === 'phrases' ? !selectedSentenceCount : !selectedCount} on:click={prepareSheet}>Préparer la fiche</button>
           </div>
           <p role="status">{importMessage}</p>
         </details>
@@ -410,6 +432,14 @@
     <section class="game" aria-label={modeLabels[mode]}>
       <h2>{modeLabels[mode]}</h2>
       {#if ready}
+        {#if mode === 'millionaire'}
+          <label class="quiz-format">Type de question
+            <select bind:value={quizFormat} on:change={() => start('millionaire')}>
+              <option value="definitions">Définitions</option>
+              <option value="phrases">Phrases à compléter</option>
+            </select>
+          </label>
+        {/if}
         <div class="coach">
           <span class="noireau" role="img" aria-label="Noireau"
             style:background-image={`url('${base}/mascotte-noireau/${sheet.fichier}')`}
@@ -435,6 +465,7 @@
           </div>
           <button disabled={!selectedCells.length} on:click={() => { selectedCells = []; report(opening.search, 'ready'); }}>Effacer le bleu</button>
         {:else if mode === 'match' && matchWords.length >= 2}
+          <p>Série {matchIndex + 1} sur {matchSets.length}</p>
           <div class="matches">
             <div class="choices">
               {#each matchWords as entry (entry.id)}
@@ -471,7 +502,7 @@
           {:else if mode === 'whack-word'}
             <p class="prompt">{target.word}</p>
           {:else}
-            <p class="prompt">{mode === 'millionaire' && target.sentence ? target.sentence : target.definition}</p>
+            <p class="prompt">{mode === 'millionaire' && quizFormat === 'phrases' ? target.sentence : target.definition}</p>
           {/if}
 
           {#if mode === 'pendu'}
@@ -521,16 +552,19 @@
         {:else if reaction !== 'complete'}
           <p>{mode === 'whack-image' ? 'Ce jeu demande un mot illustré et au moins deux mots différents.'
             : isImageMode ? 'Ce jeu demande au moins deux mots illustrés dans les thèmes choisis.'
-            : 'Ce jeu demande plusieurs mots compatibles avec cette activité.'}</p>
+            : mode === 'millionaire' && quizFormat === 'phrases' && !seriesSize
+              ? 'Ces thèmes ne contiennent aucune phrase à compléter. Choisis « Définitions » ou ajoute un thème.'
+              : 'Ce jeu demande plusieurs mots compatibles avec cette activité.'}</p>
           <div class="actions">
             <button on:click={() => settingsOpen = true}>Changer les thèmes</button>
-            <button on:click={() => start('millionaire')} disabled={mode === 'millionaire'}>Jouer au quiz de définitions</button>
+            {#if mode !== 'millionaire'}<button on:click={() => { quizFormat = 'definitions'; start('millionaire'); }}>Jouer au quiz de définitions</button>{/if}
           </div>
         {/if}
         <div class="actions controls">
           {#if (target && (!(isImageMode || mode === 'millionaire') || options.length >= 2)) || (mode === 'match' && matchWords.length >= 2) || (mode === 'search' && grid.targets.length)}
             <button disabled={hinted || solved || skipped || reaction === 'complete'} on:click={useHint}>Aide · écarter un choix</button>
-            <button class="primary" on:click={nextRound}>{mode === 'search' ? 'Nouvelle grille' : mode === 'match' ? 'Nouvelle série' : 'Mot suivant'}</button>
+            <button class="primary" on:click={nextRound}>{mode === 'search' ? 'Nouvelle grille' : mode === 'match'
+              ? matchSets.length === 1 ? 'Rejouer la série' : 'Nouvelle série' : 'Mot suivant'}</button>
           {:else if reaction === 'complete'}
             <button class="primary" on:click={() => start(mode)}>Rejouer</button>
           {/if}
@@ -552,14 +586,29 @@
     </aside>
   </main>
   {#if printWords.length}
-    <section class="print-only">
-      <h1>{showKey ? 'Corrigé · Le musée des mots' : 'Le musée des mots'}</h1>
+    <section class="worksheet" aria-labelledby="worksheet-title" tabindex="-1" bind:this={worksheet}>
+      <div class="actions no-print">
+        <button on:click={() => showKey = !showKey}>{showKey ? 'Voir la fiche élève' : 'Voir le corrigé'}</button>
+        <button class="primary" on:click={() => window.print()}>{showKey ? 'Imprimer le corrigé' : 'Imprimer la fiche'}</button>
+      </div>
+      <h2 id="worksheet-title">{showKey ? 'Corrigé · Le musée des mots' : 'Fiche élève · Le musée des mots'}</h2>
       {#if !showKey}
         <p>Prénom _____________________ Date _____________________</p>
-        <p>Écris le mot ou l’expression qui correspond à chaque définition.</p>
+        <p>{printedFormat === 'phrases' ? 'Complète chaque phrase avec un mot ou une expression de la liste.' : 'Écris le mot ou l’expression qui correspond à chaque définition.'}</p>
         <p>{[...printWords].map((word) => word.word).sort((a, b) => a.localeCompare(b, 'fr')).join(' · ')}</p>
       {/if}
-      <ol>{#each printWords as entry}<li>{entry.definition} <br />{showKey ? entry.word : '________________________________________'}</li>{/each}</ol>
+      <ol>
+        {#each printWords as entry}
+          <li>
+            {#if printedFormat === 'phrases'}
+              {@const [start, end] = entry.sentence.split('___')}
+              {start}{#if showKey}<strong>{entry.word}</strong>{:else}__________________{/if}{end}
+            {:else}
+              {entry.definition}<br />{showKey ? entry.word : '________________________________________'}
+            {/if}
+          </li>
+        {/each}
+      </ol>
     </section>
   {/if}
 </div>
@@ -587,6 +636,7 @@
   button:focus-visible, a:focus-visible { outline: 3px solid #38749a; outline-offset: 2px; }
   button.primary, button[aria-pressed=true]:not(.grid button) { background: #25453c; border-color: #25453c; color: white; }
   .secondary { background: #ede1c8; }
+  .quiz-format { display: block; margin-bottom: .8rem; }
   .game { text-align: center; }
   .coach { display: flex; justify-content: center; align-items: center; gap: .8rem; min-height: 7rem; background: #efe6d3; border-radius: .85rem; margin-bottom: 1rem; padding: .3rem .65rem; }
   .coach p { font-weight: 700; }
@@ -614,12 +664,14 @@
   .collection { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
   .collection li { background: #efe6d3; align-content: center; min-width: 5rem; }
   .collection .sprite { width: 3.5rem; }
-  .print-only { display: none; }
+  .worksheet { width: min(48rem, calc(100% - 1.3rem)); margin: 0 auto 1rem; padding: clamp(.8rem, 3vw, 2rem); background: white; border: 1px solid #d8c9ae; border-radius: 1rem; }
+  .worksheet h2 { margin: .8rem 0; }
+  .worksheet li { margin-bottom: .55rem; line-height: 1.5; }
   @media (max-width: 580px) { .search { grid-template-columns: minmax(0, 1fr); } .search ul { display: flex; flex-wrap: wrap; justify-content: center; } .shell { padding: .65rem; } }
   @media print {
-    .print-only { display: block; background: white; color: black; }
-    .print-only li { break-inside: avoid; padding-bottom: .6rem; line-height: 1.45; }
-    .print-only h1 { font-size: 1.65rem; }
+    .worksheet { width: auto; margin: 0; padding: 0; color: black; border: 0; border-radius: 0; }
+    .worksheet li { break-inside: avoid; line-height: 1.45; }
+    .worksheet h2 { font-size: 1.65rem; }
     .museum { background: white; min-height: auto; }
   }
 </style>

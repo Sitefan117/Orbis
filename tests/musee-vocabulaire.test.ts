@@ -1,11 +1,29 @@
 import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { readLexique, makeGrid, gridSize, gridWord, spriteStyle } from '../src/lib/games/musee-vocabulaire/lexique';
+import { readLexique, makeGrid, gridSize, gridWord, matchRounds, spriteStyle } from '../src/lib/games/musee-vocabulaire/lexique';
 
 const bank = readLexique(readFileSync('static/vocabulaire/lexique.csv', 'utf8'));
 assert.ok(bank.length >= 600);
 const themes = new Set(bank.map((entry) => entry.theme));
 assert.ok(themes.size >= 20);
+assert.ok(bank.filter((entry) => entry.sentence).length >= 136);
+
+const illustrated = bank.filter((entry) => entry.sprite);
+const uniqueImages = illustrated.slice(0, 20);
+for (let count = 2; count <= uniqueImages.length; count++) {
+  const pool = uniqueImages.slice(0, count);
+  const rounds = matchRounds([...pool, ...pool, bank.find((entry) => !entry.sprite)!]);
+  assert.deepEqual(rounds.flat().map((word) => word.id), pool.map((word) => word.id));
+  assert.ok(rounds.every((round) => round.length >= 2 && round.length <= 6));
+}
+assert.deepEqual(matchRounds(uniqueImages.slice(0, 1)), []);
+const [firstImage, secondImage] = uniqueImages;
+assert.deepEqual(matchRounds([
+  firstImage,
+  { ...firstImage, id: 'duplicate-sprite', word: 'Autre nom' },
+  { ...firstImage, id: 'duplicate-word', word: firstImage.word.toUpperCase(), sprite: 'other:1:3:3' },
+  secondImage
+]), [[firstImage, secondImage]]);
 for (const theme of themes) {
   const entries = bank.filter((entry) => entry.theme === theme);
   assert.ok(entries.length >= 30);
