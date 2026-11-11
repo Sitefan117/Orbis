@@ -14,6 +14,13 @@ const columns = ['id', 'theme', 'intitule', 'parcours', 'mot', 'definition', 'ph
 
 export const normalize = (value: string) => value.normalize('NFC').trim().toLocaleLowerCase('fr').replaceAll('’', "'");
 export const gridWord = (value: string) => value.toLocaleUpperCase('fr').replace(/[^\p{L}]/gu, '');
+const frenchLetters = Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZÀÂÄÆÇÉÈÊËÎÏÔŒÙÛÜŸ');
+
+export function letterChoices(word: string): string[] {
+  const needed = [...new Set(Array.from(gridWord(word)))];
+  const extras = shuffle(frenchLetters.filter((letter) => !needed.includes(letter))).slice(0, needed.length);
+  return shuffle([...needed, ...extras]);
+}
 
 export function matchRounds(words: readonly Word[]): Word[][] {
   const pool: Word[] = [];

@@ -52,6 +52,8 @@ Dans l’association, chaque série contient deux à six mots différents. « No
 
 Le quiz et la fiche permettent de choisir entre définitions et phrases à compléter. Le lexique propose 136 phrases, dont 24 sur les trajets et 28 pour chacun des thèmes démarches et formation. La fiche tire jusqu’à dix entrées des thèmes choisis. Son corrigé reprend les mêmes entrées dans le même ordre.
 
+Chaque jeu permet d’ouvrir la liste complète des mots sélectionnés avec leur définition simple. Le cahier de vocabulaire imprimable reprend tous les mots des thèmes choisis, avec une couverture puis une page par thème. Dans le pendu, les espaces, apostrophes et traits d’union restent visibles ; l’alphabet proposé contient les lettres utiles et autant de lettres en plus. Un second clic sur une lettre choisie l’efface.
+
 Pour un essai de dix minutes, sélectionner « Ville et transports » et « Démarches et services publics », puis faire quelques phrases à compléter. Proposer ensuite une courte situation orale, par exemple demander un horaire à un guichet ou reporter un rendez-vous. Observer quels mots l’élève réemploie sans aide et lesquels méritent une reprise lors d’une séance suivante.
 
 Noireau utilise la planche existante `catalogue-guide-4x2.png` et la description des poses de `static/mascotte-noireau/index.json`. Les huit poses interviennent selon l’activité, l’aide et le retour de réponse.

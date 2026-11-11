@@ -1,8 +1,11 @@
 import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { readLexique, makeGrid, gridSize, gridWord, matchRounds, spriteStyle } from '../src/lib/games/musee-vocabulaire/lexique';
+import { readLexique, makeGrid, gridSize, gridWord, letterChoices, matchRounds, spriteStyle } from '../src/lib/games/musee-vocabulaire/lexique';
 
 const bank = readLexique(readFileSync('static/vocabulaire/lexique.csv', 'utf8'));
+const compoundChoices = letterChoices('rendez-vous');
+assert.equal(compoundChoices.length, new Set(gridWord('rendez-vous')).size * 2);
+assert.ok([...new Set(gridWord('rendez-vous'))].every((letter) => compoundChoices.includes(letter)));
 assert.ok(bank.length >= 600);
 const themes = new Set(bank.map((entry) => entry.theme));
 assert.ok(themes.size >= 20);

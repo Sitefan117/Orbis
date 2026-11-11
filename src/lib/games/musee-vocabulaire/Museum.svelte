@@ -5,7 +5,7 @@
   import { getStudentName } from '$lib/orbis/identity/local-student';
   import lexique from '../../../../static/vocabulaire/lexique.csv?raw';
   import poses from '../../../../static/mascotte-noireau/index.json';
-  import { gridSize, gridWord, makeGrid, matchRounds, normalize, readLexique, shuffle, spriteStyle, type Word } from './lexique';
+  import { gridSize, gridWord, letterChoices, makeGrid, matchRounds, normalize, readLexique, shuffle, spriteStyle, type Word } from './lexique';
 
   export let initialMode = 'whack-image';
   const modes = [
@@ -18,8 +18,8 @@
   type Reaction = 'ready' | 'correct' | 'retry' | 'hint' | 'progress' | 'complete';
   type Tile = { id: number; text: string; decoy: boolean };
   type ExerciseFormat = 'definitions' | 'phrases';
+  const latinAlphabet = Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
   const modeLabels = Object.fromEntries(modes);
-  const frenchAlphabet = Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZÀÂÄÆÇÉÈÊËÎÏÔŒÙÛÜŸ');
   const original = readLexique(lexique);
   const sheet = poses.planches.find((entry) => entry.id === 'catalogue-guide')!;
   const poseByReaction: Record<Reaction, string> = {
@@ -48,6 +48,7 @@
   let options: Word[] = [];
   let ready = false;
   let inHall = true;
+  let wordListOpen = false;
   let gameHeading: HTMLHeadingElement;
   let hallNavigation: HTMLElement;
   async function enterMachine(next: Mode) {
@@ -92,6 +93,7 @@
   let settingsOpen = false;
   let printWords: Word[] = [];
   let showKey = false;
+  let printKind: 'exercise' | 'vocabulary' = 'exercise';
 
   $: categories = getCategories(bank);
   $: selectedCount = bank.filter((entry) => selectedThemes.includes(entry.theme)).length;
@@ -102,7 +104,8 @@
     : reaction === 'ready' && mode === 'millionaire' ? 'accueillir' : poseByReaction[reaction];
   $: poseRow = sheet.poses.findIndex((row) => row.includes(pose));
   $: poseCol = sheet.poses[poseRow].indexOf(pose);
-  $: alphabet = Array.from(new Set([...frenchAlphabet, ...gridWord(target?.word ?? '')]));
+  let alphabet: string[] = [];
+  $: visibleVocabulary = distinctWords(playing).sort((a, b) => a.word.localeCompare(b.word, 'fr'));
   $: matchImages = options;
 
   function getCategories(entries: Word[]) {
@@ -171,6 +174,7 @@
     solved = false;
     skipped = false;
     attempts = 0;
+    alphabet = [];
     report(opening[mode], 'ready');
 
     if (mode === 'search') {
@@ -195,6 +199,7 @@
     }
     const [entry, ...rest] = queue;
     target = entry;
+    if (mode === 'pendu') alphabet = letterChoices(entry.word);
     queue = rest;
     const distractors = distinctWords(playing.filter((item) =>
       normalize(item.word) !== normalize(entry.word) && (mode !== 'whack-word' || (item.sprite && item.sprite !== entry.sprite))));
@@ -203,7 +208,7 @@
     options = shuffle([entry, ...[...nearby, ...others].slice(0, mode === 'millionaire' ? 3 : 2)]);
     if (mode === 'letters') {
       const letters = Array.from(gridWord(entry.word));
-      const extras = shuffle(frenchAlphabet.slice(0, 26).filter((letter) => !letters.includes(letter))).slice(0, 3);
+      const extras = shuffle(latinAlphabet.filter((letter) => !letters.includes(letter))).slice(0, 3);
       tiles = shuffle([...letters, ...extras].map((text, id) => ({ id, text, decoy: id >= letters.length })));
     }
     if (mode === 'syllables') {
@@ -239,7 +244,15 @@
   }
 
   function addGuess(letter: string) {
-    if (!target || solved || skipped || guesses.includes(letter) || eliminated.includes(letter)) return;
+    if (!target || solved || eliminated.includes(letter)) return;
+    if (guesses.includes(letter)) {
+      guesses = guesses.filter((item) => item !== letter);
+      if (!gridWord(target.word).includes(letter)) attempts = Math.max(0, attempts - 1);
+      skipped = false;
+      report('Lettre effacée. Tu peux en choisir une autre.', 'progress');
+      return;
+    }
+    if (skipped) return;
     guesses = [...guesses, letter];
     const answer = gridWord(target.word);
     if (Array.from(answer).every((char) => guesses.includes(char))) success(target);
@@ -256,7 +269,7 @@
   function displayTiles(word: string, chosen: Tile[]) {
     let position = 0;
     return Array.from(word.toLocaleUpperCase('fr'), (char) =>
-      /\p{L}/u.test(char) ? chosen[position++]?.text ?? '＿' : char).join(' ');
+      /\p{L}/u.test(char) ? chosen[position++]?.text ?? '＿' : /\s/u.test(char) ? ' ' : char).join(' ');
   }
 
   function addTile(tile: Tile) {
@@ -386,7 +399,17 @@
       (sheetFormat === 'definitions' || entry.sentence));
     if (!choices.length) return;
     printWords = shuffle(distinctWords(choices)).slice(0, 10);
+    printKind = 'exercise';
     printedFormat = sheetFormat;
+    showKey = false;
+    await tick();
+    worksheet.focus();
+  }
+
+  async function prepareVocabularyList() {
+    printWords = bank.filter((entry) => selectedThemes.includes(entry.theme))
+      .sort((a, b) => a.label.localeCompare(b.label, 'fr') || a.word.localeCompare(b.word, 'fr'));
+    printKind = 'vocabulary';
     showKey = false;
     await tick();
     worksheet.focus();
@@ -435,6 +458,7 @@
               </select>
             </label>
             <button disabled={sheetFormat === 'phrases' ? !selectedSentenceCount : !selectedCount} on:click={prepareSheet}>Préparer la fiche</button>
+            <button disabled={!selectedCount} on:click={prepareVocabularyList}>Préparer le cahier de vocabulaire</button>
           </div>
           <p role="status">{importMessage}</p>
         </details>
@@ -450,6 +474,13 @@
     </nav>
     {:else}
     <button class="return-hall" on:click={returnToHall}>← Choisir une autre machine</button>
+    <button class="word-list-toggle" aria-expanded={wordListOpen} on:click={() => wordListOpen = !wordListOpen}>{wordListOpen ? 'Fermer la liste des mots' : 'Voir la liste des mots'}</button>
+    {#if wordListOpen}
+      <section class="word-bank" aria-label="Liste des mots choisis">
+        <div><h2>Les mots de mes thèmes</h2><p>Tu peux regarder l’orthographe et le sens d’un mot.</p></div>
+        <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong><span>{entry.definition}</span></li>{/each}</ul>
+      </section>
+    {/if}
     <section class="game" aria-label={modeLabels[mode]}>
       <div class="machine-heading"><span class="machine-art" aria-hidden="true" style:background-image={`url('${base}/images/musee-vocabulaire/machines.png')`} style:background-position={`${(modes.findIndex(([id]) => id === mode) % 4) * 100 / 3}% ${Math.floor(modes.findIndex(([id]) => id === mode) / 4) * 100}%`}></span><h2 tabindex="-1" bind:this={gameHeading}>{modeLabels[mode]}</h2></div>
       {#if ready}
@@ -528,10 +559,14 @@
 
           {#if mode === 'pendu'}
             <p>Essais restants · {6 - attempts}</p>
-            <p class="slots">{Array.from(target.word.toLocaleUpperCase('fr'), (char) => !/\p{L}/u.test(char) || guesses.includes(char) || skipped ? char : '＿').join(' ')}</p>
+            <p class="slots" aria-label={`Mot à compléter : ${target.word}`}>{Array.from(target.word.toLocaleUpperCase('fr'), (char) =>
+              !/\p{L}/u.test(char) ? (/\s/u.test(char) ? ' ' : char) : guesses.includes(char) || skipped ? char : '＿').join(' ')}</p>
             <div class="tiles">
               {#each alphabet as letter}
-                <button class:faded={eliminated.includes(letter)} disabled={guesses.includes(letter) || eliminated.includes(letter) || solved || skipped} on:click={() => addGuess(letter)}>{letter}</button>
+                <button class:faded={eliminated.includes(letter)} class:chosen-letter={guesses.includes(letter)}
+                  aria-pressed={guesses.includes(letter)} disabled={eliminated.includes(letter) || solved || skipped}
+                  title={guesses.includes(letter) ? 'Cliquer pour effacer cette lettre' : 'Essayer cette lettre'}
+                  on:click={() => addGuess(letter)}>{letter}</button>
               {/each}
             </div>
           {:else if mode === 'letters'}
@@ -610,9 +645,27 @@
   {#if printWords.length}
     <section class="worksheet" aria-labelledby="worksheet-title" tabindex="-1" bind:this={worksheet}>
       <div class="actions no-print">
-        <button on:click={() => showKey = !showKey}>{showKey ? 'Voir la fiche élève' : 'Voir le corrigé'}</button>
-        <button class="primary" on:click={() => window.print()}>{showKey ? 'Imprimer le corrigé' : 'Imprimer la fiche'}</button>
+        {#if printKind === 'exercise'}<button on:click={() => showKey = !showKey}>{showKey ? 'Voir la fiche élève' : 'Voir le corrigé'}</button>{/if}
+        <button class="primary" on:click={() => window.print()}>{printKind === 'vocabulary' ? 'Imprimer le cahier' : showKey ? 'Imprimer le corrigé' : 'Imprimer la fiche'}</button>
       </div>
+      {#if printKind === 'vocabulary'}
+        <div class="vocabulary-cover">
+          <p>FRANÇAIS · CAHIER IMPRIMABLE</p><h2 id="worksheet-title">Mon cahier de vocabulaire</h2>
+          <p>{selectedThemes.length} thème{selectedThemes.length > 1 ? 's' : ''} · {printWords.length} mots</p>
+          <p>Prénom _____________________ Date _____________________</p>
+        </div>
+        {#each categories.filter((theme) => selectedThemes.includes(theme.theme)) as theme}
+          <section class="vocabulary-page">
+            <h3>{theme.label}</h3>
+            <p class="page-goal">Lis les mots. Cache une colonne pour t’entraîner à retrouver le mot ou son sens.</p>
+            <table><thead><tr><th>Mot</th><th>Définition simple</th></tr></thead><tbody>
+              {#each printWords.filter((entry) => entry.theme === theme.theme) as entry}
+                <tr><td>{entry.word}</td><td>{entry.definition}</td></tr>
+              {/each}
+            </tbody></table>
+          </section>
+        {/each}
+      {:else}
       <h2 id="worksheet-title">{showKey ? 'Corrigé · Le musée des mots' : 'Fiche élève · Le musée des mots'}</h2>
       {#if !showKey}
         <p>Prénom _____________________ Date _____________________</p>
@@ -631,6 +684,7 @@
           </li>
         {/each}
       </ol>
+      {/if}
     </section>
   {/if}
 </div>
@@ -677,7 +731,7 @@
   .matches { display: grid; gap: .75rem; }
   .search { display: grid; grid-template-columns: minmax(0, 30rem) minmax(0, 12rem); gap: 1rem; justify-content: center; margin-bottom: .75rem; }
   .grid { display: grid; align-self: start; gap: 1px; }
-  .grid button { padding: 0; border-radius: .2rem; aspect-ratio: 1; min-width: 0; text-align: center; font-size: clamp(.68rem, 2.5vw, 1rem); }
+  .grid button { display: grid; place-items: center; padding: 0; border-radius: .2rem; aspect-ratio: 1; min-width: 0; text-align: center; line-height: 1; font-size: clamp(.68rem, 2.5vw, 1rem); }
   .grid button.blue { background: #b5dcf7; border-color: #267297; }
   button.green, .grid button.green, li.green { background: #bde6c8; color: #174c30; border-color: #387a50; opacity: 1; }
   button.faded { opacity: .35; text-decoration: line-through; }
@@ -709,7 +763,8 @@
   .studio section.game { background: #182e44; color: #fff7e7; border-top-color: #e6b96f; }
   .studio section.game .coach { border-color: #577083; }
   .studio section.game .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 48rem; margin: 2rem auto; gap: 1rem; }
-  .studio section.game .choices button { padding: 1.3rem; border: 2px solid #cfad72; box-shadow: 0 5px 0 #0b1f31; }
+  .studio section.game .choices button { padding: 1.3rem; border: 2px solid #cfad72; box-shadow: 0 5px 0 #0b1f31; color: #162d3e; background: #fffdf7; }
+  .studio section.game .choices button.green { color: #174c30; background: #bde6c8; }
   .workshop section.game { background: #e1d5bc; border: 12px solid #9c7650; box-shadow: inset 0 0 0 1px #715c42; }
   .workshop .matches { gap: 2rem; padding-block: 1rem; }
   .workshop .matches .choices button { min-width: 8rem; padding: 1rem; border-radius: 0; box-shadow: 3px 4px 0 #aa96766b; }
@@ -730,6 +785,21 @@
   .machine-label { display: flex; align-items: center; gap: .5rem; width: 100%; min-height: 4.2rem; padding: .6rem; background: #fffaf1; border: 2px solid #9b7954; color: #213735; font-size: 1rem; line-height: 1.4; box-shadow: 0 4px 0 #b59772; }
   .machine-hall button:hover:not(:disabled) .machine-label { background: #e4eee9; border-color: #25453c; }
   .return-hall { margin-bottom: 1.25rem; }
+  .word-list-toggle { margin: 0 0 1.25rem .5rem; }
+  .word-bank { margin-bottom: 1.25rem; padding: 1.2rem; background: #fffaf0; border-left: 5px solid #d48628; text-align: left; }
+  .word-bank h2, .word-bank p { margin: 0 0 .5rem; }
+  .word-bank ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .55rem; max-height: 24rem; overflow: auto; margin: 1rem 0 0; padding: 0; list-style: none; }
+  .word-bank li { display: grid; gap: .2rem; padding: .7rem; background: white; border: 1px solid #d8c9ae; }
+  .word-bank li span { line-height: 1.45; }
+  .chosen-letter { background: #dce9ee; border-color: #315f76; box-shadow: inset 0 0 0 2px #315f76; }
+  .vocabulary-cover { min-height: 16rem; display: grid; align-content: center; padding: 2rem; color: #fff; background: #25453c; }
+  .vocabulary-cover h2 { font-size: 2rem; }
+  .vocabulary-page { margin-top: 1.5rem; text-align: left; }
+  .vocabulary-page h3 { padding: .7rem 1rem; color: white; background: #25453c; }
+  .vocabulary-page table { width: 100%; border-collapse: collapse; }
+  .vocabulary-page th, .vocabulary-page td { padding: .55rem; border: 1px solid #b8b8b0; text-align: left; vertical-align: top; }
+  .vocabulary-page th:first-child, .vocabulary-page td:first-child { width: 30%; font-weight: 750; }
+  .page-goal { padding: .65rem; background: #f3ead7; }
   .machine-heading { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1rem; }
   .machine-heading .machine-art { width: 6rem; flex: 0 0 6rem; border-radius: .4rem; }
   .machine-heading h2 { margin: 0; text-align: left; }
@@ -743,5 +813,9 @@
     .worksheet li { break-inside: avoid; line-height: 1.45; }
     .worksheet h2 { font-size: 1.65rem; }
     .museum { background: white; min-height: auto; }
+    .vocabulary-cover { min-height: 92vh; break-after: page; color: black; background: white; border: 5px solid #25453c; }
+    .vocabulary-page { break-before: page; }
+    .vocabulary-page tr { break-inside: avoid; }
+    .vocabulary-page h3 { color: black; background: #e8eee9; border-left: 6px solid #25453c; }
   }
 </style>
