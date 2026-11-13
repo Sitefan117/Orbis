@@ -178,7 +178,7 @@
     chatInput = '';
     isChatLoading = true;
 
-    const systemInstruction = `Tu es un conseiller en orientation suisse bienveillant et cool qui aide un élève nommé \${studentName}.
+    const systemInstruction = `Tu es un conseiller en orientation suisse bienveillant et cool qui aide un élève nommé ${studentName}.
 Consignes strictes :
 1. Utilise TOUJOURS le tutoiement ("tu").
 2. Parle un langage jeune, simple, accessible, mais propre. Pas de jargon d'adulte barbant.
@@ -220,11 +220,11 @@ Consignes strictes :
   }
 
   function exportToWord() {
-    const content = `==================================================\n      LETTRE DE MOTIVATION (STYLE SUISSE)\n==================================================\n\nÉMETTEUR :\n\${letter.exp || 'Non renseigné'}\n\nDESTINATAIRE :\n\${letter.dest || 'Non renseigné'}\n\nLIEU ET DATE :\n\${letter.date || 'Non renseigné'}\n\nOBJET :\n\${letter.objet || 'Non renseigné'}\n\nAPPEL :\n\${letter.appel}\n\n[MOI] :\n\${letter.p1 || 'Non rédigé'}\n\n[VOUS] :\n\${letter.p2 || 'Non rédigé'}\n\n[NOUS] :\n\${letter.p3 || 'Non rédigé'}\n\nSIGNATURE :\n\${letter.sig || 'Non renseigné'}`;
+    const content = `==================================================\n      LETTRE DE MOTIVATION (STYLE SUISSE)\n==================================================\n\nÉMETTEUR :\n${letter.exp || 'Non renseigné'}\n\nDESTINATAIRE :\n${letter.dest || 'Non renseigné'}\n\nLIEU ET DATE :\n${letter.date || 'Non renseigné'}\n\nOBJET :\n${letter.objet || 'Non renseigné'}\n\nAPPEL :\n${letter.appel}\n\n[MOI] :\n${letter.p1 || 'Non rédigé'}\n\n[VOUS] :\n${letter.p2 || 'Non rédigé'}\n\n[NOUS] :\n${letter.p3 || 'Non rédigé'}\n\nSIGNATURE :\n${letter.sig || 'Non renseigné'}`;
     const blob = new Blob([content], { type: 'application/msword' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `Lettre_Motivation_\${studentName.replace(/\\s+/g, '_')}.doc`;
+    link.download = `Lettre_Motivation_${studentName.replace(/\s+/g, '_')}.doc`;
     link.click();
   }
 
