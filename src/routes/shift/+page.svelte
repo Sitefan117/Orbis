@@ -1,7 +1,7 @@
 <script>
   import { base } from '$app/paths';
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
-  import { onDestroy } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import {
     PLACE_VALUES, PLACE_BY_KEY, TICK_WEIGHT, LINE_TICKS, TEN_BLOCKS, HUNDRED_BLOCKS,
     emptyCounts, getRanksForMission, valueFromCounts, decomposeTicks, formatTicks,
@@ -9,13 +9,14 @@
   } from '$lib/games/shift/number-engine';
   import { DIFFICULTIES, MEASURE_UNITS, MISSIONS } from '$lib/games/shift/config';
   import { getStudentName } from '$lib/orbis/identity/local-student';
-  import { recordGameActivity } from '$lib/orbis/tracking/client';
+  import { createGameProgressService } from '$lib/orbis/persistence/game-services';
+  import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
 
   /*
    * SHIFT — Atelier des quantités
    * -------------------------------------------------------------------------
    * Refonte en un seul composant Svelte, sans dépendance supplémentaire et sans
-   * sauvegarde persistante. Les valeurs sont calculées en millièmes (ticks) :
+   * sauvegarde locale et distante. Les valeurs sont calculées en millièmes (ticks) :
    * cela évite les erreurs habituelles des nombres décimaux en JavaScript.
    * Les interactions se font avec des boutons et des champs natifs, adaptés à
    * la souris, au clavier et au tactile. Aucun glisser-déposer n'est requis.
@@ -51,6 +52,46 @@
   let questionsAnswered = 0;
   let correctAnswers = 0;
   let resultReported = false;
+  let responseDetails = [];
+  let studentName = '';
+
+  function saveShiftProgress() {
+    if (!studentName || view !== 'game' || !activeTask) return;
+    recordGameProgress({
+      studentName,
+      gameId: 'shift',
+      state: { view, activeMissionId, selectedDifficulty, playStyle, activeTask, answerInput, decompositionInputs, selectedOrder, lineGuess, attemptCount, score, streak, lives, workbench, shipment, questionsAnswered, correctAnswers, responseDetails },
+      formatVersion: 1,
+      summary: { label: `Shift · ${activeMissionId} · ${correctAnswers}/${Math.max(1, questionsAnswered)}`, completed: correctAnswers, total: Math.max(1, questionsAnswered) }
+    });
+  }
+
+  onMount(() => {
+    studentName = getStudentName();
+    void (async () => {
+      const loaded = await createGameProgressService(studentName, 'shift').loadProgress();
+      if (!loaded.ok || !loaded.value?.state?.activeTask) return;
+      const state = loaded.value.state;
+      view = 'game';
+      activeMissionId = state.activeMissionId ?? activeMissionId;
+      selectedDifficulty = state.selectedDifficulty ?? selectedDifficulty;
+      playStyle = state.playStyle ?? playStyle;
+      activeTask = state.activeTask;
+      answerInput = state.answerInput ?? '';
+      decompositionInputs = state.decompositionInputs ?? {};
+      selectedOrder = state.selectedOrder ?? [];
+      lineGuess = state.lineGuess ?? 50;
+      attemptCount = state.attemptCount ?? 0;
+      score = state.score ?? 0;
+      streak = state.streak ?? 0;
+      lives = state.lives ?? 3;
+      workbench = state.workbench ?? emptyCounts();
+      shipment = state.shipment ?? emptyCounts();
+      questionsAnswered = state.questionsAnswered ?? 0;
+      correctAnswers = state.correctAnswers ?? 0;
+      responseDetails = state.responseDetails ?? [];
+    })();
+  });
 
   $: activeMission = MISSIONS.find((mission) => mission.id === activeMissionId) || MISSIONS[0];
   $: difficulty = DIFFICULTIES.find((item) => item.id === selectedDifficulty) || DIFFICULTIES[1];
@@ -65,6 +106,7 @@
     questionsAnswered = 0;
     correctAnswers = 0;
     resultReported = false;
+    responseDetails = [];
     streak = 0;
     lives = 3;
     gameOver = false;
@@ -74,9 +116,11 @@
     if (['factory'].includes(missionId)) startSpawner();
     const chosenMission = MISSIONS.find((mission) => mission.id === missionId) || MISSIONS[0];
     announceText = `Mission lancée : ${chosenMission.title}.`;
+    saveShiftProgress();
   }
 
   function goToMenu() {
+    saveShiftProgress();
     stopSpawner();
     conveyorItems = [];
     view = 'menu';
@@ -407,6 +451,7 @@ const pixelsPerSecond = randomInt(180, 220);
     let isCorrect = false;
     let hint = '';
     let message = 'Pas encore. Reprends les rangs ou la consigne, puis réessaie.';
+    const prompt = activeTask.prompt;
 
     switch (activeTask.type) {
       case 'factory': {
@@ -529,6 +574,16 @@ const pixelsPerSecond = randomInt(180, 220);
         void reportShiftResult();
       }
     }
+    responseDetails = [...responseDetails, {
+      questionIndex: Math.max(0, questionsAnswered - 1),
+      prompt,
+      response: answerInput || JSON.stringify({ decompositionInputs, selectedOrder, shipment }),
+      expected: JSON.stringify(activeTask.expected ?? activeTask.targetTicks ?? activeTask.expectedWords ?? activeTask.values ?? activeTask.target ?? null),
+      correct: isCorrect,
+      attempts: attemptCount,
+      errorFamily: isCorrect ? undefined : activeTask.type
+    }];
+    saveShiftProgress();
   }
 
   async function reportShiftResult() {
@@ -538,6 +593,7 @@ const pixelsPerSecond = randomInt(180, 220);
       studentName: getStudentName(), gameId: 'shift', activityId: activeMissionId,
       correctCount: correctAnswers, questionCount: Math.max(1, questionsAnswered),
       errorCount: Math.max(0, questionsAnswered - correctAnswers),
+      responseDetails,
       metadata: { difficulty: selectedDifficulty, playStyle, score, streak }
     });
   }
@@ -559,6 +615,7 @@ const pixelsPerSecond = randomInt(180, 220);
       return;
     }
     newQuestion();
+    saveShiftProgress();
   }
 
   function speakPrompt() {
@@ -603,6 +660,7 @@ const pixelsPerSecond = randomInt(180, 220);
   }
 
   onDestroy(() => {
+    saveShiftProgress();
     stopSpawner();
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
   });

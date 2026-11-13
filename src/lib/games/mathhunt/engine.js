@@ -195,6 +195,7 @@ const TARGET_SCORE = 10;
             this.movementOn = true;
             this.correctHits = 0;
             this.totalShots = 0;
+            this.responseDetails = [];
             this.targetScore = TARGET_SCORE;
             this.isPlaying = false;
             this.ducks = [];
@@ -223,7 +224,8 @@ const TARGET_SCORE = 10;
                 correctHits: this.correctHits,
                 totalShots: this.totalShots,
                 accuracy,
-                stars
+                stars,
+                responseDetails: this.responseDetails
             });
         }
 
@@ -251,6 +253,22 @@ const TARGET_SCORE = 10;
             this.isPlaying = true;
             this.nextQuestion();
             this.notify('playing');
+        }
+
+        resumeFromSnapshot(snapshot) {
+            if (!snapshot?.currentQuestion) return false;
+            this.selectedTables = Array.isArray(snapshot.selectedTables) ? [...snapshot.selectedTables] : [...ALL_TABLES];
+            this.difficulty = snapshot.difficulty || 'FACILE';
+            this.movementOn = snapshot.movementOn !== false;
+            this.correctHits = Number(snapshot.correctHits) || 0;
+            this.totalShots = Number(snapshot.totalShots) || 0;
+            this.responseDetails = Array.isArray(snapshot.responseDetails) ? [...snapshot.responseDetails] : [];
+            this.currentQuestion = snapshot.currentQuestion;
+            this.questionResolved = false;
+            this.isPlaying = true;
+            this.spawnDucks();
+            this.notify('playing');
+            return true;
         }
 
         stopToMenu() {
@@ -296,6 +314,15 @@ const TARGET_SCORE = 10;
             for (const duck of this.ducks) {
                 if (duck.state !== 'ALIVE' || !duck.containsPoint(x, y)) continue;
                 hitSomething = true;
+                this.responseDetails.push({
+                    questionIndex: this.totalShots - 1,
+                    prompt: `${this.currentQuestion.factorA} × ${this.currentQuestion.factorB}`,
+                    response: String(duck.value),
+                    expected: String(this.currentQuestion.correctAnswer),
+                    correct: duck.isCorrect,
+                    attempts: 1,
+                    errorFamily: duck.isCorrect ? undefined : 'choix de réponse'
+                });
                 if (duck.isCorrect) {
                     duck.state = 'HIT';
                     this.questionResolved = true;
@@ -316,6 +343,14 @@ const TARGET_SCORE = 10;
                 break;
             }
             if (!hitSomething) {
+                this.responseDetails.push({
+                    questionIndex: this.totalShots - 1,
+                    prompt: this.currentQuestion ? `${this.currentQuestion.factorA} × ${this.currentQuestion.factorB}` : undefined,
+                    expected: this.currentQuestion ? String(this.currentQuestion.correctAnswer) : undefined,
+                    correct: false,
+                    attempts: 1,
+                    errorFamily: 'tir hors cible'
+                });
                 this.audio.playMiss();
                 this.addEffect(x, y, 'MISS!', '#e2443a');
             }

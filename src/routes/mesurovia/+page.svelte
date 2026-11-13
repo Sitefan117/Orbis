@@ -25,7 +25,7 @@
   import { coursePaths } from '$lib/orbis/catalog/course-paths';
   import { getConversionFamily } from '$lib/games/mesurovia/conversion-table';
   import { getStudentName } from '$lib/orbis/identity/local-student';
-  import { recordGameActivity } from '$lib/orbis/tracking/client';
+  import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
 
   type View = 'welcome' | 'games-catalog' | 'courses-catalog' | 'character' | 'villages' | 'village' | 'room' | 'pretest' | 'howto';
   type SessionMode = 'practice' | 'battle' | 'table' | 'detective' | 'clock' | 'builder' | 'memory' | 'race' | 'exam' | 'boss' | 'pretest';
@@ -253,6 +253,13 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, active: activeProfileKey, profiles }));
       saveMessage = 'Progression sauvegardée sur cet appareil.';
+      recordGameProgress({
+        studentName: getStudentName(profile.name),
+        gameId: 'mesurovia',
+        state: { profile, activeProfileKey },
+        formatVersion: 2,
+        summary: { label: `Mesurovia · ${profile.xp} XP`, completed: profile.badges.length, total: Math.max(1, Object.keys(profile.houses).length) }
+      });
     } catch {
       saveMessage = 'La sauvegarde locale est indisponible dans ce contexte de navigateur.';
     }

@@ -6,6 +6,7 @@
   import { getStudentName } from '$lib/orbis/identity/local-student';
   import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import { recordGameActivity } from '$lib/orbis/tracking/client';
+  import type { ResponseDetail } from '$lib/orbis/results/contract';
   import { GEOMETRY_FIGURES, getFiguresForLevel } from '$lib/games/geometrie/figures';
   import FigureDrawing from '$lib/games/geometrie/FigureDrawing.svelte';
   import { generateQuestion } from '$lib/games/geometrie/question-engine';
@@ -13,7 +14,7 @@
 
   type Phase = 'config' | 'play' | 'done';
   type FeedbackKind = 'success' | 'retry' | 'solution' | '';
-  type GeometryProgress = { phase: Phase; level: Level; mode: Mode; questionIndex: number; question: Question; selectedOptionIds: string[]; visibleHintCount: number; pointsForQuestion: number; xp: number; correctCount: number; firstTryCorrectCount: number; attemptsForQuestion: number; locked: boolean; feedbackKind: FeedbackKind; feedbackTitle: string; feedbackDetails: string; errorFamilies: ErrorFamily[]; startedAt: number; elapsedSeconds?: number };
+  type GeometryProgress = { phase: Phase; level: Level; mode: Mode; questionIndex: number; question: Question; selectedOptionIds: string[]; visibleHintCount: number; pointsForQuestion: number; xp: number; correctCount: number; firstTryCorrectCount: number; attemptsForQuestion: number; locked: boolean; feedbackKind: FeedbackKind; feedbackTitle: string; feedbackDetails: string; errorFamilies: ErrorFamily[]; responseDetails: ResponseDetail[]; startedAt: number; elapsedSeconds?: number };
 
   const ORBIS_HOME = `${base}/`;
   let homeHref = ORBIS_HOME;
@@ -48,6 +49,7 @@
   let feedbackTitle = '';
   let feedbackDetails = '';
   let errorFamilies: ErrorFamily[] = [];
+  let responseDetails: ResponseDetail[] = [];
   let showHelp = false;
   let enlargeFigures = false;
   let submittingResult = false;
@@ -78,7 +80,7 @@
       const loaded = await createGameProgressService<GeometryProgress>(studentName, 'geometrie').loadProgress();
       if (!loaded.ok || !loaded.value || loaded.value.state.phase !== 'play') return;
       const state = loaded.value.state;
-      ({ phase, level, mode, questionIndex, question, selectedOptionIds, visibleHintCount, pointsForQuestion, xp, correctCount, firstTryCorrectCount, attemptsForQuestion, locked, feedbackKind, feedbackTitle, feedbackDetails, errorFamilies, startedAt, elapsedSeconds = 0 } = state);
+      ({ phase, level, mode, questionIndex, question, selectedOptionIds, visibleHintCount, pointsForQuestion, xp, correctCount, firstTryCorrectCount, attemptsForQuestion, locked, feedbackKind, feedbackTitle, feedbackDetails, errorFamilies, responseDetails = [], startedAt, elapsedSeconds = 0 } = state);
       startedAt = Date.now();
     })();
   });
@@ -99,6 +101,7 @@
     correctCount = 0;
     firstTryCorrectCount = 0;
     errorFamilies = [];
+    responseDetails = [];
     elapsedSeconds = 0;
     startedAt = Date.now();
     resultSubmissionMessage = '';
@@ -136,7 +139,7 @@
     if (phase !== 'play' || !level || !mode || !question) return;
     checkpointElapsed();
     void createGameProgressService<GeometryProgress>(studentName, 'geometrie').saveProgress(
-      { phase, level, mode, questionIndex, question, selectedOptionIds, visibleHintCount, pointsForQuestion, xp, correctCount, firstTryCorrectCount, attemptsForQuestion, locked, feedbackKind, feedbackTitle, feedbackDetails, errorFamilies, startedAt, elapsedSeconds }, 1,
+      { phase, level, mode, questionIndex, question, selectedOptionIds, visibleHintCount, pointsForQuestion, xp, correctCount, firstTryCorrectCount, attemptsForQuestion, locked, feedbackKind, feedbackTitle, feedbackDetails, errorFamilies, responseDetails, startedAt, elapsedSeconds }, 1,
       { label: `Géométrie ${level} : question ${questionIndex}/${QUESTION_COUNT}`, completed: questionIndex - 1, total: QUESTION_COUNT }
     );
   }
@@ -181,6 +184,16 @@
     const expectedLabels = question.options
       .filter((option) => question?.correctIds.includes(option.id))
       .map((option) => option.label);
+    const detail: ResponseDetail = {
+      questionIndex: questionIndex - 1,
+      prompt: question.text,
+      response: selectedLabels.join(', '),
+      expected: expectedLabels.join(', '),
+      correct: isCorrect,
+      attempts: attemptsForQuestion + 1,
+      hintsUsed: Math.max(0, visibleHintCount - 1),
+      errorFamily: isCorrect ? undefined : question.mode
+    };
 
     if (isCorrect) {
       correctCount += 1;
@@ -190,6 +203,7 @@
       feedbackKind = 'success';
       feedbackTitle = attemptsForQuestion === 0 ? `Bonne réponse ! +${Math.max(10, pointsForQuestion)} XP` : `Bien repris ! +${Math.max(10, pointsForQuestion)} XP`;
       feedbackDetails = question.explanation;
+      responseDetails = [...responseDetails, detail];
       saveMission();
       void scrollFeedbackIntoView();
       return;
@@ -224,6 +238,7 @@
     feedbackKind = 'solution';
     feedbackTitle = 'Voici comment raisonner.';
     feedbackDetails = `Réponse attendue : ${expectedLabels.join(', ')}. ${question.explanation}`;
+    responseDetails = [...responseDetails, detail];
     saveMission();
     void scrollFeedbackIntoView();
   }
@@ -241,7 +256,7 @@
   }
 
   function backToSelection(): void {
-    // Aucune progression de partie n'est enregistrée : retour immédiat et clair.
+    // Le retour abandonne volontairement la mission en cours et revient au choix.
     question = null;
     phase = 'config';
     selectedOptionIds = [];
@@ -268,6 +283,7 @@
         questionCount: QUESTION_COUNT,
         errorCount: QUESTION_COUNT - correctCount,
         errorFamilies,
+        responseDetails,
         durationSeconds: Math.max(1, elapsedSeconds + Math.round((Date.now() - startedAt) / 1000)),
         metadata: { xp, firstTryCorrectCount, attemptedErrors: errorFamilies.length, level, mode }
       });

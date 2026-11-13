@@ -3,7 +3,9 @@
   import { onMount, tick } from 'svelte';
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { getStudentName } from '$lib/orbis/identity/local-student';
-  import { recordGameActivity } from '$lib/orbis/tracking/client';
+  import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
+  import { createGameProgressService } from '$lib/orbis/persistence/game-services';
+  import type { ResponseDetail } from '$lib/orbis/results/contract';
   import lexique from '../../../../static/vocabulaire/lexique.csv?raw';
   import poses from '../../../../static/mascotte-noireau/index.json';
   import { gridSize, gridWord, letterChoices, makeGrid, matchRounds, normalize, readLexique, shuffle, spriteStyle, type Word } from './lexique';
@@ -95,6 +97,7 @@
   let printWords: Word[] = [];
   let showKey = false;
   let printKind: 'exercise' | 'vocabulary' = 'exercise';
+  let responseDetails: ResponseDetail[] = [];
 
   $: categories = getCategories(bank);
   $: selectedCount = bank.filter((entry) => selectedThemes.includes(entry.theme)).length;
@@ -123,7 +126,29 @@
     } catch { /* The default theme works without storage. */ }
     start(modes.find(([id]) => id === requested)?.[0] ?? 'whack-image');
     ready = true;
+    void restoreRemoteProgress();
   });
+
+  async function restoreRemoteProgress() {
+    if (!student) return;
+    const loaded = await createGameProgressService(student, 'musee_vocabulaire').loadProgress();
+    if (!loaded.ok || !loaded.value?.state) return;
+    const state = loaded.value.state as Record<string, any>;
+    if (Array.isArray(state.selectedThemes) && state.selectedThemes.length) selectedThemes = state.selectedThemes;
+    if (Array.isArray(state.galleryIds)) gallery = bank.filter((entry) => state.galleryIds.includes(entry.id));
+    responseDetails = Array.isArray(state.responseDetails) ? state.responseDetails : [];
+  }
+
+  function saveRemoteProgress() {
+    if (!student) return;
+    recordGameProgress({
+      studentName: student,
+      gameId: 'musee_vocabulaire',
+      state: { mode, selectedThemes, galleryIds: gallery.map((entry) => entry.id), queueIds: queue.map((entry) => entry.id), targetId: target?.id, attempts, solved, responseDetails },
+      formatVersion: 1,
+      summary: { label: `Musée des mots · ${gallery.length} mots`, completed: gallery.length, total: Math.max(1, selectedCount) }
+    });
+  }
 
   function report(text: string, state: Reaction = 'progress') {
     message = text;
@@ -156,6 +181,7 @@
       matchIndex = -1;
     }
     nextRound();
+    saveRemoteProgress();
   }
 
   function distinctWords(entries: Word[]) {
@@ -236,8 +262,11 @@
       studentName: student || getStudentName(), gameId: 'musee_vocabulaire', activityId: mode,
       correctCount: 1, questionCount: 1, errorCount: 0,
       hintsUsed: reaction === 'hint' ? 1 : 0,
+      responseDetails: [{ questionIndex: gallery.length - 1, prompt: opening[mode], response: entry.word, expected: entry.word, correct: true, attempts: Math.max(1, attempts), hintsUsed: reaction === 'hint' ? 1 : 0 }],
       metadata: { wordId: entry.id, theme: entry.theme, format: mode }
     });
+    responseDetails = [...responseDetails, { questionIndex: gallery.length - 1, prompt: opening[mode], response: entry.word, expected: entry.word, correct: true, attempts: Math.max(1, attempts), hintsUsed: reaction === 'hint' ? 1 : 0 }];
+    saveRemoteProgress();
     report(`Bien joué ! « ${entry.word} » est dans ta collection.`, 'correct');
   }
 

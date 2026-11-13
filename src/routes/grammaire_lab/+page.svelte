@@ -6,6 +6,7 @@
   import { coursePaths } from '$lib/orbis/catalog/course-paths';
   import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import { recordGameActivity } from '$lib/orbis/tracking/client';
+  import type { ResponseDetail } from '$lib/orbis/results/contract';
   import { CATEGORY_LABELS, GRAMMAR_LEVELS, getGrammarLevel } from '$lib/games/grammaire-lab/curriculum';
   import { GRAMMAR_PROGRESS_VERSION, acceptedOrders, completeLevel, createInitialProgress, isAutonomousSuccess, levelMastered, matchesRepair, pickChallenges, sameSelection, sanitizeProgress, starsForLevel, transformedSentence, validNextBlocks } from '$lib/games/grammaire-lab/engine';
   import type { ActivityStats, GrammarBlock, GrammarChallenge, GrammarProgress } from '$lib/games/grammaire-lab/types';
@@ -43,6 +44,7 @@
   let showAnalysis = false;
   let tetrisChallenge: GrammarChallenge | null = null;
   let tetrisRemaining: GrammarBlock[] = [];
+  let responseDetails: ResponseDetail[] = [];
   let tetrisPlaced: string[] = [];
   let tetrisTimed = false;
   let tetrisMode: 'construction' | 'flash' | 'categories' | 'blanks' = 'construction';
@@ -102,6 +104,7 @@
     activeChallenges = pickChallenges(getGrammarLevel(levelId), 10, lastSessionIds[levelId] ?? []);
     lastSessionIds = { ...lastSessionIds, [levelId]: activeChallenges.map((challenge) => challenge.id) };
     challengeIndex = 0; stats = freshStats(); reportStatus = 'idle'; showAnalysis = false; screen = 'lego'; resetChallenge();
+    responseDetails = [];
   }
   function resetChallenge() {
     selectedIds = []; repairAnswer = ''; usedHint = false; feedback = 'idle'; feedbackMessage = ''; attempts = 0; resolved = false; draggedId = '';
@@ -158,8 +161,11 @@
   function checkAnswer() {
     if (resolved || (current.kind === 'repair' ? !repairAnswer.trim() : selectedIds.length === 0)) return;
     attempts += 1;
+    const response = current.kind === 'repair' ? repairAnswer : selectedIds.map((id) => current.blocks.find((block) => block.id === id)?.text ?? id).join(' ');
+    const expected = current.solution.map((id) => current.blocks.find((block) => block.id === id)?.text ?? id).join(' ');
     if (current.kind === 'repair' ? matchesRepair(current, repairAnswer) : sameSelection(current, selectedIds)) {
       resolved = true; feedback = 'correct'; feedbackMessage = current.explanation;
+      responseDetails = [...responseDetails, { questionIndex: challengeIndex, prompt: current.prompt, response, expected, correct: true, attempts, hintsUsed: usedHint ? 1 : 0 }];
       stats = { ...stats, correct: stats.correct + 1, autonomousCorrect: stats.autonomousCorrect + (isAutonomousSuccess(attempts, usedHint) ? 1 : 0), questions: stats.questions + 1 };
       return;
     }
@@ -177,6 +183,7 @@
     if (resolved) return;
     selectedIds = [...current.solution]; repairAnswer = current.blocks.find((block) => block.id === current.solution[0])?.text ?? ''; resolved = true; feedback = 'revealed';
     feedbackMessage = `${current.explanation} Observe la construction, puis essaie une nouvelle phrase.`;
+    responseDetails = [...responseDetails, { questionIndex: challengeIndex, prompt: current.prompt, response: current.kind === 'repair' ? repairAnswer : selectedIds.map((id) => current.blocks.find((block) => block.id === id)?.text ?? id).join(' '), expected: current.solution.map((id) => current.blocks.find((block) => block.id === id)?.text ?? id).join(' '), correct: false, attempts: Math.max(1, attempts), hintsUsed: usedHint ? 1 : 0, errorFamily: current.errorFamily }];
     stats = { ...stats, questions: stats.questions + 1 };
   }
   function nextChallenge() {
@@ -201,6 +208,7 @@
       studentName, gameId: 'grammaire_lab', activityId: `lego-niveau-${level.id}`, skillId: level.notions[0],
       correctCount: stats.autonomousCorrect, questionCount: activeChallenges.length, errorCount: stats.errors,
       errorFamilies: Object.entries(stats.errorFamilies).map(([family, count]) => `${family}:${count}`), hintsUsed: stats.hints,
+      responseDetails,
       durationSeconds: Math.max(1, Math.round((Date.now() - stats.startedAt) / 1000)),
       metadata: { level: level.id, stars: summaryStars, mode: 'lego', consolidation, mastered: summaryMastered, resolvedCount: stats.correct, helpedCount: stats.correct - stats.autonomousCorrect }
     });

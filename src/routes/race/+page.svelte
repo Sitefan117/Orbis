@@ -19,11 +19,13 @@
     } from '$lib/games/race/engine';
     import { loadFactStats, saveFactStats } from '$lib/games/race/progress';
     import { getStudentName } from '$lib/orbis/identity/local-student';
-    import { recordGameActivity } from '$lib/orbis/tracking/client';
+    import { createGameProgressService } from '$lib/orbis/persistence/game-services';
+    import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
+    import type { ResponseDetail } from '$lib/orbis/results/contract';
     // -------------------------------------------------------------------------
     // MATH RACER — prototype amélioré
-    // Le jeu reste indépendant du portail, mais conserve un petit bilan local.
-    // Aucune donnée n'est envoyée à un serveur dans cette version.
+    // Le jeu reste indépendant du portail, mais son bilan peut être synchronisé
+    // quand l'élève dispose d'une session Supabase.
     // -------------------------------------------------------------------------
 
     type GameState = 'MENU' | 'TABLE_PICKER' | 'PLAYING' | 'PAUSED_ERROR' | 'SUMMARY' | 'GAMEOVER';
@@ -106,6 +108,19 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
     let plannedQuestions = $state(BASE_SESSION_QUESTIONS);
     let sessionWrongFacts = $state<string[]>([]);
     let factStats = $state<Record<string, FactStat>>({});
+    let responseDetails = $state<ResponseDetail[]>([]);
+
+    function saveRaceProgress() {
+        const studentName = getStudentName('');
+        if (!studentName) return;
+        recordGameProgress({
+            studentName,
+            gameId: 'race',
+            state: { gameState, gameMode, practiceLevel, selectedNotions, selectedTables, score, lives, combo, questionsAnswered, correctAnswers, factStats, responseDetails },
+            formatVersion: 1,
+            summary: { label: `Racer · ${correctAnswers}/${Math.max(1, questionsAnswered)}`, completed: correctAnswers, total: Math.max(1, questionsAnswered) }
+        });
+    }
     // Le bilan final attend que l'élève ait lu la correction et appuyé sur BOOST.
     let pendingPauseOutcome: 'SUMMARY' | 'GAMEOVER' | null = null;
     let resultReported = false;
@@ -127,6 +142,7 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
                 correctCount: correctAnswers, questionCount: questionsAnswered,
                 errorCount: Math.max(0, questionsAnswered - correctAnswers),
                 errorFamilies: sessionWrongFacts,
+                responseDetails,
                 metadata: { selectedNotions, selectedTables, practiceLevel, sessionAccuracy }
             });
         }
@@ -576,6 +592,16 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
 
         questionsAnswered++;
         recordFactResult(base, isCorrect);
+        responseDetails = [...responseDetails, {
+            questionIndex: questionsAnswered - 1,
+            prompt: base.questionText,
+            response: selectedPanel?.userData?.text ? String(selectedPanel.userData.text) : 'Aucune voie choisie',
+            expected: String(base.answer),
+            correct: isCorrect,
+            attempts: 1,
+            errorFamily: isCorrect ? undefined : base.notionLabel
+        }];
+        saveRaceProgress();
 
         if (isCorrect) {
             correctAnswers++;
@@ -668,6 +694,7 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
         correctAnswers = 0;
         plannedQuestions = BASE_SESSION_QUESTIONS;
         sessionWrongFacts = [];
+        responseDetails = [];
         generatedQuestions = 0;
         normalQuestionsGenerated = 0;
         normalQuestionTarget = BASE_SESSION_QUESTIONS;
@@ -685,7 +712,6 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
         roadDashes.forEach((dash) => { dash.position.z = dash.userData.initialZ; });
         roadsideObjects.forEach((object) => { object.position.z = object.userData.initialZ; });
         factStats = loadFactStats();
-
         // Au départ d'une nouvelle partie, on réactive jusqu'à deux faits fragiles
         // enregistrés lors des séances précédentes. Ils remplacent des questions aléatoires.
         const levelOrder: Record<PracticeLevel, number> = { guided: 0, standard: 1, challenge: 2 };
@@ -814,6 +840,19 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
         let disposed = false;
         audioEngine = new RaceAudioEngine(() => musicEnabled, () => sfxEnabled);
         factStats = loadFactStats();
+        void (async () => {
+            const studentName = getStudentName('');
+            if (!studentName) return;
+            const loaded = await createGameProgressService(studentName, 'race').loadProgress();
+            if (!loaded.ok || !loaded.value?.state) return;
+            const state = loaded.value.state as Record<string, any>;
+            if (Array.isArray(state.selectedNotions)) selectedNotions = state.selectedNotions;
+            if (Array.isArray(state.selectedTables)) selectedTables = state.selectedTables;
+            if (state.gameMode === 'training' || state.gameMode === 'arcade') gameMode = state.gameMode;
+            if (state.practiceLevel === 'guided' || state.practiceLevel === 'standard' || state.practiceLevel === 'challenge') practiceLevel = state.practiceLevel;
+            if (state.factStats && typeof state.factStats === 'object') factStats = state.factStats;
+            responseDetails = Array.isArray(state.responseDetails) ? state.responseDetails : [];
+        })();
 
         const handleResize = () => resizeRenderer();
         window.addEventListener('resize', handleResize);

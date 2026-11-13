@@ -4,7 +4,8 @@
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
     import { TableHuntGame } from '$lib/games/mathhunt/engine.js';
     import { getStudentName } from '$lib/orbis/identity/local-student';
-    import { recordGameActivity } from '$lib/orbis/tracking/client';
+    import { createGameProgressService } from '$lib/orbis/persistence/game-services';
+    import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
 
     // État de l'interface Svelte. Les choix commencent avec les 12 livrets actifs.
     let canvas;
@@ -21,6 +22,7 @@
     let finalAccuracy = 100;
     let finalStars = '★ ★ ★ ★ ★';
     let resultReported = false;
+    let responseDetails = [];
 
     const ALL_TABLES = Array.from({ length: 12 }, (_, index) => index + 1);
     const CANVAS_WIDTH = 320;
@@ -36,12 +38,21 @@
         currentQuestion = state.currentQuestion;
         correctHits = state.correctHits;
         totalShots = state.totalShots;
+        responseDetails = state.responseDetails ?? [];
+        if (getStudentName('')) {
+            recordGameProgress({
+                studentName: getStudentName(), gameId: 'mathhunt',
+                state: { selectedTables, difficulty, movementOn, phase, currentQuestion, correctHits, totalShots, responseDetails },
+                formatVersion: 1,
+                summary: { label: `Math Hunt · ${correctHits}/${Math.max(1, totalShots)}`, completed: correctHits, total: Math.max(1, totalShots) }
+            });
+        }
         if (state.phase === 'victory') {
             finalAccuracy = state.accuracy;
             finalStars = state.stars;
             if (!resultReported) {
                 resultReported = true;
-                void recordGameActivity({ studentName: getStudentName(), gameId: 'mathhunt', activityId: difficulty, correctCount: correctHits, questionCount: Math.max(1, totalShots), errorCount: Math.max(0, totalShots - correctHits), metadata: { selectedTables, difficulty, stars: finalStars } });
+                void recordGameActivity({ studentName: getStudentName(), gameId: 'mathhunt', activityId: difficulty, correctCount: correctHits, questionCount: Math.max(1, totalShots), errorCount: Math.max(0, totalShots - correctHits), responseDetails, metadata: { selectedTables, difficulty, stars: finalStars } });
             }
         }
     }
@@ -129,7 +140,7 @@
     window.addEventListener('keydown', onKeyDown);
 
     // Charge réellement la police avant le premier dessin du jeu Canvas.
-    const initializeGame = async () => {
+        const initializeGame = async () => {
         try {
             await document.fonts.load('8px "Press Start 2P"');
             await document.fonts.ready;
@@ -142,6 +153,16 @@
         if (disposed) return;
 
         game = new TableHuntGame(canvas, handleGameState);
+        const loaded = await createGameProgressService(getStudentName(''), 'mathhunt').loadProgress();
+        const state = loaded.ok ? loaded.value?.state : null;
+        if (state) {
+            selectedTables = Array.isArray(state.selectedTables) ? state.selectedTables : selectedTables;
+            difficulty = state.difficulty || difficulty;
+            movementOn = state.movementOn !== false;
+            responseDetails = state.responseDetails ?? [];
+            if (state.phase === 'playing' && game.resumeFromSnapshot(state)) return;
+        }
+        syncSettingsToGame();
     };
 
     // Lance l'initialisation sans bloquer le retour de onMount.

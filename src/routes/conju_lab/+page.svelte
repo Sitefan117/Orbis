@@ -6,6 +6,7 @@
 import { getStudentName } from '$lib/orbis/identity/local-student';
 import { createGameProgressService } from '$lib/orbis/persistence/game-services';
 import { recordGameActivity } from '$lib/orbis/tracking/client';
+import type { ResponseDetail } from '$lib/orbis/results/contract';
   import { getTenseInfo, getTensesForGrade, RULE_CARDS } from '$lib/games/conju-lab/curriculum';
   import { getGroupLabel, getVerbsForGrade } from '$lib/games/conju-lab/verbs';
   import {
@@ -24,7 +25,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
 
   type Screen = 'menu' | 'study' | 'game' | 'end';
   type FeedbackKind = 'none' | 'correct' | 'retry' | 'revealed' | 'timeout';
-  type ConjuProgress = { screen: 'game'; focus: ActivityFocus; selectedTenses: TenseId[]; selectedGroups: VerbGroup[]; selectedVerbs: string[]; gameMode: 'detente' | 'rapide'; currentQuestion: VerbQuestion; hintIndex: number; attemptCount: number; resolved: boolean; feedbackKind: FeedbackKind; feedbackMessage: string; errorHint: string; questionIndex: number; score: number; correctQuestions: number; retrySuccesses: number; totalErrors: number; timeLeft: number; bossHp: number; playerLives: number; combo: number; bestCombo: number; combatOutcome: 'victory' | 'defeat' | null; startedAt: number; elapsedSeconds?: number };
+  type ConjuProgress = { screen: 'game'; focus: ActivityFocus; selectedTenses: TenseId[]; selectedGroups: VerbGroup[]; selectedVerbs: string[]; gameMode: 'detente' | 'rapide'; currentQuestion: VerbQuestion; hintIndex: number; attemptCount: number; resolved: boolean; feedbackKind: FeedbackKind; feedbackMessage: string; errorHint: string; questionIndex: number; score: number; correctQuestions: number; retrySuccesses: number; totalErrors: number; timeLeft: number; bossHp: number; playerLives: number; combo: number; bestCombo: number; combatOutcome: 'victory' | 'defeat' | null; responseDetails: ResponseDetail[]; startedAt: number; elapsedSeconds?: number };
 
   const SESSION_LENGTH = 10;
   const FOCI: Array<{ id: ActivityFocus; label: string; detail: string }> = [
@@ -34,8 +35,8 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     { id: 'personnes', label: 'Identifier un pronom', detail: 'Associer une forme à je, tu, il, nous…' }
   ];
 
-  // L’interface garde seulement les réglages et résultats de la session en mémoire.
-  // Aucune progression n’est enregistrée localement par ConjuFighter.
+  // L’interface garde les réglages et résultats en mémoire ; la mission en cours
+  // est également confiée au service de sauvegarde Orbis pour pouvoir la reprendre.
   let screen: Screen = 'menu';
   const grade: Grade = '9H';
   let focus: ActivityFocus = 'mixte';
@@ -64,6 +65,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   let correctQuestions = 0;
   let retrySuccesses = 0;
   let totalErrors = 0;
+  let responseDetails: ResponseDetail[] = [];
   let timeLeft = 15;
   let showHelp = false;
   let selectedRuleIndex = 0;
@@ -148,6 +150,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     correctQuestions = 0;
     retrySuccesses = 0;
     totalErrors = 0;
+    responseDetails = [];
     bossHp = 100;
     playerLives = 3;
     combo = 0;
@@ -189,7 +192,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     if (screen !== 'game' || !currentQuestion) return;
     checkpointElapsed();
     void createGameProgressService<ConjuProgress>(getStudentName(), 'conju_lab').saveProgress(
-      { screen: 'game', focus, selectedTenses, selectedGroups, selectedVerbs, gameMode, currentQuestion, hintIndex, attemptCount, resolved, feedbackKind, feedbackMessage, errorHint, questionIndex, score, correctQuestions, retrySuccesses, totalErrors, timeLeft, bossHp, playerLives, combo, bestCombo, combatOutcome, startedAt, elapsedSeconds }, 1,
+      { screen: 'game', focus, selectedTenses, selectedGroups, selectedVerbs, gameMode, currentQuestion, hintIndex, attemptCount, resolved, feedbackKind, feedbackMessage, errorHint, questionIndex, score, correctQuestions, retrySuccesses, totalErrors, timeLeft, bossHp, playerLives, combo, bestCombo, combatOutcome, responseDetails, startedAt, elapsedSeconds }, 1,
       { label: `ConjuLab : question ${questionIndex + 1}/${SESSION_LENGTH}`, completed: questionIndex, total: SESSION_LENGTH }
     );
   }
@@ -289,6 +292,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       feedbackKind = 'correct';
       feedbackMessage = attemptCount === 1 ? 'Bien joué : réponse correcte du premier coup.' : 'Tu as corrigé ton raisonnement. Réponse juste !';
       errorHint = '';
+      responseDetails = [...responseDetails, { questionIndex, prompt: currentQuestion.prompt, response: rawValue, expected: currentQuestion.correctAnswer, correct: true, attempts: attemptCount, hintsUsed: hintIndex }];
       playTone(true);
       saveSession();
       return;
@@ -329,6 +333,9 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       feedbackKind = 'revealed';
       feedbackMessage = 'La forme correcte est affichée. Compare-la à ta réponse pour repérer la différence.';
     }
+    if (resolved) {
+      responseDetails = [...responseDetails, { questionIndex, prompt: currentQuestion.prompt, response: rawValue, expected: currentQuestion.correctAnswer, correct: false, attempts: attemptCount, hintsUsed: hintIndex, errorFamily: currentQuestion.kind }];
+    }
     saveSession();
   }
 
@@ -361,6 +368,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
         correctCount: correctQuestions,
         questionCount: SESSION_LENGTH,
         errorCount: totalErrors,
+        responseDetails,
         durationSeconds: Math.max(1, elapsedSeconds + Math.round((Date.now() - startedAt) / 1000)),
         metadata: { selectedTenses, selectedGroups, selectedVerbs, answerStyle: 'qcm', gameMode, bossHp, playerLives, bestCombo, combatOutcome, retrySuccesses, totalErrors }
       });
@@ -437,7 +445,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       const loaded = await createGameProgressService<ConjuProgress>(getStudentName(), 'conju_lab').loadProgress();
       if (!loaded.ok || !loaded.value) return;
       const state = loaded.value.state;
-      ({ screen, focus, selectedTenses, selectedGroups, selectedVerbs, gameMode, currentQuestion, hintIndex, attemptCount, resolved, feedbackKind, feedbackMessage, errorHint, questionIndex, score, correctQuestions, retrySuccesses, totalErrors, timeLeft, bossHp, playerLives, combo, bestCombo, combatOutcome, startedAt, elapsedSeconds = 0 } = state);
+      ({ screen, focus, selectedTenses, selectedGroups, selectedVerbs, gameMode, currentQuestion, hintIndex, attemptCount, resolved, feedbackKind, feedbackMessage, errorHint, questionIndex, score, correctQuestions, retrySuccesses, totalErrors, timeLeft, bossHp, playerLives, combo, bestCombo, combatOutcome, responseDetails = [], startedAt, elapsedSeconds = 0 } = state);
       startedAt = Date.now();
       if (gameMode === 'rapide' && !resolved) startTimer();
     })();

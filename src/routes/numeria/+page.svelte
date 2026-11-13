@@ -12,6 +12,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { getStudentName } from '$lib/orbis/identity/local-student';
   import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
+  import type { ResponseDetail } from '$lib/orbis/results/contract';
   import { CODEX, GRADE_STORIES, REALMS, getRealm, realmsForGrade } from '$lib/games/numeria/curriculum';
   import { answersEqual, generateQuestions, normalizeAnswer } from '$lib/games/numeria/question-engine';
   import { clearProgress, createEmptySave, loadSave, saveProgress as saveNumeriaProgress, TEACHER_ACCESS_CODE } from '$lib/games/numeria/progress';
@@ -361,6 +362,14 @@
     // Prépare l'envoi vers le suivi ORBIS existant. La sauvegarde de secours reste locale.
     // L'échec de la synchronisation ne bloque jamais l'écran de résultat.
     try {
+      const responseDetails: ResponseDetail[] = questions.map((question, index) => ({
+        questionIndex: index,
+        prompt: question.prompt,
+        expected: question.expected,
+        correct: Boolean(outcomes[index]?.solved),
+        attempts: Math.max(1, Number(outcomes[index]?.mistakes ?? 0) + 1),
+        errorFamily: outcomes[index]?.solved ? undefined : question.errorFamily
+      }));
       const submission = recordGameActivity({
         studentName,
         gameId: 'numeria',
@@ -369,6 +378,7 @@
         questionCount: total,
         errorCount,
         errorFamilies: questions.filter((question, index) => (outcomes[index]?.mistakes ?? 0) > 0).map((question) => question.errorFamily),
+        responseDetails,
         metadata: { grade: selectedGrade, realmId: currentRealm.id, mode: missionMode, stars, firstTry, xpGained, guardianWon, sessionScore: correct, bestScore, errorCount }
       });
       void Promise.resolve(submission).catch((error) => console.warn('[Numéria] Résultat non synchronisé à ORBIS ; la progression locale est conservée.', error));
