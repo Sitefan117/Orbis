@@ -4,10 +4,12 @@
   import { base } from '$app/paths';
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { getStudentName } from '$lib/orbis/identity/local-student';
+  import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import { recordGameActivity } from '$lib/orbis/tracking/client';
   import { generateDecimalQuestion, type DecimalQuestion } from '$lib/games/calculs/question-engine';
 
   type Phase = 'setup' | 'play' | 'done';
+  type CalculsProgress = { phase: Phase; activeLevels: number[]; question: number; score: number; current: DecimalQuestion; errorFamilies: string[]; startedAt: number; elapsedSeconds?: number };
   let studentName = 'Explorateur';
   let phase: Phase = 'setup';
   let activeLevels: number[] = [1];
@@ -22,10 +24,19 @@
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null = null;
   let drawing = false;
+  let startedAt = Date.now();
+  let elapsedSeconds = 0;
 
   // Prépare le profil et le canvas quand le navigateur rend la page.
   onMount(() => {
     studentName = getStudentName();
+    void (async () => {
+      const loaded = await createGameProgressService<CalculsProgress>(studentName, 'calculs').loadProgress();
+      if (loaded.ok && loaded.value?.state.phase === 'play') {
+        ({ phase, activeLevels, question, score, current, errorFamilies, startedAt, elapsedSeconds = 0 } = loaded.value.state);
+        startedAt = Date.now();
+      }
+    })();
     setupCanvas();
     window.addEventListener('resize', setupCanvas);
     return () => window.removeEventListener('resize', setupCanvas);
@@ -91,7 +102,24 @@
     question = 1;
     score = 0;
     errorFamilies = [];
+    startedAt = Date.now();
+    elapsedSeconds = 0;
     nextQuestion();
+  }
+
+  function saveMission() {
+    if (phase !== 'play') return;
+    checkpointElapsed();
+    void createGameProgressService<CalculsProgress>(studentName, 'calculs').saveProgress(
+      { phase, activeLevels, question, score, current, errorFamilies, startedAt, elapsedSeconds }, 1,
+      { label: `Calculs : question ${Math.min(question, 10)}/10`, completed: Math.max(0, question - 1), total: 10 }
+    );
+  }
+
+  function checkpointElapsed() {
+    const now = Date.now();
+    elapsedSeconds += Math.max(0, Math.round((now - startedAt) / 1000));
+    startedAt = now;
   }
 
   // Demande une question au moteur et remet à zéro les champs de la question précédente.
@@ -108,6 +136,7 @@
     if (!next) return;
     current = next;
     clearCanvas();
+    saveMission();
   }
 
   // Bloque les doubles clics, compare le résultat et ajoute une erreur au bilan si besoin.
@@ -140,6 +169,7 @@
       questionCount: 10,
       errorCount: 10 - score,
       errorFamilies: Array.from(new Set(errorFamilies))
+      ,durationSeconds: Math.max(1, elapsedSeconds + Math.round((Date.now() - startedAt) / 1000))
     });
     sentMessage = report.message;
   }

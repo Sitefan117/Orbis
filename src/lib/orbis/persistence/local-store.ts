@@ -1,6 +1,7 @@
 import { studentStorageScope } from '$lib/orbis/identity/local-student';
 import type { SaveRecord } from '$lib/orbis/progress/contract';
 import type { ActivityEvent, ActivityPayload } from '$lib/orbis/results/contract';
+import { getRemoteSession } from './remote-session';
 
 const EVENTS_KEY = 'orbis:activity-events:v1';
 const SAVES_KEY = 'orbis:game-saves:v1';
@@ -10,6 +11,8 @@ type LocalSaveEnvelope = {
   studentScope: string;
   studentName: string;
   gameId: string;
+  /** Empêche une sauvegarde partagée sur un appareil d'être envoyée sous un autre compte. */
+  remoteStudentId?: string;
   record: SaveRecord<Record<string, unknown>>;
   progressSummary?: { label: string; completed?: number; total?: number };
   syncState: 'pending' | 'synced' | 'conflict';
@@ -65,6 +68,7 @@ export function createLocalActivityEvent(payload: ActivityPayload): ActivityEven
   const correctCount = boundedInteger(payload.score, 0, questionCount) ?? 0;
   return {
     eventId: createEventId(),
+    ...(getRemoteSession()?.userId ? { remoteStudentId: getRemoteSession()!.userId } : {}),
     studentName: payload.studentName.trim().slice(0, 80) || 'Explorateur',
     gameId: payload.world,
     activityId: payload.mission.trim().slice(0, 120) || 'activité',
@@ -135,6 +139,7 @@ export function storeRemoteGameSave<TState>(
     studentScope: studentStorageScope(studentName),
     studentName: studentName.trim(),
     gameId,
+    ...(getRemoteSession()?.userId ? { remoteStudentId: getRemoteSession()!.userId } : {}),
     record: record as SaveRecord<Record<string, unknown>>,
     remoteRevision: record.revision,
     syncState: 'synced',
@@ -158,6 +163,7 @@ export function saveLocalGameState<TState>(
     studentScope: studentStorageScope(studentName),
     studentName: studentName.trim(),
     gameId,
+    ...(getRemoteSession()?.userId ? { remoteStudentId: getRemoteSession()!.userId } : {}),
     record: {
       state: state as Record<string, unknown>,
       formatVersion: Math.max(1, Math.round(formatVersion)),

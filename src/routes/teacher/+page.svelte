@@ -1,22 +1,105 @@
 <script lang="ts">
+	import { base } from '$app/paths';
+	import { onMount } from 'svelte';
 	// Tableau local historique : importe des sauvegardes Fraction Tower et produit un CSV.
 	import { languageState } from '$lib/games/fractionstower2/persistence/LanguageManager';
 	import { SaveManager, type SaveData } from '$lib/games/fractionstower2/persistence/SaveManager';
 	import LocalTrackingPanel from '$lib/orbis/teacher/LocalTrackingPanel.svelte';
+	import RemoteTeacherDashboard from '$lib/orbis/teacher/RemoteTeacherDashboard.svelte';
+	import { currentSession, refreshRemoteSession, signInWithShortId, signOut, startSessionRefresh } from '$lib/orbis/auth/client';
+	import { createStudent, createTeacherClass, listTeacherClasses, listTeacherStudents, resetStudentPassword, type OrbisClass, type OrbisStudent } from '$lib/orbis/teacher/remote';
 
 	let isAuthenticated = $state(false);
+	let loginId = $state('');
 	let password = $state('');
+	let loginMessage = $state('');
+	let isLoggingIn = $state(false);
+	let showPassword = $state(false);
 	let students = $state<SaveData[]>([]);
-	
-	const TEACHER_PASSWORD = 'admin';
+	let classes = $state<OrbisClass[]>([]);
+	let newClassName = $state('');
+	let classMessage = $state('');
+	let isCreatingClass = $state(false);
+	let studentLoginId = $state('');
+	let studentDisplayName = $state('');
+	let studentPassword = $state('');
+	let studentClassId = $state('');
+	let studentMessage = $state('');
+	let isCreatingStudent = $state(false);
+	let remoteStudents = $state<OrbisStudent[]>([]);
+	let resetStudentId = $state('');
+	let resetPassword = $state('');
+	let resetMessage = $state('');
+
+	onMount(() => {
+		startSessionRefresh();
+		void (async () => {
+			await refreshRemoteSession();
+			const session = currentSession();
+			if (!session) return;
+			isAuthenticated = true;
+			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); }
+			catch { classMessage = 'Session restaurée, mais les classes ne sont pas encore accessibles.'; }
+		})();
+	});
 
 	// Les actions importent des fichiers de sauvegarde, les regroupent et préparent l’export.
-	function login() {
-		if (password === TEACHER_PASSWORD) {
+	async function login() {
+		isLoggingIn = true;
+		loginMessage = '';
+		const result = await signInWithShortId(loginId, password);
+		isLoggingIn = false;
+		if (result.ok && result.role === 'teacher') {
 			isAuthenticated = true;
-		} else {
-			alert(languageState.current === 'fr-FR' ? "Mot de passe incorrect." : "Неверный пароль.");
+			password = '';
+			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); } catch { classMessage = 'Connexion réussie, mais les classes ne sont pas encore accessibles.'; }
+			return;
 		}
+		loginMessage = result.ok ? 'Ce compte n’est pas un compte enseignant.' : result.message;
+	}
+
+	function logout() {
+		signOut();
+		isAuthenticated = false;
+	}
+
+	async function addClass() {
+		const name = newClassName.trim();
+		if (name.length < 1) { classMessage = 'Donne un nom à la classe.'; return; }
+		isCreatingClass = true;
+		classMessage = '';
+		try {
+			const created = await createTeacherClass(name);
+			classes = [...classes, created];
+			newClassName = '';
+			classMessage = 'Classe créée.';
+		} catch {
+			classMessage = 'La classe n’a pas pu être créée.';
+		} finally { isCreatingClass = false; }
+	}
+
+	async function addStudent() {
+		if (!studentClassId) { studentMessage = 'Choisis une classe.'; return; }
+		if (!/^[a-zA-Z0-9_-]{3,40}$/.test(studentLoginId.trim())) { studentMessage = 'L’identifiant doit contenir 3 à 40 caractères simples.'; return; }
+		if (studentDisplayName.trim().length < 1 || studentPassword.length < 10) { studentMessage = 'Pseudonyme obligatoire et mot de passe de 10 caractères minimum.'; return; }
+		isCreatingStudent = true;
+		studentMessage = '';
+		try {
+			await createStudent({ loginId: studentLoginId.trim(), displayName: studentDisplayName.trim(), password: studentPassword, classId: studentClassId });
+			remoteStudents = await listTeacherStudents(classes);
+			studentLoginId = ''; studentDisplayName = ''; studentPassword = '';
+			studentMessage = 'Élève créé et inscrit dans la classe.';
+		} catch (error) {
+			const detail = error instanceof Error ? error.message : 'erreur inconnue';
+			studentMessage = `Création impossible : ${detail}`;
+		}
+		finally { isCreatingStudent = false; }
+	}
+
+	async function applyPasswordReset() {
+		if (!resetStudentId || resetPassword.length < 10) { resetMessage = 'Choisis un élève et un mot de passe de 10 caractères minimum.'; return; }
+		try { await resetStudentPassword(resetStudentId, resetPassword); resetPassword = ''; resetMessage = 'Mot de passe réinitialisé.'; }
+		catch (error) { resetMessage = `Réinitialisation impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
 	}
 
 	async function handleFileUpload(e: Event) {
@@ -89,20 +172,70 @@
 {#if !isAuthenticated}
 	<div class="login-container">
 		<div class="login-card">
-			<h1>{languageState.current === 'fr-FR' ? 'Espace Enseignant' : 'Пространство учителя'}</h1>
-			<p>{languageState.current === 'fr-FR' ? 'Veuillez entrer le mot de passe pour accéder au tableau de bord.' : 'Пожалуйста, введите пароль для доступа к панели управления.'}</p>
-			<p class="local-warning">Protection locale provisoire : elle ne remplace pas encore un compte enseignant sécurisé.</p>
-			<input type="password" bind:value={password} placeholder="Mot de passe..." />
-			<button onclick={login}>{languageState.current === 'fr-FR' ? 'Se connecter' : 'Войти'}</button>
+			<div class="login-brand"><img src={`${base}/mascotte-noireau/illustrations/noireau-guide-complice.png`} alt="Noireau, guide Orbis" /><span>ORBIS · ENSEIGNANT</span></div>
+			<h1>Bienvenue dans ton espace de suivi</h1>
+			<p class="login-intro">Retrouve les classes, les progrès et les sauvegardes synchronisées.</p>
+			<div class="secure-note"><span aria-hidden="true">●</span> Connexion sécurisée par Supabase</div>
+			<label>Identifiant<input type="text" bind:value={loginId} placeholder="Identifiant court" autocomplete="username" /></label>
+			<form onsubmit={(event) => { event.preventDefault(); void login(); }}>
+				<label>Mot de passe<input type={showPassword ? 'text' : 'password'} bind:value={password} placeholder="Ton mot de passe" autocomplete="current-password" /></label>
+				<label class="remember-row"><input type="checkbox" bind:checked={showPassword} /> Afficher le mot de passe</label>
+				{#if loginMessage}<p class="login-error" role="alert">{loginMessage}</p>{/if}
+				<button type="submit" disabled={isLoggingIn}>{isLoggingIn ? 'Connexion…' : 'Ouvrir le tableau de bord →'}</button>
+			</form>
+			<p class="stay-connected">La connexion restera active sur cet appareil jusqu’à ta déconnexion.</p>
+			<a class="back-link" href={`${base}/`}>← Retour au portail Orbis</a>
 		</div>
 	</div>
 {:else}
 	<div class="teacher-container">
-		<header>
-			<h1>{languageState.current === 'fr-FR' ? 'Tableau de Bord des Élèves' : 'Панель управления учениками'}</h1>
+		<header class="teacher-header">
+			<div><p class="teacher-kicker">ORBIS · ESPACE ENSEIGNANT</p><h1>Tableau de bord pédagogique</h1><p>Une vue simple des progrès, sans remplacer ton observation professionnelle.</p></div>
+			<button class="logout-button" onclick={logout}>Se déconnecter</button>
 		</header>
 
-		<LocalTrackingPanel />
+		<RemoteTeacherDashboard {classes} students={remoteStudents} />
+
+		<details class="secondary-zone">
+			<summary>Données locales de cet appareil</summary>
+			<LocalTrackingPanel />
+		</details>
+
+		<section class="classes-card">
+			<h2>Mes classes</h2>
+			<div class="class-create-row">
+				<input type="text" bind:value={newClassName} placeholder="Nom de la classe" maxlength="100" />
+				<button onclick={addClass} disabled={isCreatingClass}>{isCreatingClass ? 'Création…' : 'Créer la classe'}</button>
+			</div>
+			{#if classMessage}<p class="class-message" role="status">{classMessage}</p>{/if}
+			{#if classes.length === 0}<p>Aucune classe pour le moment.</p>{:else}<ul class="class-list">{#each classes as classroom}<li><strong>{classroom.name}</strong><small>{new Date(classroom.created_at).toLocaleDateString('fr-CH')}</small></li>{/each}</ul>{/if}
+		</section>
+
+		<section class="classes-card">
+			<h2>Ajouter un élève</h2>
+			<div class="student-form">
+				<select bind:value={studentClassId} aria-label="Classe de l’élève">
+					<option value="">Choisir une classe</option>
+					{#each classes as classroom}<option value={classroom.id}>{classroom.name}</option>{/each}
+				</select>
+				<input type="text" bind:value={studentLoginId} placeholder="Identifiant court" autocomplete="off" />
+				<input type="text" bind:value={studentDisplayName} placeholder="Pseudonyme affiché" autocomplete="off" />
+				<input type="password" bind:value={studentPassword} placeholder="Mot de passe (10 caractères minimum)" autocomplete="new-password" />
+				<button onclick={addStudent} disabled={isCreatingStudent}>{isCreatingStudent ? 'Création…' : 'Créer l’élève'}</button>
+			</div>
+			{#if studentMessage}<p class="class-message" role="status">{studentMessage}</p>{/if}
+		</section>
+
+		<section class="classes-card">
+			<h2>Élèves de mes classes</h2>
+			{#if remoteStudents.length === 0}<p>Aucun élève distant.</p>{:else}
+				<ul class="class-list">{#each remoteStudents as pupil}<li><span><strong>{pupil.display_name}</strong><br /><small>{pupil.login_id} · {classes.find((item) => item.id === pupil.class_id)?.name ?? 'Classe'}</small></span><button onclick={() => { resetStudentId = pupil.user_id; resetMessage = ''; }}>Réinitialiser le mot de passe</button></li>{/each}</ul>
+			{/if}
+			{#if resetStudentId}
+				<div class="reset-row"><input type="password" bind:value={resetPassword} placeholder="Nouveau mot de passe" autocomplete="new-password" /><button onclick={applyPasswordReset}>Confirmer</button></div>
+			{/if}
+			{#if resetMessage}<p class="class-message" role="status">{resetMessage}</p>{/if}
+		</section>
 
 		<section class="legacy-heading">
 			<div>
@@ -184,7 +317,6 @@
 		box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 	}
 	.login-card h1 { color: #ffcc00; margin-bottom: 1rem; }
-	.local-warning { color: #ffdc72; font-size: .85rem; }
 	.login-card input {
 		width: 80%;
 		padding: 10px;
@@ -203,6 +335,21 @@
 		font-weight: bold;
 		cursor: pointer;
 	}
+	.login-error { color: #ff9d9d; min-height: 1.4em; }
+	.logout-button { margin-left: auto; padding: .55rem .9rem; }
+	.classes-card { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); border-radius: 12px; padding: 1.25rem; margin: 1.5rem 0; }
+	.class-create-row { display: flex; gap: .75rem; flex-wrap: wrap; }
+	.class-create-row input { flex: 1 1 260px; padding: .7rem; border-radius: 6px; border: 1px solid #777; }
+	.class-create-row button { padding: .7rem 1rem; }
+	.class-message { color: #ffdc72; }
+	.class-list { list-style: none; padding: 0; display: grid; gap: .6rem; }
+	.class-list li { display: flex; justify-content: space-between; gap: 1rem; padding: .7rem; background: rgba(0,0,0,.2); border-radius: 6px; }
+	.class-list small { opacity: .75; }
+	.student-form { display: grid; gap: .75rem; max-width: 520px; }
+	.student-form input, .student-form select { padding: .7rem; border-radius: 6px; border: 1px solid #777; }
+	.student-form button { padding: .7rem 1rem; }
+	.reset-row { display:flex; gap:.75rem; flex-wrap:wrap; margin-top:1rem; }
+	.reset-row input { flex:1 1 260px; padding:.7rem; }
 
 	.teacher-container {
 		padding: 2rem;
@@ -268,4 +415,42 @@
 		header, .legacy-heading { align-items: flex-start; flex-direction: column; }
 		.actions { flex-wrap: wrap; }
 	}
+
+	/* Nouvelle enveloppe visuelle du tableau enseignant. */
+	:global(body) { background: #eef3ec; color: #20332e; font-family: Arial, sans-serif; }
+	.login-container { min-height: 100vh; height: auto; padding: 1.5rem; box-sizing: border-box; background: radial-gradient(circle at 15% 10%, #d8eadb 0, transparent 35%), linear-gradient(145deg, #f7f7ed, #dfeae1); }
+	.login-card { width: min(100%, 460px); box-sizing: border-box; padding: clamp(1.5rem, 5vw, 2.6rem); text-align: left; color: #20332e; background: rgba(255,255,250,.96); border: 1px solid #c8d7c9; border-radius: 24px; box-shadow: 0 24px 70px #17362b24; backdrop-filter: blur(12px); }
+	.login-card h1 { margin: 1rem 0 .7rem; color: #173f32; font-size: clamp(2rem, 6vw, 3rem); line-height: 1.04; letter-spacing: -.04em; }
+	.login-intro { color: #586d65; line-height: 1.55; margin-bottom: 1.2rem; }
+	.login-brand { display:flex; align-items:center; gap:.8rem; color:#2b6f56; font-size:.78rem; font-weight:800; letter-spacing:.12em; }
+	.login-brand img { width:58px; height:58px; object-fit:cover; object-position:top; border-radius:14px; background:#e4eee4; }
+	.secure-note { padding:.7rem .85rem; border-radius:10px; background:#e7f2e8; color:#37634f; font-size:.86rem; margin-bottom:1.2rem; }
+	.secure-note span { color:#47a36f; margin-right:.35rem; }
+	.login-card label { display:block; margin-top:.9rem; font-weight:700; font-size:.9rem; color:#304d43; }
+	.remember-row { display:flex!important; align-items:center; gap:.5rem; font-weight:500!important; color:#60736c!important; }
+	.remember-row input { width:auto!important; margin:0!important; }
+	.stay-connected { color:#60736c; font-size:.82rem; line-height:1.4; }
+	.login-card input { width:100%; box-sizing:border-box; margin:.4rem 0 0; padding:.85rem .9rem; border:2px solid #a8bbae; border-radius:10px; text-align:left; color:#20332e; background:white; }
+	.login-card input:focus { outline:3px solid #e3a42f; outline-offset:2px; border-color:#356f58; }
+	.login-card button { width:100%; margin-top:1.2rem; padding:.9rem 1rem; border-radius:11px; background:#285f4c; color:white; font-size:1rem; }
+	.back-link { display:block; margin-top:1.2rem; color:#38634f; text-align:center; }
+	.login-error { color:#a52f27; background:#fff0ea; border-left:4px solid #b23c2e; padding:.7rem; border-radius:6px; }
+	.teacher-container { max-width: 1380px; padding: clamp(1rem, 3vw, 2.2rem); color:#20332e; }
+	.teacher-header { margin:0; padding:1rem 0 1.4rem; border-bottom:1px solid #cbd8ce; align-items:flex-end; }
+	.teacher-header h1 { margin:.25rem 0; color:#173f32; font-size:clamp(2rem,4vw,3.4rem); letter-spacing:-.04em; }
+	.teacher-header p { margin:.3rem 0; color:#64766f; }
+	.teacher-kicker { color:#2b7158!important; font-size:.75rem; font-weight:800; letter-spacing:.14em; }
+	.logout-button { border:1px solid #9eb2a5; border-radius:10px; background:white; color:#315849; cursor:pointer; }
+	.secondary-zone { margin:1.2rem 0; border:1px solid #cbd8ce; border-radius:14px; background:white; padding:.8rem 1rem; }
+	.secondary-zone summary { cursor:pointer; font-weight:700; color:#49635a; }
+	.classes-card { color:#20332e; background:white; border:1px solid #d3ded4; border-radius:18px; box-shadow:0 10px 28px #17362b0d; }
+	.classes-card h2 { color:#173f32; }
+	.class-list li { background:#f0f5ef; }
+	.class-message { color:#8d5e13; }
+	.legacy-heading h2 { color:#315f4e; }
+	.legacy-heading p { color:#66766f; }
+	.dashboard { background:white; color:#20332e; border-color:#d3ded4; box-shadow:none; }
+	.dashboard th,.dashboard td { border-color:#dfe7df; }
+	.dashboard th { color:#63756e; }
+	@media(max-width:600px){.login-container{padding:.75rem}.login-card{padding:1.35rem}.teacher-header{align-items:flex-start}}
 </style>

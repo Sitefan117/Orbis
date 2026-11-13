@@ -4,7 +4,7 @@
 
 - `local-store.ts` conserve les bilans et sauvegardes dans le navigateur, sans dépendre du réseau.
 - `game-services.ts` fournit le contrat minimal de sauvegarde à un jeu sans connaître son moteur.
-- `remote-session.ts` conserve temporairement la session distante ouverte par le futur écran de connexion.
+- `remote-session.ts` conserve temporairement la session distante ouverte par l’écran de connexion élève ou enseignant.
 - `supabase-rest.ts` traduit les objets Orbis vers les tables Supabase sans exposer la logique aux jeux.
 - `sync.ts` vide la file locale lorsque Supabase est configuré, que l’élève est connecté et que le réseau répond.
 
@@ -16,7 +16,8 @@ Les variables publiques attendues sont `PUBLIC_SUPABASE_URL` et `PUBLIC_SUPABASE
 - Avec une configuration mais sans session élève, les éléments restent dans la file locale.
 - Avec une session authentifiée, les événements et la dernière sauvegarde peuvent être transmis aux tables du brouillon SQL dans `supabase/migrations/`.
 - Le service sait relire une sauvegarde distante et signale un conflit au lieu de choisir silencieusement entre deux appareils.
-- L’écran de connexion par code de classe et code individuel reste à construire : aucune clé secrète ni faux compte n’est embarqué dans le navigateur.
+- Les files hors ligne sont liées à l’identifiant Supabase qui les a produites : un appareil partagé ne peut pas attribuer la partie d’un élève au compte connecté ensuite.
+- Calculs, Livrets, ConjuLab, Géométrie, Grammaire Lab, Numéria et Fractions Tower déposent désormais une sauvegarde commune. Leurs formats propres restent inchangés.
 
 ## Exemple pour un jeu existant
 

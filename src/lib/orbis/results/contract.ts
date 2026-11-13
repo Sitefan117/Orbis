@@ -19,6 +19,8 @@ export type ActivityPayload = {
 /** Événement durable stocké localement avant une éventuelle synchronisation. */
 export type ActivityEvent = {
   eventId: string;
+  /** Lie une file hors ligne au compte authentifié qui l'a produite. */
+  remoteStudentId?: string;
   studentName: string;
   gameId: WorldId;
   activityId: string;

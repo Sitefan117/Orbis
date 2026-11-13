@@ -4,10 +4,12 @@
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { onMount } from 'svelte';
   import { getStudentName } from '$lib/orbis/identity/local-student';
+  import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import { recordGameActivity } from '$lib/orbis/tracking/client';
   import { generateMultiplicationQuestion } from '$lib/games/livrets/question-engine';
 
   type Phase = 'setup' | 'play' | 'done';
+  type LivretsProgress = { phase: Phase; selectedTables: number[]; question: number; score: number; factorA: number; factorB: number; expected: number; errorFamilies: string[]; startedAt: number; elapsedSeconds?: number };
 
   const tables = Array.from({ length: 11 }, (_, index) => index + 2);
   let phase: Phase = 'setup';
@@ -25,9 +27,16 @@
   let showTable = false;
   let sentMessage = '';
   let errorFamilies: string[] = [];
+  let startedAt = Date.now();
+  let elapsedSeconds = 0;
 
-  onMount(() => {
+  onMount(async () => {
     studentName = getStudentName();
+    const loaded = await createGameProgressService<LivretsProgress>(studentName, 'livrets').loadProgress();
+    if (loaded.ok && loaded.value?.state.phase === 'play') {
+      ({ phase, selectedTables, question, score, factorA, factorB, expected, errorFamilies, startedAt, elapsedSeconds = 0 } = loaded.value.state);
+      startedAt = Date.now();
+    }
   });
 
   // Le parcours démarre, valide dix questions puis transmet un bilan si le service répond.
@@ -43,7 +52,24 @@
     typed = '';
     feedback = '';
     errorFamilies = [];
+    startedAt = Date.now();
+    elapsedSeconds = 0;
     nextQuestion();
+  }
+
+  function saveMission() {
+    if (phase !== 'play') return;
+    checkpointElapsed();
+    void createGameProgressService<LivretsProgress>(studentName, 'livrets').saveProgress(
+      { phase, selectedTables, question, score, factorA, factorB, expected, errorFamilies, startedAt, elapsedSeconds }, 1,
+      { label: `Livrets : question ${Math.min(question, 10)}/10`, completed: Math.max(0, question - 1), total: 10 }
+    );
+  }
+
+  function checkpointElapsed() {
+    const now = Date.now();
+    elapsedSeconds += Math.max(0, Math.round((now - startedAt) / 1000));
+    startedAt = now;
   }
 
   function nextQuestion() {
@@ -60,6 +86,7 @@
     const next = generateMultiplicationQuestion(selectedTables);
     if (!next) return;
     ({ factorA, factorB, expected } = next);
+    saveMission();
   }
 
   function pressKey(key: string) {
@@ -95,6 +122,7 @@
       questionCount: 10,
       errorCount: 10 - score,
       errorFamilies: Array.from(new Set(errorFamilies))
+      ,durationSeconds: Math.max(1, elapsedSeconds + Math.round((Date.now() - startedAt) / 1000))
     });
     sentMessage = report.message;
   }

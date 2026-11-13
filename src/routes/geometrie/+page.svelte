@@ -4,6 +4,7 @@
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { onDestroy, onMount, tick } from 'svelte';
   import { getStudentName } from '$lib/orbis/identity/local-student';
+  import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import { recordGameActivity } from '$lib/orbis/tracking/client';
   import { GEOMETRY_FIGURES, getFiguresForLevel } from '$lib/games/geometrie/figures';
   import FigureDrawing from '$lib/games/geometrie/FigureDrawing.svelte';
@@ -12,6 +13,7 @@
 
   type Phase = 'config' | 'play' | 'done';
   type FeedbackKind = 'success' | 'retry' | 'solution' | '';
+  type GeometryProgress = { phase: Phase; level: Level; mode: Mode; questionIndex: number; question: Question; selectedOptionIds: string[]; visibleHintCount: number; pointsForQuestion: number; xp: number; correctCount: number; firstTryCorrectCount: number; attemptsForQuestion: number; locked: boolean; feedbackKind: FeedbackKind; feedbackTitle: string; feedbackDetails: string; errorFamilies: ErrorFamily[]; startedAt: number; elapsedSeconds?: number };
 
   const ORBIS_HOME = `${base}/`;
   let homeHref = ORBIS_HOME;
@@ -56,6 +58,8 @@
   let planeFigures: GeometryFigure[] = [];
   let solidFigures: GeometryFigure[] = [];
   let progressPercent = 0;
+  let startedAt = Date.now();
+  let elapsedSeconds = 0;
 
   // Les figures de l'aide sont filtrées sur le niveau choisi, pour éviter
   // d'afficher d'emblée tout le vocabulaire des niveaux supérieurs.
@@ -70,6 +74,13 @@
     // Préserve le contexte de l'élève transmis par ORBIS (?eleve=...).
     const studentId = new URLSearchParams(window.location.search).get('eleve');
     homeHref = studentId ? `${ORBIS_HOME}?eleve=${encodeURIComponent(studentId)}` : ORBIS_HOME;
+    void (async () => {
+      const loaded = await createGameProgressService<GeometryProgress>(studentName, 'geometrie').loadProgress();
+      if (!loaded.ok || !loaded.value || loaded.value.state.phase !== 'play') return;
+      const state = loaded.value.state;
+      ({ phase, level, mode, questionIndex, question, selectedOptionIds, visibleHintCount, pointsForQuestion, xp, correctCount, firstTryCorrectCount, attemptsForQuestion, locked, feedbackKind, feedbackTitle, feedbackDetails, errorFamilies, startedAt, elapsedSeconds = 0 } = state);
+      startedAt = Date.now();
+    })();
   });
 
   onDestroy(() => {
@@ -88,6 +99,8 @@
     correctCount = 0;
     firstTryCorrectCount = 0;
     errorFamilies = [];
+    elapsedSeconds = 0;
+    startedAt = Date.now();
     resultSubmissionMessage = '';
     resultSubmitted = false;
     loadQuestion();
@@ -112,10 +125,26 @@
       feedbackKind = '';
       feedbackTitle = '';
       feedbackDetails = '';
+      saveMission();
     } catch (error) {
       question = null;
       generationError = error instanceof Error ? error.message : 'La question n’a pas pu être créée.';
     }
+  }
+
+  function saveMission(): void {
+    if (phase !== 'play' || !level || !mode || !question) return;
+    checkpointElapsed();
+    void createGameProgressService<GeometryProgress>(studentName, 'geometrie').saveProgress(
+      { phase, level, mode, questionIndex, question, selectedOptionIds, visibleHintCount, pointsForQuestion, xp, correctCount, firstTryCorrectCount, attemptsForQuestion, locked, feedbackKind, feedbackTitle, feedbackDetails, errorFamilies, startedAt, elapsedSeconds }, 1,
+      { label: `Géométrie ${level} : question ${questionIndex}/${QUESTION_COUNT}`, completed: questionIndex - 1, total: QUESTION_COUNT }
+    );
+  }
+
+  function checkpointElapsed(): void {
+    const now = Date.now();
+    elapsedSeconds += Math.max(0, Math.round((now - startedAt) / 1000));
+    startedAt = now;
   }
 
   function toggleOptionSelection(optionId: string): void {
@@ -123,18 +152,21 @@
 
     if (question.type === 'single') {
       selectedOptionIds = [optionId];
+      saveMission();
       return;
     }
 
     selectedOptionIds = selectedOptionIds.includes(optionId)
       ? selectedOptionIds.filter((id) => id !== optionId)
       : [...selectedOptionIds, optionId];
+    saveMission();
   }
 
   function revealNextHint(): void {
     if (locked || !question || visibleHintCount >= question.progressiveHints.length) return;
     visibleHintCount += 1;
     pointsForQuestion = Math.max(10, pointsForQuestion - 5);
+    saveMission();
   }
 
   function submitAnswer(): void {
@@ -158,6 +190,7 @@
       feedbackKind = 'success';
       feedbackTitle = attemptsForQuestion === 0 ? `Bonne réponse ! +${Math.max(10, pointsForQuestion)} XP` : `Bien repris ! +${Math.max(10, pointsForQuestion)} XP`;
       feedbackDetails = question.explanation;
+      saveMission();
       void scrollFeedbackIntoView();
       return;
     }
@@ -182,6 +215,7 @@
       feedbackKind = 'retry';
       feedbackTitle = 'Pas encore. Tu peux faire une deuxième tentative.';
       feedbackDetails = 'Relis les indices, puis compare les figures une par une. La solution ne sera affichée qu’après la deuxième tentative.';
+      saveMission();
       void scrollFeedbackIntoView();
       return;
     }
@@ -190,6 +224,7 @@
     feedbackKind = 'solution';
     feedbackTitle = 'Voici comment raisonner.';
     feedbackDetails = `Réponse attendue : ${expectedLabels.join(', ')}. ${question.explanation}`;
+    saveMission();
     void scrollFeedbackIntoView();
   }
 
@@ -233,6 +268,7 @@
         questionCount: QUESTION_COUNT,
         errorCount: QUESTION_COUNT - correctCount,
         errorFamilies,
+        durationSeconds: Math.max(1, elapsedSeconds + Math.round((Date.now() - startedAt) / 1000)),
         metadata: { xp, firstTryCorrectCount, attemptedErrors: errorFamilies.length, level, mode }
       });
       resultSubmissionMessage = 'Résultat transmis à ORBIS.';

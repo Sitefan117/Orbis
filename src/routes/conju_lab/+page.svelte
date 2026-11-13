@@ -4,6 +4,7 @@
   import { base } from '$app/paths';
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
 import { getStudentName } from '$lib/orbis/identity/local-student';
+import { createGameProgressService } from '$lib/orbis/persistence/game-services';
 import { recordGameActivity } from '$lib/orbis/tracking/client';
   import { getTenseInfo, getTensesForGrade, RULE_CARDS } from '$lib/games/conju-lab/curriculum';
   import { getGroupLabel, getVerbsForGrade } from '$lib/games/conju-lab/verbs';
@@ -23,6 +24,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
 
   type Screen = 'menu' | 'study' | 'game' | 'end';
   type FeedbackKind = 'none' | 'correct' | 'retry' | 'revealed' | 'timeout';
+  type ConjuProgress = { screen: 'game'; focus: ActivityFocus; selectedTenses: TenseId[]; selectedGroups: VerbGroup[]; selectedVerbs: string[]; gameMode: 'detente' | 'rapide'; currentQuestion: VerbQuestion; hintIndex: number; attemptCount: number; resolved: boolean; feedbackKind: FeedbackKind; feedbackMessage: string; errorHint: string; questionIndex: number; score: number; correctQuestions: number; retrySuccesses: number; totalErrors: number; timeLeft: number; bossHp: number; playerLives: number; combo: number; bestCombo: number; combatOutcome: 'victory' | 'defeat' | null; startedAt: number; elapsedSeconds?: number };
 
   const SESSION_LENGTH = 10;
   const FOCI: Array<{ id: ActivityFocus; label: string; detail: string }> = [
@@ -76,6 +78,8 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
   let intervalId: ReturnType<typeof setInterval> | null = null;
   let combatTimeoutId: ReturnType<typeof setTimeout> | null = null;
   let audioContext: AudioContext | null = null;
+  let startedAt = Date.now();
+  let elapsedSeconds = 0;
 
   $: availableTenses = getTensesForGrade(grade);
   $: verbsByGroup = [1, 2, 3].map((group) => ({
@@ -152,6 +156,8 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     combatState = 'idle';
     resultStatus = 'not-sent';
     fatalError = '';
+    startedAt = Date.now();
+    elapsedSeconds = 0;
     screen = 'game';
     showHelp = false;
     makeQuestion();
@@ -172,10 +178,26 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       timeLeft = 15;
       combatState = 'idle';
       if (gameMode === 'rapide') startTimer();
+      saveSession();
     } catch (error) {
       fatalError = error instanceof Error ? error.message : 'Une question n’a pas pu être préparée.';
       screen = 'end';
     }
+  }
+
+  function saveSession() {
+    if (screen !== 'game' || !currentQuestion) return;
+    checkpointElapsed();
+    void createGameProgressService<ConjuProgress>(getStudentName(), 'conju_lab').saveProgress(
+      { screen: 'game', focus, selectedTenses, selectedGroups, selectedVerbs, gameMode, currentQuestion, hintIndex, attemptCount, resolved, feedbackKind, feedbackMessage, errorHint, questionIndex, score, correctQuestions, retrySuccesses, totalErrors, timeLeft, bossHp, playerLives, combo, bestCombo, combatOutcome, startedAt, elapsedSeconds }, 1,
+      { label: `ConjuLab : question ${questionIndex + 1}/${SESSION_LENGTH}`, completed: questionIndex, total: SESSION_LENGTH }
+    );
+  }
+
+  function checkpointElapsed() {
+    const now = Date.now();
+    elapsedSeconds += Math.max(0, Math.round((now - startedAt) / 1000));
+    startedAt = now;
   }
 
   function stopTimer() {
@@ -229,6 +251,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
         feedbackKind = 'timeout';
         if (!combatOutcome) feedbackMessage = 'Le temps est écoulé : le boss riposte. Regarde la correction avant de continuer.';
         errorHint = currentQuestion?.hintSteps[1] ?? 'Repère d’abord le temps, puis cherche la terminaison adaptée au sujet.';
+        saveSession();
       }
     }, 1000);
   }
@@ -267,6 +290,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       feedbackMessage = attemptCount === 1 ? 'Bien joué : réponse correcte du premier coup.' : 'Tu as corrigé ton raisonnement. Réponse juste !';
       errorHint = '';
       playTone(true);
+      saveSession();
       return;
     }
 
@@ -305,6 +329,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
       feedbackKind = 'revealed';
       feedbackMessage = 'La forme correcte est affichée. Compare-la à ta réponse pour repérer la différence.';
     }
+    saveSession();
   }
 
 
@@ -336,6 +361,7 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
         correctCount: correctQuestions,
         questionCount: SESSION_LENGTH,
         errorCount: totalErrors,
+        durationSeconds: Math.max(1, elapsedSeconds + Math.round((Date.now() - startedAt) / 1000)),
         metadata: { selectedTenses, selectedGroups, selectedVerbs, answerStyle: 'qcm', gameMode, bossHp, playerLives, bestCombo, combatOutcome, retrySuccesses, totalErrors }
       });
       resultStatus = report.ok ? 'sent' : 'unavailable';
@@ -407,6 +433,14 @@ import { recordGameActivity } from '$lib/orbis/tracking/client';
     const search = new URLSearchParams(window.location.search);
     studentParam = search.get('eleve') ?? '';
     window.addEventListener('keydown', selectAnswerFromKeyboard);
+    void (async () => {
+      const loaded = await createGameProgressService<ConjuProgress>(getStudentName(), 'conju_lab').loadProgress();
+      if (!loaded.ok || !loaded.value) return;
+      const state = loaded.value.state;
+      ({ screen, focus, selectedTenses, selectedGroups, selectedVerbs, gameMode, currentQuestion, hintIndex, attemptCount, resolved, feedbackKind, feedbackMessage, errorHint, questionIndex, score, correctQuestions, retrySuccesses, totalErrors, timeLeft, bossHp, playerLives, combo, bestCombo, combatOutcome, startedAt, elapsedSeconds = 0 } = state);
+      startedAt = Date.now();
+      if (gameMode === 'rapide' && !resolved) startTimer();
+    })();
   });
 
   onDestroy(() => {
