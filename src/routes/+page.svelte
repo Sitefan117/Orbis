@@ -13,7 +13,8 @@
   import PixelWordmark from '$lib/orbis/components/PixelWordmark.svelte';
   import { catalogHref, matchesCatalogLocation, rememberCatalogLocation, savedCatalogLocation, type CatalogView } from '$lib/orbis/navigation';
   import { clearStudentName, getStudentName, storeStudentName } from '$lib/orbis/identity/local-student';
-  import { currentSession, refreshRemoteSession, signOut, startSessionRefresh } from '$lib/orbis/auth/client';
+  import { currentSession, refreshRemoteSession, signInWithShortId, signOut, startSessionRefresh } from '$lib/orbis/auth/client';
+  import { getSupabasePublicConfig } from '$lib/orbis/persistence/supabase-rest';
   import { worlds, type WorldId } from '$lib/orbis/catalog/games';
   import { courses } from '$lib/orbis/catalog/courses';
 
@@ -24,6 +25,11 @@
   let studentName = '';
   let nameInput = '';
   let remoteConnected = false;
+  let loginId = '';
+  let password = '';
+  let loginMessage = '';
+  let loginLoading = false;
+  let guestModeOpen = false;
   // Static prerendering has no query parameters; read them only in the browser.
   $: catalogParams = browser ? $page.url.searchParams : new URLSearchParams();
   $: currentView = catalogParams.get('vue') === 'jeux' ? 'ARCADE'
@@ -274,12 +280,52 @@
   // =========================================================
   // PROFIL ÉLÈVE
   // =========================================================
-  function login() {
+  function enterGuestMode() {
     const nextName = nameInput.trim();
     if (nextName.length < 2) return;
 
     studentName = nextName;
+    remoteConnected = false;
     storeStudentName(nextName);
+  }
+
+  async function loginRemote() {
+    loginLoading = true;
+    loginMessage = '';
+    const result = await signInWithShortId(loginId, password);
+    if (!result.ok) {
+      loginMessage = result.message;
+      loginLoading = false;
+      return;
+    }
+    if (result.role !== 'student') {
+      loginMessage = 'Utilise l’espace enseignant pour ce compte.';
+      signOut();
+      loginLoading = false;
+      return;
+    }
+
+    const config = getSupabasePublicConfig();
+    try {
+      const response = await fetch(`${config?.url}/rest/v1/student_profiles?user_id=eq.${encodeURIComponent(result.session.userId)}&select=display_name&limit=1`, {
+        headers: { apikey: config?.publicKey ?? '', authorization: `Bearer ${result.session.accessToken}` }
+      });
+      const profiles = await response.json() as Array<{ display_name: string }>;
+      const displayName = profiles[0]?.display_name?.trim();
+      if (!response.ok || !displayName) throw new Error('profil');
+      studentName = displayName;
+      nameInput = displayName;
+      storeStudentName(displayName);
+      remoteConnected = true;
+      password = '';
+      loginMessage = 'Connexion réussie. Tes résultats seront synchronisés.';
+    } catch {
+      signOut();
+      remoteConnected = false;
+      loginMessage = 'La session est valide, mais le profil élève est introuvable.';
+    } finally {
+      loginLoading = false;
+    }
   }
 
   function logout() {
@@ -410,12 +456,22 @@
               <h2>Comprendre.<br />Puis essayer.</h2>
               <p>Un cours pour découvrir.<br />Un jeu pour t’entraîner.</p>
               {#if !studentName}
-                  <form class="entry-form" on:submit|preventDefault={login}>
-                  <label for="student-name-input">Ton prénom</label>
-                  <div class="entry-fields"><input id="student-name-input" bind:value={nameInput} required minlength="2" maxlength="40" placeholder="Ton prénom" autocomplete="given-name" /><button class="solid-action" type="submit">Entrer <span aria-hidden="true">↗</span></button></div>
-                    <a class="student-login-link" href={`${base}/student`}>Se connecter avec mon identifiant élève et mon mot de passe ↗</a>
-                    <small class="local-mode-note">Le prénom seul ouvre un mode local. Pour enregistrer dans Supabase et reprendre tes parties sur un autre appareil, utilise la connexion élève.</small>
+                <form class="entry-form direct-login-form" on:submit|preventDefault={loginRemote}>
+                  <label for="student-login-id">Identifiant élève</label>
+                  <input id="student-login-id" bind:value={loginId} required minlength="3" maxlength="40" placeholder="panda01" autocomplete="username" />
+                  <label for="student-login-password">Mot de passe</label>
+                  <input id="student-login-password" bind:value={password} required type="password" placeholder="Mot de passe" autocomplete="current-password" />
+                  <button class="solid-action" type="submit" disabled={loginLoading}>{loginLoading ? 'Connexion…' : 'Se connecter'} <span aria-hidden="true">↗</span></button>
+                  {#if loginMessage}<p class="login-message" role="status">{loginMessage}</p>{/if}
                 </form>
+                <button class="guest-mode-button" type="button" on:click={() => guestModeOpen = !guestModeOpen} aria-expanded={guestModeOpen}>Mode invité · sans synchronisation</button>
+                {#if guestModeOpen}
+                  <form class="entry-form guest-form" on:submit|preventDefault={enterGuestMode}>
+                    <label for="student-name-input">Prénom ou pseudo</label>
+                    <div class="entry-fields"><input id="student-name-input" bind:value={nameInput} required minlength="2" maxlength="40" placeholder="Ton prénom" autocomplete="given-name" /><button class="solid-action" type="submit">Entrer en invité <span aria-hidden="true">↗</span></button></div>
+                    <small class="local-mode-note">Les données restent sur cet appareil et ne s’affichent pas dans le tableau enseignant.</small>
+                  </form>
+                {/if}
               {/if}
             </div>
             <div class="robot-cell"><span class="robot-caption">Toujours en orbite.</span><OrbitCompanion reducedMotion={reduceMotion || systemReduceMotion} paused={pauseAnimations} id="orbis-robot" /></div>
@@ -541,7 +597,12 @@
   .robot-cell { display:flex; flex-direction:column; justify-content:center; align-items:center; overflow:hidden; min-height:280px; }
   .robot-caption { align-self:flex-start; padding:1rem 1.2rem 0; font:500 .7rem/1.4 var(--orbis-label-font); color:var(--orbis-muted); }
   .entry-form { display:grid; gap:.45rem; margin-top:.35rem; }
-  .student-login-link { color:var(--orbis-ink); font-size:.82rem; text-underline-offset:3px; }
+  .direct-login-form { max-width:28rem; }
+  .direct-login-form input { min-height:48px; padding:.7rem .8rem; border:1px solid var(--orbis-line); background:var(--orbis-card-surface); color:var(--orbis-ink); font-size:1rem; }
+  .direct-login-form button[disabled] { opacity:.6; cursor:wait; }
+  .login-message { margin:.25rem 0 0; color:#285f4c; font-size:.82rem; }
+  .guest-mode-button { border:0; background:none; padding:.25rem 0; color:var(--orbis-ink); text-decoration:underline; text-underline-offset:3px; font:500 .82rem/1.4 var(--orbis-label-font); }
+  .guest-form { margin-top:.25rem; }
   .local-mode-note { color:var(--orbis-muted); font-size:.76rem; line-height:1.45; }
   .entry-form label { font:500 .8125rem/1.4 var(--orbis-label-font); }
   .entry-fields { display:flex; flex-wrap:wrap; gap:.5rem; }
