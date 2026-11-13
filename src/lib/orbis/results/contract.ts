@@ -13,7 +13,20 @@ export type ActivityPayload = {
   skillId?: string;
   hintsUsed?: number;
   durationSeconds?: number;
+  responseDetails?: ResponseDetail[];
   metadata?: Record<string, unknown>;
+};
+
+/** Trace structurée d'une question, sans enregistrer de document libre. */
+export type ResponseDetail = {
+  questionIndex: number;
+  prompt?: string;
+  response?: string;
+  expected?: string;
+  correct: boolean;
+  attempts?: number;
+  hintsUsed?: number;
+  errorFamily?: string;
 };
 
 /** Événement durable stocké localement avant une éventuelle synchronisation. */
@@ -31,6 +44,7 @@ export type ActivityEvent = {
   errorFamilies: string[];
   hintsUsed?: number;
   durationSeconds?: number;
+  responseDetails?: ResponseDetail[];
   occurredAt: string;
   metadata?: Record<string, unknown>;
   syncState: 'pending' | 'synced';

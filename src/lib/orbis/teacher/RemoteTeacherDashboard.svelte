@@ -1,7 +1,7 @@
 <script lang="ts">
   import { copyStudentSave, listRemoteActivityEvents, listRemoteGameSaves, type OrbisClass, type OrbisStudent, type RemoteActivityEvent, type RemoteGameSave } from './remote';
 
-  let { classes, students }: { classes: OrbisClass[]; students: OrbisStudent[] } = $props();
+  let { classes, students, documents = [] }: { classes: OrbisClass[]; students: OrbisStudent[]; documents?: Array<{ student_id: string; document_kind: 'cv' | 'letter'; content: Record<string, string>; updated_at: string }> } = $props();
   let activities = $state<RemoteActivityEvent[]>([]);
   let saves = $state<RemoteGameSave[]>([]);
   let loading = $state(false);
@@ -60,6 +60,8 @@
   const frequentErrors = $derived(Object.entries(selectedStudentActivities.flatMap((item) => item.error_families ?? []).reduce<Record<string, number>>((groups, family) => {
     groups[family] = (groups[family] ?? 0) + 1; return groups;
   }, {})).map(([family, count]) => ({ family, count })).sort((a, b) => b.count - a.count).slice(0, 6));
+  const selectedDocuments = $derived(selectedStudent ? documents.filter((item) => item.student_id === selectedStudent.user_id) : []);
+  const selectedResponses = $derived(selectedStudentActivities.flatMap((activity) => activity.response_details ?? []).slice(0, 80));
 
   function studentName(id: string) { return students.find((item) => item.user_id === id)?.display_name ?? 'Élève'; }
   function gameName(id: string) { return id.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
@@ -137,7 +139,7 @@
       <div class="detail-heading"><div><p class="eyebrow">FICHE ÉLÈVE</p><h3>{selectedStudent.display_name}</h3><p>Code : {selectedStudent.login_id}</p></div><button class="secondary" onclick={() => chooseStudent('all')}>Fermer la fiche</button></div>
       <div class="detail-grid">
         <section><h4>Compétences et activités</h4>{#if skillRows.length}<div class="bars">{#each skillRows as row}<div class="skill-row"><span><strong>{gameName(row.skill)}</strong><small>{row.correct}/{row.total} · {row.errors} erreur(s) · {row.hints} indice(s)</small></span><span class="track"><i style={`width:${row.rate}%`}></i></span><b>{row.rate}%</b></div>{/each}</div>{:else}<p class="empty">Pas encore de résultat synchronisé.</p>{/if}</section>
-        <section><h4>Points à observer</h4>{#if frequentErrors.length}<ul class="error-list">{#each frequentErrors as error}<li><span>{gameName(error.family)}</span><b>{error.count}</b></li>{/each}</ul>{:else}<p class="empty">Aucune famille d’erreur disponible.</p>{/if}<h4>Sauvegardes reprenables</h4>{#if selectedStudentSaves.length}<div class="transfer-choice"><label>Copier vers<select bind:value={transferTargetId} onchange={() => { pendingTransferGameId = ''; transferMessage = ''; }}><option value="">Choisir un élève</option>{#each transferTargets as target}<option value={target.user_id}>{target.display_name}</option>{/each}</select></label></div><ul class="save-list">{#each selectedStudentSaves as save}<li><span><strong>{gameName(save.game_id)}</strong><small>Révision {save.revision} · {new Date(save.updated_at).toLocaleDateString('fr-CH')}</small></span><button class="copy-button" class:confirm={pendingTransferGameId === save.game_id} disabled={!transferTargetId || transferBusy} onclick={() => transferSave(save)}>{pendingTransferGameId === save.game_id ? 'Confirmer' : 'Copier'}</button></li>{/each}</ul>{#if transferMessage}<p class="transfer-message" role="status">{transferMessage}</p>{/if}{:else}<p class="empty">Aucune sauvegarde distante.</p>{/if}</section>
+        <section><h4>Points à observer</h4>{#if frequentErrors.length}<ul class="error-list">{#each frequentErrors as error}<li><span>{gameName(error.family)}</span><b>{error.count}</b></li>{/each}</ul>{:else}<p class="empty">Aucune famille d’erreur disponible.</p>{/if}<h4>Sauvegardes reprenables</h4>{#if selectedStudentSaves.length}<div class="transfer-choice"><label>Copier vers<select bind:value={transferTargetId} onchange={() => { pendingTransferGameId = ''; transferMessage = ''; }}><option value="">Choisir un élève</option>{#each transferTargets as target}<option value={target.user_id}>{target.display_name}</option>{/each}</select></label></div><ul class="save-list">{#each selectedStudentSaves as save}<li><span><strong>{gameName(save.game_id)}</strong><small>Révision {save.revision} · {new Date(save.updated_at).toLocaleDateString('fr-CH')}</small></span><button class="copy-button" class:confirm={pendingTransferGameId === save.game_id} disabled={!transferTargetId || transferBusy} onclick={() => transferSave(save)}>{pendingTransferGameId === save.game_id ? 'Confirmer' : 'Copier'}</button></li>{/each}</ul>{#if transferMessage}<p class="transfer-message" role="status">{transferMessage}</p>{/if}{:else}<p class="empty">Aucune sauvegarde distante.</p>{/if}<h4>Documents PCP</h4>{#if selectedDocuments.length}<ul class="document-list">{#each selectedDocuments as document}<li><strong>{document.document_kind === 'cv' ? 'CV' : 'Lettre de motivation'}</strong><small>Mis à jour le {new Date(document.updated_at).toLocaleDateString('fr-CH')}</small><details><summary>Afficher le contenu</summary><pre>{Object.entries(document.content).map(([key, value]) => `${key} : ${value}`).join('\\n\\n')}</pre></details></li>{/each}</ul>{:else}<p class="empty">Aucun document PCP synchronisé.</p>{/if}</section>
       </div>
     </article>
   {/if}
@@ -147,6 +149,13 @@
       <div class="table-wrap"><table><thead><tr><th>Élève</th><th>Jeu</th><th>Résultat</th><th>Erreurs</th><th>Durée</th><th>Date</th></tr></thead><tbody>{#each filteredActivities.slice(0, 20) as item}<tr><td>{studentName(item.student_id)}</td><td>{gameName(item.game_id)}</td><td><strong>{item.correct_count}/{item.question_count}</strong></td><td>{item.error_count}</td><td>{item.duration_seconds ? duration(item.duration_seconds) : '—'}</td><td>{new Date(item.occurred_at).toLocaleDateString('fr-CH')}</td></tr>{/each}</tbody></table></div>
     {/if}
   </article>
+  {#if selectedStudent && selectedResponses.length}
+    <article class="panel response-detail-panel">
+      <h3>Détail des réponses</h3>
+      <p class="empty">Les traces servent à préparer un feedback ciblé ; elles ne remplacent pas l’observation de l’élève.</p>
+      <div class="table-wrap"><table><thead><tr><th>#</th><th>Question</th><th>Réponse</th><th>Attendu</th><th>Résultat</th><th>Essais</th></tr></thead><tbody>{#each selectedResponses as response}<tr><td>{response.questionIndex + 1}</td><td>{response.prompt ?? '—'}</td><td>{response.response ?? '—'}</td><td>{response.expected ?? '—'}</td><td>{response.correct ? 'Juste' : 'À reprendre'}</td><td>{response.attempts ?? '—'}</td></tr>{/each}</tbody></table></div>
+    </article>
+  {/if}
 </section>
 
 <style>

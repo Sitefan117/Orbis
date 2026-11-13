@@ -5,7 +5,7 @@
  */
 
 import { getStudentName, studentStorageScope } from '$lib/orbis/identity/local-student';
-import { recordGameProgress } from '$lib/orbis/tracking/client';
+import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
 
 export interface FloorProgress {
     floorId: string;
@@ -126,6 +126,11 @@ export class ProgressManager {
         }
 
         this.saveProgress(progress);
+        void recordGameActivity({
+            studentName: getStudentName(), gameId: 'fractionstower2', activityId: floorId,
+            correctCount: score, questionCount: total, errorCount: Math.max(0, total - score),
+            metadata: { stars: earnedStars, bestScore: floorData.bestScore }
+        });
     }
 
     /**

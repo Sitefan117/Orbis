@@ -8,6 +8,8 @@
     formatValue, randomInt, makeTargetTicks, numberToSwissText, normalizeWords, parseNumberInput
   } from '$lib/games/shift/number-engine';
   import { DIFFICULTIES, MEASURE_UNITS, MISSIONS } from '$lib/games/shift/config';
+  import { getStudentName } from '$lib/orbis/identity/local-student';
+  import { recordGameActivity } from '$lib/orbis/tracking/client';
 
   /*
    * SHIFT — Atelier des quantités
@@ -46,6 +48,9 @@
   let spawnTimer;
   let gameOver = false;
   let announceText = 'Choisis une mission pour commencer.';
+  let questionsAnswered = 0;
+  let correctAnswers = 0;
+  let resultReported = false;
 
   $: activeMission = MISSIONS.find((mission) => mission.id === activeMissionId) || MISSIONS[0];
   $: difficulty = DIFFICULTIES.find((item) => item.id === selectedDifficulty) || DIFFICULTIES[1];
@@ -57,6 +62,9 @@
     activeMissionId = missionId;
     view = 'game';
     score = 0;
+    questionsAnswered = 0;
+    correctAnswers = 0;
+    resultReported = false;
     streak = 0;
     lives = 3;
     gameOver = false;
@@ -395,6 +403,7 @@ const pixelsPerSecond = randomInt(180, 220);
   function submitTask() {
     if (!activeTask || feedback?.kind === 'success' || gameOver) return;
     attemptCount += 1;
+    questionsAnswered += 1;
     let isCorrect = false;
     let hint = '';
     let message = 'Pas encore. Reprends les rangs ou la consigne, puis réessaie.';
@@ -502,6 +511,7 @@ const pixelsPerSecond = randomInt(180, 220);
     }
 
     if (isCorrect) {
+      correctAnswers += 1;
       score += 50 + Math.min(streak, 5) * 10;
       streak += 1;
       feedback = { kind: 'success', title: 'Livraison validée !', message: 'Bien joué. Tu as trouvé la bonne valeur.', hint: '' };
@@ -516,8 +526,20 @@ const pixelsPerSecond = randomInt(180, 220);
       if (playStyle === 'challenge' && lives <= 0) {
         gameOver = true;
         stopSpawner();
+        void reportShiftResult();
       }
     }
+  }
+
+  async function reportShiftResult() {
+    if (resultReported) return;
+    resultReported = true;
+    await recordGameActivity({
+      studentName: getStudentName(), gameId: 'shift', activityId: activeMissionId,
+      correctCount: correctAnswers, questionCount: Math.max(1, questionsAnswered),
+      errorCount: Math.max(0, questionsAnswered - correctAnswers),
+      metadata: { difficulty: selectedDifficulty, playStyle, score, streak }
+    });
   }
 
   function chooseOrderValue(value) {

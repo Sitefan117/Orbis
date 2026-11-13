@@ -3,6 +3,8 @@
     import { base } from '$app/paths';
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
     import { TableHuntGame } from '$lib/games/mathhunt/engine.js';
+    import { getStudentName } from '$lib/orbis/identity/local-student';
+    import { recordGameActivity } from '$lib/orbis/tracking/client';
 
     // État de l'interface Svelte. Les choix commencent avec les 12 livrets actifs.
     let canvas;
@@ -18,6 +20,7 @@
     let helpVisible = false;
     let finalAccuracy = 100;
     let finalStars = '★ ★ ★ ★ ★';
+    let resultReported = false;
 
     const ALL_TABLES = Array.from({ length: 12 }, (_, index) => index + 1);
     const CANVAS_WIDTH = 320;
@@ -36,6 +39,10 @@
         if (state.phase === 'victory') {
             finalAccuracy = state.accuracy;
             finalStars = state.stars;
+            if (!resultReported) {
+                resultReported = true;
+                void recordGameActivity({ studentName: getStudentName(), gameId: 'mathhunt', activityId: difficulty, correctCount: correctHits, questionCount: Math.max(1, totalShots), errorCount: Math.max(0, totalShots - correctHits), metadata: { selectedTables, difficulty, stars: finalStars } });
+            }
         }
     }
 
@@ -80,6 +87,7 @@
         syncSettingsToGame();
         game.audio.init();
         game.startGame();
+        resultReported = false;
     }
 
     function returnToMenu() {

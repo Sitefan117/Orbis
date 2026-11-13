@@ -15,8 +15,10 @@ export type RemoteActivityEvent = {
   error_families: string[];
   hints_used: number | null;
   duration_seconds: number | null;
+  response_details: Array<{ questionIndex: number; prompt?: string; response?: string; expected?: string; correct: boolean; attempts?: number; hintsUsed?: number; errorFamily?: string }>;
   occurred_at: string;
 };
+export type RemoteStudentDocument = { student_id: string; document_kind: 'cv' | 'letter'; content: Record<string, string>; updated_at: string };
 export type RemoteGameSave = {
   student_id: string;
   game_id: string;
@@ -123,9 +125,17 @@ export async function copyStudentSave(sourceStudentId: string, targetStudentId: 
 export async function listRemoteActivityEvents(): Promise<RemoteActivityEvent[]> {
   const context = getHeaders();
   if (!context) return [];
-  const response = await fetch(`${context.config.url}/rest/v1/activity_events?select=event_id,student_id,game_id,activity_id,skill_id,correct_count,question_count,error_count,error_families,hints_used,duration_seconds,occurred_at&order=occurred_at.desc&limit=500`, { headers: context.headers });
+  const response = await fetch(`${context.config.url}/rest/v1/activity_events?select=event_id,student_id,game_id,activity_id,skill_id,correct_count,question_count,error_count,error_families,hints_used,duration_seconds,response_details,occurred_at&order=occurred_at.desc&limit=500`, { headers: context.headers });
   if (!response.ok) throw new Error(`activities-${response.status}`);
   return await response.json() as RemoteActivityEvent[];
+}
+
+export async function listTeacherStudentDocuments(): Promise<RemoteStudentDocument[]> {
+  const context = getHeaders();
+  if (!context) return [];
+  const response = await fetch(`${context.config.url}/rest/v1/student_documents?select=student_id,document_kind,content,updated_at&order=updated_at.desc&limit=500`, { headers: context.headers });
+  if (!response.ok) throw new Error(`documents-${response.status}`);
+  return await response.json() as RemoteStudentDocument[];
 }
 
 export async function listRemoteGameSaves(): Promise<RemoteGameSave[]> {

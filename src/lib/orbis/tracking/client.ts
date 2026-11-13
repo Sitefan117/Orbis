@@ -15,6 +15,7 @@ export function recordGameActivity(input: GameActivityInput): Promise<ActivitySu
     skillId: input.skillId,
     hintsUsed: input.hintsUsed,
     durationSeconds: input.durationSeconds,
+    responseDetails: input.responseDetails,
     metadata: input.metadata
   });
 }

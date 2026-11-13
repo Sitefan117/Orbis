@@ -6,10 +6,11 @@
   import { getStudentName } from '$lib/orbis/identity/local-student';
   import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import { recordGameActivity } from '$lib/orbis/tracking/client';
+  import type { ResponseDetail } from '$lib/orbis/results/contract';
   import { generateMultiplicationQuestion } from '$lib/games/livrets/question-engine';
 
   type Phase = 'setup' | 'play' | 'done';
-  type LivretsProgress = { phase: Phase; selectedTables: number[]; question: number; score: number; factorA: number; factorB: number; expected: number; errorFamilies: string[]; startedAt: number; elapsedSeconds?: number };
+  type LivretsProgress = { phase: Phase; selectedTables: number[]; question: number; score: number; factorA: number; factorB: number; expected: number; errorFamilies: string[]; responseDetails: ResponseDetail[]; startedAt: number; elapsedSeconds?: number };
 
   const tables = Array.from({ length: 11 }, (_, index) => index + 2);
   let phase: Phase = 'setup';
@@ -27,6 +28,7 @@
   let showTable = false;
   let sentMessage = '';
   let errorFamilies: string[] = [];
+  let responseDetails: ResponseDetail[] = [];
   let startedAt = Date.now();
   let elapsedSeconds = 0;
 
@@ -34,7 +36,7 @@
     studentName = getStudentName();
     const loaded = await createGameProgressService<LivretsProgress>(studentName, 'livrets').loadProgress();
     if (loaded.ok && loaded.value?.state.phase === 'play') {
-      ({ phase, selectedTables, question, score, factorA, factorB, expected, errorFamilies, startedAt, elapsedSeconds = 0 } = loaded.value.state);
+      ({ phase, selectedTables, question, score, factorA, factorB, expected, errorFamilies, responseDetails = [], startedAt, elapsedSeconds = 0 } = loaded.value.state);
       startedAt = Date.now();
     }
   });
@@ -52,6 +54,7 @@
     typed = '';
     feedback = '';
     errorFamilies = [];
+    responseDetails = [];
     startedAt = Date.now();
     elapsedSeconds = 0;
     nextQuestion();
@@ -61,7 +64,7 @@
     if (phase !== 'play') return;
     checkpointElapsed();
     void createGameProgressService<LivretsProgress>(studentName, 'livrets').saveProgress(
-      { phase, selectedTables, question, score, factorA, factorB, expected, errorFamilies, startedAt, elapsedSeconds }, 1,
+      { phase, selectedTables, question, score, factorA, factorB, expected, errorFamilies, responseDetails, startedAt, elapsedSeconds }, 1,
       { label: `Livrets : question ${Math.min(question, 10)}/10`, completed: Math.max(0, question - 1), total: 10 }
     );
   }
@@ -100,7 +103,9 @@
     blocked = true;
     const answer = Number.parseInt(typed, 10);
 
-    if (answer === expected) {
+    const isCorrect = answer === expected;
+    responseDetails = [...responseDetails, { questionIndex: question - 1, prompt: `${factorA} × ${factorB}`, response: typed, expected: String(expected), correct: isCorrect, attempts: 1, ...(isCorrect ? {} : { errorFamily: `table de ${factorA}` }) }];
+    if (isCorrect) {
       score += 1;
       feedback = '⚡ Flux intègre ! +1 donnée.';
     } else {
@@ -121,8 +126,9 @@
       correctCount: score,
       questionCount: 10,
       errorCount: 10 - score,
-      errorFamilies: Array.from(new Set(errorFamilies))
-      ,durationSeconds: Math.max(1, elapsedSeconds + Math.round((Date.now() - startedAt) / 1000))
+      errorFamilies: Array.from(new Set(errorFamilies)),
+      responseDetails,
+      durationSeconds: Math.max(1, elapsedSeconds + Math.round((Date.now() - startedAt) / 1000))
     });
     sentMessage = report.message;
   }

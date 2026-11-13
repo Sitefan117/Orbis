@@ -12,6 +12,7 @@ export type GameActivityInput = {
   errorFamilies?: Array<string | object>;
   hintsUsed?: number;
   durationSeconds?: number;
+  responseDetails?: import('$lib/orbis/results/contract').ResponseDetail[];
   metadata?: Record<string, unknown>;
 };
 

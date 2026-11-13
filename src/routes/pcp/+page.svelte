@@ -5,12 +5,16 @@
   import { onMount } from 'svelte';
   import { getStudentName, studentStorageScope } from '$lib/orbis/identity/local-student';
   import { recordGameActivity } from '$lib/orbis/tracking/client';
+  import { loadPcpDocuments, savePcpDocument } from '$lib/orbis/pcp/remote';
   import type { ChatMessage, CvFields, LetterFields, PcpScreen } from '$lib/games/pcp/types';
 
   let studentName = 'Explorateur';
   let hasStudentProfile = false;
   let legacyDraftAvailable = false;
   let storageMessage = '';
+  let remoteMessage = '';
+  let cvRemoteTimer: ReturnType<typeof setTimeout> | null = null;
+  let letterRemoteTimer: ReturnType<typeof setTimeout> | null = null;
   let screen: PcpScreen = 'home';
   
   let letterTab: 'examples' | 'chatbot' = 'chatbot'; 
@@ -89,6 +93,11 @@
     } catch {
       storageMessage = 'Un brouillon local n’a pas pu être lu. Il reste enregistré sur cet appareil.';
     }
+    void loadPcpDocuments().then((documents) => {
+      if (documents.cv) cv = { ...cv, ...documents.cv };
+      if (documents.letter) letter = { ...letter, ...documents.letter };
+      if (documents.cv || documents.letter) remoteMessage = 'CV et lettre récupérés depuis Supabase.';
+    }).catch(() => { /* Le mode local reste disponible. */ });
     
     setTimeout(() => {
       document.querySelectorAll('textarea').forEach(el => autoResize(el));
@@ -116,6 +125,8 @@
         : 'pcp_cv_v1';
       localStorage.setItem(key, JSON.stringify(cv));
       storageMessage = '';
+      if (cvRemoteTimer) clearTimeout(cvRemoteTimer);
+      cvRemoteTimer = setTimeout(() => { void savePcpDocument('cv', cv).then((saved) => { if (saved) remoteMessage = 'CV synchronisé avec Supabase.'; }); }, 700);
     } catch {
       storageMessage = 'La sauvegarde locale du CV est indisponible.';
     }
@@ -128,6 +139,8 @@
         : 'pcp_letter_v1';
       localStorage.setItem(key, JSON.stringify(letter));
       storageMessage = '';
+      if (letterRemoteTimer) clearTimeout(letterRemoteTimer);
+      letterRemoteTimer = setTimeout(() => { void savePcpDocument('letter', letter).then((saved) => { if (saved) remoteMessage = 'Lettre synchronisée avec Supabase.'; }); }, 700);
     } catch {
       storageMessage = 'La sauvegarde locale de la lettre est indisponible.';
     }
@@ -253,6 +266,7 @@ Consignes strictes :
       <p class="legacy-save-warning" role="status">Une ancienne sauvegarde PCP non attribuée est encore présente sur cet appareil. Elle n’est pas chargée dans ce profil pour éviter de montrer le travail d’un autre élève ; son contenu n’a pas été effacé.</p>
     {/if}
     {#if storageMessage}<p class="legacy-save-warning" role="status">{storageMessage}</p>{/if}
+    {#if remoteMessage}<p class="remote-save-message" role="status">{remoteMessage}</p>{/if}
     {#if screen === 'home'}
       <section class="card stack center" style="max-width: 48rem; margin: 3rem auto; text-align: center; background: #f8fafc; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
         <h2>Préparation au Choix Professionnel</h2>

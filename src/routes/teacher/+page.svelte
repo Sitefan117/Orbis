@@ -7,7 +7,7 @@
 	import LocalTrackingPanel from '$lib/orbis/teacher/LocalTrackingPanel.svelte';
 	import RemoteTeacherDashboard from '$lib/orbis/teacher/RemoteTeacherDashboard.svelte';
 	import { currentSession, refreshRemoteSession, signInWithShortId, signOut, startSessionRefresh } from '$lib/orbis/auth/client';
-	import { createStudent, createTeacherClass, listTeacherClasses, listTeacherStudents, resetStudentPassword, type OrbisClass, type OrbisStudent } from '$lib/orbis/teacher/remote';
+	import { createStudent, createTeacherClass, listTeacherClasses, listTeacherStudents, listTeacherStudentDocuments, resetStudentPassword, type OrbisClass, type OrbisStudent, type RemoteStudentDocument } from '$lib/orbis/teacher/remote';
 
 	let isAuthenticated = $state(false);
 	let loginId = $state('');
@@ -27,6 +27,7 @@
 	let studentMessage = $state('');
 	let isCreatingStudent = $state(false);
 	let remoteStudents = $state<OrbisStudent[]>([]);
+	let remoteDocuments = $state<RemoteStudentDocument[]>([]);
 	let resetStudentId = $state('');
 	let resetPassword = $state('');
 	let resetMessage = $state('');
@@ -38,7 +39,7 @@
 			const session = currentSession();
 			if (!session) return;
 			isAuthenticated = true;
-			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); }
+			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); try { remoteDocuments = await listTeacherStudentDocuments(); } catch { remoteDocuments = []; } }
 			catch { classMessage = 'Session restaurée, mais les classes ne sont pas encore accessibles.'; }
 		})();
 	});
@@ -52,7 +53,7 @@
 		if (result.ok && result.role === 'teacher') {
 			isAuthenticated = true;
 			password = '';
-			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); } catch { classMessage = 'Connexion réussie, mais les classes ne sont pas encore accessibles.'; }
+			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); try { remoteDocuments = await listTeacherStudentDocuments(); } catch { remoteDocuments = []; } } catch { classMessage = 'Connexion réussie, mais les classes ne sont pas encore accessibles.'; }
 			return;
 		}
 		loginMessage = result.ok ? 'Ce compte n’est pas un compte enseignant.' : result.message;
@@ -194,7 +195,7 @@
 			<button class="logout-button" onclick={logout}>Se déconnecter</button>
 		</header>
 
-		<RemoteTeacherDashboard {classes} students={remoteStudents} />
+		<RemoteTeacherDashboard {classes} students={remoteStudents} documents={remoteDocuments} />
 
 		<details class="secondary-zone">
 			<summary>Données locales de cet appareil</summary>

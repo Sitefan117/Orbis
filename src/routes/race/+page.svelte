@@ -18,6 +18,8 @@
         type QuestionBase
     } from '$lib/games/race/engine';
     import { loadFactStats, saveFactStats } from '$lib/games/race/progress';
+    import { getStudentName } from '$lib/orbis/identity/local-student';
+    import { recordGameActivity } from '$lib/orbis/tracking/client';
     // -------------------------------------------------------------------------
     // MATH RACER — prototype amélioré
     // Le jeu reste indépendant du portail, mais conserve un petit bilan local.
@@ -106,6 +108,7 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
     let factStats = $state<Record<string, FactStat>>({});
     // Le bilan final attend que l'élève ait lu la correction et appuyé sur BOOST.
     let pendingPauseOutcome: 'SUMMARY' | 'GAMEOVER' | null = null;
+    let resultReported = false;
 
     let isAccelerating = false;
     let isBraking = false;
@@ -114,6 +117,20 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
     let speed = BASE_SPEED_MIN;
 
     let sessionAccuracy = $derived(Math.round((correctAnswers / Math.max(1, questionsAnswered)) * 100));
+
+    $effect(() => {
+        if (gameState === 'PLAYING') resultReported = false;
+        if ((gameState === 'SUMMARY' || gameState === 'GAMEOVER') && !resultReported && questionsAnswered > 0) {
+            resultReported = true;
+            void recordGameActivity({
+                studentName: getStudentName(), gameId: 'race', activityId: gameMode,
+                correctCount: correctAnswers, questionCount: questionsAnswered,
+                errorCount: Math.max(0, questionsAnswered - correctAnswers),
+                errorFamilies: sessionWrongFacts,
+                metadata: { selectedNotions, selectedTables, practiceLevel, sessionAccuracy }
+            });
+        }
+    });
 
     // -------------------------------------------------------------------------
     // Éléments Three.js. Le type `any` évite de coupler ce composant aux types

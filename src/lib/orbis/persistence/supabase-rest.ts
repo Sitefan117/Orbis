@@ -47,6 +47,7 @@ export async function uploadActivityEvent(
       error_families: event.errorFamilies,
       hints_used: event.hintsUsed ?? null,
       duration_seconds: event.durationSeconds ?? null,
+      ...(event.responseDetails?.length ? { response_details: event.responseDetails } : {}),
       occurred_at: event.occurredAt
     })
   });

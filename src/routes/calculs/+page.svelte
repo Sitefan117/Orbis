@@ -6,10 +6,11 @@
   import { getStudentName } from '$lib/orbis/identity/local-student';
   import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import { recordGameActivity } from '$lib/orbis/tracking/client';
+  import type { ResponseDetail } from '$lib/orbis/results/contract';
   import { generateDecimalQuestion, type DecimalQuestion } from '$lib/games/calculs/question-engine';
 
   type Phase = 'setup' | 'play' | 'done';
-  type CalculsProgress = { phase: Phase; activeLevels: number[]; question: number; score: number; current: DecimalQuestion; errorFamilies: string[]; startedAt: number; elapsedSeconds?: number };
+  type CalculsProgress = { phase: Phase; activeLevels: number[]; question: number; score: number; current: DecimalQuestion; errorFamilies: string[]; responseDetails: ResponseDetail[]; startedAt: number; elapsedSeconds?: number };
   let studentName = 'Explorateur';
   let phase: Phase = 'setup';
   let activeLevels: number[] = [1];
@@ -21,6 +22,7 @@
   let blocked = false;
   let sentMessage = '';
   let errorFamilies: string[] = [];
+  let responseDetails: ResponseDetail[] = [];
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null = null;
   let drawing = false;
@@ -33,7 +35,7 @@
     void (async () => {
       const loaded = await createGameProgressService<CalculsProgress>(studentName, 'calculs').loadProgress();
       if (loaded.ok && loaded.value?.state.phase === 'play') {
-        ({ phase, activeLevels, question, score, current, errorFamilies, startedAt, elapsedSeconds = 0 } = loaded.value.state);
+        ({ phase, activeLevels, question, score, current, errorFamilies, responseDetails = [], startedAt, elapsedSeconds = 0 } = loaded.value.state);
         startedAt = Date.now();
       }
     })();
@@ -102,6 +104,7 @@
     question = 1;
     score = 0;
     errorFamilies = [];
+    responseDetails = [];
     startedAt = Date.now();
     elapsedSeconds = 0;
     nextQuestion();
@@ -111,7 +114,7 @@
     if (phase !== 'play') return;
     checkpointElapsed();
     void createGameProgressService<CalculsProgress>(studentName, 'calculs').saveProgress(
-      { phase, activeLevels, question, score, current, errorFamilies, startedAt, elapsedSeconds }, 1,
+      { phase, activeLevels, question, score, current, errorFamilies, responseDetails, startedAt, elapsedSeconds }, 1,
       { label: `Calculs : question ${Math.min(question, 10)}/10`, completed: Math.max(0, question - 1), total: 10 }
     );
   }
@@ -146,7 +149,9 @@
     if (!Number.isFinite(value)) return;
 
     blocked = true;
-    if (Math.abs(value - current.answer) < 0.001) {
+    const isCorrect = Math.abs(value - current.answer) < 0.001;
+    responseDetails = [...responseDetails, { questionIndex: question - 1, prompt: `${current.left} ${current.operation} ${current.right}`, response: answerInput.trim(), expected: String(current.answer), correct: isCorrect, attempts: 1, ...(isCorrect ? {} : { errorFamily: `niveau ${current.level}` }) }];
+    if (isCorrect) {
       score += 1;
       feedback = '⚡ Analyse correcte ! +1 alignement.';
     } else {
@@ -168,8 +173,9 @@
       correctCount: score,
       questionCount: 10,
       errorCount: 10 - score,
-      errorFamilies: Array.from(new Set(errorFamilies))
-      ,durationSeconds: Math.max(1, elapsedSeconds + Math.round((Date.now() - startedAt) / 1000))
+      errorFamilies: Array.from(new Set(errorFamilies)),
+      responseDetails,
+      durationSeconds: Math.max(1, elapsedSeconds + Math.round((Date.now() - startedAt) / 1000))
     });
     sentMessage = report.message;
   }

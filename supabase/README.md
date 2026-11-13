@@ -8,7 +8,7 @@ Ce dossier contient le schéma SQL préparé pour un projet de test vide. Le cli
 - Une classe contient plusieurs profils élèves.
 - Chaque jeu garde son propre format de sauvegarde dans un petit objet JSON.
 - Les résultats sont conservés comme des événements séparés : activité, date, score, nombre d'erreurs et, si le jeu sait les fournir, familles d'erreurs.
-- Les réponses détaillées, les CV et les lettres de motivation ne sont pas enregistrés par ce schéma.
+- La migration `202611130003_orbis_details_and_pcp.sql` ajoute des traces structurées de réponses (question, réponse, attendu, juste/faux, essais) et une table séparée pour les brouillons CV/lettre PCP.
 
 ## Protections prévues
 
@@ -32,6 +32,7 @@ Le plan gratuit est la seule cible prévue. Le site doit continuer à fonctionne
 4. Déployer `functions/orbis-admin/index.ts` pour créer les élèves, réinitialiser leur mot de passe et copier volontairement une sauvegarde entre deux élèves du même enseignant.
 5. Configurer les deux variables publiques décrites dans `docs/ORBiS_SUPABASE_INSTALLATION.md`.
 6. Vérifier la reprise locale, la synchronisation distante et les conflits avec les comptes fictifs avant toute utilisation en classe.
+7. Appliquer aussi `migrations/202611130003_orbis_details_and_pcp.sql` avant de demander la synchronisation des documents PCP ou des réponses détaillées.
 
 
 ## Carte du dossier

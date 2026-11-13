@@ -79,6 +79,16 @@ export function createLocalActivityEvent(payload: ActivityPayload): ActivityEven
     errorFamilies: normalizedErrorFamilies(payload.errorFamilies),
     ...(payload.hintsUsed === undefined ? {} : { hintsUsed: boundedInteger(payload.hintsUsed, 0, 10_000) ?? 0 }),
     ...(payload.durationSeconds === undefined ? {} : { durationSeconds: boundedInteger(payload.durationSeconds, 0, 86_400) ?? 0 }),
+    ...(payload.responseDetails?.length ? { responseDetails: payload.responseDetails.slice(0, 200).map((detail) => ({
+      questionIndex: boundedInteger(detail.questionIndex, 0, 10_000) ?? 0,
+      ...(detail.prompt ? { prompt: detail.prompt.slice(0, 500) } : {}),
+      ...(detail.response ? { response: detail.response.slice(0, 200) } : {}),
+      ...(detail.expected ? { expected: detail.expected.slice(0, 200) } : {}),
+      correct: Boolean(detail.correct),
+      ...(detail.attempts === undefined ? {} : { attempts: boundedInteger(detail.attempts, 0, 100) ?? 0 }),
+      ...(detail.hintsUsed === undefined ? {} : { hintsUsed: boundedInteger(detail.hintsUsed, 0, 100) ?? 0 }),
+      ...(detail.errorFamily ? { errorFamily: detail.errorFamily.slice(0, 120) } : {})
+    })) } : {}),
     occurredAt: new Date().toISOString(),
     ...(payload.metadata ? { metadata: payload.metadata } : {}),
     syncState: 'pending'

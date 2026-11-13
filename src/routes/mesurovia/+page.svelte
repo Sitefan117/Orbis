@@ -24,6 +24,8 @@
   import { hasHouseQuestionBank, makeHouseQuestion } from '$lib/games/mesurovia/question-bank';
   import { coursePaths } from '$lib/orbis/catalog/course-paths';
   import { getConversionFamily } from '$lib/games/mesurovia/conversion-table';
+  import { getStudentName } from '$lib/orbis/identity/local-student';
+  import { recordGameActivity } from '$lib/orbis/tracking/client';
 
   type View = 'welcome' | 'games-catalog' | 'courses-catalog' | 'character' | 'villages' | 'village' | 'room' | 'pretest' | 'howto';
   type SessionMode = 'practice' | 'battle' | 'table' | 'detective' | 'clock' | 'builder' | 'memory' | 'race' | 'exam' | 'boss' | 'pretest';
@@ -772,6 +774,11 @@
     const total = mode === 'race' ? Math.max(1, Math.min(session.questions.length, session.index)) : session.questions.length;
     const score = session.correct;
     const percent = Math.round((score / total) * 100);
+    void recordGameActivity({
+      studentName: getStudentName(), gameId: 'mesurovia', activityId: mode,
+      correctCount: score, questionCount: total, errorCount: Math.max(0, total - score),
+      metadata: { mode, firstTryCorrect: session.firstTryCorrect, attempts: session.attempts, familyResults: session.familyResults }
+    });
     if (mode === 'pretest') {
       const recommendation = engine.pretestRecommendation({ total, correct: score, byFamily: session.familyResults });
       profile.pretest = { total, correct: score, byFamily: session.familyResults, recommended: recommendation.villageId };

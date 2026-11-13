@@ -3,6 +3,7 @@
   import { onMount, tick } from 'svelte';
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import { getStudentName } from '$lib/orbis/identity/local-student';
+  import { recordGameActivity } from '$lib/orbis/tracking/client';
   import lexique from '../../../../static/vocabulaire/lexique.csv?raw';
   import poses from '../../../../static/mascotte-noireau/index.json';
   import { gridSize, gridWord, letterChoices, makeGrid, matchRounds, normalize, readLexique, shuffle, spriteStyle, type Word } from './lexique';
@@ -231,6 +232,12 @@
   function success(entry: Word) {
     collect(entry);
     solved = true;
+    void recordGameActivity({
+      studentName: student || getStudentName(), gameId: 'musee_vocabulaire', activityId: mode,
+      correctCount: 1, questionCount: 1, errorCount: 0,
+      hintsUsed: reaction === 'hint' ? 1 : 0,
+      metadata: { wordId: entry.id, theme: entry.theme, format: mode }
+    });
     report(`Bien joué ! « ${entry.word} » est dans ta collection.`, 'correct');
   }
 
