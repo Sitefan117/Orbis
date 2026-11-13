@@ -13,6 +13,7 @@
   import PixelWordmark from '$lib/orbis/components/PixelWordmark.svelte';
   import { catalogHref, matchesCatalogLocation, rememberCatalogLocation, savedCatalogLocation, type CatalogView } from '$lib/orbis/navigation';
   import { clearStudentName, getStudentName, storeStudentName } from '$lib/orbis/identity/local-student';
+  import { currentSession, refreshRemoteSession, signOut, startSessionRefresh } from '$lib/orbis/auth/client';
   import { worlds, type WorldId } from '$lib/orbis/catalog/games';
   import { courses } from '$lib/orbis/catalog/courses';
 
@@ -22,6 +23,7 @@
   let ready = false;
   let studentName = '';
   let nameInput = '';
+  let remoteConnected = false;
   // Static prerendering has no query parameters; read them only in the browser.
   $: catalogParams = browser ? $page.url.searchParams : new URLSearchParams();
   $: currentView = catalogParams.get('vue') === 'jeux' ? 'ARCADE'
@@ -151,6 +153,8 @@
     const storedName = getStudentName('');
     studentName = storedName;
     nameInput = storedName;
+    startSessionRefresh();
+    void refreshRemoteSession().then(() => { remoteConnected = Boolean(currentSession()); });
 
     try {
       const raw = localStorage.getItem('orbis-preferences');
@@ -279,6 +283,8 @@
   }
 
   function logout() {
+    signOut();
+    remoteConnected = false;
     clearStudentName();
     studentName = '';
     nameInput = '';
@@ -404,15 +410,20 @@
               <h2>Comprendre.<br />Puis essayer.</h2>
               <p>Un cours pour découvrir.<br />Un jeu pour t’entraîner.</p>
               {#if !studentName}
-                <form class="entry-form" on:submit|preventDefault={login}>
+                  <form class="entry-form" on:submit|preventDefault={login}>
                   <label for="student-name-input">Ton prénom</label>
                   <div class="entry-fields"><input id="student-name-input" bind:value={nameInput} required minlength="2" maxlength="40" placeholder="Ton prénom" autocomplete="given-name" /><button class="solid-action" type="submit">Entrer <span aria-hidden="true">↗</span></button></div>
+                    <a class="student-login-link" href={`${base}/student`}>Se connecter avec mon identifiant élève et mon mot de passe ↗</a>
+                    <small class="local-mode-note">Le prénom seul ouvre un mode local. Pour enregistrer dans Supabase et reprendre tes parties sur un autre appareil, utilise la connexion élève.</small>
                 </form>
               {/if}
             </div>
             <div class="robot-cell"><span class="robot-caption">Toujours en orbite.</span><OrbitCompanion reducedMotion={reduceMotion || systemReduceMotion} paused={pauseAnimations} id="orbis-robot" /></div>
           </div>
           {#if studentName}
+            <div class:remote-status={remoteConnected} class="connection-status">
+              {#if remoteConnected}Compte élève connecté · données synchronisables{:else}Mode local · <a href={`${base}/student`}>se connecter à Supabase</a>{/if}
+            </div>
             <div class="portal-grid">
               <div class="portal-label"><span>Ton prochain pas.</span><span class="portal-label-arrow" aria-hidden="true">↓</span></div>
               <a class="portal portal-games" href={catalogHref(base, 'jeux', studentName)}><span class="portal-number">01 / S’entraîner</span><strong>Les jeux</strong><span class="portal-arrow" aria-hidden="true">↗</span></a>
@@ -478,7 +489,7 @@
 
     <footer class="site-footer">
       <span class="footer-brand">Orbis / Apprendre. Explorer. Progresser.</span>
-      <div class="footer-links"><button bind:this={appearanceTrigger} class="text-button" type="button" aria-expanded={settingsOpen} aria-controls="orbis-appearance" on:click={toggleAppearance}>Affichage</button><a href={`${base}/teacher`}>Espace enseignant</a>{#if studentName}<button class="text-button" type="button" on:click={logout}>Changer de prénom</button>{/if}</div>
+      <div class="footer-links"><button bind:this={appearanceTrigger} class="text-button" type="button" aria-expanded={settingsOpen} aria-controls="orbis-appearance" on:click={toggleAppearance}>Affichage</button>{#if !remoteConnected}<a href={`${base}/student`}>Connexion élève</a>{/if}<a href={`${base}/teacher`}>Espace enseignant</a>{#if studentName}<button class="text-button" type="button" on:click={logout}>Changer de prénom</button>{/if}</div>
     </footer>
     <span class="sr-only" role="status">{comfortEnabled ? 'Confort activé : texte agrandi, lecture aérée, mouvements arrêtés.' : ''}</span>
   </div>
@@ -530,11 +541,16 @@
   .robot-cell { display:flex; flex-direction:column; justify-content:center; align-items:center; overflow:hidden; min-height:280px; }
   .robot-caption { align-self:flex-start; padding:1rem 1.2rem 0; font:500 .7rem/1.4 var(--orbis-label-font); color:var(--orbis-muted); }
   .entry-form { display:grid; gap:.45rem; margin-top:.35rem; }
+  .student-login-link { color:var(--orbis-ink); font-size:.82rem; text-underline-offset:3px; }
+  .local-mode-note { color:var(--orbis-muted); font-size:.76rem; line-height:1.45; }
   .entry-form label { font:500 .8125rem/1.4 var(--orbis-label-font); }
   .entry-fields { display:flex; flex-wrap:wrap; gap:.5rem; }
   .entry-fields input { width:0; min-width:120px; flex:1; padding:.7rem .8rem; min-height:48px; border:1px solid var(--orbis-line); border-radius:0; background:var(--orbis-card-surface); color:var(--orbis-ink); font-size:1rem; }
   .solid-action { min-height:48px; display:inline-flex; align-items:center; justify-content:space-between; gap:1.5rem; padding:.7rem 1rem; border:0; background:var(--orbis-ink); color:var(--orbis-action-text); text-decoration:none; font:500 .875rem/1.4 var(--orbis-label-font); clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px); }
   .portal-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-bottom:1px solid var(--orbis-line); }
+  .connection-status { padding:.75rem 1.5rem; border-bottom:1px solid var(--orbis-line); color:#7a4c17; background:#fff2d9; font:600 .78rem/1.4 var(--orbis-label-font); }
+  .connection-status.remote-status { color:#1f6245; background:#e5f3e8; }
+  .connection-status a { color:inherit; text-decoration:underline; text-underline-offset:3px; }
   .portal-label { padding:1.5rem; display:flex; flex-direction:column; justify-content:space-between; gap:1rem; font:500 .8125rem/1.5 var(--orbis-label-font); }
   .portal-label-arrow { font:400 2rem/1 Arial,sans-serif; }
   .portal { display:flex; flex-direction:column; position:relative; gap:2rem; padding:1.4rem 1.5rem; min-height:160px; border-left:1px solid var(--orbis-line); transition:background-color 160ms ease; }
