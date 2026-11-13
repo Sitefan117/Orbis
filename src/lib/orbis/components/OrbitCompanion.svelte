@@ -89,7 +89,7 @@
   class="orbit-companion"
   class:motion-allowed={motionAllowed}
   class:greeting
-  aria-label="Robot orbital Orbis"
+  aria-label="Nox, robot orbital d’Orbis"
   on:pointermove={followTouch}
   on:pointerdown={followTouch}
   on:pointerup={releaseTouch}

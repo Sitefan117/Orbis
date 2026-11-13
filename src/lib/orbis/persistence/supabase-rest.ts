@@ -1,4 +1,7 @@
-import { env } from '$env/dynamic/public';
+// GitHub Pages est un site statique : les variables doivent être injectées
+// pendant le build. `$env/dynamic/public` reste vide une fois déployé sans
+// serveur SvelteKit, alors que `$env/static/public` est remplacé par Vite.
+import { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL } from '$env/static/public';
 import type { ActivityEvent } from '$lib/orbis/results/contract';
 import type { LocalSaveEnvelope } from './local-store';
 import type { OrbisRemoteSession } from './remote-session';
@@ -11,10 +14,17 @@ export type RemoteGameSave<TState> = {
   updatedAt: string;
 };
 
+// Repli public pour le site statique : une URL Supabase et une clé
+// `sb_publishable_` peuvent être exposées dans le navigateur par conception.
+// Les variables GitHub restent prioritaires et permettent de changer de projet.
+const fallbackPublicConfig: SupabasePublicConfig = {
+  url: 'https://tnoyoleonpnwjujktpdc.supabase.co',
+  publicKey: 'sb_publishable_ZbvCrE0wm-FLqUCww-VvRg_gSMTTakX'
+};
+
 export function getSupabasePublicConfig(): SupabasePublicConfig | null {
-  const url = env.PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
-  // La clé « publishable » remplace progressivement l’ancienne clé « anon ».
-  const publicKey = env.PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? env.PUBLIC_SUPABASE_ANON_KEY;
+  const url = (PUBLIC_SUPABASE_URL || fallbackPublicConfig.url).replace(/\/$/, '');
+  const publicKey = PUBLIC_SUPABASE_PUBLISHABLE_KEY || fallbackPublicConfig.publicKey;
   return url && publicKey ? { url, publicKey } : null;
 }
 

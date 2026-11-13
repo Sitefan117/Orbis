@@ -474,7 +474,7 @@
                 {/if}
               {/if}
             </div>
-            <div class="robot-cell"><span class="robot-caption">Toujours en orbite.</span><OrbitCompanion reducedMotion={reduceMotion || systemReduceMotion} paused={pauseAnimations} id="orbis-robot" /></div>
+            <div class="robot-cell"><span class="robot-caption">Nox · toujours en orbite.</span><OrbitCompanion reducedMotion={reduceMotion || systemReduceMotion} paused={pauseAnimations} id="orbis-robot" /></div>
           </div>
           {#if studentName}
             <div class:remote-status={remoteConnected} class="connection-status">
