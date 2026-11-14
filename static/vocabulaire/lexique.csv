@@ -329,13 +329,15 @@ formation-encadrement,formation,"Formation, stage et emploi",avance,encadrement,
 formation-orientation,formation,"Formation, stage et emploi",avance,orientation,Choix des études ou du métier que tu veux faire ensuite,"Pour choisir la suite de mes études, je prends rendez-vous au service d’___.",o-rien-ta-tion,
 formation-se-renseigner,formation,"Formation, stage et emploi",avance,se renseigner,Chercher des réponses à tes questions,"Avant de choisir un métier, il vaut mieux ___ sur les conditions de formation.",,
 formation-faire-un-bilan,formation,"Formation, stage et emploi",avance,faire un bilan,"Regarder ce qui a été fait, ce qui a bien marché et ce qu’on peut améliorer","À la fin du stage, je vais ___ avec ma responsable pour parler de mes progrès.",,
+formation-place-apprentissage,formation,"Formation, stage et emploi",base,place d’apprentissage,Place proposée par une entreprise pour apprendre un métier,,,
+formation-entreprise-formatrice,formation,"Formation, stage et emploi",base,entreprise formatrice,Entreprise qui forme une apprentie ou un apprenti,,,
 demarches-formulaire,demarches,Démarches et services publics,avance,formulaire,Papier ou page avec des cases à remplir,Remplis le ___ avant de déposer ta demande.,for-mu-lai-re,demarches:0
 demarches-signature,demarches,Démarches et services publics,avance,signature,Ton nom ou ton signe écrit à la main pour dire que c’est bien toi ou que tu es d’accord,"Écris ton nom à la main au bas du document et ajoute ta ___ pour donner ton accord.",si-gna-tu-re,formation:3
 demarches-piece-d-identite,demarches,Démarches et services publics,avance,pièce d’identité,"Papier officiel qui montre qui tu es, par exemple un passeport","Pour prouver qui je suis au guichet, je présente une ___, par exemple mon passeport.",,demarches:3
 demarches-permis-de-sejour,demarches,Démarches et services publics,avance,permis de séjour,Papier officiel qui te donne le droit de rester dans un pays si tu viens d’un autre pays,,,
 demarches-attestation,demarches,Démarches et services publics,avance,attestation,"Papier qui confirme quelque chose, par exemple que tu es inscrit à l’école","Le secrétariat délivre une ___ de scolarité qui confirme mon inscription.",at-tes-ta-tion,
 demarches-justificatif,demarches,Démarches et services publics,avance,justificatif,"Papier qui sert à prouver ce que tu dis, par exemple où tu habites","Pour prouver où j’habite, je joins un ___ de domicile.",,
-demarches-commune,demarches,Démarches et services publics,avance,commune,"Lieu où tu habites et services qui s’occupent des besoins de ce lieu, comme la mairie","Je me rends au guichet de ma ___, l’administration locale de mon lieu de résidence.",com-mu-ne,
+demarches-commune,demarches,Démarches et services publics,avance,commune,"Lieu où tu habites et services qui s’occupent des besoins de ce lieu, comme l’administration communale","Je me rends au guichet de ma ___, l’administration locale de mon lieu de résidence.",com-mu-ne,
 demarches-administration,demarches,Démarches et services publics,avance,administration,Bureaux et personnes qui s’occupent des papiers et des demandes du public,,,
 demarches-guichet,demarches,Démarches et services publics,avance,guichet,Endroit où tu parles à une personne derrière une table ou une vitre pour avoir de l’aide ou donner un papier,"J’attends mon tour au ___, puis je remets mes documents à l’employée.",gui-chet,formation:4
 demarches-inscription,demarches,Démarches et services publics,avance,inscription,Moment où tu donnes ton nom pour pouvoir suivre un cours ou faire une activité,"Je termine mon ___ au cours : mon nom figure maintenant sur la liste.",ins-crip-tion,
@@ -419,7 +421,7 @@ securite-proteger,securite,Santé et sécurité,avance,protéger,Faire quelque c
 securite-assurance-maladie,securite,Santé et sécurité,avance,assurance maladie,Assurance qui paie une partie de ce que coûtent les soins,,,
 securite-carte-d-assurance,securite,Santé et sécurité,avance,carte d’assurance,Carte qui montre quelle assurance paie une partie de tes soins,,,
 securite-avoir-un-malaise,securite,Santé et sécurité,avance,avoir un malaise,"Se sentir soudain très mal, parfois comme si on allait tomber",,,
-numerique-telephone-portable,numerique,Numérique et vie privée,avance,téléphone portable,"Petit appareil que tu peux emporter pour appeler, écrire des messages ou aller sur Internet",,,quotidien:7
+numerique-telephone-portable,numerique,Numérique et vie privée,avance,téléphone mobile,"Petit appareil que tu peux emporter pour appeler, écrire des messages ou aller sur Internet",,,quotidien:7
 numerique-ecran,numerique,Numérique et vie privée,avance,écran,Partie où tu vois les images et les mots sur un téléphone ou un ordinateur,,é-cran,numerique:0
 numerique-clavier,numerique,Numérique et vie privée,avance,clavier,Touches sur lesquelles tu appuies pour écrire sur un ordinateur,,cla-vier,numerique:1
 numerique-chargeur,numerique,Numérique et vie privée,avance,chargeur,Objet qu’on branche pour redonner de l’énergie à un téléphone ou à un autre appareil,,char-geur,numerique:2
@@ -445,7 +447,7 @@ numerique-consentement,numerique,Numérique et vie privée,avance,consentement,D
 numerique-geolocalisation,numerique,Numérique et vie privée,avance,géolocalisation,Façon de trouver où est une personne ou un appareil sur une carte,,,
 numerique-capture-d-ecran,numerique,Numérique et vie privée,avance,capture d’écran,Photo de ce que tu vois à l’écran,,,
 numerique-lien,numerique,Numérique et vie privée,avance,lien,"Mot, image ou adresse sur lesquels tu peux cliquer pour ouvrir une page",,,
-numerique-courriel,numerique,Numérique et vie privée,avance,courriel,Message que tu envoies par e-mail,,cour-riel,
+numerique-courriel,numerique,Numérique et vie privée,avance,e-mail,Message que tu envoies par Internet,,,
 numerique-piece-jointe,numerique,Numérique et vie privée,avance,pièce jointe,Photo ou fichier que tu ajoutes à ton e-mail,,,
 numerique-bloquer-un-contact,numerique,Numérique et vie privée,avance,bloquer un contact,Empêcher une personne de t’écrire ou de t’appeler sur une application,,,
 numerique-sauvegarde,numerique,Numérique et vie privée,avance,sauvegarde,Copie que tu gardes pour retrouver tes fichiers si tu les perds,,sau-ve-gar-de,
