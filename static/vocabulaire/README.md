@@ -59,3 +59,5 @@ Pour un essai de dix minutes, sélectionner « Ville et transports » et « Dém
 Noireau utilise la planche existante `catalogue-guide-4x2.png` et la description des poses de `static/mascotte-noireau/index.json`. Les huit poses interviennent selon l’activité, l’aide et le retour de réponse.
 
 Pour vérifier les données et les grilles, lancer `node --import tsx tests/musee-vocabulaire.test.ts`.
+
+Les listes métiers comprennent aussi `coiffeuse`, `fleuriste`, `tatoueuse` et `carrossiere-peintre`. Leur atlas visuel est `../images/musee-vocabulaire/metiers.png`, organisé en quatre colonnes et quatre lignes.
