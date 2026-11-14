@@ -42,7 +42,7 @@ export function matchRounds(words: readonly Word[]): Word[][] {
 const atlas: Record<string, [number, number]> = {
   'ecole-sprites-v1': [3, 3], actions: [3, 3], quotidien2: [3, 3], emotions: [3, 3],
   maison: [4, 3], courses: [4, 3], ville: [4, 3], corps: [4, 3], loisirs: [4, 3],
-  quotidien: [4, 3], demarches: [4, 3], numerique: [4, 3], formation: [3, 3], metiers: [4, 4]
+  quotidien: [4, 3], demarches: [4, 3], numerique: [4, 3], formation: [3, 3], metiers: [4, 4], sports: [4, 4]
 };
 
 // Some generated sheets use wider frames on the last row.
