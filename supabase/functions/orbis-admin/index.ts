@@ -97,6 +97,11 @@ Deno.serve(async (request) => {
   try { body = await request.json() as AdminAction; } catch { return json({ error: 'invalid_json' }, 400); }
 
   if (body.action === 'create_student') {
+    // 1) Vérifier le format, puis la classe possédée par l'enseignant.
+    // 2) Créer uniquement le compte Auth côté serveur.
+    // 3) Appeler la fonction SQL qui crée le profil et l'inscription.
+    // Si l'étape 3 échoue, on supprime le compte Auth créé pour éviter
+    // un compte « orphelin » sans profil Orbis.
     if (!validLoginId(body.loginId) || typeof body.displayName !== 'string' || body.displayName.trim().length < 1
       || !validPassword(body.password) || !/^[0-9a-f-]{36}$/.test(body.classId)) {
       return json({ error: 'invalid_student_payload' }, 400);
@@ -133,6 +138,9 @@ Deno.serve(async (request) => {
   }
 
   if (body.action === 'reset_student_password') {
+    // Le navigateur ne possède jamais de clé administrateur. Il transmet
+    // seulement la session de l'enseignant ; cette fonction vérifie ensuite
+    // que l'élève appartient bien à l'une de ses classes.
     if (!/^[0-9a-f-]{36}$/.test(body.studentId) || !validPassword(body.password)) return json({ error: 'invalid_reset_payload' }, 400);
     if (!await teacherCanViewStudent(accessToken, body.studentId)) return json({ error: 'student_not_in_teacher_class' }, 403);
     const { error } = await authClient.auth.admin.updateUserById(body.studentId, { password: body.password });
@@ -140,6 +148,8 @@ Deno.serve(async (request) => {
   }
 
   if (body.action === 'copy_student_save') {
+    // Même principe pour une sauvegarde : les deux élèves doivent être
+    // visibles par le même enseignant avant que la fonction SQL copie l'état.
     const validUuid = (value: string) => /^[0-9a-f-]{36}$/.test(value);
     if (!validUuid(body.sourceStudentId) || !validUuid(body.targetStudentId)
       || typeof body.gameId !== 'string' || body.gameId.length < 1 || body.gameId.length > 80
@@ -164,6 +174,8 @@ Deno.serve(async (request) => {
   }
 
   if (body.action === 'export_student_data') {
+    // L'export rassemble les données applicatives, mais ne renvoie jamais
+    // les mots de passe Auth. Les lectures sont paginées dans teacherRows().
     if (!/^[0-9a-f-]{36}$/.test(body.studentId)) return json({ error: 'invalid_student_id' }, 400);
     if (!await teacherCanViewStudent(accessToken, body.studentId)) return json({ error: 'student_not_in_teacher_class' }, 403);
     const studentFilter = encodeURIComponent(body.studentId);
@@ -182,6 +194,8 @@ Deno.serve(async (request) => {
   }
 
   if (body.action === 'delete_student') {
+    // Suppression volontairement irréversible : Auth supprime l'utilisateur,
+    // puis les relations « on delete cascade » suppriment ses données Orbis.
     if (!/^[0-9a-f-]{36}$/.test(body.studentId)) return json({ error: 'invalid_student_id' }, 400);
     if (!await teacherCanViewStudent(accessToken, body.studentId)) return json({ error: 'student_not_in_teacher_class' }, 403);
     const { error } = await authClient.auth.admin.deleteUser(body.studentId);

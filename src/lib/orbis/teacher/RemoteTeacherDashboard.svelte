@@ -1,5 +1,6 @@
 <script lang="ts">
   import { copyStudentSave, listRemoteActivityEvents, listRemoteGameSaves, type OrbisClass, type OrbisStudent, type RemoteActivityEvent, type RemoteGameSave } from './remote';
+  import { resultRowsToCsv, resultRowsToPdf, safeExportPart, type ResultExportRow } from './result-export';
 
   let { classes, students, documents = [] }: { classes: OrbisClass[]; students: OrbisStudent[]; documents?: Array<{ student_id: string; document_kind: 'cv' | 'letter'; content: Record<string, string>; updated_at: string }> } = $props();
   let activities = $state<RemoteActivityEvent[]>([]);
@@ -15,6 +16,7 @@
   let transferBusy = $state(false);
   let transferMessage = $state('');
   let pendingTransferGameId = $state('');
+  let exportingPdf = $state(false);
 
   const visibleStudents = $derived(selectedClass === 'all' ? students : students.filter((item) => item.class_id === selectedClass));
   const visibleStudentIds = $derived(new Set(visibleStudents.map((item) => item.user_id)));
@@ -87,16 +89,45 @@
   });
 
   function studentName(id: string) { return students.find((item) => item.user_id === id)?.display_name ?? 'Élève'; }
+  function classNameForStudent(id: string) { const student = students.find((item) => item.user_id === id); return classes.find((item) => item.id === student?.class_id)?.name ?? 'Classe'; }
   function gameName(id: string) { return id.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
   function duration(seconds: number) { const minutes = Math.round(seconds / 60); return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`; }
   function chooseStudent(studentId: string) { selectedStudentId = studentId; }
-  function downloadCsv() {
-    const header = ['Élève', 'Jeu', 'Activité', 'Justes', 'Questions', 'Erreurs', 'Indices', 'Durée (s)', 'Date'];
-    const rows = filteredActivities.map((item) => [studentName(item.student_id), gameName(item.game_id), item.activity_id, item.correct_count, item.question_count, item.error_count, item.hints_used ?? '', item.duration_seconds ?? '', item.occurred_at]);
-    const csv = [header, ...rows].map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(';')).join('\n');
-    const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' })); link.download = `orbis-resultats-${new Date().toISOString().slice(0, 10)}.csv`; link.click(); URL.revokeObjectURL(link.href);
+  function exportRows(): ResultExportRow[] {
+    return filteredActivities.map((item) => ({
+      student: studentName(item.student_id), classroom: classNameForStudent(item.student_id), game: gameName(item.game_id),
+      activity: gameName(item.activity_id), skill: item.skill_id ? gameName(item.skill_id) : '', correct: item.correct_count,
+      questions: item.question_count, errors: item.error_count, hints: item.hints_used, durationSeconds: item.duration_seconds, occurredAt: item.occurred_at
+    }));
   }
-  function printDashboard() { window.print(); }
+  function exportScope() {
+    if (selectedStudent) return safeExportPart(selectedStudent.display_name);
+    if (selectedClass !== 'all') return safeExportPart(classes.find((item) => item.id === selectedClass)?.name ?? 'classe');
+    return 'toutes-les-classes';
+  }
+  function filterDescription() {
+    const classroom = selectedClass === 'all' ? 'Toutes les classes' : classes.find((item) => item.id === selectedClass)?.name ?? 'Classe';
+    const pupil = selectedStudent?.display_name ?? 'Tous les élèves';
+    const period = selectedPeriod === 'all' ? 'Toute la période' : `${selectedPeriod} derniers jours`;
+    const game = selectedGame === 'all' ? 'Tous les jeux' : gameName(selectedGame);
+    return `${classroom} · ${pupil} · ${period} · ${game}`;
+  }
+  function downloadCsv() {
+    const rows = exportRows();
+    if (!rows.length) { message = 'Aucun résultat à exporter avec les filtres actuels.'; return; }
+    const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([`\ufeff${resultRowsToCsv(rows)}`], { type: 'text/csv;charset=utf-8' })); link.download = `orbis-resultats-${exportScope()}-${new Date().toISOString().slice(0, 10)}.csv`; link.click(); URL.revokeObjectURL(link.href);
+  }
+  async function downloadPdf() {
+    const rows = exportRows();
+    if (!rows.length) { message = 'Aucun résultat à exporter avec les filtres actuels.'; return; }
+    exportingPdf = true; message = '';
+    try {
+      const generatedAt = new Date();
+      const content = await resultRowsToPdf(rows, { filters: filterDescription(), generatedAt, totalCorrect, totalQuestions });
+      const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([content], { type: 'application/pdf' })); link.download = `orbis-resultats-${exportScope()}-${generatedAt.toISOString().slice(0, 10)}.pdf`; link.click(); URL.revokeObjectURL(link.href);
+    } catch { message = 'Le PDF n’a pas pu être créé. Le CSV reste disponible.'; }
+    finally { exportingPdf = false; }
+  }
   async function transferSave(save: RemoteGameSave) {
     if (!selectedStudent || !transferTargetId || transferBusy) return;
     const target = students.find((item) => item.user_id === transferTargetId);
@@ -125,7 +156,7 @@
 <section class="remote-dashboard" aria-labelledby="remote-title">
   <header>
     <div><p class="eyebrow">SUIVI SUPABASE</p><h2 id="remote-title">Vue d’ensemble de la classe</h2><p>Résultats synchronisés depuis les appareils élèves.</p></div>
-    <div class="header-actions"><button onclick={refresh} disabled={loading}>{loading ? 'Actualisation…' : 'Actualiser'}</button><button class="secondary" onclick={downloadCsv}>Exporter CSV</button><button class="secondary" onclick={printDashboard}>Imprimer / PDF</button></div>
+    <div class="header-actions"><button onclick={refresh} disabled={loading}>{loading ? 'Actualisation…' : 'Actualiser'}</button><button class="secondary" onclick={downloadCsv}>Télécharger CSV</button><button class="secondary" onclick={() => void downloadPdf()} disabled={exportingPdf}>{exportingPdf ? 'Création du PDF…' : 'Télécharger PDF'}</button></div>
   </header>
   <div class="filters" aria-label="Filtres du tableau">
     <label>Classe<select bind:value={selectedClass}><option value="all">Toutes les classes</option>{#each classes as classroom}<option value={classroom.id}>{classroom.name}</option>{/each}</select></label>
@@ -133,6 +164,7 @@
     <label>Période<select bind:value={selectedPeriod}><option value="7">7 derniers jours</option><option value="30">30 derniers jours</option><option value="90">90 derniers jours</option><option value="all">Toute la période</option></select></label>
     <label>Jeu<select bind:value={selectedGame}><option value="all">Tous les jeux</option>{#each availableGames as game}<option value={game}>{gameName(game)}</option>{/each}</select></label>
   </div>
+  <p class="export-help">Les fichiers CSV et PDF reprennent uniquement les résultats correspondant à ces quatre filtres.</p>
   {#if message}<p class="notice" role="alert">{message}</p>{/if}
   <div class="metric-grid">
     <article><span>Élèves</span><strong>{selectedStudent ? 1 : visibleStudents.length}</strong><small>{selectedStudent?.display_name ?? (selectedClass === 'all' ? `${classes.length} classe(s)` : 'classe filtrée')}</small></article>
@@ -196,4 +228,5 @@
   .remote-dashboard{color:#21332f;background:linear-gradient(145deg,#f9fbf5,#edf4ed);border:1px solid #ceddce;border-radius:24px;padding:clamp(1rem,3vw,2rem);margin:1.5rem 0;box-shadow:0 18px 45px #0d2b2012}.remote-dashboard>header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;border:0;margin:0 0 1.4rem;padding:0}.remote-dashboard h2{margin:.25rem 0;font-size:clamp(1.6rem,3vw,2.35rem);color:#173c31}.remote-dashboard h3{margin-top:0}.remote-dashboard h4{margin:0 0 .8rem;color:#274b40}.remote-dashboard p{margin:.35rem 0;color:#506760}.eyebrow{font-size:.72rem;font-weight:800;letter-spacing:.15em;color:#2c7158!important}.remote-dashboard button{border:1px solid #2b6b55;border-radius:10px;background:#265f4c;color:white;padding:.7rem 1rem;font-weight:700}.filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem;margin-bottom:1rem;padding:1rem;background:#e5eee5;border-radius:14px}.filters label{font-weight:700;font-size:.82rem;color:#38564c}.filters select,.transfer-choice select{display:block;width:100%;margin-top:.35rem;padding:.65rem;border:1px solid #9fb5a7;border-radius:9px;background:white;color:#21332f}.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem}.metric-grid article,.panel{background:white;border:1px solid #d9e4d8;border-radius:16px;padding:1rem}.metric-grid span,.metric-grid small{display:block;color:#60736c}.metric-grid strong{display:block;font-size:clamp(1.7rem,4vw,2.5rem);color:#173c31;margin:.25rem 0}.dashboard-columns{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}.bars{display:grid;gap:1rem}.bar-row,.student-row,.skill-row{display:grid;grid-template-columns:minmax(120px,1.4fr) minmax(90px,2fr) 3rem;align-items:center;gap:.75rem}.bar-row small,.student-row small,.skill-row small{display:block;color:#6a7c75;margin-top:.2rem}.student-row{width:100%;text-align:left;background:#f7faf7!important;color:#21332f!important;border-color:#dbe7dc!important;padding:.75rem!important}.student-row.active{outline:3px solid #87b99e}.student-row strong,.skill-row strong{font-size:1rem!important;margin:0!important}.track{display:block;height:12px;border-radius:99px;background:#e5ece6;overflow:hidden}.track span,.track i{display:block;height:100%;background:linear-gradient(90deg,#2b795b,#63b878);border-radius:inherit}.track.games span{background:linear-gradient(90deg,#2d6f91,#65b5bb)}.bar-row b,.student-row b,.skill-row b{text-align:right;color:#214b3e}.student-detail{margin-top:1rem;border-color:#9dc3ac}.detail-heading{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start}.detail-heading h3{font-size:1.65rem;margin:.2rem 0}.secondary{background:white!important;color:#285f4d!important}.detail-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:1.5rem;margin-top:1.2rem}.error-list,.save-list{list-style:none;margin:0 0 1.4rem;padding:0;display:grid;gap:.5rem}.error-list li,.save-list li{display:flex;justify-content:space-between;align-items:center;gap:1rem;background:#f3f7f3;border-radius:10px;padding:.7rem}.error-list b{background:#f4d9c5;color:#783a1b;border-radius:99px;padding:.15rem .55rem}.save-list small{display:block}.transfer-choice{margin:.5rem 0 1rem}.transfer-choice label{font-weight:700;font-size:.82rem}.copy-button{padding:.4rem .65rem!important;font-size:.78rem}.copy-button.confirm{background:#9b4b24!important;border-color:#7d3718!important}.transfer-message{padding:.65rem;background:#e5f4e8;border-radius:9px}.recent{margin-top:1rem}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;text-align:left;font-size:.9rem}th,td{padding:.8rem;border-bottom:1px solid #e1e9e1}th{color:#52665f;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}.notice{background:#fff3d8;padding:.8rem;border-left:4px solid #b77720}.empty{padding:1rem 0}@media(max-width:800px){.filters{grid-template-columns:1fr}.metric-grid{grid-template-columns:repeat(2,1fr)}.dashboard-columns,.detail-grid{grid-template-columns:1fr}.remote-dashboard>header,.detail-heading{flex-direction:column}.bar-row,.student-row,.skill-row{grid-template-columns:1fr 3rem}.track{grid-column:1/3}}
   .visual-summary{display:grid;grid-template-columns:1.2fr 1fr;gap:1rem;margin-top:1rem}.ring-panel{display:flex;align-items:center;gap:1.2rem}.success-ring{width:116px;height:116px;flex:0 0 116px;border-radius:50%;display:grid;place-items:center;position:relative}.success-ring::before{content:"";position:absolute;inset:10px;border-radius:50%;background:white}.success-ring span{position:relative;font-weight:800;font-size:1.35rem;color:#173c31}.ring-panel h3{margin:.25rem 0}.ring-panel small{display:block;color:#718078;margin-top:.65rem;line-height:1.4}.quick-reading h3{margin-bottom:1rem}.reading-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.8rem}.reading-grid div{background:#f3f8f3;border-radius:12px;padding:.7rem}.reading-grid strong,.reading-grid span{display:block}.reading-grid strong{font-size:1.4rem;color:#285f4d}.reading-grid span{font-size:.78rem;color:#60736c;margin-top:.2rem}@media(max-width:800px){.visual-summary{grid-template-columns:1fr}}
   .header-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.5rem}.header-actions .secondary{background:white!important;color:#285f4d!important}.trend-panel{margin-top:1rem}.panel-heading{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start}.panel-heading p{font-size:.9rem}.panel-heading small{color:#718078}.trend-chart{height:150px;display:flex;align-items:end;gap:clamp(.3rem,1vw,.8rem);padding:1rem .4rem .2rem;border-bottom:1px solid #dbe7dc}.trend-column{height:100%;flex:1;display:flex;flex-direction:column;justify-content:end;align-items:center;gap:.35rem;min-width:18px}.trend-column span{width:100%;max-width:34px;min-height:5px;border-radius:7px 7px 0 0;background:linear-gradient(180deg,#63b878,#2b795b)}.trend-column small{font-size:.65rem;color:#718078;writing-mode:vertical-rl;transform:rotate(180deg)}.teacher-summary{background:#eef6ef;border-left:4px solid #5eaa75;padding:.75rem;border-radius:8px;line-height:1.45}.document-list{list-style:none;padding:0;display:grid;gap:.6rem}.document-list li{padding:.7rem;background:#f3f7f3;border-radius:10px}.document-list small{display:block;color:#718078;margin:.2rem 0 .45rem}.document-list pre{white-space:pre-wrap;overflow:auto;max-height:240px;font:inherit;font-size:.84rem;background:white;padding:.6rem;border-radius:7px}.response-detail-panel{margin-top:1rem}.response-detail-panel td{vertical-align:top;max-width:240px;word-break:break-word}@media print{.remote-dashboard>header button,.filters,.transfer-choice,.copy-button,:global(.secondary-zone),:global(.classes-card),.student-detail .document-list{display:none!important}.remote-dashboard{box-shadow:none;border:0}.trend-panel{break-inside:avoid}}
+  .export-help{margin:-.55rem 0 1rem!important;font-size:.82rem;color:#60736c!important}
 </style>

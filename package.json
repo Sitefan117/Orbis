@@ -17,6 +17,7 @@
     "@sveltejs/kit": "^2.22.0",
     "better-sqlite3": "^11.10.0",
     "drizzle-orm": "^0.45.2",
+    "jspdf": "^4.2.1",
     "svelte": "^5.35.0",
     "three": "^0.186.0"
   },

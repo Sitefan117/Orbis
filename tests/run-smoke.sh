@@ -14,6 +14,7 @@ python3 tests/orbis-navigation-smoke.py
 node --import tsx tests/orbis-catalog-navigation.test.ts
 node --import tsx tests/orbis-local-student.test.ts
 node --import tsx tests/orbis-remote-session.test.ts
+node --import tsx tests/orbis-result-export.test.ts
 node tests/orbis-multi-student-persistence.test.cjs
 node tests/orbis-student-profile-simulation.test.cjs
 node --import tsx tests/grammaire-lab-engine.test.ts
