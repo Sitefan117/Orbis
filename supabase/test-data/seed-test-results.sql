@@ -41,10 +41,10 @@ begin
   from (
     -- Les 10 comptes visibles dans la classe de test.
     select * from (values
-      ('panda01', 'tres-bon'),
       ('renard01', 'tres-bon'),
-      ('loutre02', 'tres-mauvais'),
-      ('koala03', 'tres-mauvais'),
+      ('dauphin09', 'tres-bon'),
+      ('chat10', 'tres-mauvais'),
+      ('singe11', 'tres-mauvais'),
       ('lynx02', 'bon'),
       ('hibou04', 'bon'),
       ('tigre05', 'mauvais'),
