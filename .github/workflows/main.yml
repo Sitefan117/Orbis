@@ -13,7 +13,9 @@ permissions:
 
 concurrency:
   group: 'pages'
-  cancel-in-progress: true
+  # Une publication Pages déjà engagée ne doit pas être interrompue : GitHub
+  # peut sinon conserver un verrou de déploiement et refuser les runs suivants.
+  cancel-in-progress: false
 
 jobs:
   # Cette chaîne s’exécute après chaque mise à jour de la branche principale.
