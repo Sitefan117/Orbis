@@ -33,7 +33,7 @@ begin
     score.correct_count,
     10,
     10 - score.correct_count,
-    case when score.correct_count < 8 then array['test-' || student.profile]::text[] else '{}'::text[] end,
+    case when score.correct_count < 8 then array['test-' || profile.profile]::text[] else '{}'::text[] end,
     floor(random() * 3)::integer,
     45 + floor(random() * 256)::integer,
     details.response_details,
