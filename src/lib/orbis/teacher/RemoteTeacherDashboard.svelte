@@ -75,7 +75,8 @@
     ...response,
     game: activity.game_id,
     activity: activity.activity_id,
-    skill: activity.skill_id
+    skill: response.skillId ?? activity.skill_id,
+    category: response.category ?? taxonomyFor(response.skillId ?? activity.skill_id)?.category
   }))).slice(0, 120));
   const trendRows = $derived(Object.entries(filteredActivities.reduce<Record<string, { correct: number; total: number }>>((groups, item) => {
     const day = item.occurred_at.slice(0, 10);
@@ -227,7 +228,7 @@
     <article class="panel response-detail-panel">
       <h3>Détail des réponses</h3>
       <p class="empty">Les traces servent à préparer un feedback ciblé ; elles ne remplacent pas l’observation de l’élève.</p>
-      <div class="table-wrap"><table><thead><tr><th>Jeu</th><th>Compétence</th><th>#</th><th>Question</th><th>Réponse</th><th>Attendu</th><th>Résultat</th><th>Essais</th><th>Indices</th></tr></thead><tbody>{#each selectedResponses as response}<tr><td>{gameName(response.game)}</td><td>{skillLabel(response.skill)}</td><td>{response.questionIndex + 1}</td><td>{response.prompt ?? '—'}</td><td>{response.response ?? '—'}</td><td>{response.expected ?? '—'}</td><td><span class:correct-response={response.correct} class:error-response={!response.correct}>{response.correct ? 'Juste' : 'À reprendre'}</span></td><td>{response.attempts ?? '—'}</td><td>{response.hintsUsed ?? '—'}</td></tr>{/each}</tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Jeu</th><th>Catégorie</th><th>Compétence</th><th>#</th><th>Question</th><th>Réponse</th><th>Attendu</th><th>Résultat</th><th>Essais</th><th>Indices</th><th>Temps</th></tr></thead><tbody>{#each selectedResponses as response}<tr><td>{gameName(response.game)}</td><td>{response.category ?? '—'}</td><td>{skillLabel(response.skill)}</td><td>{response.questionIndex + 1}</td><td>{response.prompt ?? '—'}</td><td>{response.response ?? '—'}</td><td>{response.expected ?? '—'}</td><td><span class:correct-response={response.correct} class:error-response={!response.correct}>{response.correct ? 'Juste' : 'À reprendre'}</span></td><td>{response.attempts ?? '—'}</td><td>{response.hintsUsed ?? '—'}</td><td>{response.durationSeconds ? `${response.durationSeconds} s` : '—'}</td></tr>{/each}</tbody></table></div>
     </article>
   {/if}
 </section>

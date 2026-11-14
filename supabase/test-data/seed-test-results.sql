@@ -29,11 +29,11 @@ begin
     student.user_id,
     game.game_id,
     test_activity,
-    'profil-' || profile.profile,
+    game.primary_skill,
     score.correct_count,
     10,
     10 - score.correct_count,
-    case when score.correct_count < 8 then array['test-' || profile.profile]::text[] else '{}'::text[] end,
+    case when score.correct_count < 8 then array[game.error_family || ':' || (10 - score.correct_count)::text]::text[] else '{}'::text[] end,
     floor(random() * 3)::integer,
     45 + floor(random() * 256)::integer,
     details.response_details,
@@ -68,25 +68,39 @@ begin
     end as correct_count
   ) score
   cross join lateral (
+    select * from (values
+      ('race', 'race.calcul_mental', 'race.ordre_grandeur', 'Calcul mental', 'Choisir rapidement le bon résultat', 'bonne option', 'option voisine', 'strategie-inefficace'),
+      ('livrets', 'livrets.table_7', 'livrets.table_8', 'Multiplication', 'Calculer un produit des tables de 7 ou 8', '56', '54', 'confusion-table'),
+      ('geometrie', 'geometrie.proprietes_figures', 'geometrie.vocabulaire', 'Géométrie', 'Reconnaître une propriété de la figure', 'propriété correcte', 'propriété incorrecte', 'confusion-propriete'),
+      ('calculs', 'calculs.addition_decimale', 'calculs.soustraction_decimale', 'Nombres décimaux', 'Effectuer un calcul décimal', '12,5', '125', 'virgule-mal-placee'),
+      ('numeria', 'numeria.valeur_position', 'numeria.comparaison', 'Numération', 'Identifier la valeur et comparer les nombres', 'valeur correcte', 'rang voisin', 'confusion-position'),
+      ('pcp', 'pcp.interets', 'pcp.competences', 'Orientation', 'Identifier un intérêt ou une compétence', 'choix argumenté', 'réponse incomplète', 'justification-incomplete'),
+      ('mesurovia', 'mesurovia.conversion_longueur', 'mesurovia.choix_unite', 'Mesures', 'Convertir une longueur et choisir l’unité', 'conversion correcte', 'unité incorrecte', 'conversion-unite'),
+      ('conju_lab', 'conju_lab.temps_verbe', 'conju_lab.accord_sujet', 'Conjugaison', 'Conjuguer le verbe avec le sujet indiqué', 'forme correcte', 'terminaison incorrecte', 'terminaison-verbale'),
+      ('grammaire_lab', 'grammaire_lab.accord', 'grammaire_lab.fonction', 'Grammaire', 'Analyser ou compléter la phrase', 'analyse correcte', 'accord incorrect', 'accord-grammatical'),
+      ('musee_vocabulaire', 'musee_vocabulaire.sens_mot', 'musee_vocabulaire.famille_mot', 'Vocabulaire', 'Associer le mot à son sens ou à sa famille', 'association correcte', 'mot proche', 'confusion-semantique'),
+      ('shift', 'shift.ordre_grandeur', 'shift.comparaison', 'Numération', 'Comparer et estimer les nombres', 'estimation correcte', 'ordre incorrect', 'ordre-grandeur'),
+      ('fractionstower2', 'fractionstower2.fraction_equivalente', 'fractionstower2.comparaison', 'Fractions', 'Comparer ou compléter les fractions', 'fraction correcte', 'fraction non équivalente', 'equivalence-fraction'),
+      ('mathhunt', 'mathhunt.strategie_calcul', 'mathhunt.resolution', 'Résolution', 'Choisir une stratégie et résoudre le problème', 'solution correcte', 'résultat plausible mais faux', 'strategie-calcul')
+    ) as games(game_id, primary_skill, secondary_skill, category, prompt_prefix, expected, wrong_answer, error_family)
+  ) game
+  cross join lateral (
     select jsonb_agg(jsonb_build_object(
       'questionIndex', question.question_number,
-      'prompt', 'Question de test ' || (question.question_number + 1),
-      'response', case when question.question_number < score.correct_count then 'réponse correcte' else 'réponse à reprendre' end,
-      'expected', 'réponse attendue',
+      'questionId', game.game_id || '-simulation-' || lpad((question.question_number + 1)::text, 2, '0'),
+      'skillId', case when question.question_number % 2 = 0 then game.primary_skill else game.secondary_skill end,
+      'category', game.category,
+      'prompt', game.prompt_prefix || ' — exercice ' || (question.question_number + 1),
+      'response', case when question.question_number < score.correct_count then game.expected else game.wrong_answer end,
+      'expected', game.expected,
       'correct', question.question_number < score.correct_count,
       'attempts', case when question.question_number < score.correct_count then 1 else 2 end,
       'hintsUsed', case when question.question_number < score.correct_count then 0 else 1 end,
-      'errorFamily', case when question.question_number < score.correct_count then null else 'test-' || profile.profile end
+      'durationSeconds', 4 + floor(random() * 18)::integer,
+      'errorFamily', case when question.question_number < score.correct_count then null else game.error_family end
     ) order by question.question_number) as response_details
     from generate_series(0, 9) as question(question_number)
-  ) details
-  cross join lateral (
-    select game_id from (values
-      ('race'), ('livrets'), ('geometrie'), ('calculs'), ('numeria'), ('pcp'),
-      ('mesurovia'), ('conju_lab'), ('grammaire_lab'), ('musee_vocabulaire'),
-      ('shift'), ('fractionstower2'), ('mathhunt')
-    ) as games(game_id)
-  ) game;
+  ) details;
 end $$;
 
 -- Contrôle : doit retourner 130.

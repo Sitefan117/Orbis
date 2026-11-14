@@ -20,12 +20,19 @@ export type ActivityPayload = {
 /** Trace structurée d'une question, sans enregistrer de document libre. */
 export type ResponseDetail = {
   questionIndex: number;
+  /** Identifiant stable de l'item, utile pour comparer plusieurs tentatives. */
+  questionId?: string;
+  /** Compétence précise de cette question lorsqu'une activité en mélange plusieurs. */
+  skillId?: string;
+  /** Regroupement lisible pour l'enseignant (numération, mesure, grammaire…). */
+  category?: string;
   prompt?: string;
   response?: string;
   expected?: string;
   correct: boolean;
   attempts?: number;
   hintsUsed?: number;
+  durationSeconds?: number;
   errorFamily?: string;
 };
 

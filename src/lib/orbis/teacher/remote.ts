@@ -15,7 +15,7 @@ export type RemoteActivityEvent = {
   error_families: string[];
   hints_used: number | null;
   duration_seconds: number | null;
-  response_details: Array<{ questionIndex: number; prompt?: string; response?: string; expected?: string; correct: boolean; attempts?: number; hintsUsed?: number; errorFamily?: string }>;
+  response_details: Array<{ questionIndex: number; questionId?: string; skillId?: string; category?: string; prompt?: string; response?: string; expected?: string; correct: boolean; attempts?: number; hintsUsed?: number; durationSeconds?: number; errorFamily?: string }>;
   occurred_at: string;
 };
 export type RemoteStudentDocument = { student_id: string; document_kind: 'cv' | 'letter'; content: Record<string, string>; updated_at: string };
