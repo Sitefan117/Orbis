@@ -69,16 +69,16 @@ begin
   ) score
   cross join lateral (
     select jsonb_agg(jsonb_build_object(
-      'questionIndex', question.index,
-      'prompt', 'Question de test ' || (question.index + 1),
-      'response', case when question.index < score.correct_count then 'réponse correcte' else 'réponse à reprendre' end,
+      'questionIndex', question.question_number,
+      'prompt', 'Question de test ' || (question.question_number + 1),
+      'response', case when question.question_number < score.correct_count then 'réponse correcte' else 'réponse à reprendre' end,
       'expected', 'réponse attendue',
-      'correct', question.index < score.correct_count,
-      'attempts', case when question.index < score.correct_count then 1 else 2 end,
-      'hintsUsed', case when question.index < score.correct_count then 0 else 1 end,
-      'errorFamily', case when question.index < score.correct_count then null else 'test-' || profile.profile end
-    ) order by question.index) as response_details
-    from generate_series(0, 9) as question(index)
+      'correct', question.question_number < score.correct_count,
+      'attempts', case when question.question_number < score.correct_count then 1 else 2 end,
+      'hintsUsed', case when question.question_number < score.correct_count then 0 else 1 end,
+      'errorFamily', case when question.question_number < score.correct_count then null else 'test-' || profile.profile end
+    ) order by question.question_number) as response_details
+    from generate_series(0, 9) as question(question_number)
   ) details
   cross join lateral (
     select game_id from (values
