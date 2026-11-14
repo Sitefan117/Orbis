@@ -9,6 +9,7 @@
     "test": "bash tests/run-smoke.sh",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
+    "supabase:backup": "bash scripts/backup-supabase.sh",
     "db:migrate": "tsx src/lib/server/db/migrate.ts",
     "teacher:hash": "tsx src/lib/server/auth/print-teacher-hash.ts"
   },

@@ -6,6 +6,7 @@
 
 import { getStudentName, studentStorageScope } from '$lib/orbis/identity/local-student';
 import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
+import { createGameProgressService } from '$lib/orbis/persistence/game-services';
 
 export interface FloorProgress {
     floorId: string;
@@ -33,6 +34,17 @@ function currentStorageKey(): string {
 }
 
 export class ProgressManager {
+    /** Récupère la progression Supabase et la recopie dans le format historique du jeu. */
+    public static async restoreRemoteProgress(): Promise<boolean> {
+        if (typeof window === 'undefined') return false;
+        const studentName = getStudentName('');
+        if (!studentName) return false;
+        const loaded = await createGameProgressService<GameProgress>(studentName, 'fractionstower2').loadProgress();
+        if (!loaded.ok || !loaded.value?.state) return false;
+        localStorage.setItem(currentStorageKey(), JSON.stringify(loaded.value.state));
+        return true;
+    }
+
     /**
      * Récupère la progression globale de l'élève.
      * Si aucune sauvegarde n'existe, initialise la tour (Étage 1 déverrouillé par défaut).

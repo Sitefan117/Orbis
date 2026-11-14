@@ -45,6 +45,7 @@
     {#if message}<p class="message" role="alert">{message}</p>{/if}
     <button onclick={login} disabled={loading}>{loading ? 'Connexion…' : 'Se connecter'}</button>
     <a href={`${base}/`}>← Retour à Orbis</a>
+    <a href={`${base}/confidentialite`}>Comment mes données sont utilisées</a>
   </section>
 </main>
 

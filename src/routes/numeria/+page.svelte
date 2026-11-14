@@ -12,6 +12,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { getStudentName } from '$lib/orbis/identity/local-student';
   import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
+  import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import type { ResponseDetail } from '$lib/orbis/results/contract';
   import { CODEX, GRADE_STORIES, REALMS, getRealm, realmsForGrade } from '$lib/games/numeria/curriculum';
   import { answersEqual, generateQuestions, normalizeAnswer } from '$lib/games/numeria/question-engine';
@@ -156,7 +157,15 @@
       studentName = connectedName;
       save = loadSave(connectedName, '6H');
       selectedGrade = save.grade;
-      if (!resumeActiveMission()) screen = 'hub';
+      void (async () => {
+        const loaded = await createGameProgressService<StudentSave>(connectedName, 'numeria').loadProgress();
+        if (loaded.ok && loaded.value?.state) {
+          save = loaded.value.state;
+          saveNumeriaProgress(save);
+          selectedGrade = save.grade;
+        }
+        if (!resumeActiveMission()) screen = 'hub';
+      })();
     }
   });
 

@@ -162,6 +162,7 @@
     }
 
     onMount(() => {
+        void ProgressManager.restoreRemoteProgress();
         updateScale();
         window.addEventListener('resize', updateScale);
         const onOrientationChange = () => window.setTimeout(updateScale, 200);

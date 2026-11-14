@@ -26,6 +26,16 @@ export type RemoteGameSave = {
   updated_at: string;
 };
 
+export type StudentDataExport = {
+  format: 'orbis-student-export-v1';
+  exportedAt: string;
+  profile: Record<string, unknown> | null;
+  memberships: unknown[];
+  saves: unknown[];
+  activities: unknown[];
+  documents: unknown[];
+};
+
 function getHeaders() {
   const config = getSupabasePublicConfig();
   const session = currentSession();
@@ -35,6 +45,23 @@ function getHeaders() {
     authorization: `Bearer ${session.accessToken}`,
     'content-type': 'application/json'
   } };
+}
+
+async function fetchAllRows<T>(path: string, errorPrefix: string): Promise<T[]> {
+  const context = getHeaders();
+  if (!context) return [];
+  const pageSize = 500;
+  const rows: T[] = [];
+  for (let offset = 0; offset < 50_000; offset += pageSize) {
+    const response = await fetch(`${context.config.url}/rest/v1/${path}`, {
+      headers: { ...context.headers, Range: `${offset}-${offset + pageSize - 1}` }
+    });
+    if (!response.ok) throw new Error(`${errorPrefix}-${response.status}`);
+    const page = await response.json() as T[];
+    rows.push(...page);
+    if (page.length < pageSize) return rows;
+  }
+  throw new Error(`${errorPrefix}-too-many-rows`);
 }
 
 export async function listTeacherClasses(): Promise<OrbisClass[]> {
@@ -79,21 +106,17 @@ export async function createStudent(input: { loginId: string; displayName: strin
 }
 
 export async function listTeacherStudents(classes: OrbisClass[]): Promise<OrbisStudent[]> {
-  const context = getHeaders();
-  if (!context || classes.length === 0) return [];
-  const output: OrbisStudent[] = [];
-  for (const classroom of classes) {
-    const membershipResponse = await fetch(`${context.config.url}/rest/v1/class_memberships?class_id=eq.${encodeURIComponent(classroom.id)}&select=student_id`, { headers: context.headers });
-    if (!membershipResponse.ok) throw new Error(`memberships-${membershipResponse.status}`);
-    const memberships = await membershipResponse.json() as Array<{ student_id: string }>;
-    for (const membership of memberships) {
-      const profileResponse = await fetch(`${context.config.url}/rest/v1/student_profiles?user_id=eq.${encodeURIComponent(membership.student_id)}&select=user_id,login_id,display_name&limit=1`, { headers: context.headers });
-      if (!profileResponse.ok) throw new Error(`student-profile-${profileResponse.status}`);
-      const profiles = await profileResponse.json() as Array<Omit<OrbisStudent, 'class_id'>>;
-      if (profiles[0]) output.push({ ...profiles[0], class_id: classroom.id });
-    }
-  }
-  return output;
+  if (classes.length === 0) return [];
+  const [memberships, profiles] = await Promise.all([
+    fetchAllRows<Array<{ class_id: string; student_id: string }>[number]>('class_memberships?select=class_id,student_id&order=created_at.asc', 'memberships'),
+    fetchAllRows<Array<Omit<OrbisStudent, 'class_id'>>[number]>('student_profiles?select=user_id,login_id,display_name&order=created_at.asc', 'student-profiles')
+  ]);
+  const allowedClasses = new Set(classes.map((item) => item.id));
+  const profileById = new Map(profiles.map((profile) => [profile.user_id, profile]));
+  return memberships.flatMap((membership) => {
+    const profile = profileById.get(membership.student_id);
+    return allowedClasses.has(membership.class_id) && profile ? [{ ...profile, class_id: membership.class_id }] : [];
+  });
 }
 
 export async function resetStudentPassword(studentId: string, password: string): Promise<void> {
@@ -122,26 +145,35 @@ export async function copyStudentSave(sourceStudentId: string, targetStudentId: 
   }
 }
 
-export async function listRemoteActivityEvents(): Promise<RemoteActivityEvent[]> {
+async function callStudentAdmin(action: 'export_student_data' | 'delete_student', studentId: string): Promise<Response> {
   const context = getHeaders();
-  if (!context) return [];
-  const response = await fetch(`${context.config.url}/rest/v1/activity_events?select=event_id,student_id,game_id,activity_id,skill_id,correct_count,question_count,error_count,error_families,hints_used,duration_seconds,response_details,occurred_at&order=occurred_at.desc&limit=500`, { headers: context.headers });
-  if (!response.ok) throw new Error(`activities-${response.status}`);
-  return await response.json() as RemoteActivityEvent[];
+  if (!context) throw new Error('session-required');
+  const response = await fetch(`${context.config.url}/functions/v1/orbis-admin`, {
+    method: 'POST', headers: context.headers, body: JSON.stringify({ action, studentId })
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error ?? `HTTP ${response.status}`);
+  }
+  return response;
+}
+
+export async function exportStudentData(studentId: string): Promise<StudentDataExport> {
+  return await (await callStudentAdmin('export_student_data', studentId)).json() as StudentDataExport;
+}
+
+export async function deleteStudent(studentId: string): Promise<void> {
+  await callStudentAdmin('delete_student', studentId);
+}
+
+export async function listRemoteActivityEvents(): Promise<RemoteActivityEvent[]> {
+  return fetchAllRows<RemoteActivityEvent>('activity_events?select=event_id,student_id,game_id,activity_id,skill_id,correct_count,question_count,error_count,error_families,hints_used,duration_seconds,response_details,occurred_at&order=occurred_at.desc', 'activities');
 }
 
 export async function listTeacherStudentDocuments(): Promise<RemoteStudentDocument[]> {
-  const context = getHeaders();
-  if (!context) return [];
-  const response = await fetch(`${context.config.url}/rest/v1/student_documents?select=student_id,document_kind,content,updated_at&order=updated_at.desc&limit=500`, { headers: context.headers });
-  if (!response.ok) throw new Error(`documents-${response.status}`);
-  return await response.json() as RemoteStudentDocument[];
+  return fetchAllRows<RemoteStudentDocument>('student_documents?select=student_id,document_kind,content,updated_at&order=updated_at.desc', 'documents');
 }
 
 export async function listRemoteGameSaves(): Promise<RemoteGameSave[]> {
-  const context = getHeaders();
-  if (!context) return [];
-  const response = await fetch(`${context.config.url}/rest/v1/game_saves?select=student_id,game_id,revision,updated_at&order=updated_at.desc&limit=500`, { headers: context.headers });
-  if (!response.ok) throw new Error(`saves-${response.status}`);
-  return await response.json() as RemoteGameSave[];
+  return fetchAllRows<RemoteGameSave>('game_saves?select=student_id,game_id,revision,updated_at&order=updated_at.desc', 'saves');
 }

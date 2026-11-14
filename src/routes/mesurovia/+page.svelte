@@ -24,8 +24,10 @@
   import { hasHouseQuestionBank, makeHouseQuestion } from '$lib/games/mesurovia/question-bank';
   import { coursePaths } from '$lib/orbis/catalog/course-paths';
   import { getConversionFamily } from '$lib/games/mesurovia/conversion-table';
-  import { getStudentName } from '$lib/orbis/identity/local-student';
+  import { getStudentName, studentStorageScope } from '$lib/orbis/identity/local-student';
   import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
+  import { createGameProgressService } from '$lib/orbis/persistence/game-services';
+  import type { ResponseDetail } from '$lib/orbis/results/contract';
 
   type View = 'welcome' | 'games-catalog' | 'courses-catalog' | 'character' | 'villages' | 'village' | 'room' | 'pretest' | 'howto';
   type SessionMode = 'practice' | 'battle' | 'table' | 'detective' | 'clock' | 'builder' | 'memory' | 'race' | 'exam' | 'boss' | 'pretest';
@@ -60,6 +62,7 @@
     memoryOpenIds: string[];
     memoryMoves: number;
     familyResults: Record<string, { total: number; correct: number }>;
+    responseDetails: ResponseDetail[];
   };
 
   const STORAGE_KEY = 'mesurovia-orbis-v2';
@@ -138,6 +141,24 @@
   let view: View = 'welcome';
   let profiles: Record<string, Profile> = {};
   let activeProfileKey = '';
+
+  async function restoreRemoteProgress() {
+    const studentName = getStudentName('');
+    if (!studentName) return;
+    const loaded = await createGameProgressService<{ profile: Profile; activeProfileKey: string }>(studentName, 'mesurovia').loadProgress();
+    if (!loaded.ok || !loaded.value?.state?.profile) return;
+    const remoteState = loaded.value.state;
+    const key = remoteState.activeProfileKey || studentStorageScope(studentName);
+    const restored = normalizeProfile(remoteState.profile, key, avatars[0], engine.VILLAGES[0].id, engine.VILLAGES.map((village: any) => village.id));
+    profiles = { ...profiles, [key]: restored };
+    activeProfileKey = key;
+    profile = restored;
+    newName = restored.name;
+    chosenAvatar = restored.avatar;
+    currentVillageId = restored.lastVillage || engine.VILLAGES[0].id;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, active: key, profiles }));
+    saveMessage = 'Progression récupérée depuis Supabase.';
+  }
   let profile: Profile | null = null;
   let saveMessage = '';
   let newName = '';
@@ -239,6 +260,7 @@
       saveMessage = 'La sauvegarde existante n’a pas pu être lue. Tu peux créer un nouveau profil.';
     }
     ready = true;
+    void restoreRemoteProgress();
     return () => window.removeEventListener('scroll', onScroll);
   });
 
@@ -569,7 +591,7 @@
       tableComplete: false, tableCommaCorrect: false, tablePlacementCorrect: false, tableResult: '',
       selectedMany: [], matches: {}, matchingLeft: '', orderedItems: [], gameEvent: null,
       playerHp: 3, enemyHp: 3, raceSteps: 0, rivalSteps: 0, raceRoll: 0,
-      memoryCards: createMemoryCards(memoryPairs), memoryOpenIds: [], memoryMoves: 0, familyResults: {}
+      memoryCards: createMemoryCards(memoryPairs), memoryOpenIds: [], memoryMoves: 0, familyResults: {}, responseDetails: []
     };
     activeQuestion = session.questions[0];
     if (activeQuestion?.type === 'order') session.orderedItems = [...activeQuestion.items];
@@ -687,13 +709,24 @@
     }
     const correct = engine.checkAnswer(activeQuestion, raw);
     const family = activeQuestion.family;
+    const expected = activeQuestion.answerLabel ?? activeQuestion.answer ?? activeQuestion.correctAnswer ?? activeQuestion.expected ?? '';
+    session.responseDetails.push({
+      questionIndex: session.index,
+      prompt: String(activeQuestion.prompt ?? activeQuestion.question ?? 'Défi Mesurovia'),
+      response: String(raw),
+      expected: typeof expected === 'string' ? expected : JSON.stringify(expected),
+      correct,
+      attempts: session.attempts + 1,
+      hintsUsed: session.helped ? 1 : 0,
+      ...(correct ? {} : { errorFamily: family })
+    });
     session.familyResults[family] ??= { total: 0, correct: 0 };
     session.familyResults[family].total += 1;
     if (session.mode === 'pretest') {
       if (correct) {
         session.correct += 1;
         session.familyResults[family].correct += 1;
-      }
+      } else session.wrong += 1;
       session.answerStatus = correct ? 'correct' : 'wrong';
       currentFeedback = { kind: correct ? 'success' : 'notice', title: correct ? 'Bien vu !' : 'Réponse enregistrée', text: correct ? 'Le bilan continue.' : 'Ce bilan sert à conseiller un point de départ : ce n’est pas une note.' };
       return;
@@ -783,8 +816,9 @@
     const percent = Math.round((score / total) * 100);
     void recordGameActivity({
       studentName: getStudentName(), gameId: 'mesurovia', activityId: mode,
-      correctCount: score, questionCount: total, errorCount: Math.max(0, total - score),
-      metadata: { mode, firstTryCorrect: session.firstTryCorrect, attempts: session.attempts, familyResults: session.familyResults }
+      correctCount: score, questionCount: total, errorCount: session.wrong,
+      responseDetails: session.responseDetails,
+      metadata: { mode, firstTryCorrect: session.firstTryCorrect, totalAttempts: session.responseDetails.length, familyResults: session.familyResults }
     });
     if (mode === 'pretest') {
       const recommendation = engine.pretestRecommendation({ total, correct: score, byFamily: session.familyResults });

@@ -32,9 +32,11 @@
   const totalQuestions = $derived(filteredActivities.reduce((sum, item) => sum + item.question_count, 0));
   const totalCorrect = $derived(filteredActivities.reduce((sum, item) => sum + item.correct_count, 0));
   const successRate = $derived(totalQuestions ? Math.round(totalCorrect / totalQuestions * 100) : 0);
-  const totalDuration = $derived(filteredActivities.reduce((sum, item) => sum + (item.duration_seconds ?? 0), 0));
+  const activitiesWithDuration = $derived(filteredActivities.filter((item) => item.duration_seconds !== null));
+  const activitiesWithHints = $derived(filteredActivities.filter((item) => item.hints_used !== null));
+  const totalDuration = $derived(activitiesWithDuration.reduce((sum, item) => sum + (item.duration_seconds ?? 0), 0));
   const totalErrors = $derived(filteredActivities.reduce((sum, item) => sum + item.error_count, 0));
-  const totalHints = $derived(filteredActivities.reduce((sum, item) => sum + (item.hints_used ?? 0), 0));
+  const totalHints = $derived(activitiesWithHints.reduce((sum, item) => sum + (item.hints_used ?? 0), 0));
   const successRing = $derived(`conic-gradient(#2b795b ${successRate}%, #dfe9df 0)`);
   const byStudent = $derived(visibleStudents.filter((student) => selectedStudentId === 'all' || student.user_id === selectedStudentId).map((student) => {
     const own = filteredActivities.filter((item) => item.student_id === student.user_id);
@@ -50,15 +52,18 @@
   const selectedStudent = $derived(students.find((item) => item.user_id === selectedStudentId) ?? null);
   const selectedStudentActivities = $derived(selectedStudent ? filteredActivities.filter((item) => item.student_id === selectedStudent.user_id) : []);
   const selectedStudentSaves = $derived(selectedStudent ? visibleSaves.filter((item) => item.student_id === selectedStudent.user_id) : []);
-  const transferTargets = $derived(selectedStudent ? students.filter((item) => item.user_id !== selectedStudent.user_id) : []);
+  const transferTargets = $derived(selectedStudent ? students.filter((item) => item.user_id !== selectedStudent.user_id && item.class_id === selectedStudent.class_id) : []);
   const skillRows = $derived(Object.entries(selectedStudentActivities.reduce<Record<string, { correct: number; total: number; errors: number; hints: number }>>((groups, item) => {
     const key = item.skill_id || item.activity_id;
     const group = groups[key] ?? { correct: 0, total: 0, errors: 0, hints: 0 };
     group.correct += item.correct_count; group.total += item.question_count; group.errors += item.error_count; group.hints += item.hints_used ?? 0; groups[key] = group;
     return groups;
   }, {})).map(([skill, values]) => ({ skill, ...values, rate: values.total ? Math.round(values.correct / values.total * 100) : 0 })).sort((a, b) => a.rate - b.rate));
-  const frequentErrors = $derived(Object.entries(selectedStudentActivities.flatMap((item) => item.error_families ?? []).reduce<Record<string, number>>((groups, family) => {
-    groups[family] = (groups[family] ?? 0) + 1; return groups;
+  const frequentErrors = $derived(Object.entries(selectedStudentActivities.flatMap((item) => item.error_families ?? []).reduce<Record<string, number>>((groups, encodedFamily) => {
+    const match = encodedFamily.match(/^(.*):(\d+)$/);
+    const family = match?.[1] ?? encodedFamily;
+    const count = match ? Number(match[2]) : 1;
+    groups[family] = (groups[family] ?? 0) + count; return groups;
   }, {})).map(([family, count]) => ({ family, count })).sort((a, b) => b.count - a.count).slice(0, 6));
   const selectedDocuments = $derived(selectedStudent ? documents.filter((item) => item.student_id === selectedStudent.user_id) : []);
   const selectedResponses = $derived(selectedStudentActivities.flatMap((activity) => activity.response_details ?? []).slice(0, 80));
@@ -70,12 +75,16 @@
   }, {})).sort(([a], [b]) => a.localeCompare(b)).slice(-14).map(([day, values]) => ({ day, ...values, rate: values.total ? Math.round(values.correct / values.total * 100) : 0 })));
   const studentSummary = $derived(selectedStudent ? (() => {
     const own = selectedStudentActivities;
-    const weakest = [...skillRows].sort((a, b) => a.rate - b.rate)[0];
-    if (!own.length) return 'Pas encore assez de données pour formuler un point de départ.';
+    const weakest = [...skillRows].filter((row) => row.total >= 5).sort((a, b) => a.rate - b.rate)[0];
+    if (own.length < 2 || own.reduce((sum, item) => sum + item.question_count, 0) < 10) return 'Pas encore assez de données : attendre au moins 2 activités et 10 réponses avant de formuler une piste.';
     if (weakest && weakest.rate < 70) return `Point de départ conseillé : reprendre ${gameName(weakest.skill)} avec un feedback court et une nouvelle tentative.`;
     if (frequentErrors.length) return `À observer : ${gameName(frequentErrors[0].family)} revient le plus souvent.`;
     return 'Progression régulière sur les activités observées ; proposer un défi légèrement plus complexe.';
   })() : 'Sélectionne un élève pour obtenir une synthèse prudente.');
+
+  $effect(() => {
+    if (selectedStudentId !== 'all' && !visibleStudentIds.has(selectedStudentId)) selectedStudentId = 'all';
+  });
 
   function studentName(id: string) { return students.find((item) => item.user_id === id)?.display_name ?? 'Élève'; }
   function gameName(id: string) { return id.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
@@ -129,7 +138,7 @@
     <article><span>Élèves</span><strong>{selectedStudent ? 1 : visibleStudents.length}</strong><small>{selectedStudent?.display_name ?? (selectedClass === 'all' ? `${classes.length} classe(s)` : 'classe filtrée')}</small></article>
     <article><span>Activités</span><strong>{filteredActivities.length}</strong><small>{visibleSaves.length} sauvegarde(s)</small></article>
     <article><span>Réussite</span><strong>{successRate}%</strong><small>{totalCorrect}/{totalQuestions} réponses</small></article>
-    <article><span>Temps observé</span><strong>{duration(totalDuration)}</strong><small>{totalErrors} erreur(s) · {totalHints} indice(s)</small></article>
+    <article><span>Temps observé</span><strong>{activitiesWithDuration.length ? duration(totalDuration) : '—'}</strong><small>{activitiesWithDuration.length}/{filteredActivities.length} activité(s) chronométrée(s)</small></article>
   </div>
   <div class="visual-summary">
     <article class="panel ring-panel">
@@ -138,7 +147,7 @@
     </article>
     <article class="panel quick-reading">
       <h3>Lecture rapide</h3>
-      <div class="reading-grid"><div><strong>{byGame.length}</strong><span>jeu(x) pratiqué(s)</span></div><div><strong>{visibleSaves.length}</strong><span>sauvegarde(s)</span></div><div><strong>{totalErrors}</strong><span>erreur(s) à observer</span></div><div><strong>{totalHints}</strong><span>indice(s) utilisé(s)</span></div></div>
+      <div class="reading-grid"><div><strong>{byGame.length}</strong><span>jeu(x) pratiqué(s)</span></div><div><strong>{visibleSaves.length}</strong><span>sauvegarde(s)</span></div><div><strong>{totalErrors}</strong><span>erreur(s) à observer</span></div><div><strong>{activitiesWithHints.length ? totalHints : '—'}</strong><span>indice(s) · {activitiesWithHints.length}/{filteredActivities.length} mesuré(s)</span></div></div>
     </article>
   </div>
   <div class="dashboard-columns">

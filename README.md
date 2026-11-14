@@ -6,7 +6,7 @@ Orbis est un portail pédagogique construit avec SvelteKit, Svelte et TypeScript
 
 Le dépôt publie un site statique sur GitHub Pages. Le workflow `.github/workflows/main.yml` installe les dépendances, exécute les contrôles et tests, construit le site, puis publie le dossier `build/`. Aucun serveur ne tourne sur le Mac de l’enseignant.
 
-Le dépôt contient aussi d’anciennes routes API SvelteKit et un stockage SQLite côté serveur. GitHub Pages ne peut pas exécuter ces routes ni conserver ce fichier SQLite. Les nouveaux bilans passent donc par un stockage local compatible avec GitHub Pages ; une synchronisation Supabase facultative est préparée pour réunir ensuite les appareils. Les comptes élèves et enseignant restent à configurer.
+Le dépôt contient aussi d’anciennes routes API SvelteKit et un stockage SQLite côté serveur. GitHub Pages ne peut pas les exécuter. Les bilans passent donc par un stockage local compatible avec GitHub Pages puis, pour les comptes connectés, par le projet Supabase Orbis. L’Edge Function `orbis-admin` réalise les opérations privilégiées sans exposer de clé secrète au navigateur.
 
 ## Démarrer en local
 
@@ -41,7 +41,8 @@ Le serveur de développement SvelteKit peut exécuter les routes serveur en loca
 
 - `/` : portail Arcade et Cours, alimenté par les catalogues dans `src/lib/orbis/catalog/`.
 - `/livrets`, `/geometrie`, `/calculs`, `/numeria`, `/mesurovia`, `/fractionstower2`, `/race`, `/mathhunt`, `/shift`, `/conju_lab` et `/pcp` : jeux et activités autonomes.
-- `/teacher` : tableau de suivi des bilans enregistrés sur ce navigateur, avec export CSV, et import des anciennes sauvegardes `.fracsave` de Fraction Tower. Ce n’est pas encore un tableau enseignant connecté aux résultats des autres appareils.
+- `/teacher` : tableau enseignant connecté aux classes, résultats, sauvegardes et documents PCP Supabase ; il conserve aussi l’import historique des fichiers `.fracsave`.
+- `/confidentialite` : notice lisible décrivant les données du pilote et les droits d’export ou de suppression.
 - `static/cours/maths/` : cours HTML classés par thème et publiés comme fichiers statiques.
 
 Les anciennes adresses des cours déplacés contiennent de petites redirections vers les nouveaux fichiers.
@@ -54,12 +55,10 @@ Les jeux n’utilisent pas tous le même format de sauvegarde :
 - Mesurovia conserve plusieurs profils locaux.
 - Race conserve certaines statistiques dans `localStorage`.
 - Fraction Tower conserve une progression locale et propose un export/import `.fracsave`.
-- PCP conserve localement le CV et la lettre de motivation ; ces contenus peuvent inclure des renseignements personnels.
-- Certaines activités envoient des résultats à l’API SvelteKit. Cette API enregistre dans SQLite quand l’application est exécutée avec un serveur, mais elle n’est pas hébergée par GitHub Pages.
+- PCP conserve localement le CV et la lettre de motivation et les synchronise pour un compte élève connecté ; ces contenus peuvent inclure des renseignements personnels.
+- Les treize jeux déposent un bilan local-first. Les jeux compatibles synchronisent également leur sauvegarde et le détail des réponses avec Supabase.
 
-Les clés et formats locaux doivent être préservés lors de toute future migration. La cible proposée est décrite dans `docs/ORBiS_ARCHITECTURE.md` ; elle est encore à valider avant l’implémentation du service distant.
-
-Un brouillon de tables et de règles d’accès Supabase Free se trouve dans `supabase/`. Il n’est appliqué à aucun projet et ne contient aucune donnée réelle ; ses règles devront être testées avec des comptes fictifs avant l’usage en classe.
+Les clés et formats locaux restent préservés pendant la transition. Le schéma, les politiques RLS et l’Edge Function du pilote sont versionnés dans `supabase/`. L’isolation entre deux enseignants réels reste à valider avant l’usage avec des données réelles.
 
 ## Organisation du dépôt
 
@@ -71,7 +70,7 @@ Un brouillon de tables et de règles d’accès Supabase Free se trouve dans `su
 - `archives/` : fichiers de jeux conservés comme références, non publiés avec le site.
 - `tests/` : contrôles automatisés des moteurs, contenus et structure des routes.
 - `docs/` : cartographie, décisions, guide développeur et plan d’évolution.
-- `supabase/` : brouillon de schéma pour un futur pilote gratuit, pas encore connecté.
+- `supabase/` : migrations et Edge Function du pilote gratuit connecté.
 
 ### Exemples de séparation du code des jeux
 

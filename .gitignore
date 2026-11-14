@@ -16,3 +16,4 @@ build/
 .workflow/
 /migrations/
 /*.html
+backups/

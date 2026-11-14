@@ -1,6 +1,6 @@
 # Guide développeur Orbis
 
-Guide provisoire mis à jour le 27 octobre 2026. Le stockage local commun et le client de synchronisation Supabase sont présents ; le projet distant et la connexion par codes ne sont pas encore configurés. Ne copie pas de clé secrète dans le code du navigateur.
+Guide mis à jour le 14 novembre 2026. Le stockage local-first, les comptes par identifiant court, la synchronisation Supabase et le tableau enseignant distant sont actifs. Ne copie jamais de clé secrète dans le code du navigateur.
 
 ## Lancer et contrôler le projet
 
@@ -63,9 +63,9 @@ Avant de modifier un jeu :
 
 L’interface de persistance commune est documentée dans `ORBiS_ARCHITECTURE.md` et implémentée sous `src/lib/orbis/persistence/`. Pour une transition sans risque, appeler `queueGameProgressSnapshot` après la sauvegarde historique plutôt que de la remplacer immédiatement.
 
-## Préparer la future identité élève
+## Identité élève
 
-Le portail utilise aujourd’hui un prénom stocké en `sessionStorage` et le transmet comme paramètre `eleve`. C’est un nom d’affichage, pas un identifiant de compte. Les comptes prévus seront gérés par l’enseignant ; leur méthode de connexion, la gestion des classes et la récupération d’accès restent à décider.
+Le paramètre `eleve` reste un nom d’affichage et n’est jamais une preuve d’identité. Pour un compte connecté, l’UUID Supabase est la seule identité distante. L’enseignant crée les comptes et peut réinitialiser leur mot de passe, exporter leurs données ou supprimer le compte. La suppression et l’export nécessitent la version à jour de l’Edge Function `orbis-admin`.
 
 Ne stocke aucune clé administrateur dans `src/` ou `static/`. Les clés publiables peuvent être présentes dans un frontend si les permissions serveur/RLS sont correctement configurées ; les clés secrètes doivent rester dans un environnement serveur sécurisé.
 

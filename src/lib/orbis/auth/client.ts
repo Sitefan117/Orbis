@@ -6,6 +6,8 @@ export type OrbisAuthResult =
   | { ok: true; session: OrbisRemoteSession; role: 'teacher' | 'student' }
   | { ok: false; message: string };
 
+export type OrbisAccountRole = 'teacher' | 'student';
+
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
 // Supabase Auth utilise une adresse e-mail comme identifiant technique.
@@ -24,7 +26,22 @@ async function readError(response: Response): Promise<string> {
 }
 
 /** Connexion destinée à l'écran élève ou enseignant. */
-export async function signInWithShortId(loginId: string, password: string): Promise<OrbisAuthResult> {
+export async function sessionRole(session: OrbisRemoteSession = getRemoteSession()!): Promise<OrbisAccountRole | null> {
+  const config = getSupabasePublicConfig();
+  if (!config || !session) return null;
+  const profileHeaders = { apikey: config.publicKey, authorization: `Bearer ${session.accessToken}` };
+  try {
+    const teacherResponse = await fetch(`${config.url}/rest/v1/teacher_accounts?user_id=eq.${encodeURIComponent(session.userId)}&select=user_id&limit=1`, { headers: profileHeaders });
+    if (teacherResponse.ok && (await teacherResponse.json() as unknown[]).length > 0) return 'teacher';
+    const studentResponse = await fetch(`${config.url}/rest/v1/student_profiles?user_id=eq.${encodeURIComponent(session.userId)}&select=user_id&limit=1`, { headers: profileHeaders });
+    if (studentResponse.ok && (await studentResponse.json() as unknown[]).length > 0) return 'student';
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+export async function signInWithShortId(loginId: string, password: string, options: { persistent?: boolean } = {}): Promise<OrbisAuthResult> {
   if (!browser) return { ok: false, message: 'La connexion est disponible dans le navigateur.' };
   const cleanId = loginId.trim();
   if (!/^[a-zA-Z0-9_-]{3,40}$/.test(cleanId)) {
@@ -55,20 +72,14 @@ export async function signInWithShortId(loginId: string, password: string): Prom
       accessToken: data.access_token,
       ...(data.refresh_token ? { refreshToken: data.refresh_token } : {}),
       userId: data.user.id,
-      expiresAt: Math.floor(Date.now() / 1000) + (data.expires_in ?? 3600)
+      expiresAt: Math.floor(Date.now() / 1000) + (data.expires_in ?? 3600),
+      persistent: options.persistent === true
     };
     storeRemoteSession(session);
     startSessionRefresh();
 
-    const profileHeaders = { apikey: config.publicKey, authorization: `Bearer ${session.accessToken}` };
-    const teacherResponse = await fetch(`${config.url}/rest/v1/teacher_accounts?user_id=eq.${encodeURIComponent(session.userId)}&select=user_id&limit=1`, { headers: profileHeaders });
-    if (teacherResponse.ok && (await teacherResponse.json() as unknown[]).length > 0) {
-      return { ok: true, session, role: 'teacher' };
-    }
-    const studentResponse = await fetch(`${config.url}/rest/v1/student_profiles?user_id=eq.${encodeURIComponent(session.userId)}&select=user_id&limit=1`, { headers: profileHeaders });
-    if (studentResponse.ok && (await studentResponse.json() as unknown[]).length > 0) {
-      return { ok: true, session, role: 'student' };
-    }
+    const role = await sessionRole(session);
+    if (role) return { ok: true, session, role };
     clearRemoteSession();
     return { ok: false, message: 'Ce compte existe, mais son profil Orbis n’est pas encore configuré.' };
   } catch {
@@ -76,9 +87,20 @@ export async function signInWithShortId(loginId: string, password: string): Prom
   }
 }
 
-export function signOut(): void {
+export async function signOut(): Promise<void> {
   stopSessionRefresh();
-  clearRemoteSession();
+  const session = getRemoteSession({ allowExpired: true });
+  const config = getSupabasePublicConfig();
+  try {
+    if (session?.accessToken && config) {
+      await fetch(`${config.url}/auth/v1/logout?scope=local`, {
+        method: 'POST',
+        headers: { apikey: config.publicKey, authorization: `Bearer ${session.accessToken}` }
+      });
+    }
+  } finally {
+    clearRemoteSession();
+  }
 }
 
 /** Renouvelle discrètement le jeton avant son expiration, y compris après une mise en veille. */
@@ -107,7 +129,8 @@ export async function refreshRemoteSession(): Promise<OrbisRemoteSession | null>
       accessToken: data.access_token,
       refreshToken: data.refresh_token ?? current.refreshToken,
       userId: data.user?.id ?? current.userId,
-      expiresAt: now + (data.expires_in ?? 3600)
+      expiresAt: now + (data.expires_in ?? 3600),
+      persistent: current.persistent === true
     };
     storeRemoteSession(renewed);
     return renewed;

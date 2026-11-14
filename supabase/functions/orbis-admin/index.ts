@@ -5,7 +5,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 type AdminAction =
   | { action: 'create_student'; loginId: string; displayName: string; password: string; classId: string }
   | { action: 'reset_student_password'; studentId: string; password: string }
-  | { action: 'copy_student_save'; sourceStudentId: string; targetStudentId: string; gameId: string };
+  | { action: 'copy_student_save'; sourceStudentId: string; targetStudentId: string; gameId: string }
+  | { action: 'export_student_data'; studentId: string }
+  | { action: 'delete_student'; studentId: string };
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -47,6 +49,25 @@ async function teacherCanViewStudent(accessToken: string, studentId: string): Pr
   if (!response.ok) return false;
   const rows = await response.json() as Array<{ user_id: string }>;
   return rows.length === 1;
+}
+
+async function teacherRows(accessToken: string, path: string): Promise<unknown[]> {
+  const rows: unknown[] = [];
+  const pageSize = 500;
+  for (let from = 0; from < 50_000; from += pageSize) {
+    const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${accessToken}`,
+        Range: `${from}-${from + pageSize - 1}`
+      }
+    });
+    if (!response.ok) throw new Error(`student_export_failed_${response.status}`);
+    const page = await response.json() as unknown[];
+    rows.push(...page);
+    if (page.length < pageSize) return rows;
+  }
+  throw new Error('student_export_too_large');
 }
 
 Deno.serve(async (request) => {
@@ -140,6 +161,31 @@ Deno.serve(async (request) => {
       return json({ error: detail.message ?? `copy_failed_${copyResponse.status}` }, copyResponse.status === 404 ? 404 : 400);
     }
     return json({ ok: true });
+  }
+
+  if (body.action === 'export_student_data') {
+    if (!/^[0-9a-f-]{36}$/.test(body.studentId)) return json({ error: 'invalid_student_id' }, 400);
+    if (!await teacherCanViewStudent(accessToken, body.studentId)) return json({ error: 'student_not_in_teacher_class' }, 403);
+    const studentFilter = encodeURIComponent(body.studentId);
+    try {
+      const [profile, memberships, saves, activities, documents] = await Promise.all([
+        teacherRows(accessToken, `student_profiles?user_id=eq.${studentFilter}&select=user_id,login_id,display_name,created_at`),
+        teacherRows(accessToken, `class_memberships?student_id=eq.${studentFilter}&select=class_id,created_at`),
+        teacherRows(accessToken, `game_saves?student_id=eq.${studentFilter}&select=game_id,format_version,state,revision,updated_at&order=updated_at.asc`),
+        teacherRows(accessToken, `activity_events?student_id=eq.${studentFilter}&select=event_id,game_id,activity_id,skill_id,correct_count,question_count,error_count,error_families,hints_used,duration_seconds,response_details,occurred_at,created_at&order=occurred_at.asc`),
+        teacherRows(accessToken, `student_documents?student_id=eq.${studentFilter}&select=document_kind,content,updated_at&order=updated_at.asc`)
+      ]);
+      return json({ format: 'orbis-student-export-v1', exportedAt: new Date().toISOString(), profile: profile[0] ?? null, memberships, saves, activities, documents });
+    } catch (error) {
+      return json({ error: error instanceof Error ? error.message : 'student_export_failed' }, 500);
+    }
+  }
+
+  if (body.action === 'delete_student') {
+    if (!/^[0-9a-f-]{36}$/.test(body.studentId)) return json({ error: 'invalid_student_id' }, 400);
+    if (!await teacherCanViewStudent(accessToken, body.studentId)) return json({ error: 'student_not_in_teacher_class' }, 403);
+    const { error } = await authClient.auth.admin.deleteUser(body.studentId);
+    return error ? json({ error: error.message }, 400) : json({ ok: true });
   }
 
   return json({ error: 'unknown_action' }, 400);

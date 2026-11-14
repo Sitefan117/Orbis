@@ -5,6 +5,8 @@ export type OrbisRemoteSession = {
   refreshToken?: string;
   userId: string;
   expiresAt?: number;
+  /** Une session persistante survit à la fermeture du navigateur sur un appareil de confiance. */
+  persistent?: boolean;
 };
 
 export function getRemoteSession(options: { allowExpired?: boolean } = {}): OrbisRemoteSession | null {
@@ -23,11 +25,18 @@ export function getRemoteSession(options: { allowExpired?: boolean } = {}): Orbi
   }
 }
 
-/** Utilisé par le futur écran de connexion ; le jeton reste limité à l’onglet. */
 export function storeRemoteSession(session: OrbisRemoteSession): void {
-  const serialized = JSON.stringify(session);
-  if (typeof localStorage !== 'undefined') localStorage.setItem(SESSION_KEY, serialized);
-  if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(SESSION_KEY, serialized);
+  const normalized = { ...session, persistent: session.persistent === true };
+  const serialized = JSON.stringify(normalized);
+  // Un seul stockage est utilisé. Par défaut, fermer l'onglet détruit la session ;
+  // la persistance doit être choisie explicitement sur un appareil de confiance.
+  if (normalized.persistent && typeof localStorage !== 'undefined') {
+    localStorage.setItem(SESSION_KEY, serialized);
+    sessionStorage?.removeItem(SESSION_KEY);
+  } else if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.setItem(SESSION_KEY, serialized);
+    localStorage?.removeItem(SESSION_KEY);
+  }
 }
 
 export function clearRemoteSession(): void {

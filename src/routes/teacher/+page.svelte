@@ -6,8 +6,8 @@
 	import { SaveManager, type SaveData } from '$lib/games/fractionstower2/persistence/SaveManager';
 	import LocalTrackingPanel from '$lib/orbis/teacher/LocalTrackingPanel.svelte';
 	import RemoteTeacherDashboard from '$lib/orbis/teacher/RemoteTeacherDashboard.svelte';
-	import { currentSession, refreshRemoteSession, signInWithShortId, signOut, startSessionRefresh } from '$lib/orbis/auth/client';
-	import { createStudent, createTeacherClass, listTeacherClasses, listTeacherStudents, listTeacherStudentDocuments, resetStudentPassword, type OrbisClass, type OrbisStudent, type RemoteStudentDocument } from '$lib/orbis/teacher/remote';
+	import { currentSession, refreshRemoteSession, sessionRole, signInWithShortId, signOut, startSessionRefresh } from '$lib/orbis/auth/client';
+	import { createStudent, createTeacherClass, deleteStudent, exportStudentData, listTeacherClasses, listTeacherStudents, listTeacherStudentDocuments, resetStudentPassword, type OrbisClass, type OrbisStudent, type RemoteStudentDocument } from '$lib/orbis/teacher/remote';
 
 	let isAuthenticated = $state(false);
 	let loginId = $state('');
@@ -15,6 +15,7 @@
 	let loginMessage = $state('');
 	let isLoggingIn = $state(false);
 	let showPassword = $state(false);
+	let rememberTeacher = $state(true);
 	let students = $state<SaveData[]>([]);
 	let classes = $state<OrbisClass[]>([]);
 	let newClassName = $state('');
@@ -31,6 +32,9 @@
 	let resetStudentId = $state('');
 	let resetPassword = $state('');
 	let resetMessage = $state('');
+	let dataActionMessage = $state('');
+	let pendingDeleteStudentId = $state('');
+	let studentActionBusy = $state(false);
 
 	onMount(() => {
 		startSessionRefresh();
@@ -38,6 +42,11 @@
 			await refreshRemoteSession();
 			const session = currentSession();
 			if (!session) return;
+				if (await sessionRole(session) !== 'teacher') {
+					await signOut();
+					loginMessage = 'Cette session n’est pas un compte enseignant.';
+					return;
+				}
 			isAuthenticated = true;
 			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); try { remoteDocuments = await listTeacherStudentDocuments(); } catch { remoteDocuments = []; } }
 			catch { classMessage = 'Session restaurée, mais les classes ne sont pas encore accessibles.'; }
@@ -48,7 +57,7 @@
 	async function login() {
 		isLoggingIn = true;
 		loginMessage = '';
-		const result = await signInWithShortId(loginId, password);
+		const result = await signInWithShortId(loginId, password, { persistent: rememberTeacher });
 		isLoggingIn = false;
 		if (result.ok && result.role === 'teacher') {
 			isAuthenticated = true;
@@ -59,8 +68,8 @@
 		loginMessage = result.ok ? 'Ce compte n’est pas un compte enseignant.' : result.message;
 	}
 
-	function logout() {
-		signOut();
+	async function logout() {
+		await signOut();
 		isAuthenticated = false;
 	}
 
@@ -101,6 +110,40 @@
 		if (!resetStudentId || resetPassword.length < 10) { resetMessage = 'Choisis un élève et un mot de passe de 10 caractères minimum.'; return; }
 		try { await resetStudentPassword(resetStudentId, resetPassword); resetPassword = ''; resetMessage = 'Mot de passe réinitialisé.'; }
 		catch (error) { resetMessage = `Réinitialisation impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
+	}
+
+	async function downloadStudentExport(student: OrbisStudent) {
+		studentActionBusy = true;
+		dataActionMessage = '';
+		try {
+			const data = await exportStudentData(student.user_id);
+			const link = document.createElement('a');
+			link.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+			link.download = `orbis-${student.login_id}-export-${new Date().toISOString().slice(0, 10)}.json`;
+			link.click();
+			URL.revokeObjectURL(link.href);
+			dataActionMessage = `Données de ${student.display_name} exportées.`;
+		} catch (error) {
+			dataActionMessage = `Export impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`;
+		} finally { studentActionBusy = false; }
+	}
+
+	async function requestStudentDeletion(student: OrbisStudent) {
+		if (pendingDeleteStudentId !== student.user_id) {
+			pendingDeleteStudentId = student.user_id;
+			dataActionMessage = `Attention : un second clic supprimera définitivement le compte et toutes les données de ${student.display_name}. Exporte-les d’abord si nécessaire.`;
+			return;
+		}
+		studentActionBusy = true;
+		try {
+			await deleteStudent(student.user_id);
+			remoteStudents = await listTeacherStudents(classes);
+			remoteDocuments = await listTeacherStudentDocuments();
+			pendingDeleteStudentId = '';
+			dataActionMessage = `Compte de ${student.display_name} supprimé.`;
+		} catch (error) {
+			dataActionMessage = `Suppression impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`;
+		} finally { studentActionBusy = false; }
 	}
 
 	async function handleFileUpload(e: Event) {
@@ -181,18 +224,20 @@
 			<form onsubmit={(event) => { event.preventDefault(); void login(); }}>
 				<label>Mot de passe<input type={showPassword ? 'text' : 'password'} bind:value={password} placeholder="Ton mot de passe" autocomplete="current-password" /></label>
 				<label class="remember-row"><input type="checkbox" bind:checked={showPassword} /> Afficher le mot de passe</label>
+				<label class="remember-row"><input type="checkbox" bind:checked={rememberTeacher} /> Rester connecté sur cet appareil</label>
 				{#if loginMessage}<p class="login-error" role="alert">{loginMessage}</p>{/if}
 				<button type="submit" disabled={isLoggingIn}>{isLoggingIn ? 'Connexion…' : 'Ouvrir le tableau de bord →'}</button>
 			</form>
 			<p class="stay-connected">La connexion restera active sur cet appareil jusqu’à ta déconnexion.</p>
 			<a class="back-link" href={`${base}/`}>← Retour au portail Orbis</a>
+			<a class="back-link" href={`${base}/confidentialite`}>Protection des données</a>
 		</div>
 	</div>
 {:else}
 	<div class="teacher-container">
 		<header class="teacher-header">
 			<div><p class="teacher-kicker">ORBIS · ESPACE ENSEIGNANT</p><h1>Tableau de bord pédagogique</h1><p>Une vue simple des progrès, sans remplacer ton observation professionnelle.</p></div>
-			<button class="logout-button" onclick={logout}>Se déconnecter</button>
+			<button class="logout-button" onclick={() => void logout()}>Se déconnecter</button>
 		</header>
 
 		<RemoteTeacherDashboard {classes} students={remoteStudents} documents={remoteDocuments} />
@@ -230,12 +275,13 @@
 		<section class="classes-card">
 			<h2>Élèves de mes classes</h2>
 			{#if remoteStudents.length === 0}<p>Aucun élève distant.</p>{:else}
-				<ul class="class-list">{#each remoteStudents as pupil}<li><span><strong>{pupil.display_name}</strong><br /><small>{pupil.login_id} · {classes.find((item) => item.id === pupil.class_id)?.name ?? 'Classe'}</small></span><button onclick={() => { resetStudentId = pupil.user_id; resetMessage = ''; }}>Réinitialiser le mot de passe</button></li>{/each}</ul>
+				<ul class="class-list">{#each remoteStudents as pupil}<li><span><strong>{pupil.display_name}</strong><br /><small>{pupil.login_id} · {classes.find((item) => item.id === pupil.class_id)?.name ?? 'Classe'}</small></span><span class="student-actions"><button onclick={() => { resetStudentId = pupil.user_id; resetMessage = ''; }}>Mot de passe</button><button disabled={studentActionBusy} onclick={() => void downloadStudentExport(pupil)}>Exporter</button><button class:confirm-delete={pendingDeleteStudentId === pupil.user_id} disabled={studentActionBusy} onclick={() => void requestStudentDeletion(pupil)}>{pendingDeleteStudentId === pupil.user_id ? 'Confirmer la suppression' : 'Supprimer'}</button></span></li>{/each}</ul>
 			{/if}
 			{#if resetStudentId}
 				<div class="reset-row"><input type="password" bind:value={resetPassword} placeholder="Nouveau mot de passe" autocomplete="new-password" /><button onclick={applyPasswordReset}>Confirmer</button></div>
 			{/if}
 			{#if resetMessage}<p class="class-message" role="status">{resetMessage}</p>{/if}
+			{#if dataActionMessage}<p class="class-message" role="status">{dataActionMessage}</p>{/if}
 		</section>
 
 		<section class="legacy-heading">
@@ -346,6 +392,8 @@
 	.class-list { list-style: none; padding: 0; display: grid; gap: .6rem; }
 	.class-list li { display: flex; justify-content: space-between; gap: 1rem; padding: .7rem; background: rgba(0,0,0,.2); border-radius: 6px; }
 	.class-list small { opacity: .75; }
+	.student-actions { display:flex; gap:.45rem; flex-wrap:wrap; justify-content:flex-end; }
+	.confirm-delete { background:#9e2f2f !important; color:#fff !important; }
 	.student-form { display: grid; gap: .75rem; max-width: 520px; }
 	.student-form input, .student-form select { padding: .7rem; border-radius: 6px; border: 1px solid #777; }
 	.student-form button { padding: .7rem 1rem; }

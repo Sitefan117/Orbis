@@ -1,6 +1,6 @@
 # Préparer Supabase pour Orbis
 
-Guide mis à jour le 27 octobre 2026 pour un projet Supabase **Free** et un site hébergé sur GitHub Pages.
+Guide mis à jour le 14 novembre 2026 pour le projet Supabase **Free** connecté au site GitHub Pages.
 
 ## Ce qui est déjà prêt dans le dépôt
 
@@ -10,7 +10,7 @@ Guide mis à jour le 27 octobre 2026 pour un projet Supabase **Free** et un site
 - La migration crée les tables, les droits RLS et la protection contre l’écrasement d’une révision plus récente.
 - Le déploiement GitHub Pages sait recevoir l’URL et la clé publique depuis les variables GitHub.
 
-## Ce que Stefan devra créer une seule fois
+## Installation reproduisible sur un nouveau projet
 
 1. Ouvrir Supabase et créer **un projet Free de test** appelé par exemple `orbis-test`.
 2. Ne placer au début que de faux élèves dans ce projet.
@@ -33,17 +33,11 @@ Ces valeurs sont publiques. La sécurité vient des comptes élèves et des règ
 
 Pour travailler uniquement sur le Mac, copier `.env.example` vers `.env` et remplacer les deux valeurs. `.env` est ignoré par Git.
 
-## Pourquoi les comptes ne sont pas encore activés
+## Comptes et opérations d’administration
 
-L’objectif retenu est : code de classe + identifiant élève + code personnel, sans adresse électronique personnelle. La création et la réinitialisation de ces comptes nécessitent une fonction distante possédant une clé secrète. Cette fonction ne peut pas être placée dans GitHub Pages.
+La connexion utilise un identifiant court et un mot de passe, sans adresse électronique personnelle visible. La création, la réinitialisation, l’export et la suppression passent par l’Edge Function `orbis-admin`. Après chaque modification de cette fonction, il faut la redéployer depuis le tableau Supabase ou le CLI.
 
-La prochaine phase Supabase devra donc ajouter :
-
-1. une fonction sécurisée pour créer/réinitialiser un élève ;
-2. l’écran enseignant authentifié ;
-3. l’écran élève par codes ;
-4. des essais avec deux enseignants et deux classes pour vérifier qu’aucun enseignant ne voit l’autre classe ;
-5. un export périodique, car le plan Free ne fournit pas les mêmes sauvegardes automatiques que les offres payantes.
+Il reste obligatoire de réaliser un essai d’isolation avec deux enseignants et deux classes avant les données réelles. Le plan Free exige également une sauvegarde manuelle régulière avec `npm run supabase:backup` ; voir `docs/ORBiS_PROTECTION_DONNEES.md`.
 
 ## Fonctionnement gratuit attendu
 

@@ -29,6 +29,7 @@
   let password = '';
   let loginMessage = '';
   let loginLoading = false;
+  let rememberStudent = false;
   let guestModeOpen = false;
   // Static prerendering has no query parameters; read them only in the browser.
   $: catalogParams = browser ? $page.url.searchParams : new URLSearchParams();
@@ -292,7 +293,7 @@
   async function loginRemote() {
     loginLoading = true;
     loginMessage = '';
-    const result = await signInWithShortId(loginId, password);
+    const result = await signInWithShortId(loginId, password, { persistent: rememberStudent });
     if (!result.ok) {
       loginMessage = result.message;
       loginLoading = false;
@@ -300,7 +301,7 @@
     }
     if (result.role !== 'student') {
       loginMessage = 'Utilise l’espace enseignant pour ce compte.';
-      signOut();
+      void signOut();
       loginLoading = false;
       return;
     }
@@ -320,7 +321,7 @@
       password = '';
       loginMessage = 'Connexion réussie. Tes résultats seront synchronisés.';
     } catch {
-      signOut();
+      void signOut();
       remoteConnected = false;
       loginMessage = 'La session est valide, mais le profil élève est introuvable.';
     } finally {
@@ -328,8 +329,8 @@
     }
   }
 
-  function logout() {
-    signOut();
+  async function logout() {
+    await signOut();
     remoteConnected = false;
     clearStudentName();
     studentName = '';
@@ -461,6 +462,7 @@
                   <input id="student-login-id" bind:value={loginId} required minlength="3" maxlength="40" placeholder="panda01" autocomplete="username" />
                   <label for="student-login-password">Mot de passe</label>
                   <input id="student-login-password" bind:value={password} required type="password" placeholder="Mot de passe" autocomplete="current-password" />
+                  <label class="remember-login"><input type="checkbox" bind:checked={rememberStudent} /> Rester connecté sur cet appareil</label>
                   <button class="solid-action" type="submit" disabled={loginLoading}>{loginLoading ? 'Connexion…' : 'Se connecter'} <span aria-hidden="true">↗</span></button>
                   {#if loginMessage}<p class="login-message" role="status">{loginMessage}</p>{/if}
                 </form>
@@ -545,7 +547,7 @@
 
     <footer class="site-footer">
       <span class="footer-brand">Orbis / Apprendre. Explorer. Progresser.</span>
-      <div class="footer-links"><button bind:this={appearanceTrigger} class="text-button" type="button" aria-expanded={settingsOpen} aria-controls="orbis-appearance" on:click={toggleAppearance}>Affichage</button>{#if !remoteConnected}<a href={`${base}/student`}>Connexion élève</a>{/if}<a href={`${base}/teacher`}>Espace enseignant</a>{#if studentName}<button class="text-button" type="button" on:click={logout}>Changer de prénom</button>{/if}</div>
+      <div class="footer-links"><button bind:this={appearanceTrigger} class="text-button" type="button" aria-expanded={settingsOpen} aria-controls="orbis-appearance" on:click={toggleAppearance}>Affichage</button><a href={`${base}/confidentialite`}>Confidentialité</a>{#if !remoteConnected}<a href={`${base}/student`}>Connexion élève</a>{/if}<a href={`${base}/teacher`}>Espace enseignant</a>{#if studentName}<button class="text-button" type="button" on:click={() => void logout()}>Se déconnecter</button>{/if}</div>
     </footer>
     <span class="sr-only" role="status">{comfortEnabled ? 'Confort activé : texte agrandi, lecture aérée, mouvements arrêtés.' : ''}</span>
   </div>
