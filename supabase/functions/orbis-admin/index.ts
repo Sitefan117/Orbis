@@ -1,7 +1,13 @@
-// Fonction Supabase Edge à déployer après validation locale.
-// Elle ne doit jamais être remplacée par une clé service_role dans GitHub Pages.
+// Cette fonction tourne sur les serveurs Supabase, pas dans le navigateur.
+// Elle sert de « coffre-fort » pour les opérations qui nécessitent la clé
+// secrète Supabase. Cette clé ne doit jamais arriver dans GitHub Pages.
+//
+// Pour la mettre à jour : Supabase > Edge Functions > orbis-admin > Code >
+// remplacer ce fichier > Deploy updates.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Le type liste toutes les commandes que le navigateur a le droit de demander.
+// TypeScript nous aide à repérer une commande ou un champ mal orthographié.
 type AdminAction =
   | { action: 'create_student'; loginId: string; displayName: string; password: string; classId: string }
   | { action: 'reset_student_password'; studentId: string; password: string }
@@ -9,16 +15,23 @@ type AdminAction =
   | { action: 'export_student_data'; studentId: string }
   | { action: 'delete_student'; studentId: string };
 
+// GitHub Pages et Supabase ont deux domaines différents. CORS autorise donc
+// le navigateur à appeler cette fonction. La vraie sécurité vient ensuite de
+// la session, du rôle enseignant et des règles RLS.
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
 
+// Petite fonction utilitaire : toutes les réponses ont le même format JSON
+// et les mêmes en-têtes. Exemple : { ok: true } ou { error: 'teacher_required' }.
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
   headers: { ...corsHeaders, 'Content-Type': 'application/json' }
 });
 
+// Ces deux fonctions refusent des entrées trop longues ou inattendues avant
+// toute écriture dans Auth ou PostgreSQL. Le mot de passe n'est jamais logué.
 function validLoginId(value: unknown): value is string {
   return typeof value === 'string' && /^[a-zA-Z0-9_-]{3,40}$/.test(value);
 }
@@ -27,6 +40,9 @@ function validPassword(value: unknown): value is string {
   return typeof value === 'string' && value.length >= 10 && value.length <= 200;
 }
 
+// Supabase injecte ces variables secrètes au démarrage de l'Edge Function.
+// SUPABASE_URL indique le projet ; la clé secrète autorise les opérations
+// administratives comme créer ou supprimer un compte Auth.
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 // Supabase's current secret-key variable is plural; keep the legacy fallback
 // so the function also works during the platform's key migration.
@@ -39,6 +55,9 @@ const authClient = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefre
 // Separate client so validating the caller's token cannot replace the
 // privileged Authorization header used for database administration.
 
+// Vérifie qu'un élève appartient à une classe de l'enseignant connecté.
+// La requête contient la clé serveur, mais aussi le Bearer de l'enseignant :
+// les politiques RLS restent donc la source de vérité pour cette relation.
 async function teacherCanViewStudent(accessToken: string, studentId: string): Promise<boolean> {
   // Cette lecture passe volontairement avec le jeton enseignant : la politique
   // RLS student_profiles_read_self_or_teacher constitue la source de vérité.
@@ -51,6 +70,8 @@ async function teacherCanViewStudent(accessToken: string, studentId: string): Pr
   return rows.length === 1;
 }
 
+// PostgREST peut limiter une réponse. Cette boucle récupère les données par
+// paquets de 500 afin qu'un export ancien ne soit pas tronqué silencieusement.
 async function teacherRows(accessToken: string, path: string): Promise<unknown[]> {
   const rows: unknown[] = [];
   const pageSize = 500;
@@ -70,6 +91,9 @@ async function teacherRows(accessToken: string, path: string): Promise<unknown[]
   throw new Error('student_export_too_large');
 }
 
+// Point d'entrée HTTP : chaque clic du tableau enseignant arrive ici.
+// L'ordre est volontaire : méthode HTTP, session, rôle enseignant, action,
+// validation des paramètres, puis opération demandée.
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
