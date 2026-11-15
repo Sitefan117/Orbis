@@ -188,8 +188,8 @@
 		taskBusy = true; taskMessage = '';
 		try {
 			const recipientCount = taskStudentIds.length;
-			const created = await createTeacherTask({ classId: taskClassId, studentIds: taskStudentIds, title: taskTitle, body: taskBody, targetGameId: taskGameId, dueAt: taskDueAt ? new Date(`${taskDueAt}T23:59:00`).toISOString() : undefined });
-			teacherTasks = [created, ...teacherTasks]; taskTitle = ''; taskBody = ''; taskGameId = ''; taskDueAt = ''; taskStudentIds = []; taskMessage = recipientCount ? `Consigne envoyée à ${recipientCount} élève(s).` : 'Consigne envoyée à toute la classe.';
+			await createTeacherTask({ classId: taskClassId, studentIds: taskStudentIds, title: taskTitle, body: taskBody, targetGameId: taskGameId, dueAt: taskDueAt ? new Date(`${taskDueAt}T23:59:00`).toISOString() : undefined });
+			teacherTasks = await listTeacherTasks(); taskTitle = ''; taskBody = ''; taskGameId = ''; taskDueAt = ''; taskStudentIds = []; taskMessage = recipientCount ? `Consigne envoyée à ${recipientCount} élève(s).` : 'Consigne envoyée à toute la classe.';
 		} catch (error) { taskMessage = `Envoi impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
 		finally { taskBusy = false; }
 	}
