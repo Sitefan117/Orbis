@@ -4,6 +4,7 @@ import { currentSession } from '$lib/orbis/auth/client';
 export type StudentTask = {
   id: string;
   class_id: string;
+  student_id: string | null;
   title: string;
   body: string;
   target_game_id: string | null;
@@ -22,7 +23,7 @@ function context() {
 export async function listStudentTasks(): Promise<StudentTask[]> {
   const current = context();
   if (!current) return [];
-  const response = await fetch(`${current.config.url}/rest/v1/student_tasks?select=id,class_id,title,body,target_game_id,due_at,active,created_at&active=eq.true&order=created_at.desc`, { headers: current.headers });
+  const response = await fetch(`${current.config.url}/rest/v1/student_tasks?select=id,class_id,student_id,title,body,target_game_id,due_at,active,created_at&active=eq.true&order=created_at.desc`, { headers: current.headers });
   if (!response.ok) throw new Error(`tasks-${response.status}`);
   return await response.json() as StudentTask[];
 }
@@ -30,17 +31,18 @@ export async function listStudentTasks(): Promise<StudentTask[]> {
 export async function listTeacherTasks(): Promise<StudentTask[]> {
   const current = context();
   if (!current) return [];
-  const response = await fetch(`${current.config.url}/rest/v1/student_tasks?select=id,class_id,title,body,target_game_id,due_at,active,created_at&teacher_id=eq.${encodeURIComponent(current.session.userId)}&order=created_at.desc`, { headers: current.headers });
+  const response = await fetch(`${current.config.url}/rest/v1/student_tasks?select=id,class_id,student_id,title,body,target_game_id,due_at,active,created_at&teacher_id=eq.${encodeURIComponent(current.session.userId)}&order=created_at.desc`, { headers: current.headers });
   if (!response.ok) throw new Error(`teacher-tasks-${response.status}`);
   return await response.json() as StudentTask[];
 }
 
-export async function createTeacherTask(input: { classId: string; title: string; body: string; targetGameId?: string; dueAt?: string }): Promise<StudentTask> {
+export async function createTeacherTask(input: { classId: string; studentIds?: string[]; title: string; body: string; targetGameId?: string; dueAt?: string }): Promise<StudentTask> {
   const current = context();
   if (!current) throw new Error('session-required');
+  const studentIds = input.studentIds?.length ? input.studentIds : [null];
   const response = await fetch(`${current.config.url}/rest/v1/student_tasks`, {
     method: 'POST', headers: { ...current.headers, prefer: 'return=representation' },
-    body: JSON.stringify({ teacher_id: current.session.userId, class_id: input.classId, title: input.title.trim(), body: input.body.trim(), target_game_id: input.targetGameId || null, due_at: input.dueAt || null })
+    body: JSON.stringify(studentIds.map((studentId) => ({ teacher_id: current.session.userId, class_id: input.classId, student_id: studentId, title: input.title.trim(), body: input.body.trim(), target_game_id: input.targetGameId || null, due_at: input.dueAt || null })))
   });
   if (!response.ok) throw new Error(`task-create-${response.status}`);
   const rows = await response.json() as StudentTask[];

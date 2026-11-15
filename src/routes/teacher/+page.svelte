@@ -52,6 +52,7 @@
 	let taskDueAt = $state('');
 	let taskMessage = $state('');
 	let taskBusy = $state(false);
+	let taskStudentIds = $state<string[]>([]);
 	const demoProfiles = [
 		['renard01', 'Renard Rapide'], ['dauphin09', 'Dauphin Serein'], ['chat10', 'Chat Curieux'], ['singe11', 'Singe Farceur'],
 		['lynx02', 'Lynx Malin'], ['hibou04', 'Hibou Futé'], ['tigre05', 'Tigre Tranquille'], ['zebre06', 'Zèbre Rigolo'],
@@ -186,8 +187,9 @@
 		if (!taskClassId || taskTitle.trim().length < 1 || taskBody.trim().length < 1) { taskMessage = 'Choisis une classe et renseigne un titre et une consigne.'; return; }
 		taskBusy = true; taskMessage = '';
 		try {
-			const created = await createTeacherTask({ classId: taskClassId, title: taskTitle, body: taskBody, targetGameId: taskGameId, dueAt: taskDueAt ? new Date(`${taskDueAt}T23:59:00`).toISOString() : undefined });
-			teacherTasks = [created, ...teacherTasks]; taskTitle = ''; taskBody = ''; taskGameId = ''; taskDueAt = ''; taskMessage = 'Consigne envoyée à la classe.';
+			const recipientCount = taskStudentIds.length;
+			const created = await createTeacherTask({ classId: taskClassId, studentIds: taskStudentIds, title: taskTitle, body: taskBody, targetGameId: taskGameId, dueAt: taskDueAt ? new Date(`${taskDueAt}T23:59:00`).toISOString() : undefined });
+			teacherTasks = [created, ...teacherTasks]; taskTitle = ''; taskBody = ''; taskGameId = ''; taskDueAt = ''; taskStudentIds = []; taskMessage = recipientCount ? `Consigne envoyée à ${recipientCount} élève(s).` : 'Consigne envoyée à toute la classe.';
 		} catch (error) { taskMessage = `Envoi impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
 		finally { taskBusy = false; }
 	}
@@ -377,13 +379,14 @@
 			<h2>Consigne à faire</h2>
 			<p>Le message restera visible dans l’espace élève jusqu’à son archivage.</p>
 			<div class="task-form">
-				<select bind:value={taskClassId} aria-label="Classe destinataire"><option value="">Choisir une classe</option>{#each classes as classroom}<option value={classroom.id}>{classroom.name}</option>{/each}</select>
+				<select bind:value={taskClassId} onchange={() => { taskStudentIds = []; }} aria-label="Classe destinataire"><option value="">Choisir une classe</option>{#each classes as classroom}<option value={classroom.id}>{classroom.name}</option>{/each}</select>
+				{#if taskClassId}<fieldset class="task-recipients"><legend>Destinataires <small>(aucune case = toute la classe)</small></legend>{#each remoteStudents.filter((student) => student.class_id === taskClassId) as pupil}<label><input type="checkbox" checked={taskStudentIds.includes(pupil.user_id)} onchange={() => { taskStudentIds = taskStudentIds.includes(pupil.user_id) ? taskStudentIds.filter((id) => id !== pupil.user_id) : [...taskStudentIds, pupil.user_id]; }} /> {pupil.display_name} <small>{pupil.login_id}</small></label>{/each}</fieldset>{/if}
 				<input bind:value={taskTitle} placeholder="Titre · Aujourd’hui" maxlength="140" />
 				<textarea bind:value={taskBody} placeholder="Ex. 1. Fais Race. 2. Reprends ensuite le cours sur les fractions." maxlength="2000"></textarea>
 				<div class="task-options"><select bind:value={taskGameId} aria-label="Activité conseillée"><option value="">Aucune activité liée</option>{#each ['race','calculs','livrets','geometrie','numeria','mesurovia','conju_lab','grammaire_lab','musee_vocabulaire','shift','fractionstower2','mathhunt'] as game}<option value={game}>{game.replaceAll('_',' ')}</option>{/each}</select><input type="date" bind:value={taskDueAt} aria-label="Date limite" /><button disabled={taskBusy} onclick={() => void sendTask()}>{taskBusy ? 'Envoi…' : 'Envoyer la consigne'}</button></div>
 			</div>
 			{#if taskMessage}<p class="class-message" role="status">{taskMessage}</p>{/if}
-			{#if teacherTasks.filter((task) => task.active).length}<ul class="task-list">{#each teacherTasks.filter((task) => task.active).slice(0, 8) as task}<li><div><strong>{task.title}</strong><small>{classes.find((item) => item.id === task.class_id)?.name ?? 'Classe'}{task.target_game_id ? ` · ${task.target_game_id}` : ''}</small><p>{task.body}</p></div><button onclick={() => void archiveTask(task)}>Archiver</button></li>{/each}</ul>{/if}
+			{#if teacherTasks.filter((task) => task.active).length}<ul class="task-list">{#each teacherTasks.filter((task) => task.active).slice(0, 8) as task}<li><div><strong>{task.title}</strong><small>{classes.find((item) => item.id === task.class_id)?.name ?? 'Classe'} · {task.student_id ? (remoteStudents.find((student) => student.user_id === task.student_id)?.display_name ?? 'Élève ciblé') : 'Toute la classe'}{task.target_game_id ? ` · ${task.target_game_id}` : ''}</small><p>{task.body}</p></div><button onclick={() => void archiveTask(task)}>Archiver</button></li>{/each}</ul>{/if}
 		</section>
 
 		<section class="classes-card">
@@ -514,6 +517,10 @@
 	.task-form { display:grid; gap:.65rem; }
 	.task-form textarea { min-height:6rem; resize:vertical; padding:.7rem; border-radius:8px; border:1px solid rgba(255,255,255,.25); font:inherit; }
 	.task-options { display:flex; gap:.6rem; flex-wrap:wrap; align-items:center; }
+	.task-recipients { display:flex; flex-wrap:wrap; gap:.45rem .8rem; padding:.65rem; border:1px solid rgba(255,255,255,.2); border-radius:8px; }
+	.task-recipients legend { padding:0 .35rem; font-weight:700; }
+	.task-recipients label { font-size:.88rem; }
+	.task-recipients small { opacity:.7; }
 	.task-options select,.task-options input { min-height:2.5rem; padding:.45rem; border-radius:7px; border:1px solid rgba(255,255,255,.25); }
 	.task-list { list-style:none; display:grid; gap:.6rem; padding:0; margin:1rem 0 0; }
 	.task-list li { display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; padding:.75rem; border-radius:8px; background:rgba(0,0,0,.18); }
