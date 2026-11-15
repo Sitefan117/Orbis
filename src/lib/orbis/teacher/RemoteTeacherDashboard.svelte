@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import { copyStudentSave, listRemoteActivityEvents, listRemoteGameSaves, type OrbisClass, type OrbisStudent, type RemoteActivityEvent, type RemoteGameSave } from './remote';
   import { resultRowsToCsv, resultRowsToPdf, safeExportPart, type ResultExportRow } from './result-export';
   import { skillLabel, taxonomyFor } from './learning-taxonomy';
@@ -18,6 +19,7 @@
   let transferMessage = $state('');
   let pendingTransferGameId = $state('');
   let exportingPdf = $state(false);
+  let dashboardView = $state<'today' | 'overview'>('today');
 
   const visibleStudents = $derived(selectedClass === 'all' ? students : students.filter((item) => item.class_id === selectedClass));
   const visibleStudentIds = $derived(new Set(visibleStudents.map((item) => item.user_id)));
@@ -45,8 +47,21 @@
     const own = filteredActivities.filter((item) => item.student_id === student.user_id);
     const questions = own.reduce((sum, item) => sum + item.question_count, 0);
     const correct = own.reduce((sum, item) => sum + item.correct_count, 0);
-    return { student, activities: own.length, questions, rate: questions ? Math.round(correct / questions * 100) : 0 };
+    const errors = own.reduce((sum, item) => sum + item.error_count, 0);
+    const hints = own.reduce((sum, item) => sum + (item.hints_used ?? 0), 0);
+    const latestAt = own.reduce((latest, item) => Math.max(latest, new Date(item.occurred_at).getTime()), 0);
+    const inactiveDays = latestAt ? Math.floor((Date.now() - latestAt) / 86_400_000) : null;
+    return { student, activities: own.length, questions, rate: questions ? Math.round(correct / questions * 100) : 0, errors, hints, latestAt, inactiveDays };
   }));
+  const attentionRows = $derived([...byStudent].filter((row) => row.questions >= 10 && row.rate < 60).sort((a, b) => a.rate - b.rate).slice(0, 6));
+  const inactiveRows = $derived([...byStudent].filter((row) => row.inactiveDays === null || row.inactiveDays >= 7).sort((a, b) => (b.inactiveDays ?? 999) - (a.inactiveDays ?? 999)).slice(0, 6));
+  const encouragementRows = $derived([...byStudent].filter((row) => row.questions >= 10 && row.rate >= 80).sort((a, b) => b.rate - a.rate).slice(0, 4));
+  const medianRate = $derived((() => {
+    const rates = byStudent.filter((row) => row.questions > 0).map((row) => row.rate).sort((a, b) => a - b);
+    if (!rates.length) return null;
+    const middle = Math.floor(rates.length / 2);
+    return rates.length % 2 ? rates[middle] : Math.round((rates[middle - 1] + rates[middle]) / 2);
+  })());
   const byGame = $derived(Object.entries(filteredActivities.reduce<Record<string, { correct: number; total: number; count: number }>>((groups, item) => {
     const group = groups[item.game_id] ?? { correct: 0, total: 0, count: 0 };
     group.correct += item.correct_count; group.total += item.question_count; group.count += 1; groups[item.game_id] = group;
@@ -164,9 +179,14 @@
 
 <section class="remote-dashboard" aria-labelledby="remote-title">
   <header>
-    <div><p class="eyebrow">SUIVI SUPABASE</p><h2 id="remote-title">Vue d’ensemble de la classe</h2><p>Résultats synchronisés depuis les appareils élèves.</p></div>
+    <div><p class="eyebrow">ORBIS · OBSERVATOIRE PÉDAGOGIQUE</p><h2 id="remote-title">{dashboardView === 'today' ? 'À voir aujourd’hui' : 'Vue générale'}</h2><p>{dashboardView === 'today' ? 'Les signaux utiles pour préparer les prochaines interventions.' : 'Les tendances de la classe, sans réduire les élèves à une moyenne.'}</p></div>
     <div class="header-actions"><button onclick={refresh} disabled={loading}>{loading ? 'Actualisation…' : 'Actualiser'}</button><button class="secondary" onclick={downloadCsv}>Télécharger CSV</button><button class="secondary" onclick={() => void downloadPdf()} disabled={exportingPdf}>{exportingPdf ? 'Création du PDF…' : 'Télécharger PDF'}</button></div>
   </header>
+  <nav class="dashboard-nav" aria-label="Navigation du tableau enseignant">
+    <button class:active={dashboardView === 'today'} aria-pressed={dashboardView === 'today'} onclick={() => dashboardView = 'today'}><span aria-hidden="true">✦</span> À voir aujourd’hui</button>
+    <button class:active={dashboardView === 'overview'} aria-pressed={dashboardView === 'overview'} onclick={() => dashboardView = 'overview'}><span aria-hidden="true">◫</span> Vue générale</button>
+    <a href={`${base}/teacher/admin`}><span aria-hidden="true">⚙</span> Administration</a>
+  </nav>
   <div class="filters" aria-label="Filtres du tableau">
     <label>Classe<select bind:value={selectedClass}><option value="all">Toutes les classes</option>{#each classes as classroom}<option value={classroom.id}>{classroom.name}</option>{/each}</select></label>
     <label>Élève<select bind:value={selectedStudentId}><option value="all">Tous les élèves</option>{#each visibleStudents as student}<option value={student.user_id}>{student.display_name}</option>{/each}</select></label>
@@ -175,40 +195,55 @@
   </div>
   <p class="export-help">Les fichiers CSV et PDF reprennent uniquement les résultats correspondant à ces quatre filtres.</p>
   {#if message}<p class="notice" role="alert">{message}</p>{/if}
-  <div class="metric-grid">
-    <article><span>Élèves</span><strong>{selectedStudent ? 1 : visibleStudents.length}</strong><small>{selectedStudent?.display_name ?? (selectedClass === 'all' ? `${classes.length} classe(s)` : 'classe filtrée')}</small></article>
-    <article><span>Activités</span><strong>{filteredActivities.length}</strong><small>{visibleSaves.length} sauvegarde(s)</small></article>
-    <article><span>Réussite</span><strong>{successRate}%</strong><small>{totalCorrect}/{totalQuestions} réponses</small></article>
-    <article><span>Temps observé</span><strong>{activitiesWithDuration.length ? duration(totalDuration) : '—'}</strong><small>{activitiesWithDuration.length}/{filteredActivities.length} activité(s) chronométrée(s)</small></article>
-  </div>
-  <div class="visual-summary">
-    <article class="panel ring-panel">
-      <div class="success-ring" style={`background:${successRing}`} role="img" aria-label={`${successRate}% de réussite`}><span>{successRate}%</span></div>
-      <div><p class="eyebrow">INDICATEUR CENTRAL</p><h3>Réussite moyenne</h3><p>{totalCorrect} réponses justes sur {totalQuestions}.</p><small>Les données restent filtrables par classe, élève, période et jeu.</small></div>
-    </article>
-    <article class="panel quick-reading">
-      <h3>Lecture rapide</h3>
-      <div class="reading-grid"><div><strong>{byGame.length}</strong><span>jeu(x) pratiqué(s)</span></div><div><strong>{visibleSaves.length}</strong><span>sauvegarde(s)</span></div><div><strong>{totalErrors}</strong><span>erreur(s) à observer</span></div><div><strong>{activitiesWithHints.length ? totalHints : '—'}</strong><span>indice(s) · {activitiesWithHints.length}/{filteredActivities.length} mesuré(s)</span></div></div>
-    </article>
-  </div>
-  <div class="dashboard-columns">
-    <article class="panel">
-      <h3>Progression par élève</h3>
-      {#if byStudent.length === 0}<p class="empty">Aucun élève.</p>{:else}
-        <div class="bars">{#each byStudent as row}<button class="student-row" class:active={selectedStudentId === row.student.user_id} onclick={() => chooseStudent(row.student.user_id)}><span><strong>{row.student.display_name}</strong><small>{row.activities} activité(s) · {row.questions} questions</small></span><span class="track" aria-label={`${row.rate}% de réussite`}><i style={`width:${row.rate}%`}></i></span><b>{row.rate}%</b></button>{/each}</div>
-      {/if}
-    </article>
-    <article class="panel">
-      <h3>Résultats par jeu</h3>
-      {#if byGame.length === 0}<p class="empty">Aucune activité synchronisée.</p>{:else}
-        <div class="bars">{#each byGame as row}<div class="bar-row"><div><strong>{gameName(row.game)}</strong><small>{row.count} activité(s)</small></div><div class="track games"><span style={`width:${row.rate}%`}></span></div><b>{row.rate}%</b></div>{/each}</div>
-      {/if}
-    </article>
-  </div>
-  <article class="panel trend-panel">
-    <div class="panel-heading"><div><h3>Évolution récente</h3><p>Réussite quotidienne sur les activités visibles.</p></div><small>Lecture descriptive, pas une note.</small></div>
-    {#if trendRows.length}<div class="trend-chart" aria-label="Graphique d’évolution de la réussite">{#each trendRows as row}<div class="trend-column" title={`${row.day} : ${row.rate}%`}><span style={`height:${Math.max(4, row.rate)}%`}></span><small>{row.day.slice(5)}</small></div>{/each}</div>{:else}<p class="empty">Pas encore assez de résultats.</p>{/if}
-  </article>
+  {#if dashboardView === 'today'}
+    <div class="today-metrics" aria-label="Résumé du jour">
+      <article><span>Élèves observés</span><strong>{byStudent.filter((row) => row.questions > 0).length}<small> / {visibleStudents.length}</small></strong><p>avec des réponses sur la période</p></article>
+      <article class="attention"><span>À examiner</span><strong>{attentionRows.length}</strong><p>résultats sous 60 %, avec au moins 10 réponses</p></article>
+      <article><span>Sans activité récente</span><strong>{inactiveRows.length}</strong><p>aucune trace ou dernière activité il y a 7 jours</p></article>
+      <article><span>Réussite médiane</span><strong>{medianRate === null ? '—' : `${medianRate}%`}</strong><p>moins sensible aux valeurs extrêmes</p></article>
+    </div>
+    <div class="mission-grid">
+      <article class="mission-card priority">
+        <div class="mission-heading"><div><p class="eyebrow">PRIORITÉ PÉDAGOGIQUE</p><h3>Résultats à examiner</h3></div><span>{attentionRows.length}</span></div>
+        {#if attentionRows.length}
+          <div class="signal-list">{#each attentionRows as row}<button onclick={() => chooseStudent(row.student.user_id)}><span class="signal-orb warning" aria-hidden="true"></span><span><strong>{row.student.display_name}</strong><small>{row.rate}% · {row.errors} erreurs sur {row.questions} réponses</small></span><b>Voir →</b></button>{/each}</div>
+        {:else}<p class="calm-state">Aucun signal prioritaire avec les filtres actuels.</p>{/if}
+      </article>
+      <article class="mission-card">
+        <div class="mission-heading"><div><p class="eyebrow">RYTHME</p><h3>À reconnecter</h3></div><span>{inactiveRows.length}</span></div>
+        {#if inactiveRows.length}
+          <div class="signal-list">{#each inactiveRows as row}<button onclick={() => chooseStudent(row.student.user_id)}><span class="signal-orb quiet" aria-hidden="true"></span><span><strong>{row.student.display_name}</strong><small>{row.inactiveDays === null ? 'Aucune activité sur cette période' : `Dernière trace il y a ${row.inactiveDays} jour(s)`}</small></span><b>Voir →</b></button>{/each}</div>
+        {:else}<p class="calm-state">Tous les élèves ont une activité récente.</p>{/if}
+      </article>
+      <article class="mission-card encouragements">
+        <div class="mission-heading"><div><p class="eyebrow">À VALORISER</p><h3>Réussites solides</h3></div><span>{encouragementRows.length}</span></div>
+        {#if encouragementRows.length}
+          <div class="signal-list">{#each encouragementRows as row}<button onclick={() => chooseStudent(row.student.user_id)}><span class="signal-orb success" aria-hidden="true"></span><span><strong>{row.student.display_name}</strong><small>{row.rate}% sur {row.questions} réponses</small></span><b>Voir →</b></button>{/each}</div>
+        {:else}<p class="calm-state">Pas encore assez de données pour dégager une réussite stable.</p>{/if}
+      </article>
+      <article class="mission-card data-card">
+        <p class="eyebrow">QUALITÉ DES DONNÉES</p><h3>Ce que mesure Orbis</h3>
+        <div class="data-gauges"><div><span style={`width:${filteredActivities.length ? Math.round(activitiesWithDuration.length / filteredActivities.length * 100) : 0}%`}></span></div><p><strong>{activitiesWithDuration.length}/{filteredActivities.length}</strong> activités avec durée</p><div><span style={`width:${filteredActivities.length ? Math.round(activitiesWithHints.length / filteredActivities.length * 100) : 0}%`}></span></div><p><strong>{activitiesWithHints.length}/{filteredActivities.length}</strong> activités avec indices mesurés</p></div>
+        <small>Une absence de mesure reste affichée comme inconnue, jamais comme zéro.</small>
+      </article>
+    </div>
+  {:else}
+    <div class="metric-grid">
+      <article><span>Élèves</span><strong>{selectedStudent ? 1 : visibleStudents.length}</strong><small>{selectedStudent?.display_name ?? (selectedClass === 'all' ? `${classes.length} classe(s)` : 'classe filtrée')}</small></article>
+      <article><span>Activités</span><strong>{filteredActivities.length}</strong><small>{visibleSaves.length} sauvegarde(s)</small></article>
+      <article><span>Réussite médiane</span><strong>{medianRate === null ? '—' : `${medianRate}%`}</strong><small>moyenne pondérée : {successRate}%</small></article>
+      <article><span>Temps observé</span><strong>{activitiesWithDuration.length ? duration(totalDuration) : '—'}</strong><small>{activitiesWithDuration.length}/{filteredActivities.length} activité(s) chronométrée(s)</small></article>
+    </div>
+    <div class="visual-summary">
+      <article class="panel ring-panel"><div class="success-ring" style={`background:${successRing}`} role="img" aria-label={`${successRate}% de réussite`}><span>{successRate}%</span></div><div><p class="eyebrow">VUE D’ENSEMBLE</p><h3>Réussite pondérée</h3><p>{totalCorrect} réponses justes sur {totalQuestions}.</p><small>À interpréter avec le nombre de réponses et la distribution des élèves.</small></div></article>
+      <article class="panel quick-reading"><h3>Lecture rapide</h3><div class="reading-grid"><div><strong>{byGame.length}</strong><span>jeu(x) pratiqué(s)</span></div><div><strong>{visibleSaves.length}</strong><span>sauvegarde(s)</span></div><div><strong>{totalErrors}</strong><span>erreur(s) à observer</span></div><div><strong>{activitiesWithHints.length ? totalHints : '—'}</strong><span>indice(s) · {activitiesWithHints.length}/{filteredActivities.length} mesuré(s)</span></div></div></article>
+    </div>
+    <div class="dashboard-columns">
+      <article class="panel"><h3>Résultats par élève</h3>{#if byStudent.length === 0}<p class="empty">Aucun élève.</p>{:else}<div class="bars">{#each byStudent as row}<button class="student-row" class:active={selectedStudentId === row.student.user_id} onclick={() => chooseStudent(row.student.user_id)}><span><strong>{row.student.display_name}</strong><small>{row.activities} activité(s) · {row.questions} questions</small></span><span class="track" aria-label={`${row.rate}% de réussite`}><i style={`width:${row.rate}%`}></i></span><b>{row.rate}%</b></button>{/each}</div>{/if}</article>
+      <article class="panel"><h3>Résultats par jeu</h3>{#if byGame.length === 0}<p class="empty">Aucune activité synchronisée.</p>{:else}<div class="bars">{#each byGame as row}<div class="bar-row"><div><strong>{gameName(row.game)}</strong><small>{row.count} activité(s)</small></div><div class="track games"><span style={`width:${row.rate}%`}></span></div><b>{row.rate}%</b></div>{/each}</div>{/if}</article>
+    </div>
+    <article class="panel trend-panel"><div class="panel-heading"><div><h3>Évolution récente</h3><p>Réussite quotidienne sur les activités visibles.</p></div><small>Lecture descriptive, pas une note.</small></div>{#if trendRows.length}<div class="trend-chart" aria-label="Graphique d’évolution de la réussite">{#each trendRows as row}<div class="trend-column" title={`${row.day} : ${row.rate}%`}><span style={`height:${Math.max(4, row.rate)}%`}></span><small>{row.day.slice(5)}</small></div>{/each}</div>{:else}<p class="empty">Pas encore assez de résultats.</p>{/if}</article>
+  {/if}
   {#if selectedStudent}
     <article class="panel student-detail">
       <div class="detail-heading"><div><p class="eyebrow">FICHE ÉLÈVE</p><h3>{selectedStudent.display_name}</h3><p>Code : {selectedStudent.login_id}</p></div><button class="secondary" onclick={() => chooseStudent('all')}>Fermer la fiche</button></div>
@@ -241,5 +276,21 @@
   .correct-response{color:#216443;font-weight:800}.error-response{color:#a34b2b;font-weight:800}
   .vocabulary-status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem;margin:0 0 1rem}.vocabulary-status span{padding:.55rem;background:#eef6ef;border-radius:8px;color:#52665f}.vocabulary-status b{color:#285f4d;margin-right:.25rem}
   .response-detail-panel{animation:panel-in .35s ease-out both}@keyframes panel-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-  @media(prefers-reduced-motion:reduce){.response-detail-panel{animation:none}}
+  /* Cockpit sombre : le mouvement sert à signaler les changements, jamais à distraire. */
+  .remote-dashboard{color:#e9f2ff;background:radial-gradient(circle at 8% 0%,#28336f88 0,transparent 28%),radial-gradient(circle at 92% 10%,#134e6680 0,transparent 26%),linear-gradient(155deg,#10152d,#080b1b 72%);border-color:#5365a766;box-shadow:0 24px 70px #040612aa,inset 0 1px #ffffff12;overflow:hidden;position:relative}
+  .remote-dashboard::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;background-image:radial-gradient(circle,#d9e7ff 1px,transparent 1px);background-size:34px 34px;mask-image:linear-gradient(to bottom,black,transparent 45%)}
+  .remote-dashboard>*{position:relative}.remote-dashboard h2,.remote-dashboard h3,.remote-dashboard h4{color:#f3f7ff}.remote-dashboard p{color:#aebbd4}.eyebrow{color:#73d9ff!important}
+  .dashboard-nav{display:flex;gap:.55rem;align-items:center;margin:0 0 1rem;padding:.45rem;border:1px solid #6071ab55;border-radius:15px;background:#090d20aa;backdrop-filter:blur(16px)}
+  .dashboard-nav button,.dashboard-nav a{display:flex;align-items:center;justify-content:center;gap:.45rem;min-height:42px;padding:.65rem .9rem;border:0;border-radius:10px;background:transparent!important;color:#aebbd4!important;text-decoration:none;font-weight:800;cursor:pointer}
+  .dashboard-nav .active{color:white!important;background:linear-gradient(135deg,#6657e8,#258bb5)!important;box-shadow:0 8px 22px #3b4ab755}.dashboard-nav a{margin-left:auto}.dashboard-nav a:hover{background:#ffffff0d!important;color:white!important}
+  .filters{position:sticky;top:.6rem;z-index:4;background:#111831e8;border:1px solid #5d6da855;box-shadow:0 14px 35px #03061570;backdrop-filter:blur(18px)}.filters label{color:#aebbd4}.filters select,.transfer-choice select{background:#090d1f;color:#edf4ff;border-color:#5d70a3}.export-help{color:#8796b5!important}
+  .remote-dashboard button{background:linear-gradient(135deg,#5d50d6,#237fa8);border-color:#7f8bea;color:white;cursor:pointer}.remote-dashboard button:focus-visible,.dashboard-nav a:focus-visible{outline:3px solid #ffd66b;outline-offset:3px}.secondary,.header-actions .secondary{background:#151c38!important;color:#dfe9ff!important;border-color:#596a9d!important}
+  .metric-grid article,.panel,.mission-card,.today-metrics article{background:linear-gradient(150deg,#171e3cdd,#0e142cdd);border:1px solid #52639755;box-shadow:inset 0 1px #ffffff0a,0 16px 32px #03061555}.metric-grid span,.metric-grid small,.bar-row small,.student-row small,.skill-row small{color:#94a2be}.metric-grid strong{color:#f7fbff}
+  .today-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem}.today-metrics article{padding:1rem;border-radius:16px;animation:rise-in .4s ease-out both}.today-metrics article:nth-child(2){animation-delay:.05s}.today-metrics article:nth-child(3){animation-delay:.1s}.today-metrics article:nth-child(4){animation-delay:.15s}.today-metrics span{color:#8fa0c3;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.today-metrics strong{display:block;margin:.35rem 0;color:#f5f8ff;font-size:clamp(1.75rem,4vw,2.55rem)}.today-metrics strong small{font-size:1rem;color:#7d8ca9}.today-metrics p{font-size:.78rem;line-height:1.4}.today-metrics .attention{border-color:#ff9f6b66;background:linear-gradient(150deg,#39203bdd,#12152ddd)}
+  .mission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1rem}.mission-card{padding:1.1rem;border-radius:18px;min-height:230px;animation:rise-in .42s .08s ease-out both}.mission-card.priority{border-color:#f68f6c66}.mission-card.encouragements{border-color:#5be2b455}.mission-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.mission-heading h3{margin:.2rem 0}.mission-heading>span{display:grid;place-items:center;min-width:40px;height:40px;border-radius:12px;background:#ffffff0c;color:white;font-weight:900}.signal-list{display:grid;gap:.45rem;margin-top:.8rem}.signal-list button{width:100%;display:grid;grid-template-columns:12px 1fr auto;align-items:center;gap:.7rem;padding:.7rem;background:#ffffff08!important;border-color:#ffffff0b!important;text-align:left}.signal-list button:hover{transform:translateX(3px);background:#ffffff10!important}.signal-list strong,.signal-list small{display:block}.signal-list small{margin-top:.15rem;color:#92a1bf}.signal-list b{color:#8edaff;font-size:.78rem}.signal-orb{width:10px;height:10px;border-radius:50%;box-shadow:0 0 14px currentColor}.signal-orb.warning{color:#ff936a;background:currentColor}.signal-orb.quiet{color:#8d9bbb;background:currentColor}.signal-orb.success{color:#58dfac;background:currentColor}.calm-state{padding:1.4rem;border:1px dashed #5b6c9d66;border-radius:12px;text-align:center}.data-gauges{margin-top:1rem}.data-gauges>div{height:7px;border-radius:999px;background:#070b1b;overflow:hidden}.data-gauges>div span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#6f5cff,#42c7dc)}.data-gauges p{font-size:.82rem;margin:.35rem 0 .8rem}.data-card>small{display:block;color:#8796b5;line-height:1.45}
+  .student-row{background:#111831!important;color:#edf4ff!important;border-color:#4f608f55!important}.student-row.active{outline-color:#68d5e8}.track{background:#080d1f}.track span,.track i{background:linear-gradient(90deg,#735eff,#48d2bd)}.track.games span{background:linear-gradient(90deg,#337fbd,#55d4e2)}.bar-row b,.student-row b,.skill-row b{color:#dfe9ff}.success-ring::before{background:#111831}.success-ring span{color:white}.reading-grid div,.error-list li,.save-list li,.document-list li,.vocabulary-status span{background:#0b1128;color:#dce7fb}.reading-grid strong,.vocabulary-status b{color:#7de0f4}.reading-grid span,.ring-panel small,.panel-heading small,.document-list small{color:#8d9bb7}.teacher-summary{background:#172946;border-left-color:#55d1bc}.transfer-message{background:#193b39}.table-wrap{border:1px solid #42517a55;border-radius:12px}table{color:#dfe8f8}th,td{border-color:#354363}th{color:#8fa0c1}tbody tr:hover{background:#ffffff05}.notice{background:#3e321d;color:#ffe2a4}.correct-response{color:#60e0ad}.error-response{color:#ff9c7c}.document-list pre{background:#070b1b;color:#dce8ff}.trend-chart{border-color:#344263}.trend-column span{background:linear-gradient(180deg,#55d8e0,#6657e8)}
+  @keyframes rise-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @media(max-width:900px){.today-metrics{grid-template-columns:repeat(2,1fr)}.mission-grid{grid-template-columns:1fr}.dashboard-nav{overflow-x:auto}.dashboard-nav button,.dashboard-nav a{white-space:nowrap}.dashboard-nav a{margin-left:0}}
+  @media(max-width:560px){.today-metrics{grid-template-columns:1fr}.dashboard-nav{align-items:stretch}.header-actions{justify-content:flex-start}.signal-list button{grid-template-columns:12px 1fr}.signal-list b{grid-column:2}}
+  @media(prefers-reduced-motion:reduce){.response-detail-panel,.today-metrics article,.mission-card{animation:none}.signal-list button:hover{transform:none}}
 </style>

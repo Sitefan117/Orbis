@@ -9,6 +9,7 @@
 	import { currentSession, refreshRemoteSession, sessionRole, signInWithShortId, signOut, startSessionRefresh } from '$lib/orbis/auth/client';
 	import { createStudent, createTeacherClass, deleteStudent, exportStudentData, listTeacherClasses, listTeacherStudents, listTeacherStudentDocuments, resetStudentPassword, type OrbisClass, type OrbisStudent, type RemoteStudentDocument } from '$lib/orbis/teacher/remote';
 
+	let { mode = 'dashboard' }: { mode?: 'dashboard' | 'admin' } = $props();
 	let isAuthenticated = $state(false);
 	let loginId = $state('');
 	let password = $state('');
@@ -236,12 +237,13 @@
 {:else}
 	<div class="teacher-container">
 		<header class="teacher-header">
-			<div><p class="teacher-kicker">ORBIS · ESPACE ENSEIGNANT</p><h1>Tableau de bord pédagogique</h1><p>Une vue simple des progrès, sans remplacer ton observation professionnelle.</p></div>
-			<button class="logout-button" onclick={() => void logout()}>Se déconnecter</button>
+				<div><p class="teacher-kicker">ORBIS · ESPACE ENSEIGNANT</p><h1>{mode === 'admin' ? 'Administration' : 'Tableau de bord pédagogique'}</h1><p>{mode === 'admin' ? 'Classes, comptes élèves et outils de maintenance.' : 'Les signaux utiles, sans remplacer ton observation professionnelle.'}</p></div>
+				<div class="teacher-header-actions"><a class="mode-link" href={mode === 'admin' ? `${base}/teacher` : `${base}/teacher/admin`}>{mode === 'admin' ? '← Retour au tableau' : 'Administration →'}</a><button class="logout-button" onclick={() => void logout()}>Se déconnecter</button></div>
 		</header>
 
-		<RemoteTeacherDashboard {classes} students={remoteStudents} documents={remoteDocuments} />
-
+			{#if mode === 'dashboard'}
+				<RemoteTeacherDashboard {classes} students={remoteStudents} documents={remoteDocuments} />
+			{:else}
 		<details class="secondary-zone">
 			<summary>Données locales de cet appareil</summary>
 			<LocalTrackingPanel />
@@ -334,6 +336,7 @@
 				</table>
 			</div>
 		{/if}
+			{/if}
 	</div>
 {/if}
 
@@ -383,7 +386,9 @@
 		cursor: pointer;
 	}
 	.login-error { color: #ff9d9d; min-height: 1.4em; }
-	.logout-button { margin-left: auto; padding: .55rem .9rem; }
+	.logout-button { padding: .55rem .9rem; }
+	.teacher-header-actions { margin-left:auto; display:flex; align-items:center; gap:.65rem; flex-wrap:wrap; justify-content:flex-end; }
+	.mode-link { color:#315849; background:white; border:1px solid #9eb2a5; border-radius:10px; padding:.55rem .9rem; text-decoration:none; font-weight:700; }
 	.classes-card { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); border-radius: 12px; padding: 1.25rem; margin: 1.5rem 0; }
 	.class-create-row { display: flex; gap: .75rem; flex-wrap: wrap; }
 	.class-create-row input { flex: 1 1 260px; padding: .7rem; border-radius: 6px; border: 1px solid #777; }
