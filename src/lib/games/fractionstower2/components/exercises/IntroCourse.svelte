@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { recordCourseActivity } from '$lib/orbis/tracking/client';
+  import { getStudentName } from '$lib/orbis/identity/local-student';
 let steps = [
   // ============================================================
   // ÉTAGE 1 — PARTAGE ÉQUITABLE ET VOCABULAIRE
@@ -666,6 +668,11 @@ let steps = [
   let userAnswer = $state('');
   let feedbackMessage = $state('');
   let isCorrect = $state(false);
+  let attemptsForStep = $state(0);
+  let courseResponses = $state<import('$lib/orbis/results/contract').ResponseDetail[]>([]);
+  let wrongAttempts = $state(0);
+  let courseSessionId = $state(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `course-${Date.now()}`);
+  let courseStartedAt = $state(Date.now());
 
   let activeStep = $derived(
     floorSteps[currentSubStepIndex] ?? floorSteps[0] ?? fallbackStep
@@ -683,6 +690,11 @@ let steps = [
       userAnswer = '';
       feedbackMessage = '';
       isCorrect = false;
+      attemptsForStep = 0;
+      courseResponses = [];
+      wrongAttempts = 0;
+      courseSessionId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `course-${Date.now()}`;
+      courseStartedAt = Date.now();
     }
   });
 
@@ -705,14 +717,28 @@ let steps = [
     }
 
     const cleanedAnswer = normalizeAnswer(userAnswer);
+    attemptsForStep += 1;
     const matches = activeStep.expected.some(
       (expectedAnswer) => normalizeAnswer(expectedAnswer) === cleanedAnswer
     );
 
     if (matches) {
       isCorrect = true;
+      courseResponses = [...courseResponses, {
+        questionIndex: currentSubStepIndex,
+        questionId: `fractionstower2-course-${floorNum}-${currentSubStepIndex + 1}`,
+        skillId: `fractionstower2.fractions.floor_${floorNum}`,
+        category: activeStep.floorTitle,
+        prompt: activeStep.question,
+        response: userAnswer.trim(),
+        expected: activeStep.expected[0],
+        correct: true,
+        attempts: attemptsForStep,
+        durationSeconds: Math.max(0, Math.round((Date.now() - courseStartedAt) / 1000))
+      }];
       feedbackMessage = 'Bravo ! Ta réponse est correcte. Tu peux passer à la suite.';
     } else {
+      wrongAttempts += 1;
       isCorrect = false;
       feedbackMessage = `Pas encore. ${activeStep.errorExplanation} Indice : ${activeStep.hint}`;
     }
@@ -727,7 +753,21 @@ let steps = [
       userAnswer = '';
       feedbackMessage = '';
       isCorrect = false;
+      attemptsForStep = 0;
     } else {
+      void recordCourseActivity({
+        studentName: getStudentName('Explorateur'),
+        gameId: 'fractionstower2',
+        activityId: `course-floor-${floorNum}`,
+        skillId: `fractionstower2.fractions.floor_${floorNum}`,
+        correctCount: courseResponses.filter((response) => response.correct).length,
+        questionCount: floorSteps.length,
+        errorCount: wrongAttempts,
+        durationSeconds: Math.max(0, Math.round((Date.now() - courseStartedAt) / 1000)),
+        responseDetails: courseResponses,
+        sessionId: courseSessionId,
+        metadata: { floor: floorNum, course: 'fractions', steps: floorSteps.length }
+      });
       onComplete?.();
     }
   }
@@ -740,6 +780,7 @@ let steps = [
     feedbackMessage = '';
     // Revalider cette étape est nécessaire après y être revenu.
     isCorrect = false;
+    attemptsForStep = 0;
   }
 </script>
 

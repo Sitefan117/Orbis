@@ -58,6 +58,9 @@ export async function uploadActivityEvent(
       hints_used: event.hintsUsed ?? null,
       duration_seconds: event.durationSeconds ?? null,
       ...(event.responseDetails?.length ? { response_details: event.responseDetails } : {}),
+      metadata: event.metadata ?? {},
+      activity_kind: event.activityKind ?? 'game',
+      session_id: event.sessionId ?? null,
       occurred_at: event.occurredAt
     })
   });

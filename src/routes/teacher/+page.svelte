@@ -7,7 +7,7 @@
 	import LocalTrackingPanel from '$lib/orbis/teacher/LocalTrackingPanel.svelte';
 	import RemoteTeacherDashboard from '$lib/orbis/teacher/RemoteTeacherDashboard.svelte';
 	import { currentSession, refreshRemoteSession, sessionRole, signInWithShortId, signOut, startSessionRefresh } from '$lib/orbis/auth/client';
-	import { createStudent, createTeacherClass, deleteStudent, exportStudentData, listTeacherClasses, listTeacherStudents, listTeacherStudentDocuments, resetStudentPassword, type OrbisClass, type OrbisStudent, type RemoteStudentDocument } from '$lib/orbis/teacher/remote';
+	import { createStudent, createTeacherClass, deleteStudent, deleteTeacherClass, exportStudentData, listTeacherClasses, listTeacherStudents, listTeacherStudentDocuments, renameTeacherClass, resetStudentPassword, type OrbisClass, type OrbisStudent, type RemoteStudentDocument } from '$lib/orbis/teacher/remote';
 
 	let { mode = 'dashboard' }: { mode?: 'dashboard' | 'admin' } = $props();
 	let isAuthenticated = $state(false);
@@ -22,6 +22,10 @@
 	let newClassName = $state('');
 	let classMessage = $state('');
 	let isCreatingClass = $state(false);
+	let editingClassId = $state('');
+	let editingClassName = $state('');
+	let classActionBusy = $state(false);
+	let pendingDeleteClassId = $state('');
 	let studentLoginId = $state('');
 	let studentDisplayName = $state('');
 	let studentPassword = $state('');
@@ -36,6 +40,14 @@
 	let dataActionMessage = $state('');
 	let pendingDeleteStudentId = $state('');
 	let studentActionBusy = $state(false);
+	let demoPassword = $state('');
+	let demoMessage = $state('');
+	let demoBusy = $state(false);
+	const demoProfiles = [
+		['renard01', 'Renard Rapide'], ['dauphin09', 'Dauphin Serein'], ['chat10', 'Chat Curieux'], ['singe11', 'Singe Farceur'],
+		['lynx02', 'Lynx Malin'], ['hibou04', 'Hibou Futé'], ['tigre05', 'Tigre Tranquille'], ['zebre06', 'Zèbre Rigolo'],
+		['castor07', 'Castor Costaud'], ['manchot08', 'Manchot Dansant']
+	] as const;
 
 	onMount(() => {
 		startSessionRefresh();
@@ -89,6 +101,41 @@
 		} finally { isCreatingClass = false; }
 	}
 
+	function startClassRename(classroom: OrbisClass) {
+		editingClassId = classroom.id;
+		editingClassName = classroom.name;
+		pendingDeleteClassId = '';
+		classMessage = '';
+	}
+
+	async function saveClassRename() {
+		const name = editingClassName.trim();
+		if (!editingClassId || !name) { classMessage = 'Le nom de classe est obligatoire.'; return; }
+		classActionBusy = true;
+		try {
+			await renameTeacherClass(editingClassId, name);
+			classes = classes.map((item) => item.id === editingClassId ? { ...item, name } : item);
+			editingClassId = ''; editingClassName = ''; classMessage = 'Classe renommée.';
+		} catch (error) { classMessage = `Renommage impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
+		finally { classActionBusy = false; }
+	}
+
+	async function removeClass(classroom: OrbisClass) {
+		if (pendingDeleteClassId !== classroom.id) {
+			pendingDeleteClassId = classroom.id;
+			classMessage = `Second clic pour supprimer « ${classroom.name} ». Les inscriptions seront retirées, mais les comptes élèves resteront conservés.`;
+			return;
+		}
+		classActionBusy = true;
+		try {
+			await deleteTeacherClass(classroom.id);
+			classes = classes.filter((item) => item.id !== classroom.id);
+			remoteStudents = await listTeacherStudents(classes);
+			pendingDeleteClassId = ''; classMessage = 'Classe supprimée. Les comptes élèves restent disponibles.';
+		} catch (error) { classMessage = `Suppression impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
+		finally { classActionBusy = false; }
+	}
+
 	async function addStudent() {
 		if (!studentClassId) { studentMessage = 'Choisis une classe.'; return; }
 		if (!/^[a-zA-Z0-9_-]{3,40}$/.test(studentLoginId.trim())) { studentMessage = 'L’identifiant doit contenir 3 à 40 caractères simples.'; return; }
@@ -105,6 +152,25 @@
 			studentMessage = `Création impossible : ${detail}`;
 		}
 		finally { isCreatingStudent = false; }
+	}
+
+	async function createDemoStudents() {
+		if (demoPassword.length < 10) { demoMessage = 'Choisis un mot de passe de 10 caractères minimum pour les comptes de test.'; return; }
+		demoBusy = true; demoMessage = '';
+		try {
+			let demoClass = classes.find((item) => item.name === 'TEST — profils de réussite');
+			if (!demoClass) { demoClass = await createTeacherClass('TEST — profils de réussite'); classes = [...classes, demoClass]; }
+			const existing = await listTeacherStudents(classes);
+			let created = 0;
+			for (const [loginId, displayName] of demoProfiles) {
+				if (existing.some((student) => student.login_id.toLowerCase() === loginId)) continue;
+				await createStudent({ loginId, displayName, password: demoPassword, classId: demoClass.id });
+				created += 1;
+			}
+			remoteStudents = await listTeacherStudents(classes);
+			demoMessage = `${created} compte(s) de simulation créé(s). Étape suivante : exécuter le script SQL de simulation sans PCP dans Supabase.`;
+		} catch (error) { demoMessage = `Simulation impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
+		finally { demoBusy = false; }
 	}
 
 	async function applyPasswordReset() {
@@ -256,7 +322,9 @@
 				<button onclick={addClass} disabled={isCreatingClass}>{isCreatingClass ? 'Création…' : 'Créer la classe'}</button>
 			</div>
 			{#if classMessage}<p class="class-message" role="status">{classMessage}</p>{/if}
-			{#if classes.length === 0}<p>Aucune classe pour le moment.</p>{:else}<ul class="class-list">{#each classes as classroom}<li><strong>{classroom.name}</strong><small>{new Date(classroom.created_at).toLocaleDateString('fr-CH')}</small></li>{/each}</ul>{/if}
+			{#if classes.length === 0}<p>Aucune classe pour le moment.</p>{:else}<ul class="class-list">{#each classes as classroom}<li>
+				{#if editingClassId === classroom.id}<span class="class-edit"><input bind:value={editingClassName} maxlength="100" aria-label="Nouveau nom de classe" /><button disabled={classActionBusy} onclick={() => void saveClassRename()}>Enregistrer</button><button disabled={classActionBusy} onclick={() => { editingClassId = ''; }}>Annuler</button></span>{:else}<span><strong>{classroom.name}</strong><small>{new Date(classroom.created_at).toLocaleDateString('fr-CH')}</small></span><span class="class-actions"><button disabled={classActionBusy} onclick={() => startClassRename(classroom)}>Renommer</button><button class:confirm-delete={pendingDeleteClassId === classroom.id} disabled={classActionBusy} onclick={() => void removeClass(classroom)}>{pendingDeleteClassId === classroom.id ? 'Confirmer' : 'Supprimer'}</button></span>{/if}
+			</li>{/each}</ul>{/if}
 		</section>
 
 		<section class="classes-card">
@@ -272,6 +340,13 @@
 				<button onclick={addStudent} disabled={isCreatingStudent}>{isCreatingStudent ? 'Création…' : 'Créer l’élève'}</button>
 			</div>
 			{#if studentMessage}<p class="class-message" role="status">{studentMessage}</p>{/if}
+		</section>
+
+		<section class="classes-card demo-card">
+			<h2>Recréer la simulation pédagogique</h2>
+			<p>Crée les 10 comptes de test (2 très bons, 2 bons, 2 moyens, 2 mauvais, 2 très mauvais) dans une classe dédiée. Les comptes existants sont conservés.</p>
+			<div class="class-create-row"><input type="password" bind:value={demoPassword} placeholder="Mot de passe commun (10 caractères min.)" autocomplete="new-password" /><button disabled={demoBusy} onclick={() => void createDemoStudents()}>{demoBusy ? 'Création…' : 'Créer les 10 comptes'}</button></div>
+			{#if demoMessage}<p class="class-message" role="status">{demoMessage}</p>{/if}
 		</section>
 
 		<section class="classes-card">
@@ -397,6 +472,8 @@
 	.class-list { list-style: none; padding: 0; display: grid; gap: .6rem; }
 	.class-list li { display: flex; justify-content: space-between; gap: 1rem; padding: .7rem; background: rgba(0,0,0,.2); border-radius: 6px; }
 	.class-list small { opacity: .75; }
+	.class-actions, .class-edit { display:flex; gap:.45rem; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+	.class-edit input { max-width: 16rem; padding:.45rem; border-radius:6px; border:1px solid rgba(255,255,255,.25); }
 	.student-actions { display:flex; gap:.45rem; flex-wrap:wrap; justify-content:flex-end; }
 	.confirm-delete { background:#9e2f2f !important; color:#fff !important; }
 	.student-form { display: grid; gap: .75rem; max-width: 520px; }

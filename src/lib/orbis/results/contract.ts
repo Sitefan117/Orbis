@@ -15,6 +15,10 @@ export type ActivityPayload = {
   durationSeconds?: number;
   responseDetails?: ResponseDetail[];
   metadata?: Record<string, unknown>;
+  /** Permet de distinguer une séance de jeu d'un cours suivi. */
+  activityKind?: 'game' | 'course';
+  /** Regroupe les réponses d'une même séance ou d'un cours. */
+  sessionId?: string;
 };
 
 /** Trace structurée d'une question, sans enregistrer de document libre. */
@@ -54,6 +58,8 @@ export type ActivityEvent = {
   responseDetails?: ResponseDetail[];
   occurredAt: string;
   metadata?: Record<string, unknown>;
+  activityKind?: 'game' | 'course';
+  sessionId?: string;
   syncState: 'pending' | 'synced';
   syncedAt?: string;
 };
