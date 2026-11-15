@@ -1,6 +1,9 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { recordCourseActivity } from '$lib/orbis/tracking/client';
   import { getStudentName } from '$lib/orbis/identity/local-student';
+  import { createGameProgressService } from '$lib/orbis/persistence/game-services';
+  import type { GameProgressService } from '$lib/orbis/progress/contract';
 let steps = [
   // ============================================================
   // ÉTAGE 1 — PARTAGE ÉQUITABLE ET VOCABULAIRE
@@ -673,6 +676,7 @@ let steps = [
   let wrongAttempts = $state(0);
   let courseSessionId = $state(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `course-${Date.now()}`);
   let courseStartedAt = $state(Date.now());
+  let courseProgressService: GameProgressService<{ step: number }> | null = null;
 
   let activeStep = $derived(
     floorSteps[currentSubStepIndex] ?? floorSteps[0] ?? fallbackStep
@@ -696,6 +700,13 @@ let steps = [
       courseSessionId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `course-${Date.now()}`;
       courseStartedAt = Date.now();
     }
+  });
+
+  onMount(() => {
+    courseProgressService = createGameProgressService(getStudentName('Explorateur'), `fractionstower2-course-${floorNum}`);
+    void courseProgressService.loadProgress().then((result) => {
+      if (result.ok && result.value?.state?.step) currentSubStepIndex = Math.min(floorSteps.length - 1, result.value.state.step);
+    });
   });
 
   function normalizeAnswer(value: string): string {
@@ -750,6 +761,7 @@ let steps = [
 
     if (currentSubStepIndex < floorSteps.length - 1) {
       currentSubStepIndex += 1;
+      void courseProgressService?.saveProgress({ step: currentSubStepIndex }, 1, { label: `Cours fractions — étage ${floorNum}`, completed: currentSubStepIndex, total: floorSteps.length });
       userAnswer = '';
       feedbackMessage = '';
       isCorrect = false;
@@ -768,6 +780,7 @@ let steps = [
         sessionId: courseSessionId,
         metadata: { floor: floorNum, course: 'fractions', steps: floorSteps.length }
       });
+      void courseProgressService?.saveProgress({ step: floorSteps.length }, 1, { label: `Cours fractions — étage ${floorNum}`, completed: floorSteps.length, total: floorSteps.length });
       onComplete?.();
     }
   }

@@ -93,6 +93,7 @@
     skill: response.skillId ?? activity.skill_id,
     category: response.category ?? taxonomyFor(response.skillId ?? activity.skill_id)?.category
   }))).slice(0, 120));
+  const selectedSettings = $derived(selectedStudentActivities.filter((activity) => Object.keys(activity.metadata ?? {}).length > 0).slice(0, 12));
   const trendRows = $derived(Object.entries(filteredActivities.reduce<Record<string, { correct: number; total: number }>>((groups, item) => {
     const day = item.occurred_at.slice(0, 10);
     const group = groups[day] ?? { correct: 0, total: 0 };
@@ -256,7 +257,7 @@
   <article class="panel recent">
     <h3>Activités récentes</h3>
     {#if filteredActivities.length === 0}<p class="empty">Aucun bilan pour ces filtres.</p>{:else}
-      <div class="table-wrap"><table><thead><tr><th>Élève</th><th>Jeu</th><th>Résultat</th><th>Erreurs</th><th>Durée</th><th>Date</th></tr></thead><tbody>{#each filteredActivities.slice(0, 20) as item}<tr><td>{studentName(item.student_id)}</td><td>{gameName(item.game_id)}</td><td><strong>{item.correct_count}/{item.question_count}</strong></td><td>{item.error_count}</td><td>{item.duration_seconds ? duration(item.duration_seconds) : '—'}</td><td>{new Date(item.occurred_at).toLocaleDateString('fr-CH')}</td></tr>{/each}</tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Élève</th><th>Activité</th><th>Type</th><th>Résultat</th><th>Erreurs</th><th>Durée</th><th>Date</th></tr></thead><tbody>{#each filteredActivities.slice(0, 20) as item}<tr><td>{studentName(item.student_id)}</td><td>{gameName(item.game_id)}</td><td>{item.activity_kind === 'course' ? 'Cours' : 'Jeu'}</td><td><strong>{item.correct_count}/{item.question_count}</strong></td><td>{item.error_count}</td><td>{item.duration_seconds ? duration(item.duration_seconds) : '—'}</td><td>{new Date(item.occurred_at).toLocaleDateString('fr-CH')}</td></tr>{/each}</tbody></table></div>
     {/if}
   </article>
   {#if selectedStudent && selectedResponses.length}

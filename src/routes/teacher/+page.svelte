@@ -8,6 +8,7 @@
 	import RemoteTeacherDashboard from '$lib/orbis/teacher/RemoteTeacherDashboard.svelte';
 	import { currentSession, refreshRemoteSession, sessionRole, signInWithShortId, signOut, startSessionRefresh } from '$lib/orbis/auth/client';
 	import { createStudent, createTeacherClass, deleteStudent, deleteTeacherClass, exportStudentData, listTeacherClasses, listTeacherStudents, listTeacherStudentDocuments, renameTeacherClass, resetStudentPassword, type OrbisClass, type OrbisStudent, type RemoteStudentDocument } from '$lib/orbis/teacher/remote';
+	import { archiveTeacherTask, createTeacherTask, listTeacherTasks, type StudentTask } from '$lib/orbis/tasks/remote';
 
 	let { mode = 'dashboard' }: { mode?: 'dashboard' | 'admin' } = $props();
 	let isAuthenticated = $state(false);
@@ -43,6 +44,14 @@
 	let demoPassword = $state('');
 	let demoMessage = $state('');
 	let demoBusy = $state(false);
+	let teacherTasks = $state<StudentTask[]>([]);
+	let taskClassId = $state('');
+	let taskTitle = $state('');
+	let taskBody = $state('');
+	let taskGameId = $state('');
+	let taskDueAt = $state('');
+	let taskMessage = $state('');
+	let taskBusy = $state(false);
 	const demoProfiles = [
 		['renard01', 'Renard Rapide'], ['dauphin09', 'Dauphin Serein'], ['chat10', 'Chat Curieux'], ['singe11', 'Singe Farceur'],
 		['lynx02', 'Lynx Malin'], ['hibou04', 'Hibou Futé'], ['tigre05', 'Tigre Tranquille'], ['zebre06', 'Zèbre Rigolo'],
@@ -61,7 +70,7 @@
 					return;
 				}
 			isAuthenticated = true;
-			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); try { remoteDocuments = await listTeacherStudentDocuments(); } catch { remoteDocuments = []; } }
+			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); try { remoteDocuments = await listTeacherStudentDocuments(); } catch { remoteDocuments = []; } try { teacherTasks = await listTeacherTasks(); } catch { teacherTasks = []; } }
 			catch { classMessage = 'Session restaurée, mais les classes ne sont pas encore accessibles.'; }
 		})();
 	});
@@ -75,7 +84,7 @@
 		if (result.ok && result.role === 'teacher') {
 			isAuthenticated = true;
 			password = '';
-			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); try { remoteDocuments = await listTeacherStudentDocuments(); } catch { remoteDocuments = []; } } catch { classMessage = 'Connexion réussie, mais les classes ne sont pas encore accessibles.'; }
+			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); try { remoteDocuments = await listTeacherStudentDocuments(); } catch { remoteDocuments = []; } try { teacherTasks = await listTeacherTasks(); } catch { teacherTasks = []; } } catch { classMessage = 'Connexion réussie, mais les classes ne sont pas encore accessibles.'; }
 			return;
 		}
 		loginMessage = result.ok ? 'Ce compte n’est pas un compte enseignant.' : result.message;
@@ -171,6 +180,21 @@
 			demoMessage = `${created} compte(s) de simulation créé(s). Étape suivante : exécuter le script SQL de simulation sans PCP dans Supabase.`;
 		} catch (error) { demoMessage = `Simulation impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
 		finally { demoBusy = false; }
+	}
+
+	async function sendTask() {
+		if (!taskClassId || taskTitle.trim().length < 1 || taskBody.trim().length < 1) { taskMessage = 'Choisis une classe et renseigne un titre et une consigne.'; return; }
+		taskBusy = true; taskMessage = '';
+		try {
+			const created = await createTeacherTask({ classId: taskClassId, title: taskTitle, body: taskBody, targetGameId: taskGameId, dueAt: taskDueAt ? new Date(`${taskDueAt}T23:59:00`).toISOString() : undefined });
+			teacherTasks = [created, ...teacherTasks]; taskTitle = ''; taskBody = ''; taskGameId = ''; taskDueAt = ''; taskMessage = 'Consigne envoyée à la classe.';
+		} catch (error) { taskMessage = `Envoi impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
+		finally { taskBusy = false; }
+	}
+
+	async function archiveTask(task: StudentTask) {
+		try { await archiveTeacherTask(task.id); teacherTasks = teacherTasks.map((item) => item.id === task.id ? { ...item, active: false } : item); taskMessage = 'Consigne archivée.'; }
+		catch (error) { taskMessage = `Archivage impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
 	}
 
 	async function applyPasswordReset() {
@@ -349,6 +373,19 @@
 			{#if demoMessage}<p class="class-message" role="status">{demoMessage}</p>{/if}
 		</section>
 
+		<section class="classes-card task-card">
+			<h2>Consigne à faire</h2>
+			<p>Le message restera visible dans l’espace élève jusqu’à son archivage.</p>
+			<div class="task-form">
+				<select bind:value={taskClassId} aria-label="Classe destinataire"><option value="">Choisir une classe</option>{#each classes as classroom}<option value={classroom.id}>{classroom.name}</option>{/each}</select>
+				<input bind:value={taskTitle} placeholder="Titre · Aujourd’hui" maxlength="140" />
+				<textarea bind:value={taskBody} placeholder="Ex. 1. Fais Race. 2. Reprends ensuite le cours sur les fractions." maxlength="2000"></textarea>
+				<div class="task-options"><select bind:value={taskGameId} aria-label="Activité conseillée"><option value="">Aucune activité liée</option>{#each ['race','calculs','livrets','geometrie','numeria','mesurovia','conju_lab','grammaire_lab','musee_vocabulaire','shift','fractionstower2','mathhunt'] as game}<option value={game}>{game.replaceAll('_',' ')}</option>{/each}</select><input type="date" bind:value={taskDueAt} aria-label="Date limite" /><button disabled={taskBusy} onclick={() => void sendTask()}>{taskBusy ? 'Envoi…' : 'Envoyer la consigne'}</button></div>
+			</div>
+			{#if taskMessage}<p class="class-message" role="status">{taskMessage}</p>{/if}
+			{#if teacherTasks.filter((task) => task.active).length}<ul class="task-list">{#each teacherTasks.filter((task) => task.active).slice(0, 8) as task}<li><div><strong>{task.title}</strong><small>{classes.find((item) => item.id === task.class_id)?.name ?? 'Classe'}{task.target_game_id ? ` · ${task.target_game_id}` : ''}</small><p>{task.body}</p></div><button onclick={() => void archiveTask(task)}>Archiver</button></li>{/each}</ul>{/if}
+		</section>
+
 		<section class="classes-card">
 			<h2>Élèves de mes classes</h2>
 			{#if remoteStudents.length === 0}<p>Aucun élève distant.</p>{:else}
@@ -474,6 +511,14 @@
 	.class-list small { opacity: .75; }
 	.class-actions, .class-edit { display:flex; gap:.45rem; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
 	.class-edit input { max-width: 16rem; padding:.45rem; border-radius:6px; border:1px solid rgba(255,255,255,.25); }
+	.task-form { display:grid; gap:.65rem; }
+	.task-form textarea { min-height:6rem; resize:vertical; padding:.7rem; border-radius:8px; border:1px solid rgba(255,255,255,.25); font:inherit; }
+	.task-options { display:flex; gap:.6rem; flex-wrap:wrap; align-items:center; }
+	.task-options select,.task-options input { min-height:2.5rem; padding:.45rem; border-radius:7px; border:1px solid rgba(255,255,255,.25); }
+	.task-list { list-style:none; display:grid; gap:.6rem; padding:0; margin:1rem 0 0; }
+	.task-list li { display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; padding:.75rem; border-radius:8px; background:rgba(0,0,0,.18); }
+	.task-list small { display:block; opacity:.7; margin-top:.2rem; }
+	.task-list p { margin:.35rem 0 0; }
 	.student-actions { display:flex; gap:.45rem; flex-wrap:wrap; justify-content:flex-end; }
 	.confirm-delete { background:#9e2f2f !important; color:#fff !important; }
 	.student-form { display: grid; gap: .75rem; max-width: 520px; }

@@ -17,6 +17,7 @@
   import { getSupabasePublicConfig } from '$lib/orbis/persistence/supabase-rest';
   import { worlds, type WorldId } from '$lib/orbis/catalog/games';
   import { courses } from '$lib/orbis/catalog/courses';
+  import { listStudentTasks, type StudentTask } from '$lib/orbis/tasks/remote';
 
   // =========================================================
   // ÉTAT DE LA PAGE ET PROFIL ÉLÈVE
@@ -30,6 +31,7 @@
   let loginMessage = '';
   let loginLoading = false;
   let rememberStudent = false;
+  let studentTasks: StudentTask[] = [];
   let guestModeOpen = false;
   // Static prerendering has no query parameters; read them only in the browser.
   $: catalogParams = browser ? $page.url.searchParams : new URLSearchParams();
@@ -161,7 +163,7 @@
     studentName = storedName;
     nameInput = storedName;
     startSessionRefresh();
-    void refreshRemoteSession().then(() => { remoteConnected = Boolean(currentSession()); });
+    void refreshRemoteSession().then(async () => { remoteConnected = Boolean(currentSession()); if (remoteConnected) { try { studentTasks = await listStudentTasks(); } catch { studentTasks = []; } } });
 
     try {
       const raw = localStorage.getItem('orbis-preferences');
@@ -318,6 +320,7 @@
       nameInput = displayName;
       storeStudentName(displayName);
       remoteConnected = true;
+      try { studentTasks = await listStudentTasks(); } catch { studentTasks = []; }
       password = '';
       loginMessage = 'Connexion réussie. Tes résultats seront synchronisés.';
     } catch {
@@ -327,6 +330,12 @@
     } finally {
       loginLoading = false;
     }
+  }
+
+  function taskHref(task: StudentTask): string | null {
+    if (!task.target_game_id) return null;
+    const world = worlds.find((item) => item.id === task.target_game_id);
+    return world ? `${base}${world.route}` : null;
   }
 
   async function logout() {
@@ -482,6 +491,20 @@
             <div class:remote-status={remoteConnected} class="connection-status">
               {#if remoteConnected}Compte élève connecté · données synchronisables{:else}Mode local · <a href={`${base}/student`}>se connecter à Supabase</a>{/if}
             </div>
+            {#if remoteConnected && studentTasks.length}
+              <aside class="student-task-panel" aria-labelledby="student-tasks-heading">
+                <div><span class="student-task-kicker">À faire maintenant</span><h2 id="student-tasks-heading">Ton parcours du jour</h2></div>
+                <div class="student-task-list">
+                  {#each studentTasks as task, index}
+                    <article class="student-task" style={`--task-index:${index}`}>
+                      <span class="student-task-number">{String(index + 1).padStart(2, '0')}</span>
+                      <div><h3>{task.title}</h3><p>{task.body}</p>{#if task.due_at}<small>À faire pour le {new Date(task.due_at).toLocaleDateString('fr-CH')}</small>{/if}</div>
+                      {#if taskHref(task)}<a class="task-go" href={taskHref(task)!}>Ouvrir ↗</a>{/if}
+                    </article>
+                  {/each}
+                </div>
+              </aside>
+            {/if}
             <div class="portal-grid">
               <div class="portal-label"><span>Ton prochain pas.</span><span class="portal-label-arrow" aria-hidden="true">↓</span></div>
               <a class="portal portal-games" href={catalogHref(base, 'jeux', studentName)}><span class="portal-number">01 / S’entraîner</span><strong>Les jeux</strong><span class="portal-arrow" aria-hidden="true">↗</span></a>
@@ -614,6 +637,18 @@
   .connection-status { padding:.75rem 1.5rem; border-bottom:1px solid var(--orbis-line); color:#7a4c17; background:#fff2d9; font:600 .78rem/1.4 var(--orbis-label-font); }
   .connection-status.remote-status { color:#1f6245; background:#e5f3e8; }
   .connection-status a { color:inherit; text-decoration:underline; text-underline-offset:3px; }
+  .student-task-panel { padding:1.4rem 1.5rem; border-bottom:1px solid var(--orbis-line); background:linear-gradient(120deg,var(--orbis-card-surface),color-mix(in srgb,var(--orbis-orange) 12%,var(--orbis-card-surface))); }
+  .student-task-kicker { color:var(--orbis-muted); font:600 .7rem/1.4 var(--orbis-label-font); letter-spacing:.08em; text-transform:uppercase; }
+  .student-task-panel h2 { margin:.35rem 0 1rem; font:700 clamp(1.4rem,2.4vw,2rem)/1.2 Arial,Helvetica,sans-serif; }
+  .student-task-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:.7rem; }
+  .student-task { display:grid; grid-template-columns:auto 1fr auto; gap:.7rem; align-items:start; padding:1rem; border:1px solid var(--orbis-line); background:var(--orbis-card-surface); animation:task-arrive 360ms ease both; animation-delay:calc(var(--task-index) * 80ms); }
+  .student-task-number { color:var(--orbis-orange); font:700 .75rem/1.4 var(--orbis-label-font); }
+  .student-task h3 { margin:0; font-size:1rem; }
+  .student-task p { margin:.35rem 0 0; color:var(--orbis-muted); font-size:.88rem; white-space:pre-line; }
+  .student-task small { display:block; margin-top:.5rem; color:var(--orbis-muted); font-size:.75rem; }
+  .task-go { align-self:center; padding:.45rem .6rem; border:1px solid var(--orbis-ink); font:600 .75rem/1.4 var(--orbis-label-font); white-space:nowrap; }
+  .task-go:hover { background:var(--orbis-ink); color:var(--orbis-paper); }
+  @keyframes task-arrive { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
   .portal-label { padding:1.5rem; display:flex; flex-direction:column; justify-content:space-between; gap:1rem; font:500 .8125rem/1.5 var(--orbis-label-font); }
   .portal-label-arrow { font:400 2rem/1 Arial,sans-serif; }
   .portal { display:flex; flex-direction:column; position:relative; gap:2rem; padding:1.4rem 1.5rem; min-height:160px; border-left:1px solid var(--orbis-line); transition:background-color 160ms ease; }
@@ -674,6 +709,7 @@
   .motion-reduced .portal-arrow,.motion-reduced .portal,.motion-reduced .filter-options button { transition:none; }
   .motion-reduced .portal:hover .portal-arrow { transform:none; }
   @media (prefers-reduced-motion:reduce) { .brand-orbit,.encouragement-track { animation:none; } .portal-arrow,.portal,.filter-options button { transition:none; } .portal:hover .portal-arrow { transform:none; } }
+  @media (prefers-reduced-motion:reduce) { .student-task { animation:none; } }
   @media (max-width:1160px) { .catalog-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } .hero-grid { grid-template-columns:.65fr 1.2fr 1fr; } .hero-intro { padding:1.5rem; } }
   @media (max-width:900px) { .catalog-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .site-header { grid-template-columns:1fr auto; gap:.4rem 1rem; } .main-navigation { grid-column:1/-1; grid-row:2; justify-content:center; } .comfort-toggle { grid-column:2; grid-row:1; } .hero-grid { grid-template-columns:1.2fr 1fr; } .hero-motto { display:none; } .hero-grid>div.hero-intro { border-left:0; } .catalog-heading { grid-template-columns:1.5fr 1fr; } }
   @media (max-width:580px) { .orbis-shell { padding:0 .5rem; } .site-header { padding:.8rem 1rem; gap:.4rem .8rem; } .orbis-brand { font-size:1.4rem; gap:.4rem; } .brand-symbol { width:33px; height:33px; } .comfort-toggle { font-size:.7rem; gap:.6rem; padding:.6rem; } .main-navigation { font-size:.8125rem; gap:1.5rem; } .editorial-meta { padding:1rem 1rem .4rem; } .editorial-meta>span:last-child { display:none; } .wordmark { padding:.8rem 1rem 1.1rem; } .wordmark-corner { width:8px; height:8px; right:1rem; top:.8rem; } .hero-grid { grid-template-columns:1fr; } .hero-intro { padding:1.5rem 1rem; } .hero-intro h2 { font-size:2rem; } .hero-grid>div.robot-cell { border-left:0; border-top:1px solid var(--orbis-line); min-height:220px; } .robot-caption { align-self:center; padding:.8rem 0 0; } .robot-cell :global(.orbit-companion) { max-height:230px; } .portal-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .portal-label { display:none; } .portal { min-height:142px; padding:1.2rem 1rem; } .portal:first-of-type { border-left:0; } .portal strong { font-size:1.8rem; } .portal-arrow { right:.85rem; bottom:.8rem; } .portal-number { font-size:.7rem; } .home-note { padding:1rem; } .home-note>span:last-child { display:none; } .catalog-grid { grid-template-columns:1fr; } .catalog-heading { grid-template-columns:1fr; gap:1rem; padding:1.8rem 1rem; } .catalog-heading h1 { font-size:3rem; } .catalog-heading p { font-size:1rem; } .section-rail { padding:.4rem 1rem; } .filter-row { grid-template-columns:1fr; gap:.3rem; padding:.8rem 1rem; } .filter-label { padding:0; } .catalog-meta { padding:.65rem 1rem; } .catalog-meta>span { display:none; } .filter-options { gap:.4rem; } .filter-options button { padding:.6rem .75rem; } .motion-toggle { min-width:88px; padding:.55rem .6rem; } .encouragement-static { font-size:.75rem; padding:.55rem .75rem; } .site-footer { padding:1rem; } .appearance-panel { grid-template-columns:1fr; padding:1rem; } .footer-links { gap:.75rem; } }
