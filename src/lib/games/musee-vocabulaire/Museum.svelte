@@ -118,7 +118,7 @@
   let alphabet: string[] = [];
   $: visibleVocabulary = distinctWords(playing).sort((a, b) => a.word.localeCompare(b.word, 'fr'));
   $: mastery = masterySummary(vocabularyProgress);
-  function audioPath(entry: Word) { return audioWords.has(entry.id) ? `${base}/audio/musee-vocabulaire/${entry.id}-${audioVoice}.aiff` : ''; }
+  function audioPath(entry: Word) { return audioWords.has(entry.id) ? `${base}/audio/musee-vocabulaire/${entry.id}-${audioVoice}.wav` : ''; }
   $: matchImages = options;
 
   function getCategories(entries: Word[]) {
