@@ -34,18 +34,18 @@ const headers = rows.shift();
 const idIndex = headers.indexOf('id');
 const wordIndex = headers.indexOf('mot');
 const words = new Map(rows.map((row) => [row[idIndex], row[wordIndex]]));
-const voices = { eddy: 'Eddy (Français (France))', flo: 'Flo (Français (France))' };
+const piper = process.env.PIPER_BIN || 'piper';
+const model = process.env.PIPER_MODEL;
+if (!model) throw new Error('Définis PIPER_MODEL avec le chemin du modèle Piper français.');
 mkdirSync(output, { recursive: true });
 
 for (const id of manifest.words) {
   const word = words.get(id);
   if (!word) throw new Error(`Mot absent du CSV : ${id}`);
-  for (const voice of manifest.voices) {
-    const aiff = resolve('/tmp', `${id}-${voice}.aiff`);
-    const wav = resolve(output, `${id}-${voice}.wav`);
-    execFileSync('say', ['-v', voices[voice], '-o', aiff, word], { stdio: 'inherit' });
-    execFileSync('afconvert', [aiff, wav, '-f', 'WAVE', '-d', 'LEI16'], { stdio: 'inherit' });
-  }
+  const wav = resolve(output, `${id}-piper.wav`);
+  execFileSync(piper, [
+    '-m', model, '--length-scale', '1.12', '--sentence-silence', '0.25', '-f', wav
+  ], { input: `${word}\n`, stdio: ['pipe', 'inherit', 'inherit'] });
 }
 
-console.log(`${manifest.words.length * manifest.voices.length} fichiers WAV générés.`);
+console.log(`${manifest.words.length} fichiers WAV Piper générés.`);

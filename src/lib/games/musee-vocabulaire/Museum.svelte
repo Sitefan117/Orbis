@@ -102,8 +102,8 @@
   let responseDetails: ResponseDetail[] = [];
   let vocabularyProgress: VocabularyProgress = {};
   const audioWords = new Set(['actions-boire','actions-dormir','actions-manger','actions-marcher','actions-s-habiller','actions-se-lever','actions-se-reveiller','alimentation-banane','alimentation-fromage','alimentation-lait','alimentation-pain','alimentation-pates','alimentation-pomme','alimentation-riz','corps-bouche','corps-dent','corps-main','corps-nez','corps-oeil','corps-oreille','corps-pied','ecole-bibliotheque','ecole-cahier','ecole-cartable','ecole-classe','ecole-ecole','ecole-recreation','ecole-tableau','emotions-calme','emotions-content','emotions-fatigue','emotions-fier','emotions-inquiet','emotions-surpris','emotions-triste','famille-famille','famille-frere','famille-grand-mere','famille-mere','famille-parent','famille-pere','famille-soeur','logement-bail','logement-charges','logement-garantie-de-loyer','logement-locataire','logement-loyer','logement-proprietaire','logement-regie','maison-chaise','maison-cle','maison-fenetre','maison-lit','maison-maison','maison-porte','maison-table','temps-annee','temps-jour','temps-lundi','temps-mardi','temps-mercredi','temps-mois','temps-semaine','ville-bus','ville-feu-de-circulation','ville-gare','ville-passage-pieton','ville-train','ville-tram','ville-velo']);
-  let audioVoice: 'piper' | 'eddy' | 'flo' = 'piper';
   let audioTestOnly = false;
+  let spokenAudio: HTMLAudioElement | undefined;
 
   $: categories = getCategories(bank);
   $: selectedEntries = bank.filter((entry) => selectedThemes.includes(entry.theme) && (!audioTestOnly || audioWords.has(entry.id)));
@@ -118,7 +118,13 @@
   let alphabet: string[] = [];
   $: visibleVocabulary = distinctWords(playing).sort((a, b) => a.word.localeCompare(b.word, 'fr'));
   $: mastery = masterySummary(vocabularyProgress);
-  function audioPath(entry: Word, voice: 'piper' | 'eddy' | 'flo') { return audioWords.has(entry.id) ? `${base}/audio/musee-vocabulaire/${entry.id}-${voice}.wav` : ''; }
+  function audioPath(entry: Word) { return `${base}/audio/musee-vocabulaire/${entry.id}-piper.wav`; }
+  function playWord(entry: Word) {
+    if (typeof Audio === 'undefined') return;
+    spokenAudio?.pause();
+    spokenAudio = new Audio(audioPath(entry));
+    void spokenAudio.play();
+  }
   $: matchImages = options;
 
   function getCategories(entries: Word[]) {
@@ -293,6 +299,7 @@
 
   function choose(entry: Word) {
     if (!target || solved || eliminated.includes(entry.id)) return;
+    if (mode === 'whack-image' || mode === 'millionaire') playWord(entry);
     if (entry.id === target.id) success(target);
     else {
       eliminated = [...eliminated, entry.id];
@@ -340,7 +347,7 @@
 
   function checkParts() {
     if (!target || solved || parts.some((part) => !part)) return;
-    if (parts.join('') === target.word) success(target);
+    if (parts.join('') === target.word) { playWord(target); success(target); }
     else report('Relis ton mot. Il faut changer au moins un morceau.', 'retry');
   }
 
@@ -360,6 +367,7 @@
   }
 
   function selectMatch(entry: Word) {
+    playWord(entry);
     if (picked?.id !== entry.id) {
       eliminated = [];
     }
@@ -537,10 +545,8 @@
     {#if wordListOpen}
       <section class="word-bank" aria-label="Liste des mots choisis">
         <div><h2>Les mots de mes thèmes</h2><p>Tu peux regarder l’orthographe et le sens d’un mot.</p></div>
-        <label class="audio-choice">Voix
-          <select bind:value={audioVoice}><option value="piper">Piper · voix choisie</option><option value="eddy">Voix 1</option><option value="flo">Voix 2</option></select>
-        </label>
-        <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong><span>{entry.definition}</span>{#if audioPath(entry, audioVoice)}<audio controls preload="none" src={audioPath(entry, audioVoice)} aria-label={`Écouter ${entry.word}`}></audio>{/if}</li>{/each}</ul>
+        <p class="audio-choice">Voix : Piper · français</p>
+        <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong><span>{entry.definition}</span>{#if audioPath(entry)}<audio controls preload="none" src={audioPath(entry)} aria-label={`Écouter ${entry.word}`}></audio>{/if}</li>{/each}</ul>
       </section>
     {/if}
     <section class="game" aria-label={modeLabels[mode]}>
@@ -614,7 +620,7 @@
           {:else if mode === 'whack-image'}
             <span class="sprite large" role="img" aria-label={target.definition} style={spriteStyle(base, target.sprite)}></span>
           {:else if mode === 'whack-word'}
-            <p class="prompt">{target.word}</p>
+            <div class="prompt-with-audio"><p class="prompt">{target.word}</p><button aria-label={`Écouter ${target.word}`} on:click={() => target && playWord(target)}>🔊 Écouter</button></div>
           {:else}
             <p class="prompt">{mode === 'millionaire' && quizFormat === 'phrases' ? target.sentence : target.definition}</p>
           {/if}
@@ -785,6 +791,7 @@
   .sprite { display: block; width: min(6rem, 100%); aspect-ratio: 1; margin: auto; background-repeat: no-repeat; }
   .sprite.large { width: min(11rem, 100%); }
   .prompt { font-size: clamp(1.1rem, 3vw, 1.65rem); font-weight: 750; }
+  .prompt-with-audio { display: flex; align-items: center; justify-content: center; gap: .65rem; flex-wrap: wrap; }
   .controls, .game .choices, .tiles, .game .actions { justify-content: center; margin-top: .85rem; }
   .choices button { min-width: min(7rem, 100%); text-align: center; }
   .slots { overflow-wrap: anywhere; font-weight: 800; }
@@ -795,8 +802,8 @@
   .vignettes .chosen { border-color: #25453c; background: #e9f0e8; }
   .matches { display: grid; gap: .75rem; }
   .search { display: grid; grid-template-columns: minmax(0, 30rem) minmax(0, 12rem); gap: 1rem; justify-content: center; margin-bottom: .75rem; }
-  .grid { display: grid; align-self: start; gap: 1px; }
-  .grid button { display: grid; place-items: center; padding: 0; border-radius: .2rem; aspect-ratio: 1; min-width: 0; text-align: center; line-height: 1; font-size: clamp(.68rem, 2.5vw, 1rem); }
+  .grid { display: grid; align-self: start; gap: .18rem; align-items: stretch; justify-items: stretch; }
+  .grid button { display: grid; place-items: center; width: 100%; height: 100%; box-sizing: border-box; padding: 0; border-radius: .2rem; aspect-ratio: 1; min-width: 0; text-align: center; line-height: 1; font-size: clamp(.68rem, 2.5vw, 1rem); }
   .grid button.blue { background: #b5dcf7; border-color: #267297; }
   button.green, .grid button.green, li.green { background: #bde6c8; color: #174c30; border-color: #387a50; opacity: 1; }
   button.faded { opacity: .35; text-decoration: line-through; }

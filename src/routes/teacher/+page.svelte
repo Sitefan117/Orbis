@@ -327,21 +327,45 @@
 		</div>
 	</div>
 {:else}
-	<div class="teacher-container">
-		<header class="teacher-header">
-				<div><p class="teacher-kicker">ORBIS · ESPACE ENSEIGNANT</p><h1>{mode === 'admin' ? 'Administration' : 'Tableau de bord pédagogique'}</h1><p>{mode === 'admin' ? 'Classes, comptes élèves et outils de maintenance.' : 'Les signaux utiles, sans remplacer ton observation professionnelle.'}</p></div>
-				<div class="teacher-header-actions"><a class="mode-link" href={mode === 'admin' ? `${base}/teacher` : `${base}/teacher/admin`}>{mode === 'admin' ? '← Retour au tableau' : 'Administration →'}</a><button class="logout-button" onclick={() => void logout()}>Se déconnecter</button></div>
-		</header>
+		{#if mode === 'dashboard'}
+			<div class="teacher-shell">
+				<aside class="teacher-sidebar" aria-label="Navigation enseignant">
+					<a class="sidebar-brand" href={`${base}/teacher`}><span class="brand-orb">✦</span><span><strong>ORBIS</strong><small>Teacher cockpit</small></span></a>
+					<p class="sidebar-label">ESPACE DE SUIVI</p>
+					<nav class="sidebar-nav">
+						<a class="active" href={`${base}/teacher`}><span>⌂</span> Vue générale</a>
+						<a href={`${base}/teacher#details` }><span>◈</span> Résultats élèves</a>
+						<a href={`${base}/teacher/admin#tasks`}><span>✓</span> Consignes</a>
+						<a href={`${base}/teacher/admin#classes`}><span>▦</span> Classes et élèves</a>
+					</nav>
+					<p class="sidebar-label">OUTILS</p>
+					<nav class="sidebar-nav">
+						<a href={`${base}/teacher/admin`}><span>⚙</span> Administration</a>
+						<a href={`${base}/confidentialite`}><span>⌁</span> Données et confidentialité</a>
+					</nav>
+					<div class="sidebar-bottom"><div class="nox-mini">N</div><div><strong>Nox</strong><small>Assistant Orbis</small></div></div>
+				</aside>
+				<main class="teacher-main">
+					<header class="teacher-header">
+						<div><p class="teacher-kicker">ORBIS · ESPACE ENSEIGNANT</p><h1>Tableau de bord pédagogique</h1><p>Les signaux utiles, sans remplacer ton observation professionnelle.</p></div>
+						<div class="teacher-header-actions"><span class="live-status"><i></i> Données synchronisées</span><a class="mode-link" href={`${base}/teacher/admin`}>Administration →</a><button class="logout-button" onclick={() => void logout()}>Se déconnecter</button></div>
+					</header>
+					<RemoteTeacherDashboard {classes} students={remoteStudents} documents={remoteDocuments} />
+				</main>
+			</div>
+		{:else}
+		<div class="teacher-container">
+			<header class="teacher-header">
+				<div><p class="teacher-kicker">ORBIS · ESPACE ENSEIGNANT</p><h1>Administration</h1><p>Classes, comptes élèves et outils de maintenance.</p></div>
+				<div class="teacher-header-actions"><a class="mode-link" href={`${base}/teacher`}>← Retour au tableau</a><button class="logout-button" onclick={() => void logout()}>Se déconnecter</button></div>
+			</header>
 
-			{#if mode === 'dashboard'}
-				<RemoteTeacherDashboard {classes} students={remoteStudents} documents={remoteDocuments} />
-			{:else}
 		<details class="secondary-zone">
 			<summary>Données locales de cet appareil</summary>
 			<LocalTrackingPanel />
 		</details>
 
-		<section class="classes-card">
+		<section class="classes-card" id="classes">
 			<h2>Mes classes</h2>
 			<div class="class-create-row">
 				<input type="text" bind:value={newClassName} placeholder="Nom de la classe" maxlength="100" />
@@ -375,7 +399,7 @@
 			{#if demoMessage}<p class="class-message" role="status">{demoMessage}</p>{/if}
 		</section>
 
-		<section class="classes-card task-card">
+		<section class="classes-card task-card" id="tasks">
 			<h2>Consigne à faire</h2>
 			<p>Le message restera visible dans l’espace élève jusqu’à son archivage.</p>
 			<div class="task-form">
@@ -450,9 +474,9 @@
 					</tbody>
 				</table>
 			</div>
-		{/if}
 			{/if}
 	</div>
+		{/if}
 {/if}
 
 <style>
