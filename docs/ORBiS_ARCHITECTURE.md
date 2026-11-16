@@ -76,7 +76,7 @@ La plupart des données locales sont propres à un jeu. La progression de Numér
 | Jeu/activité | État constaté dans le dépôt | Reprise d’une partie |
 | --- | --- | --- |
 | Livrets | Envoie un rapport vers l’API de résultats. | Pas de sauvegarde de session repérée. |
-| Géométrie | Envoie un rapport vers l’API ; son identifiant `geometrie` est reconnu par le type `WorldId`. | Pas de sauvegarde de session repérée. |
+| Géométrie / Nexus | Enregistre localement la mission en cours, reprend la question active et dépose un bilan détaillé ; une session Supabase authentifiée peut synchroniser la sauvegarde et le résultat. | Reprise au même niveau, mode, question, sélection, indices, essais et résultats intermédiaires ; dépend du navigateur sans compte distant. |
 | Calculs | Envoie un rapport vers l’API de résultats. | Pas de sauvegarde de session repérée. |
 | Numéria | Sauvegarde locale par nom, migration héritée, progression et mission active ; envoie aussi un rapport. | Reprise au même royaume, à la même question, avec réponse, essais, indice et résultats intermédiaires. Reste limitée à ce navigateur jusqu’à la synchronisation distante. |
 | Mesurovia | Sauvegarde locale versionnée avec profils et migration d’une ancienne clé. | Progression de jeu conservée ; état exact de session à détailler. |

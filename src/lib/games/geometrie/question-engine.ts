@@ -250,3 +250,37 @@ export function generateQuestion(level: Level, requestedMode: Mode, random: () =
   if (validateQuestion(fallback)) return fallback;
   throw new Error(`Le moteur n'a pas réussi à créer une question valide pour ${level} / ${chosenMode}.`);
 }
+
+/** Deux enquêtes ciblées, indépendantes des quatre modes historiques. */
+export function generateFocusedQuestion(level: Level, focus: 'triangles' | 'solides', random: () => number = Math.random): Question {
+  const pool = getFiguresForLevel(level).filter((figure) => focus === 'triangles' ? figure.isTriangle : figure.kind === 'solid');
+  const target = choose(pool, random);
+  if (focus === 'triangles') {
+    const right = (target.properties.rightAngles ?? 0) > 0;
+    return {
+      mode: 'A', text: 'Ce triangle possède-t-il un angle droit ?', type: 'single',
+      options: [{ id: 'yes', label: 'Oui, il possède un angle droit' }, { id: 'no', label: 'Non, aucun angle droit' }],
+      correctIds: [right ? 'yes' : 'no'], focusFigure: target,
+      explanation: `${target.name} : ${target.definition}`,
+      progressiveHints: ['Cherche un coin qui forme un quart de tour.', 'Un angle droit peut être vérifié avec une équerre.'], initialHintCount: 1
+    };
+  }
+  const count = choose(['faces', 'edges', 'vertices'] as const, random);
+  const expected = target.properties[count] ?? 0;
+  const label = count === 'faces' ? 'faces' : count === 'edges' ? 'arêtes' : 'sommets';
+  // Cube et pavé ont les mêmes dénombrements en 6H : varier avec la forme des faces.
+  if (level === '6H') return {
+    mode: 'C', text: 'Quelle forme ont les faces de ce solide ?', type: 'single', focusFigure: target,
+    options: [{ id: 'square', label: 'Des carrés identiques' }, { id: 'rectangle', label: 'Des rectangles, pas tous carrés' }],
+    correctIds: [target.id === 'cube' ? 'square' : 'rectangle'],
+    explanation: `${target.name} : ${target.definition}`,
+    progressiveHints: ['Observe les faces visibles.', 'Un carré a quatre côtés égaux.'], initialHintCount: 1
+  };
+  const values = shuffle([expected, expected + 1, Math.max(1, expected - 1)], random);
+  return {
+    mode: 'C', text: `Combien ce solide possède-t-il de ${label} ?`, type: 'single', focusFigure: target,
+    options: values.map((value) => ({ id: String(value), label: String(value) })), correctIds: [String(expected)],
+    explanation: `${target.name} : ${target.definition}`,
+    progressiveHints: ['Compte aussi les éléments cachés.', 'Imagine le solide tourné dans tes mains.'], initialHintCount: 1
+  };
+}

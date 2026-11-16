@@ -171,5 +171,20 @@ export const courses: CourseEntry[] = [
       title: "Le Défi des Formes",
       route: "/geometrie"
     }
+  },
+  {
+    id: "aide-memoire-geometrie",
+    title: "Géométrie — aide-mémoire 6H à 8H",
+    subject: "Mathématiques",
+    domain: "Espace",
+    description: "Vocabulaire, propriétés, figures planes, solides et méthode pour justifier une réponse.",
+    level: "6H-8H",
+    duration: "10 min",
+    isInteractive: false,
+    href: coursePaths.geometry.aideMemoire,
+    gameLink: {
+      title: "Jouer à Nexus",
+      route: "/geometrie"
+    }
   }
 ];
