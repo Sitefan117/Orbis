@@ -118,7 +118,7 @@
   let alphabet: string[] = [];
   $: visibleVocabulary = distinctWords(playing).sort((a, b) => a.word.localeCompare(b.word, 'fr'));
   $: mastery = masterySummary(vocabularyProgress);
-  function audioPath(entry: Word) { return audioWords.has(entry.id) ? `${base}/audio/musee-vocabulaire/${entry.id}-${audioVoice}.wav` : ''; }
+  function audioPath(entry: Word, voice: 'eddy' | 'flo') { return audioWords.has(entry.id) ? `${base}/audio/musee-vocabulaire/${entry.id}-${voice}.wav` : ''; }
   $: matchImages = options;
 
   function getCategories(entries: Word[]) {
@@ -540,7 +540,7 @@
         <label class="audio-choice">Voix
           <select bind:value={audioVoice}><option value="eddy">Voix 1</option><option value="flo">Voix 2</option></select>
         </label>
-        <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong><span>{entry.definition}</span>{#if audioPath(entry)}<audio controls preload="none" src={audioPath(entry)} aria-label={`Écouter ${entry.word}`}></audio>{/if}</li>{/each}</ul>
+        <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong><span>{entry.definition}</span>{#if audioPath(entry, audioVoice)}<audio controls preload="none" src={audioPath(entry, audioVoice)} aria-label={`Écouter ${entry.word}`}></audio>{/if}</li>{/each}</ul>
       </section>
     {/if}
     <section class="game" aria-label={modeLabels[mode]}>
