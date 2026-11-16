@@ -13,7 +13,9 @@
     réparer: ['réparer', 'réparation', 'réparateur'],
     apprendre: ['apprendre', 'apprentissage', 'apprenti'],
     protéger: ['protéger', 'protection', 'protecteur'],
-    travailler: ['travail', 'travailler', 'travailleur']
+    travailler: ['travail', 'travailler', 'travailleur'],
+    lire: ['lire', 'lecture', 'lecteur'],
+    écrire: ['écrire', 'écriture', 'écrivain']
   };
   let mode: LabMode = 'dialogue';
   let index = 0;
@@ -37,6 +39,9 @@
       return item ? { prompt, choices, answer: item.word, word: item.word } : undefined;
     };
     return [
+      pick('cahier', 'Je prends mon ___ pour écrire.', ['cahier', 'tableau', 'récréation']),
+      pick('consigne', 'Je lis la ___ avant de commencer.', ['consigne', 'gomme', 'bibliothèque']),
+      pick('question', 'Je pose une ___ au professeur.', ['question', 'feuille', 'réponse']),
       pick('rendez-vous', 'Bonjour, je voudrais prendre un ___ chez le médecin.', ['rendez-vous', 'terrain', 'bouquet']),
       pick('ordonnance', 'Bonjour, voici mon ___. Je voudrais ce médicament.', ['ordonnance', 'contrat', 'maillot']),
       pick('place d’apprentissage', 'Je cherche une ___ dans le métier de fleuriste.', ['place d’apprentissage', 'sortie', 'douleur']),
@@ -48,6 +53,8 @@
   function buildOrders(entries: Word[]): Ordered[] {
     const wordsSet = new Set(entries.map((entry) => entry.word.toLocaleLowerCase('fr')));
     const candidates: Ordered[] = [
+      { prompt: 'En classe', parts: ['Je lis', 'la consigne', 'avant de répondre'] },
+      { prompt: 'Pour demander de l’aide', parts: ['Je pose', 'une question', 'au professeur'] },
       { prompt: 'À la pharmacie', parts: ['Bonjour', 'je voudrais', 'ce médicament', 's’il vous plaît'] },
       { prompt: 'Pour un apprentissage', parts: ['Je cherche', 'une place', 'dans cette profession'] },
       { prompt: 'À la poste', parts: ['Je voudrais', 'envoyer', 'ce colis'] },
