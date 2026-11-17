@@ -4,6 +4,7 @@
   import { clearLocalActivityEvents, getLocalActivityEvents, getLocalGameSaves, type LocalSaveEnvelope } from '$lib/orbis/persistence/local-store';
   import type { ActivityEvent } from '$lib/orbis/results/contract';
   import { studentStorageScope } from '$lib/orbis/identity/local-student';
+  import { GEOMETRY_FIGURES } from '$lib/games/geometrie/figures';
 
   let events = $state<ActivityEvent[]>([]);
   let saves = $state<LocalSaveEnvelope[]>([]);
@@ -42,6 +43,22 @@
       errors: [...errors].sort((a, b) => b[1] - a[1]).slice(0, 5)
     };
   }));
+  const nexusRows = $derived.by(() => {
+    const groups = new Map<string, { figure: string; students: Set<string>; sessions: number; checks: number; hints: number }>();
+    for (const event of events) {
+      if (event.gameId !== 'geometrie' || typeof event.metadata?.figureId !== 'string') continue;
+      const figure = GEOMETRY_FIGURES.find((item) => item.id === event.metadata?.figureId);
+      if (!figure) continue;
+      const row = groups.get(figure.id) ?? { figure: figure.name, students: new Set<string>(), sessions: 0, checks: 0, hints: 0 };
+      row.students.add(studentStorageScope(event.studentName));
+      row.sessions += 1;
+      const checks = Number(event.metadata?.totalChecks ?? event.metadata?.totalAttempts);
+      if (Number.isFinite(checks) && checks >= 1) row.checks += checks;
+      row.hints += event.hintsUsed ?? 0;
+      groups.set(figure.id, row);
+    }
+    return [...groups.values()].map((row) => ({ figure: row.figure, students: row.students.size, sessions: row.sessions, checks: row.checks, hints: row.hints }));
+  });
 
   onMount(refresh);
 
@@ -143,6 +160,14 @@
     </div>
   {/if}
 
+  {#if nexusRows.length}
+    <div class="nexus-followup">
+      <h3>Nexus · constructions sur cet appareil</h3>
+      <p>Figures terminées, élèves distincts, vérifications et indices. Un croquis terminé n’est pas une note.</p>
+      <div class="table-wrap"><table><thead><tr><th>Figure</th><th>Élèves</th><th>Croquis</th><th>Vérifications</th><th>Indices</th></tr></thead><tbody>{#each nexusRows as row}<tr><td>{row.figure}</td><td>{row.students}</td><td>{row.sessions}</td><td>{row.checks}</td><td>{row.hints}</td></tr>{/each}</tbody></table></div>
+    </div>
+  {/if}
+
   <div class="summary" aria-label="Résumé du suivi">
     <article><strong>{totals.students}</strong><span>élève(s)</span></article>
     <article><strong>{totals.activities}</strong><span>activité(s)</span></article>
@@ -179,6 +204,7 @@
 
 <style>
   .grammar-followup{margin:1rem 0;padding:1rem;background:#eaf5ee;color:#183c2c;border-left:5px solid #3b9860}.grammar-followup h3{margin:0 0 .3rem}.grammar-followup p{margin:.2rem 0 .8rem}.grammar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.7rem}.grammar-grid article{display:grid;gap:.2rem;padding:.7rem;background:white;border:1px solid #b9d4c3}.grammar-grid small{color:#365a46}
+  .nexus-followup{margin:1rem 0;padding:1rem;border:1px solid #425b62;border-radius:12px;background:#18292f;color:#e7f8fa}.nexus-followup h3{margin:0 0 .3rem}.nexus-followup p{color:#c8dde0}.nexus-followup table{width:100%;border-collapse:collapse}.nexus-followup th,.nexus-followup td{padding:.5rem;text-align:left;border-bottom:1px solid #405961}
   .panel { background: #1e1e1e; border: 1px solid #3a3a3a; border-radius: 16px; padding: 1.25rem; margin-bottom: 2rem; box-shadow: 0 8px 25px rgb(0 0 0 / .22); }
   .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
   .eyebrow { margin: 0 0 .25rem; color: #ffcc00; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; font-size: .75rem; }

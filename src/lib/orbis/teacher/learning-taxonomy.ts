@@ -1,3 +1,5 @@
+import { GEOMETRY_FIGURES } from '../../games/geometrie/figures';
+
 /**
  * Vocabulaire pédagogique partagé par le tableau enseignant.
  *
@@ -29,7 +31,11 @@ export const LEARNING_TAXONOMY: Record<string, LearningTaxonomyEntry> = {
 };
 
 export function taxonomyFor(skillId?: string | null): LearningTaxonomyEntry | null {
-  return skillId ? LEARNING_TAXONOMY[skillId] ?? null : null;
+  if (!skillId) return null;
+  const figureId = skillId.startsWith('geometrie.construction.') ? skillId.slice('geometrie.construction.'.length) : '';
+  const figure = GEOMETRY_FIGURES.find((item) => item.id === figureId);
+  if (figure) return { label: `Construction : ${figure.name}`, description: 'Reproduire un croquis ou une vue de solide sur une grille.', category: 'Géométrie' };
+  return LEARNING_TAXONOMY[skillId] ?? null;
 }
 
 export function skillLabel(skillId?: string | null): string {

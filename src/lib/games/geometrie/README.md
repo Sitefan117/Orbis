@@ -4,8 +4,9 @@
 
 ## Fichiers
 
-- **[`ConstructionLab.svelte`](./ConstructionLab.svelte)** — Grille tactile et accessible pour construire une figure en 6H, 7H et 8H.
-- **[`construction.ts`](./construction.ts)** — Consignes, réponse unique et correction exacte des trois constructions.
+- **[`ConstructionLab.svelte`](./ConstructionLab.svelte)** — Galerie tactile des 19 figures, avec modèles, croquis, vues de solides, défis et badges.
+- **[`construction.ts`](./construction.ts)** — Modèles et correcteurs exacts des sommets et arêtes.
+- **[`construction-progress.ts`](./construction-progress.ts)** — Progression personnelle, XP et badges conservés par élève.
 
 - **[`FigureDrawing.svelte](./FigureDrawing.svelte)** — Dessine les figures en SVG.  
   Dépend de : `src/lib/games/geometrie/types.ts`.

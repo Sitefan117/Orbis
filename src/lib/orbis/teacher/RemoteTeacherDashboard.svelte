@@ -3,6 +3,7 @@
   import { copyStudentSave, listRemoteActivityEvents, listRemoteGameSaves, type OrbisClass, type OrbisStudent, type RemoteActivityEvent, type RemoteGameSave } from './remote';
   import { resultRowsToCsv, resultRowsToPdf, safeExportPart, type ResultExportRow } from './result-export';
   import { skillLabel, taxonomyFor } from './learning-taxonomy';
+  import { summarizeNexusConstruction } from './nexus-construction-summary';
 
   let { classes, students, documents = [] }: { classes: OrbisClass[]; students: OrbisStudent[]; documents?: Array<{ student_id: string; document_kind: 'cv' | 'letter'; content: Record<string, string>; updated_at: string }> } = $props();
   let activities = $state<RemoteActivityEvent[]>([]);
@@ -69,6 +70,8 @@
   }, {})).map(([game, values]) => ({ game, ...values, rate: values.total ? Math.round(values.correct / values.total * 100) : 0 })).sort((a, b) => b.count - a.count));
   const selectedStudent = $derived(students.find((item) => item.user_id === selectedStudentId) ?? null);
   const selectedStudentActivities = $derived(selectedStudent ? filteredActivities.filter((item) => item.student_id === selectedStudent.user_id) : []);
+  const nexusConstructionRows = $derived(summarizeNexusConstruction(filteredActivities));
+  const studentConstructionRows = $derived(summarizeNexusConstruction(selectedStudentActivities));
   const selectedStudentSaves = $derived(selectedStudent ? visibleSaves.filter((item) => item.student_id === selectedStudent.user_id) : []);
   const selectedVocabulary = $derived(selectedStudentSaves.find((save) => save.game_id === 'musee_vocabulaire')?.state?.vocabularyProgress as Record<string, { status?: string }> | undefined);
   const vocabularyCounts = $derived(Object.values(selectedVocabulary ?? {}).reduce<Record<string, number>>((counts, item) => { const status = item.status ?? 'nouveau'; counts[status] = (counts[status] ?? 0) + 1; return counts; }, {}));
@@ -245,6 +248,16 @@
     </div>
     <article class="panel trend-panel"><div class="panel-heading"><div><h3>Évolution récente</h3><p>Réussite quotidienne sur les activités visibles.</p></div><small>Lecture descriptive, pas une note.</small></div>{#if trendRows.length}<div class="trend-chart" aria-label="Graphique d’évolution de la réussite">{#each trendRows as row}<div class="trend-column" title={`${row.day} : ${row.rate}%`}><span style={`height:${Math.max(4, row.rate)}%`}></span><small>{row.day.slice(5)}</small></div>{/each}</div>{:else}<p class="empty">Pas encore assez de résultats.</p>{/if}</article>
   {/if}
+  {#if selectedGame === 'all' || selectedGame === 'geometrie'}
+    <article class="panel nexus-construction-followup">
+      <div class="panel-heading"><div><p class="eyebrow">NEXUS · CONSTRUCTIONS</p><h3>Croquis et vues de solides</h3><p>Figures terminées, nombre d’élèves concernés, essais et indices. Ces données décrivent la pratique ; elles ne constituent pas une note.</p></div><small>{nexusConstructionRows.length} figure(s) observée(s)</small></div>
+      {#if nexusConstructionRows.length}
+        <div class="table-wrap"><table><thead><tr><th>Figure</th><th>Élèves</th><th>Croquis terminés</th><th>Vérifications</th><th>Indices</th></tr></thead><tbody>
+          {#each nexusConstructionRows as row}<tr><td><strong>{row.figureName}</strong></td><td>{row.students}</td><td>{row.sessions}</td><td>{row.attempts}</td><td>{row.hints}</td></tr>{/each}
+        </tbody></table></div>
+      {:else}<p class="empty">Aucun croquis Nexus synchronisé pour ces filtres.</p>{/if}
+    </article>
+  {/if}
   {#if selectedStudent}
     <article class="panel student-detail">
       <div class="detail-heading"><div><p class="eyebrow">FICHE ÉLÈVE</p><h3>{selectedStudent.display_name}</h3><p>Code : {selectedStudent.login_id}</p></div><button class="secondary" onclick={() => chooseStudent('all')}>Fermer la fiche</button></div>
@@ -252,6 +265,9 @@
         <section><h4>Compétences et activités</h4><p class="teacher-summary">{studentSummary}</p>{#if skillRows.length}<div class="bars">{#each skillRows as row}<div class="skill-row"><span><strong>{skillLabel(row.skill)}</strong><small>{taxonomyFor(row.skill)?.category ?? 'Catégorie à préciser'} · {row.correct}/{row.total} · {row.errors} erreur(s) · {row.hints} indice(s)</small></span><span class="track"><i style={`width:${row.rate}%`}></i></span><b>{row.rate}%</b></div>{/each}</div>{:else}<p class="empty">Pas encore de résultat synchronisé.</p>{/if}</section>
         <section><h4>Points à observer</h4>{#if frequentErrors.length}<ul class="error-list">{#each frequentErrors as error}<li><span>{gameName(error.family)}</span><b>{error.count}</b></li>{/each}</ul>{:else}<p class="empty">Aucune famille d’erreur disponible.</p>{/if}{#if selectedVocabulary}<h4>Musée des mots</h4><div class="vocabulary-status"><span><b>{vocabularyCounts.acquis ?? 0}</b> acquis</span><span><b>{vocabularyCounts['a-revoir'] ?? 0}</b> à revoir</span><span><b>{vocabularyCounts.fragile ?? 0}</b> fragiles</span><span><b>{vocabularyCounts.nouveau ?? 0}</b> nouveaux</span></div>{/if}<h4>Sauvegardes reprenables</h4>{#if selectedStudentSaves.length}<div class="transfer-choice"><label>Copier vers<select bind:value={transferTargetId} onchange={() => { pendingTransferGameId = ''; transferMessage = ''; }}><option value="">Choisir un élève</option>{#each transferTargets as target}<option value={target.user_id}>{target.display_name}</option>{/each}</select></label></div><ul class="save-list">{#each selectedStudentSaves as save}<li><span><strong>{gameName(save.game_id)}</strong><small>Révision {save.revision} · {new Date(save.updated_at).toLocaleDateString('fr-CH')}</small></span><button class="copy-button" class:confirm={pendingTransferGameId === save.game_id} disabled={!transferTargetId || transferBusy} onclick={() => transferSave(save)}>{pendingTransferGameId === save.game_id ? 'Confirmer' : 'Copier'}</button></li>{/each}</ul>{#if transferMessage}<p class="transfer-message" role="status">{transferMessage}</p>{/if}{:else}<p class="empty">Aucune sauvegarde distante.</p>{/if}<h4>Documents PCP</h4>{#if selectedDocuments.length}<ul class="document-list">{#each selectedDocuments as document}<li><strong>{document.document_kind === 'cv' ? 'CV' : 'Lettre de motivation'}</strong><small>Mis à jour le {new Date(document.updated_at).toLocaleDateString('fr-CH')}</small><details><summary>Afficher le contenu</summary><pre>{Object.entries(document.content).map(([key, value]) => `${key} : ${value}`).join('\\n\\n')}</pre></details></li>{/each}</ul>{:else}<p class="empty">Aucun document PCP synchronisé.</p>{/if}</section>
       </div>
+      {#if studentConstructionRows.length}
+        <section class="student-construction"><h4>Constructions Nexus de cet élève</h4><div class="table-wrap"><table><thead><tr><th>Figure</th><th>Terminé</th><th>Vérifications</th><th>Indices</th></tr></thead><tbody>{#each studentConstructionRows as row}<tr><td>{row.figureName}</td><td>{row.sessions} fois</td><td>{row.attempts}</td><td>{row.hints}</td></tr>{/each}</tbody></table></div></section>
+      {/if}
     </article>
   {/if}
   <article class="panel recent">
@@ -276,6 +292,7 @@
   .export-help{margin:-.55rem 0 1rem!important;font-size:.82rem;color:#60736c!important}
   .correct-response{color:#216443;font-weight:800}.error-response{color:#a34b2b;font-weight:800}
   .vocabulary-status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem;margin:0 0 1rem}.vocabulary-status span{padding:.55rem;background:#eef6ef;border-radius:8px;color:#52665f}.vocabulary-status b{color:#285f4d;margin-right:.25rem}
+  .nexus-construction-followup{margin-top:1rem}.student-construction{margin-top:1.2rem}
   .response-detail-panel{animation:panel-in .35s ease-out both}@keyframes panel-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   /* Cockpit sombre : le mouvement sert à signaler les changements, jamais à distraire. */
   .remote-dashboard{color:#e9f2ff;background:radial-gradient(circle at 8% 0%,#28336f88 0,transparent 28%),radial-gradient(circle at 92% 10%,#134e6680 0,transparent 26%),linear-gradient(155deg,#10152d,#080b1b 72%);border-color:#5365a766;box-shadow:0 24px 70px #040612aa,inset 0 1px #ffffff12;overflow:hidden;position:relative}
