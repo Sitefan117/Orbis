@@ -20,6 +20,7 @@ node tests/orbis-student-profile-simulation.test.cjs
 node --import tsx tests/grammaire-lab-engine.test.ts
 node tests/geometry-engine-smoke.cjs
 node --import tsx tests/geometrie-gamification.test.ts
+node --import tsx tests/geometrie-construction.test.ts
 node tests/numeria-engine-smoke.cjs
 node tests/numeria-progress-smoke.cjs
 bash tests/run-conju-lab-smoke.sh
