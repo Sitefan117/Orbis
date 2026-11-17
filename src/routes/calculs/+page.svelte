@@ -6,6 +6,7 @@
   import { getStudentName } from '$lib/orbis/identity/local-student';
   import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import { recordGameActivity } from '$lib/orbis/tracking/client';
+  import NumericKeypad from '$lib/components/NumericKeypad.svelte';
   import type { ResponseDetail } from '$lib/orbis/results/contract';
   import { generateDecimalQuestion, type DecimalQuestion } from '$lib/games/calculs/question-engine';
 
@@ -225,6 +226,7 @@
             Saisis ta réponse de précision
             <input class="dark-input" style="text-align: center; font-size: 1.7rem; font-weight: 1000;" bind:value={answerInput} on:keydown={(event) => event.key === 'Enter' && validateAnswer()} inputmode="decimal" placeholder="0.00" />
           </label>
+          <NumericKeypad bind:value={answerInput} disabled={blocked} onSubmit={validateAnswer} />
           <button class="btn warn" disabled={blocked} type="button" on:click={validateAnswer}>Soumettre le calcul ⚔️</button>
           <p class:good={feedback.startsWith('⚡')} class:bad={!feedback.startsWith('⚡')} class="feedback">{feedback}</p>
         </div>

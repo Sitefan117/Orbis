@@ -8,6 +8,7 @@
   import FractionBar from '$lib/games/fractionstower2/components/fraction/FractionBar.svelte';
   import VisualFractionModel from '$lib/games/fractionstower2/components/fraction/VisualFractionModel.svelte';
   import { ExerciseGenerator, type Exercise } from '$lib/games/fractionstower2/engines/ExerciseGenerator';
+  import type { ResponseDetail } from '$lib/orbis/results/contract';
 let {
   floorId = 'floor-1',
   onComplete,
@@ -15,7 +16,7 @@ let {
   game
 }: {
   floorId?: string;
-  onComplete: (score?: number) => void;
+  onComplete: (score?: number, responseDetails?: ResponseDetail[]) => void;
   onClose?: () => void;
   game?: {
     markBossDefeated?: (floorId: string) => void;
@@ -37,6 +38,9 @@ let feedback = $state('');
 let locked = $state(false);
 let questions = $state<Exercise[]>([]);
 let lastLoadedFloorId = '';
+let responseDetails = $state<ResponseDetail[]>([]);
+let attemptCount = $state(0);
+let questionStartedAt = $state(Date.now());
 // Le bilan de l'étage 5 privilégie les étages récents dans les révisions.
 // Le bilan de l'étage 8 révise les étages 5 à 7. L'étage 9 porte uniquement
 // sur son propre contenu. Les autres boss utilisent leur étage uniquement.
@@ -132,6 +136,9 @@ function restartBoss(bossFloor: string = activeFloor) {
     answer = '';
     feedback = '';
     locked = false;
+    responseDetails = [];
+    attemptCount = 0;
+    questionStartedAt = Date.now();
   }
 function normalizeAnswer(value: string): string {
 const cleaned = value.trim().toLowerCase().replace(/\s+/g, '');
@@ -182,16 +189,21 @@ const effectiveAnswer = submitted;
           : 'Écris ou sélectionne une réponse avant de vérifier.';
       return;
     }
+    attemptCount += 1;
     if (!answersMatch(effectiveAnswer, currentExercise.correctAnswer)) {
       playerLives = Math.max(0, playerLives - 1);
       feedback = playerLives === 0
         ? 'Tu n’as plus de vies. Le boss a gagné cette fois.'
         : `Pas tout à fait. Tu perds une vie. Il t’en reste ${playerLives}. Piste : ${currentExercise.hint || 'Relis les informations utiles et vérifie ta méthode.'}`;
       if (typeof (AudioManager as any).play === 'function') (AudioManager as any).play('error');
-      if (playerLives === 0) phase = 5;
+      if (playerLives === 0) {
+        responseDetails = [...responseDetails, makeResponseDetail(false, effectiveAnswer)];
+        phase = 5;
+      }
       return;
     }
     locked = true;
+    responseDetails = [...responseDetails, makeResponseDetail(true, effectiveAnswer)];
     score += 1;
     bossLives = Math.max(0, bossLives - 1);
     feedback = 'Bravo ! C’est juste.';
@@ -207,6 +219,8 @@ const effectiveAnswer = submitted;
       }
       answer = '';
       feedback = '';
+      attemptCount = 0;
+      questionStartedAt = Date.now();
       locked = false;
     }, 900);
   }
@@ -240,7 +254,22 @@ const utterance = new SpeechSynthesisUtterance(currentExercise.question);
   }
 function finishBoss() {
     game?.markBossDefeated?.(activeFloor);
-    onComplete(score);
+    onComplete(score, responseDetails);
+  }
+
+  function makeResponseDetail(correct: boolean, response: string): ResponseDetail {
+    return {
+      questionIndex: activeQuestionIndex,
+      questionId: currentExercise.id,
+      category: `Fractions · ${currentExercise.type}`,
+      prompt: currentExercise.question,
+      response,
+      expected: currentExercise.correctAnswer,
+      correct,
+      attempts: attemptCount,
+      durationSeconds: Math.max(1, Math.round((Date.now() - questionStartedAt) / 1000)),
+      errorFamily: correct ? undefined : currentExercise.type
+    };
   }
 </script>
 <div class="boss-overlay" role="presentation">

@@ -116,6 +116,7 @@
   let vocabularyProgress: VocabularyProgress = {};
   let progressHydrated = false;
   let spokenAudio: HTMLAudioElement | undefined;
+  const audioCache = new Map<string, HTMLAudioElement>();
 
   $: categories = getCategories(bank);
   $: selectedEntries = bank.filter((entry) => selectedThemes.includes(entry.theme));
@@ -133,8 +134,15 @@
   function audioPath(entry: Word) { return `${base}/audio/musee-vocabulaire/${entry.id}-piper.wav`; }
   function playWord(entry: Word) {
     if (typeof Audio === 'undefined') return;
+    const src = audioPath(entry);
     spokenAudio?.pause();
-    spokenAudio = new Audio(audioPath(entry));
+    spokenAudio = audioCache.get(src);
+    if (!spokenAudio) {
+      spokenAudio = new Audio(src);
+      spokenAudio.preload = 'auto';
+      audioCache.set(src, spokenAudio);
+    }
+    spokenAudio.currentTime = 0;
     void spokenAudio.play();
   }
   $: matchImages = options;

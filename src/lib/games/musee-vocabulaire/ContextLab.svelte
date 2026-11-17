@@ -1,5 +1,6 @@
 <script lang="ts">
   import { recordGameActivity } from '$lib/orbis/tracking/client';
+  import type { ResponseDetail } from '$lib/orbis/results/contract';
   import type { Word } from './lexique';
 
   export let words: Word[] = [];
@@ -24,6 +25,7 @@
   let feedback = '';
   let correct = 0;
   let attempts = 0;
+  let responseDetails: ResponseDetail[] = [];
 
   $: vocabulary = new Set(words.map((item) => item.word.toLocaleLowerCase('fr')));
   $: dialogues = buildDialogues(words);
@@ -66,10 +68,21 @@
   function choose(value: string) {
     if (!currentDialogue) return;
     attempts++;
-    if (value === currentDialogue.answer) {
+    const isCorrect = value === currentDialogue.answer;
+    if (isCorrect) {
       correct++;
       feedback = 'Bonne réponse. La phrase est naturelle.';
     } else feedback = 'Essaie encore. Relis toute la phrase.';
+    responseDetails = [...responseDetails, {
+      questionIndex: index,
+      questionId: `dialogue-${index + 1}`,
+      category: 'Réemploi en dialogue',
+      prompt: currentDialogue.prompt,
+      response: value,
+      expected: currentDialogue.answer,
+      correct: isCorrect,
+      attempts: 1
+    }];
   }
 
   function shuffleOrder() {
@@ -88,10 +101,22 @@
   function checkOrder() {
     attempts++;
     const expected = currentOrder?.parts ?? [];
-    if (order.join('|') === expected.join('|')) {
+    const isCorrect = order.join('|') === expected.join('|');
+    if (isCorrect) {
       correct++;
       feedback = 'Bonne phrase. Les mots sont dans le bon ordre.';
     } else feedback = 'Ce n’est pas encore le bon ordre.';
+    responseDetails = [...responseDetails, {
+      questionIndex: index,
+      questionId: `ordre-${index + 1}`,
+      category: 'Réemploi : ordre des mots',
+      prompt: currentOrder?.prompt,
+      response: order.join(' '),
+      expected: expected.join(' '),
+      correct: isCorrect,
+      attempts: 1,
+      errorFamily: isCorrect ? undefined : 'ordre-des-mots'
+    }];
   }
 
   function next() {
@@ -103,14 +128,16 @@
 
   function finish() {
     if (!attempts) return;
+    const questionCount = new Set(responseDetails.map((item) => item.questionId ?? String(item.questionIndex))).size;
     void recordGameActivity({
       studentName,
       gameId: 'musee_vocabulaire',
       activityId: `atelier-${mode}`,
       correctCount: correct,
-      questionCount: Math.max(correct, attempts),
-      errorCount: Math.max(0, attempts - correct),
-      metadata: { selectedWords: words.length }
+      questionCount,
+      errorCount: responseDetails.filter((item) => !item.correct).length,
+      responseDetails,
+      metadata: { selectedWords: words.length, mode }
     });
     feedback = 'Séance enregistrée. Tu peux continuer ou changer d’atelier.';
   }

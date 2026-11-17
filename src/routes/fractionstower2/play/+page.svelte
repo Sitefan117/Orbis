@@ -19,6 +19,7 @@
     import { SaveManager } from '$lib/games/fractionstower2/persistence/SaveManager';
     import { AudioManager } from '$lib/games/fractionstower2/audio/AudioManager';
     import { ProgressManager } from '$lib/games/fractionstower2/persistence/ProgressManager';
+    import type { ResponseDetail } from '$lib/orbis/results/contract';
 
 
     const game = createGameState();
@@ -383,13 +384,20 @@
     <ActivityModal activityId={activeActivityId} onClose={() => activeActivityId = null} />
 {/if}
 {#if activeBossFloorId === 'floor-1'}
-  <BossFloor1 game={game} onComplete={() => activeBossFloorId = null} onClose={() => activeBossFloorId = null} />
+  <BossFloor1
+    game={game}
+    onComplete={(score = 0, responseDetails: ResponseDetail[] = []) => {
+      ProgressManager.recordFloorCompletion('floor-1', score, 18, responseDetails);
+      activeBossFloorId = null;
+    }}
+    onClose={() => activeBossFloorId = null}
+  />
 {:else if activeBossFloorId}
   <BossBattle
     floorId={activeBossFloorId}
     game={game}
-    onComplete={(score = 0) => {
-      ProgressManager.recordFloorCompletion(activeBossFloorId!, score, 18);
+    onComplete={(score = 0, responseDetails: ResponseDetail[] = []) => {
+      ProgressManager.recordFloorCompletion(activeBossFloorId!, score, 18, responseDetails);
       activeBossFloorId = null;
     }}
     onClose={() => activeBossFloorId = null}

@@ -178,7 +178,7 @@
   $effect(() => { if (!initialized && !loading) void refresh(); });
 </script>
 
-<section class="remote-dashboard" aria-labelledby="remote-title">
+<section class="remote-dashboard" id="details" aria-labelledby="remote-title">
   <header>
     <div><p class="eyebrow">ORBIS · OBSERVATOIRE PÉDAGOGIQUE</p><h2 id="remote-title">{dashboardView === 'today' ? 'À voir aujourd’hui' : 'Vue générale'}</h2><p>{dashboardView === 'today' ? 'Les signaux utiles pour préparer les prochaines interventions.' : 'Les tendances de la classe, sans réduire les élèves à une moyenne.'}</p></div>
     <div class="header-actions"><button onclick={refresh} disabled={loading}>{loading ? 'Actualisation…' : 'Actualiser'}</button><button class="secondary" onclick={downloadCsv}>Télécharger CSV</button><button class="secondary" onclick={() => void downloadPdf()} disabled={exportingPdf}>{exportingPdf ? 'Création du PDF…' : 'Télécharger PDF'}</button></div>

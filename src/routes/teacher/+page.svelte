@@ -354,10 +354,27 @@
 				</main>
 			</div>
 		{:else}
-		<div class="teacher-container">
+		<div class="teacher-shell">
+			<aside class="teacher-sidebar" aria-label="Navigation enseignant">
+				<a class="sidebar-brand" href={`${base}/teacher`}><span class="brand-orb">✦</span><span><strong>ORBIS</strong><small>Teacher cockpit</small></span></a>
+				<p class="sidebar-label">ESPACE DE SUIVI</p>
+				<nav class="sidebar-nav">
+					<a href={`${base}/teacher`}><span>⌂</span> Vue générale</a>
+					<a href={`${base}/teacher#details`}><span>◈</span> Résultats élèves</a>
+					<a href={`${base}/teacher/admin#tasks`}><span>✓</span> Consignes</a>
+					<a href={`${base}/teacher/admin#classes`}><span>▦</span> Classes et élèves</a>
+				</nav>
+				<p class="sidebar-label">OUTILS</p>
+				<nav class="sidebar-nav">
+					<a class="active" href={`${base}/teacher/admin`}><span>⚙</span> Administration</a>
+					<a href={`${base}/confidentialite`}><span>⌁</span> Données et confidentialité</a>
+				</nav>
+				<div class="sidebar-bottom"><div class="nox-mini">N</div><div><strong>Nox</strong><small>Assistant Orbis</small></div></div>
+			</aside>
+			<main class="teacher-main">
 			<header class="teacher-header">
 				<div><p class="teacher-kicker">ORBIS · ESPACE ENSEIGNANT</p><h1>Administration</h1><p>Classes, comptes élèves et outils de maintenance.</p></div>
-				<div class="teacher-header-actions"><a class="mode-link" href={`${base}/teacher`}>← Retour au tableau</a><button class="logout-button" onclick={() => void logout()}>Se déconnecter</button></div>
+				<div class="teacher-header-actions"><span class="live-status"><i></i> Données synchronisées</span><a class="mode-link" href={`${base}/teacher`}>← Retour au tableau</a><button class="logout-button" onclick={() => void logout()}>Se déconnecter</button></div>
 			</header>
 
 		<details class="secondary-zone">
@@ -475,7 +492,8 @@
 				</table>
 			</div>
 			{/if}
-	</div>
+			</main>
+		</div>
 		{/if}
 {/if}
 
@@ -558,11 +576,6 @@
 	.reset-row { display:flex; gap:.75rem; flex-wrap:wrap; margin-top:1rem; }
 	.reset-row input { flex:1 1 260px; padding:.7rem; }
 
-	.teacher-container {
-		padding: 2rem;
-		max-width: 1200px;
-		margin: auto;
-	}
 	header {
 		display: flex;
 		justify-content: space-between;
@@ -642,7 +655,20 @@
 	.login-card button { width:100%; margin-top:1.2rem; padding:.9rem 1rem; border-radius:11px; background:#285f4c; color:white; font-size:1rem; }
 	.back-link { display:block; margin-top:1.2rem; color:#38634f; text-align:center; }
 	.login-error { color:#a52f27; background:#fff0ea; border-left:4px solid #b23c2e; padding:.7rem; border-radius:6px; }
-	.teacher-container { max-width: 1380px; padding: clamp(1rem, 3vw, 2.2rem); color:#20332e; }
+	/* Enveloppe type admin dashboard : navigation stable, contenu lisible et responsive. */
+	.teacher-shell { min-height:100vh; display:grid; grid-template-columns:248px minmax(0,1fr); background:radial-gradient(circle at 60% -10%,#24356b 0,transparent 32%),#080c1b; color:#eaf1ff; }
+	.teacher-sidebar { position:sticky; top:0; height:100vh; box-sizing:border-box; display:flex; flex-direction:column; gap:1rem; padding:1.35rem 1rem; background:linear-gradient(180deg,#101833f2,#0a1023f2); border-right:1px solid #52629455; }
+	.sidebar-brand { display:flex; align-items:center; gap:.7rem; color:#f5f8ff; text-decoration:none; padding:.35rem .4rem 1.1rem; border-bottom:1px solid #53628d44; }
+	.brand-orb { display:grid; place-items:center; width:38px; height:38px; border-radius:13px; color:#061022; background:linear-gradient(135deg,#70e6ed,#7865fa); box-shadow:0 0 24px #56d7e366; font-weight:900; }
+	.sidebar-brand strong,.sidebar-brand small,.sidebar-bottom strong,.sidebar-bottom small { display:block; }
+	.sidebar-brand strong { letter-spacing:.14em; font-size:.95rem; }.sidebar-brand small,.sidebar-bottom small { color:#8494b8; font-size:.72rem; margin-top:.15rem; }
+	.sidebar-label { margin:1rem .6rem .1rem; color:#6e7fa8!important; font-size:.65rem; font-weight:900; letter-spacing:.12em; }
+	.sidebar-nav { display:grid; gap:.35rem; }.sidebar-nav a { display:flex; align-items:center; gap:.7rem; padding:.72rem .75rem; border-radius:10px; color:#9eafd0; text-decoration:none; font-size:.86rem; font-weight:700; transition:background .18s,transform .18s,color .18s; }.sidebar-nav a span { width:1rem; text-align:center; color:#6ed9e6; }.sidebar-nav a:hover { color:white; background:#ffffff0b; transform:translateX(2px); }.sidebar-nav a.active { color:#fff; background:linear-gradient(135deg,#6257dc,#216f9f); box-shadow:0 9px 24px #304da655; }
+	.sidebar-bottom { display:flex; align-items:center; gap:.65rem; margin-top:auto; padding:.8rem; border:1px solid #52629455; border-radius:14px; background:#ffffff07; }.nox-mini { display:grid; place-items:center; width:32px; height:32px; border-radius:10px; color:#071125; font-weight:900; background:linear-gradient(135deg,#5ce0e6,#7765fa); }
+	.teacher-main { min-width:0; padding:1.25rem clamp(1rem,3vw,2.6rem) 3rem; }.teacher-main .teacher-header { max-width:1480px; margin:0 auto .8rem; padding:.4rem 0 1rem; border-bottom:1px solid #51618c44; }.teacher-main .teacher-header h1 { color:#f7f9ff; margin:.2rem 0; font-size:clamp(1.35rem,2vw,1.9rem); }.teacher-main .teacher-header p { color:#9eafd0; }.teacher-main .teacher-kicker { color:#75ddec!important; }.teacher-main .teacher-header-actions { gap:.5rem; }.live-status { display:inline-flex; align-items:center; gap:.4rem; color:#8de1c2; font-size:.76rem; font-weight:800; }.live-status i { width:7px; height:7px; border-radius:50%; background:#4de0a3; box-shadow:0 0 12px #4de0a3; }.teacher-main .mode-link { color:#dce7ff; background:#151d3b; border-color:#526494; }.teacher-main .logout-button { border:1px solid #526494; border-radius:10px; background:#111932; color:#dce7ff; padding:.55rem .9rem; cursor:pointer; }
+	.teacher-main :global(.remote-dashboard) { max-width:1480px; margin:0 auto; border-radius:20px; }
+	@media (max-width:900px) { .teacher-shell { grid-template-columns:1fr; }.teacher-sidebar { position:static; height:auto; padding:.75rem 1rem; display:block; }.sidebar-brand { display:inline-flex; border:0; padding-bottom:.65rem; }.sidebar-label { display:none; }.sidebar-nav { display:flex; overflow-x:auto; padding:.15rem 0; }.sidebar-nav a { white-space:nowrap; }.sidebar-bottom { display:none; }.teacher-main { padding:.8rem; }.teacher-main .teacher-header { flex-direction:column; align-items:flex-start; }.teacher-main .teacher-header-actions { justify-content:flex-start; } }
+	@media (prefers-reduced-motion: reduce) { .sidebar-nav a { transition:none; } }
 	.teacher-header { margin:0; padding:1rem 0 1.4rem; border-bottom:1px solid #cbd8ce; align-items:flex-end; }
 	.teacher-header h1 { margin:.25rem 0; color:#173f32; font-size:clamp(2rem,4vw,3.4rem); letter-spacing:-.04em; }
 	.teacher-header p { margin:.3rem 0; color:#64766f; }
