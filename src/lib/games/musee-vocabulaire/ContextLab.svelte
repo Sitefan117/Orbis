@@ -4,6 +4,7 @@
 
   export let words: Word[] = [];
   export let studentName = '';
+  export let gameId: 'musee_vocabulaire' | 'english_lab' = 'musee_vocabulaire';
 
   type LabMode = 'dialogue' | 'ordre' | 'familles';
   type Dialogue = { prompt: string; choices: string[]; answer: string; word?: string };
@@ -98,7 +99,7 @@
     if (!attempts) return;
     void recordGameActivity({
       studentName,
-      gameId: 'musee_vocabulaire',
+      gameId,
       activityId: `atelier-${mode}`,
       correctCount: correct,
       questionCount: Math.max(correct, attempts),

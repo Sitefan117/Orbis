@@ -116,7 +116,7 @@ export function readLexique(input: string): Word[] {
     if (fields.length !== headers.length || !id || ids.has(id) || !theme || !label || !word || !definition ||
         (tier !== 'base' && tier !== 'avance') || !validSprite ||
         (sentence && sentence.split('___').length !== 2) ||
-        (parts.length && (parts.length < 2 || !parts.every(Boolean) || normalize(parts.join('')) !== normalize(word)))) {
+        (parts.length && (!parts.every(Boolean) || normalize(parts.join('')) !== normalize(word)))) {
       throw new Error(`Entrée CSV ${index + 2} invalide (${id || 'identifiant manquant'}).`);
     }
     ids.add(id);

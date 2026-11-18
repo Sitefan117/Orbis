@@ -53,7 +53,8 @@
     fractionstower2: { notion: 'Fractions', goal: 'Comprends les fractions, étape par étape.' },
     mathhunt: { notion: 'Calcul mental', goal: 'Vise la bonne réponse.' },
     grammaire_lab: { notion: 'Grammaire', goal: 'Construis des phrases correctes.' },
-    musee_vocabulaire: { notion: 'Vocabulaire', goal: 'Observe, associe et reconstruis les mots.' }
+    musee_vocabulaire: { notion: 'Vocabulaire', goal: 'Observe, associe et reconstruis les mots.' },
+    english_lab: { notion: 'English vocabulary', goal: 'Test words, phrases and computer vocabulary.' }
   };
   $: selectedGameNotion = catalogParams.get('notion');
   $: visibleArcadeCategories = arcadeCategories.filter(category => category === 'TOUS' || worlds.some(world => world.subject === category));
