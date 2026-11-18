@@ -17,6 +17,7 @@
   export let variant: 'museum' | 'english' = 'museum';
   const isEnglish = variant === 'english';
   const gameId = isEnglish ? 'english_lab' : 'musee_vocabulaire';
+  const machineImage = `${base}/images/${isEnglish ? 'english-lab' : 'musee-vocabulaire'}/machines.png`;
   const modes = [
     ['pendu', 'Pendu restaurateur'], ['whack-image', 'Image → mot'],
     ['whack-word', 'Mot → image'], ['millionaire', 'Qui veut gagner des mots ?'],
@@ -31,6 +32,9 @@
   const modeLabels = Object.fromEntries(modes);
   const original = readLexique(isEnglish ? englishLexique : lexique);
   const sheet = poses.planches.find((entry) => entry.id === 'catalogue-guide')!;
+  const assistantImage = isEnglish
+    ? `${base}/images/english-lab/lab-assistant.png`
+    : `${base}/mascotte-noireau/${sheet.fichier}`;
   const poseByReaction: Record<Reaction, string> = {
     ready: 'presenter', correct: 'celebrer', retry: 'oups', hint: 'pointer bas',
     progress: 'reflechir', complete: 'saluer'
@@ -47,7 +51,7 @@
   };
 
   let bank = original;
-  let selectedThemes = isEnglish ? ['school'] : ['ecole'];
+  let selectedThemes = original.length ? [original[0].theme] : [];
   let categories = getCategories(bank);
   let mode: Mode = 'whack-image';
   let playing: Word[] = [];
@@ -173,7 +177,11 @@
     const loaded = await createGameProgressService(student, gameId).loadProgress();
     if (loaded.ok && loaded.value?.state) {
       const state = loaded.value.state as Record<string, any>;
-      if (Array.isArray(state.selectedThemes) && state.selectedThemes.length) selectedThemes = state.selectedThemes;
+      if (Array.isArray(state.selectedThemes) && state.selectedThemes.length) {
+        const validThemes = state.selectedThemes.filter((theme) =>
+          typeof theme === 'string' && categories.some((category) => category.theme === theme));
+        if (validThemes.length) selectedThemes = validThemes;
+      }
       if (Array.isArray(state.galleryIds)) gallery = bank.filter((entry) => state.galleryIds.includes(entry.id));
       responseDetails = Array.isArray(state.responseDetails) ? state.responseDetails : [];
       vocabularyProgress = state.vocabularyProgress && typeof state.vocabularyProgress === 'object' ? state.vocabularyProgress : {};
@@ -552,12 +560,12 @@
     </section>
 
     {#if inHall}
-    <div class="hall-guide"><span class="noireau" role="img" aria-label="Guide du laboratoire" style:background-image={`url('${base}/mascotte-noireau/${sheet.fichier}')`} style:background-position="0% 0%"></span><div><h2>{isEnglish ? 'Welcome to English Lab.' : 'Bienvenue au musée.'}</h2><p>{isEnglish ? 'Choose a machine and test your English.' : 'Choisis une machine pour jouer.'}<br />Je suis là si tu as besoin d’aide.</p></div></div>
+    <div class="hall-guide"><span class="noireau" class:lab-assistant={isEnglish} role="img" aria-label={isEnglish ? 'Assistant English Lab' : 'Guide du laboratoire'} style:background-image={`url('${assistantImage}')`} style:background-position="0% 0%"></span><div><h2>{isEnglish ? 'Welcome to English Lab.' : 'Bienvenue au musée.'}</h2><p>{isEnglish ? 'Choose a machine and test your English.' : 'Choisis une machine pour jouer.'}<br />Je suis là si tu as besoin d’aide.</p></div></div>
     <nav class="machine-hall" aria-label="Choisir un jeu" bind:this={hallNavigation}>
       {#each modes as [id, label], index}
-        <button data-mode={id} disabled={!ready || !selectedCount} on:click={() => enterMachine(id)}><span class="machine-art" aria-hidden="true" style:background-image={`url('${base}/images/musee-vocabulaire/machines.png')`} style:background-position={`${(index % 4) * 100 / 3}% ${Math.floor(index / 4) * 100}%`}></span><span class="machine-label"><small>{String(index + 1).padStart(2, '0')}</small>{label}</span></button>
+        <button data-mode={id} disabled={!ready || !selectedCount} on:click={() => enterMachine(id)}><span class="machine-art" aria-hidden="true" style:background-image={`url('${machineImage}')`} style:background-position={`${(index % 4) * 100 / 3}% ${Math.floor(index / 4) * 100}%`}></span><span class="machine-label"><small>{String(index + 1).padStart(2, '0')}</small>{label}</span></button>
       {/each}
-      <button data-mode="workshop" disabled={!ready || !selectedCount} on:click={enterWorkshop}><span class="machine-art" aria-hidden="true" style:background-image={`url('${base}/images/musee-vocabulaire/machines.png')`} style:background-position="66.666% 100%"></span><span class="machine-label"><small>09</small>Atelier de réemploi</span></button>
+      <button data-mode="workshop" disabled={!ready || !selectedCount} on:click={enterWorkshop}><span class="machine-art" aria-hidden="true" style:background-image={`url('${machineImage}')`} style:background-position="66.666% 100%"></span><span class="machine-label"><small>09</small>Atelier de réemploi</span></button>
     </nav>
     {:else}
     <button class="return-hall" on:click={returnToHall}>← Choisir une autre machine</button>
@@ -573,7 +581,7 @@
       <ContextLab words={playing} studentName={student || getStudentName()} {gameId} />
     {:else}
     <section class="game" aria-label={modeLabels[mode]}>
-      <div class="machine-heading"><span class="machine-art" aria-hidden="true" style:background-image={`url('${base}/images/musee-vocabulaire/machines.png')`} style:background-position={`${(modes.findIndex(([id]) => id === mode) % 4) * 100 / 3}% ${Math.floor(modes.findIndex(([id]) => id === mode) / 4) * 100}%`}></span><h2 tabindex="-1" bind:this={gameHeading}>{modeLabels[mode]}</h2></div>
+      <div class="machine-heading"><span class="machine-art" aria-hidden="true" style:background-image={`url('${machineImage}')`} style:background-position={`${(modes.findIndex(([id]) => id === mode) % 4) * 100 / 3}% ${Math.floor(modes.findIndex(([id]) => id === mode) / 4) * 100}%`}></span><h2 tabindex="-1" bind:this={gameHeading}>{modeLabels[mode]}</h2></div>
       {#if ready}
         {#if mode === 'millionaire'}
           <label class="quiz-format">Type de question
@@ -584,9 +592,9 @@
           </label>
         {/if}
         <div class="coach">
-          <span class="noireau" role="img" aria-label="Noireau"
-            style:background-image={`url('${base}/mascotte-noireau/${sheet.fichier}')`}
-            style:background-position={`${poseCol * 100 / 3}% ${poseRow * 100}%`}></span>
+          <span class="noireau" class:lab-assistant={isEnglish} role="img" aria-label={isEnglish ? 'Assistant English Lab' : 'Noireau'}
+            style:background-image={`url('${assistantImage}')`}
+            style:background-position={isEnglish ? 'center' : `${poseCol * 100 / 3}% ${poseRow * 100}%`}></span>
           <p aria-live="polite">{message}</p>
         </div>
         {#if mode === 'search' && grid.targets.length}
@@ -929,4 +937,7 @@
   .museum.english-lab .vignettes > div { background: #f8fbf8; color: #102337; }
   .museum.english-lab .coach { color: #eef4f3; border-color: #6ca1a5; }
   .museum.english-lab .machine-label { background: #f8fbf8; color: #102337; border-color: #83b8b8; }
+  .museum.english-lab .machine-art { aspect-ratio: 1; border: 1px solid #83b8b8; background-color: #ebe7df; }
+  .museum.english-lab .noireau.lab-assistant { aspect-ratio: 1; background-size: contain; background-position: center; }
+  .museum.english-lab .sprite { padding: .3rem; border: 2px solid #8fbdbc; border-radius: .4rem; background-color: #eef4ef; box-shadow: 0 0 0 4px #17364a, 0 0 16px #72c9c633; }
 </style>
