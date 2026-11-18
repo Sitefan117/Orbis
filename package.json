@@ -9,6 +9,8 @@
     "test": "bash tests/run-smoke.sh",
     "build": "vite build",
     "generate:audio": "node scripts/generate-musee-audio.mjs",
+    "generate:audio:english": "python3 scripts/generate-english-audio.py",
+    "generate:lexique:english": "node scripts/generate-english-lexique.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "supabase:backup": "bash scripts/backup-supabase.sh",
     "db:migrate": "tsx src/lib/server/db/migrate.ts",

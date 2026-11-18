@@ -121,7 +121,6 @@
   let progressHydrated = false;
   let spokenAudio: HTMLAudioElement | undefined;
   const audioCache = new Map<string, HTMLAudioElement>();
-  let audioVoice: 'eddy' | 'flo' = 'eddy';
 
   $: categories = getCategories(bank);
   $: selectedEntries = bank.filter((entry) => selectedThemes.includes(entry.theme));
@@ -136,7 +135,7 @@
   let alphabet: string[] = [];
   $: visibleVocabulary = distinctWords(playing).sort((a, b) => a.word.localeCompare(b.word, 'fr'));
   $: mastery = masterySummary(vocabularyProgress);
-  function audioPath(entry: Word) { return isEnglish ? `${base}/audio/english-lab/${entry.id}-${audioVoice}.aiff` : `${base}/audio/musee-vocabulaire/${entry.id}-piper.wav`; }
+  function audioPath(entry: Word) { return `${base}/audio/${isEnglish ? 'english-lab' : 'musee-vocabulaire'}/${entry.id}-piper.wav`; }
   function playWord(entry: Word) {
     if (typeof Audio === 'undefined') return;
     const src = audioPath(entry);
@@ -504,7 +503,7 @@
 
 <svelte:head><title>{isEnglish ? 'English Lab' : 'Le musée des mots'} · Orbis</title></svelte:head>
 
-<div class="museum" class:english-lab={isEnglish} class:studio={mode === 'millionaire'} class:workshop={mode === 'match'}>
+<div class="museum" class:english-lab={isEnglish} class:studio={mode === 'millionaire'} class:workshop={mode === 'match'} style={`--lab-background:url('${base}/images/english-lab/lab-background.png')`}>
   <header class="no-print">
     <div class="shell">
       <a href={catalogHref(base, 'jeux', student)} use:restoreCatalogReturn={base}>← Arcade Orbis</a>
@@ -566,7 +565,7 @@
     {#if wordListOpen}
       <section class="word-bank" aria-label="Liste des mots choisis">
         <div><h2>Les mots de mes thèmes</h2><p>Tu peux regarder l’orthographe et le sens d’un mot.</p></div>
-        <p class="audio-choice">Voix : Piper · français</p>
+        <p class="audio-choice">Voix : Piper · {isEnglish ? 'anglais britannique' : 'français'}</p>
         <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong><span>{entry.definition}</span>{#if audioPath(entry)}<audio controls preload="none" src={audioPath(entry)} aria-label={`Écouter ${entry.word}`}></audio>{/if}</li>{/each}</ul>
       </section>
     {/if}
@@ -784,7 +783,7 @@
 
 <style>
   .museum { min-height: 100vh; background: #f5efe3; color: #322820; }
-  .museum.english-lab { background: #102337 url('/images/english-lab/lab-background.png') center top / cover fixed; color: #eef4f3; }
+  .museum.english-lab { background: #102337 var(--lab-background) center top / cover fixed; color: #eef4f3; }
   .museum.english-lab .shell, .museum.english-lab .game, .museum.english-lab .settings, .museum.english-lab .word-bank { background: rgba(12, 28, 45, .92); border-color: #79b8bd66; }
   .museum.english-lab h1, .museum.english-lab h2 { color: #f1b24b; }
   .museum.english-lab .machine-hall button, .museum.english-lab .hall-guide { background: #16344b; border-color: #79b8bd88; color: #eef4f3; }
@@ -917,8 +916,17 @@
     .vocabulary-page tr { break-inside: avoid; }
     .vocabulary-page h3 { color: black; background: #e8eee9; border-left: 6px solid #25453c; }
   }
-  .museum.english-lab { background: #102337 url('/images/english-lab/lab-background.png') center top / cover fixed; color: #eef4f3; }
+  .museum.english-lab { background: #102337 var(--lab-background) center top / cover fixed; color: #eef4f3; }
   .museum.english-lab .shell, .museum.english-lab .game, .museum.english-lab .settings, .museum.english-lab .word-bank { background: rgba(12, 28, 45, .92); border-color: #79b8bd66; }
   .museum.english-lab h1, .museum.english-lab h2 { color: #f1b24b; }
   .museum.english-lab .machine-hall button, .museum.english-lab .hall-guide { background: #16344b; border-color: #79b8bd88; color: #eef4f3; }
+  .museum.english-lab button { background: #f8fbf8; border-color: #83b8b8; color: #102337; }
+  .museum.english-lab button:hover:not(:disabled) { background: #dcefee; border-color: #f1b24b; color: #071725; }
+  .museum.english-lab button.primary,
+  .museum.english-lab button[aria-pressed=true]:not(.grid button) { background: #167c80; border-color: #8ed6d2; color: #fff; }
+  .museum.english-lab .word-bank li,
+  .museum.english-lab .collection li,
+  .museum.english-lab .vignettes > div { background: #f8fbf8; color: #102337; }
+  .museum.english-lab .coach { color: #eef4f3; border-color: #6ca1a5; }
+  .museum.english-lab .machine-label { background: #f8fbf8; color: #102337; border-color: #83b8b8; }
 </style>

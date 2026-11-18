@@ -4,6 +4,17 @@ import { readLexique, makeGrid, gridSize, gridWord, letterChoices, matchRounds, 
 import { conversations } from '../src/lib/games/musee-vocabulaire/context-content';
 
 const bank = readLexique(readFileSync('static/vocabulaire/lexique.csv', 'utf8'));
+const englishBank = readLexique(readFileSync('static/vocabulaire/english-lab.csv', 'utf8'));
+assert.equal(englishBank.length, bank.length + 10);
+const englishThemes = new Set(englishBank.map((entry) => entry.theme));
+for (const theme of new Set(bank.map((entry) => entry.theme))) assert.ok(englishThemes.has(theme));
+assert.ok(englishThemes.has('computing'));
+assert.ok(englishThemes.has('computer-actions'));
+assert.equal(englishBank.filter((entry) => entry.sentence).length, bank.filter((entry) => entry.sentence).length);
+assert.ok(englishBank.every((entry) => entry.definition));
+for (const entry of englishBank) {
+  assert.ok(existsSync(`static/audio/english-lab/${entry.id}-piper.wav`), `Audio anglais manquant : ${entry.id}`);
+}
 const compoundChoices = letterChoices('rendez-vous');
 assert.equal(compoundChoices.length, new Set(gridWord('rendez-vous')).size * 2);
 assert.ok([...new Set(gridWord('rendez-vous'))].every((letter) => compoundChoices.includes(letter)));
@@ -62,4 +73,4 @@ assert.throws(() => readLexique(header + '\na,t,T,base,test,Définition,,fa-ux,'
 assert.throws(() => readLexique(header + '\na,t,T,base,test,"guillemet'));
 assert.throws(() => readLexique(header + '\na,t,T,base,test,D,,,\na,t,T,base,test,D,,,'));
 assert.throws(() => readLexique(header + '\na,t,T,base,test,D,trop ___ de ___ trous,,'));
-console.log('Musée du vocabulaire — 940 entrées, 31 thèmes, 220 phrases et discussions validés.');
+console.log(`Musée du vocabulaire et English Lab — ${englishBank.length} entrées, ${englishThemes.size} thèmes, ${englishBank.filter((entry) => entry.sentence).length} phrases et audios validés.`);
