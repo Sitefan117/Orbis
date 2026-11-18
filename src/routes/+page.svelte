@@ -40,8 +40,8 @@
 
   // Filtres de l'Arcade : les matières sont définies explicitement dans worlds.ts.
   $: selectedArcadeCategory = catalogParams.get('matiere') || 'TOUS';
-  const arcadeCategories = ['TOUS', 'MATHS', 'FRANÇAIS', 'SCIENCES', 'AUTRES', 'À CLASSER'];
-  const categoryLabels: Record<string, string> = { TOUS: 'Toutes', MATHS: 'Maths', FRANÇAIS: 'Français', SCIENCES: 'Sciences', AUTRES: 'Autres', 'À CLASSER': 'À découvrir' };
+  const arcadeCategories = ['TOUS', 'MATHS', 'FRANÇAIS', 'ANGLAIS', 'ALLEMAND', 'SCIENCES', 'ÉDUCATION NUMÉRIQUE', 'AUTRES', 'À CLASSER'];
+  const categoryLabels: Record<string, string> = { TOUS: 'Toutes', MATHS: 'Maths', FRANÇAIS: 'Français', ANGLAIS: 'Anglais', ALLEMAND: 'Allemand', SCIENCES: 'Sciences', 'ÉDUCATION NUMÉRIQUE': 'Éducation numérique', AUTRES: 'Autres', 'À CLASSER': 'À découvrir' };
   const gamePresentation: Record<WorldId, { notion: string; goal: string }> = {
     race: { notion: 'Calcul mental', goal: 'Calcule juste pour avancer.' },
     livrets: { notion: 'Multiplications', goal: 'Entraîne-toi aux tables.' },
@@ -59,7 +59,7 @@
     english_lab: { notion: 'English vocabulary', goal: 'Test words, phrases and computer vocabulary.' }
   };
   $: selectedGameNotion = catalogParams.get('notion');
-  $: visibleArcadeCategories = arcadeCategories.filter(category => category === 'TOUS' || worlds.some(world => world.subject === category));
+  $: visibleArcadeCategories = arcadeCategories;
   $: gameNotions = Array.from(new Set(worlds.filter(world => selectedArcadeCategory === 'TOUS' || world.subject === selectedArcadeCategory).map(world => gamePresentation[world.id].notion)));
 
   const statusLabels = {

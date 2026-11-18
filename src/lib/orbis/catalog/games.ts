@@ -18,7 +18,10 @@ export type WorldId =
 export type WorldSubject =
   | 'MATHS'
   | 'FRANÇAIS'
+  | 'ANGLAIS'
+  | 'ALLEMAND'
   | 'SCIENCES'
+  | 'ÉDUCATION NUMÉRIQUE'
   | 'AUTRES'
   | 'À CLASSER';
 
@@ -159,7 +162,7 @@ export const worlds: World[] = [
     route: '/english_lab',
     emoji: '🧪',
     color: 'blue',
-    subject: 'AUTRES',
+    subject: 'ANGLAIS',
     status: 'prototype'
   },
   {
