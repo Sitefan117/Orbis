@@ -16,8 +16,15 @@ export function recordGameActivity(input: GameActivityInput): Promise<ActivitySu
     hintsUsed: input.hintsUsed,
     durationSeconds: input.durationSeconds,
     responseDetails: input.responseDetails,
-    metadata: input.metadata
+    metadata: input.metadata,
+    activityKind: input.activityKind,
+    sessionId: input.sessionId
   });
+}
+
+/** Même format que les jeux, mais marqué explicitement comme cours. */
+export function recordCourseActivity(input: Omit<GameActivityInput, 'activityKind'>): Promise<ActivitySubmission> {
+  return recordGameActivity({ ...input, activityKind: 'course' });
 }
 
 /** Point d’entrée commun pour une sauvegarde, sans interpréter l’état du jeu. */

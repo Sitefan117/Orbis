@@ -106,19 +106,19 @@ export function makeQuestionBase(
   } else if (notion === 'complements10') {
     const value = randomInt(1, 9);
     answer = 10 - value;
-    questionText = `De ${value} à 10 : combien manque-t-il ?`;
+    questionText = `${value} + … = 10`;
     fullFormula = `${value} + ${answer} = 10`;
     factKey = `complement10:${value}`;
   } else if (notion === 'complements100') {
     const value = practiceLevel === 'guided' ? randomInt(1, 9) * 10 : randomInt(1, 99);
     answer = 100 - value;
-    questionText = `De ${value} à 100 : combien manque-t-il ?`;
+    questionText = `${value} + … = 100`;
     fullFormula = `${value} + ${answer} = 100`;
     factKey = `complement100:${value}`;
   } else if (notion === 'complements1000') {
     const value = practiceLevel === 'guided' ? randomInt(1, 9) * 100 : randomInt(1, 999);
     answer = 1000 - value;
-    questionText = `De ${formatNumber(value)} à 1 000 : combien manque-t-il ?`;
+    questionText = `${formatNumber(value)} + … = ${formatNumber(1000)}`;
     fullFormula = `${formatNumber(value)} + ${formatNumber(answer)} = ${formatNumber(1000)}`;
     factKey = `complement1000:${value}`;
   } else if (notion === 'dizaineSuivante') {

@@ -4,9 +4,10 @@
     import FractionBar from '$lib/games/fractionstower2/components/fraction/FractionBar.svelte';
     import VisualFractionModel from '$lib/games/fractionstower2/components/fraction/VisualFractionModel.svelte';
     import { ExerciseGenerator, type VisualFractionOption } from '$lib/games/fractionstower2/engines/ExerciseGenerator';
+    import type { ResponseDetail } from '$lib/orbis/results/contract';
 
     let { onComplete, onClose, game } = $props<{
-        onComplete: () => void;
+        onComplete: (score?: number, responseDetails?: ResponseDetail[]) => void;
         onClose?: () => void;
         game: { markBossDefeated?: (floorId: string) => void };
     }>();
@@ -25,6 +26,9 @@
     let feedback = $state('');
     let locked = $state(false);
     let exercise = $state<BossExercise>(makePhase1Question());
+    let responseDetails = $state<ResponseDetail[]>([]);
+    let attemptCount = $state(0);
+    let questionStartedAt = $state(Date.now());
 
     type Fraction = { numerator: number; denominator: number };
     type Phase1Exercise = { kind: 'read'; fraction: Fraction };
@@ -88,6 +92,8 @@
         answer = '';
         feedback = '';
         locked = false;
+        attemptCount = 0;
+        questionStartedAt = Date.now();
         if (phase === 1) exercise = makePhase1Question();
         else if (phase === 2) exercise = makePhase2Question();
         else exercise = makePhase3Question();
@@ -153,6 +159,7 @@
             return;
         }
         let correct = false;
+        attemptCount += 1;
 
         if (phase === 1 && exercise.kind === 'read') {
             const parts = normalize(value ?? answer).split('/');
@@ -178,11 +185,15 @@
             feedback = playerLives === 0
                 ? 'Tu n’as plus de vies. Le boss a gagné cette fois.'
                 : `Pas tout à fait. Tu perds une vie. Il t’en reste ${playerLives}. Piste : ${getHint()}`;
-            if (playerLives === 0) phase = 5;
+            if (playerLives === 0) {
+                responseDetails = [...responseDetails, makeResponseDetail(false, value ?? answer)];
+                phase = 5;
+            }
             return;
         }
 
         locked = true;
+        responseDetails = [...responseDetails, makeResponseDetail(true, value ?? answer)];
         score += 1;
         bossLives = Math.max(0, bossLives - 1);
         feedback = phase === 3 && exercise.kind === 'situation'
@@ -230,7 +241,7 @@
 
     function finishBoss() {
         game.markBossDefeated?.('floor-1');
-        onComplete();
+        onComplete(score, responseDetails);
     }
 
     function restartBoss() {
@@ -240,7 +251,33 @@
         score = 0;
         bossLives = MAX_BOSS_LIVES;
         playerLives = MAX_PLAYER_LIVES;
+        responseDetails = [];
+        attemptCount = 0;
+        questionStartedAt = Date.now();
         loadQuestion();
+    }
+
+    function makeResponseDetail(correct: boolean, response: string): ResponseDetail {
+        const prompt = exercise.kind === 'read'
+            ? `Écris la fraction représentée : ${exercise.fraction.numerator}/${exercise.fraction.denominator}.`
+            : exercise.kind === 'match'
+                ? `Sélectionne les parts représentant ${exercise.target.numerator}/${exercise.target.denominator}.`
+                : exercise.question;
+        const expected = exercise.kind === 'read'
+            ? `${exercise.fraction.numerator}/${exercise.fraction.denominator}`
+            : exercise.kind === 'match' ? exercise.correctAnswer : exercise.answer;
+        return {
+            questionIndex: (phase - 1) * QUESTIONS_PER_PHASE + questionIndex,
+            questionId: `fractionstower2-floor-1-${phase}-${questionIndex + 1}`,
+            category: phase === 1 ? 'Fractions · lecture' : phase === 2 ? 'Fractions · parts égales' : 'Fractions · situation',
+            prompt,
+            response,
+            expected,
+            correct,
+            attempts: attemptCount,
+            durationSeconds: Math.max(1, Math.round((Date.now() - questionStartedAt) / 1000)),
+            errorFamily: correct ? undefined : exercise.kind
+        };
     }
 </script>
 

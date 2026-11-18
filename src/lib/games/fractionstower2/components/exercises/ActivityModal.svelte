@@ -11,6 +11,7 @@
   import BossBattle from '$lib/games/fractionstower2/components/exercises/BossBattle.svelte';
   import { ProgressManager } from '$lib/games/fractionstower2/persistence/ProgressManager';
   import { AudioManager } from '$lib/games/fractionstower2/audio/AudioManager';
+  import type { ResponseDetail } from '$lib/orbis/results/contract';
 
   // Typage des propriétés : syntaxe compatible avec l'erreur rencontrée.
   let {
@@ -58,7 +59,7 @@
           : 'training'
   );
 
-  function handleComplete(finalScore: number = 10) {
+  function handleComplete(finalScore: number = 10, responseDetails: ResponseDetail[] = []) {
     if (typeof (AudioManager as any).play === 'function') {
       (AudioManager as any).play('success');
     } else if (typeof (AudioManager as any).playSuccess === 'function') {
@@ -70,7 +71,8 @@
     ProgressManager.recordFloorCompletion(
       floorNumber,
       finalScore,
-      totalQuestions
+      totalQuestions,
+      responseDetails
     );
 
     setTimeout(() => onClose(), 1500);
@@ -125,13 +127,13 @@
       {:else if activityType === 'boss'}
         <BossBattle
           floorId={floorNumber}
-          onComplete={(score?: number) => handleComplete(score ?? 0)}
+          onComplete={(score?: number, responseDetails?: ResponseDetail[]) => handleComplete(score ?? 0, responseDetails ?? [])}
           onClose={onClose}
         />
       {:else}
         <TrainingSession
           floorId={floorNumber}
-          onComplete={(score: number) => handleComplete(score)}
+          onComplete={(score: number, responseDetails: ResponseDetail[]) => handleComplete(score, responseDetails)}
         />
       {/if}
     </div>

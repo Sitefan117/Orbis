@@ -16,7 +16,8 @@ export const coursePaths = {
   },
   geometry: {
     notebook: '/cours/maths/geometrie/carnet.html',
-    sketch: '/cours/maths/geometrie/croquis.html'
+    sketch: '/cours/maths/geometrie/croquis.html',
+    aideMemoire: '/cours/maths/geometrie/aide-memoire.html'
   },
   french: {
     grammar: '/cours/francais/grammaire/atelier-des-phrases.html',

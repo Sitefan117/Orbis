@@ -336,6 +336,8 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
     function stopRound() {
         clearFeedback();
         clearTapBoost();
+        if (steeringPress?.longPress) clearTimeout(steeringPress.longPress);
+        steeringPress = null;
         isAccelerating = false;
         isBraking = false;
         pendingPauseOutcome = null;
@@ -350,6 +352,36 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
 
     function moveRight() {
         if (gameState === 'PLAYING' && currentLane < 2) currentLane++;
+    }
+
+    // Sur tablette : un tap change de voie ; un maintien commande la vitesse.
+    // Les zones restent transparentes pour conserver le décor sans ajouter de boutons.
+    let steeringPress: { side: 'left' | 'right'; startedAt: number; longPress: ReturnType<typeof setTimeout> | null } | null = null;
+    function handleSteeringPointerDown(event: PointerEvent, side: 'left' | 'right') {
+        event.preventDefault();
+        const target = event.currentTarget as HTMLElement;
+        try { target.setPointerCapture(event.pointerId); } catch { /* Certains navigateurs iPad n'exposent pas la capture. */ }
+        steeringPress = { side, startedAt: Date.now(), longPress: null };
+        steeringPress.longPress = setTimeout(() => {
+            if (gameState !== 'PLAYING' || !steeringPress) return;
+            steeringPress.longPress = null;
+            if (side === 'left') isBraking = true;
+            else isAccelerating = true;
+        }, 180);
+    }
+
+    function handleSteeringPointerUp(event: PointerEvent) {
+        event.preventDefault();
+        const press = steeringPress;
+        steeringPress = null;
+        if (!press) return;
+        if (press.longPress) clearTimeout(press.longPress);
+        const wasLongPress = Date.now() - press.startedAt >= 180;
+        if (wasLongPress) {
+            isAccelerating = false;
+            isBraking = false;
+        } else if (press.side === 'left') moveLeft();
+        else moveRight();
     }
 
     function handleKeydown(event: KeyboardEvent) {
@@ -951,9 +983,9 @@ const ORBIS_HOME = catalogHref(base, 'jeux'); // Modifier cette constante si l'a
         </div>
 
         {#if gameState === 'PLAYING'}
-            <nav class="touch-steering" aria-label="Commandes tactiles de direction">
-                <button type="button" class="steering-zone steering-left" onclick={moveLeft} aria-label="Aller sur la voie de gauche"><span>◀</span></button>
-                <button type="button" class="steering-zone steering-right" onclick={moveRight} aria-label="Aller sur la voie de droite"><span>▶</span></button>
+            <nav class="touch-steering" aria-label="Commandes tactiles de direction et de vitesse">
+                <button type="button" class="steering-zone steering-left" onpointerdown={(event) => handleSteeringPointerDown(event, 'left')} onpointerup={handleSteeringPointerUp} onpointercancel={handleSteeringPointerUp} aria-label="Toucher pour aller à gauche, maintenir pour ralentir"></button>
+                <button type="button" class="steering-zone steering-right" onpointerdown={(event) => handleSteeringPointerDown(event, 'right')} onpointerup={handleSteeringPointerUp} onpointercancel={handleSteeringPointerUp} aria-label="Toucher pour aller à droite, maintenir pour accélérer"></button>
             </nav>
         {/if}
     {/if}

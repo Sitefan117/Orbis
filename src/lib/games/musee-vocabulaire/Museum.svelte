@@ -57,19 +57,32 @@
   let options: Word[] = [];
   let ready = false;
   let inHall = true;
+  let workshopOnly = false;
+  let lastHallChoice: Mode | 'workshop' = 'whack-image';
   let wordListOpen = false;
   let gameHeading: HTMLHeadingElement;
   let hallNavigation: HTMLElement;
   async function enterMachine(next: Mode) {
+    workshopOnly = false;
+    lastHallChoice = next;
     start(next);
     inHall = false;
     await tick();
     gameHeading?.focus();
   }
+  async function enterWorkshop() {
+    workshopOnly = true;
+    lastHallChoice = 'workshop';
+    settingsOpen = false;
+    playing = bank.filter((entry) => selectedThemes.includes(entry.theme));
+    rememberThemes();
+    inHall = false;
+    await tick();
+  }
   async function returnToHall() {
     inHall = true;
     await tick();
-    hallNavigation?.querySelector<HTMLButtonElement>(`button[data-mode="${mode}"]`)?.focus();
+    hallNavigation?.querySelector<HTMLButtonElement>(`button[data-mode="${lastHallChoice}"]`)?.focus();
   }
   let student = '';
   let message = '';
@@ -105,12 +118,13 @@
   let printKind: 'exercise' | 'vocabulary' = 'exercise';
   let responseDetails: ResponseDetail[] = [];
   let vocabularyProgress: VocabularyProgress = {};
-  const audioWords = new Set(['actions-boire','actions-dormir','actions-manger','actions-marcher','actions-s-habiller','actions-se-lever','actions-se-reveiller','alimentation-banane','alimentation-fromage','alimentation-lait','alimentation-pain','alimentation-pates','alimentation-pomme','alimentation-riz','corps-bouche','corps-dent','corps-main','corps-nez','corps-oeil','corps-oreille','corps-pied','ecole-bibliotheque','ecole-cahier','ecole-cartable','ecole-classe','ecole-ecole','ecole-recreation','ecole-tableau','emotions-calme','emotions-content','emotions-fatigue','emotions-fier','emotions-inquiet','emotions-surpris','emotions-triste','famille-famille','famille-frere','famille-grand-mere','famille-mere','famille-parent','famille-pere','famille-soeur','logement-bail','logement-charges','logement-garantie-de-loyer','logement-locataire','logement-loyer','logement-proprietaire','logement-regie','maison-chaise','maison-cle','maison-fenetre','maison-lit','maison-maison','maison-porte','maison-table','temps-annee','temps-jour','temps-lundi','temps-mardi','temps-mercredi','temps-mois','temps-semaine','ville-bus','ville-feu-de-circulation','ville-gare','ville-passage-pieton','ville-train','ville-tram','ville-velo']);
+  let progressHydrated = false;
+  let spokenAudio: HTMLAudioElement | undefined;
+  const audioCache = new Map<string, HTMLAudioElement>();
   let audioVoice: 'eddy' | 'flo' = 'eddy';
-  let audioTestOnly = false;
 
   $: categories = getCategories(bank);
-  $: selectedEntries = bank.filter((entry) => selectedThemes.includes(entry.theme) && (!audioTestOnly || audioWords.has(entry.id)));
+  $: selectedEntries = bank.filter((entry) => selectedThemes.includes(entry.theme));
   $: selectedCount = selectedEntries.length;
   $: selectedSentenceCount = selectedEntries.filter((entry) => entry.sentence).length;
   $: isImageMode = mode === 'whack-image' || mode === 'whack-word' || mode === 'match';
@@ -122,7 +136,20 @@
   let alphabet: string[] = [];
   $: visibleVocabulary = distinctWords(playing).sort((a, b) => a.word.localeCompare(b.word, 'fr'));
   $: mastery = masterySummary(vocabularyProgress);
-  function audioPath(entry: Word) { return isEnglish ? `${base}/audio/english-lab/${entry.id}-${audioVoice}.aiff` : (audioWords.has(entry.id) ? `${base}/audio/musee-vocabulaire/${entry.id}-${audioVoice}.aiff` : ''); }
+  function audioPath(entry: Word) { return isEnglish ? `${base}/audio/english-lab/${entry.id}-${audioVoice}.aiff` : `${base}/audio/musee-vocabulaire/${entry.id}-piper.wav`; }
+  function playWord(entry: Word) {
+    if (typeof Audio === 'undefined') return;
+    const src = audioPath(entry);
+    spokenAudio?.pause();
+    spokenAudio = audioCache.get(src);
+    if (!spokenAudio) {
+      spokenAudio = new Audio(src);
+      spokenAudio.preload = 'auto';
+      audioCache.set(src, spokenAudio);
+    }
+    spokenAudio.currentTime = 0;
+    void spokenAudio.play();
+  }
   $: matchImages = options;
 
   function getCategories(entries: Word[]) {
@@ -145,22 +172,24 @@
   async function restoreRemoteProgress() {
     if (!student) return;
     const loaded = await createGameProgressService(student, gameId).loadProgress();
-    if (!loaded.ok || !loaded.value?.state) return;
-    const state = loaded.value.state as Record<string, any>;
-    if (Array.isArray(state.selectedThemes) && state.selectedThemes.length) selectedThemes = state.selectedThemes;
-    audioTestOnly = state.audioTestOnly === true;
-    if (Array.isArray(state.galleryIds)) gallery = bank.filter((entry) => state.galleryIds.includes(entry.id));
-    responseDetails = Array.isArray(state.responseDetails) ? state.responseDetails : [];
-    vocabularyProgress = state.vocabularyProgress && typeof state.vocabularyProgress === 'object' ? state.vocabularyProgress : {};
+    if (loaded.ok && loaded.value?.state) {
+      const state = loaded.value.state as Record<string, any>;
+      if (Array.isArray(state.selectedThemes) && state.selectedThemes.length) selectedThemes = state.selectedThemes;
+      if (Array.isArray(state.galleryIds)) gallery = bank.filter((entry) => state.galleryIds.includes(entry.id));
+      responseDetails = Array.isArray(state.responseDetails) ? state.responseDetails : [];
+      vocabularyProgress = state.vocabularyProgress && typeof state.vocabularyProgress === 'object' ? state.vocabularyProgress : {};
+      playing = bank.filter((entry) => selectedThemes.includes(entry.theme));
+    }
+    progressHydrated = true;
   }
 
   function saveRemoteProgress() {
-    if (!student) return;
+    if (!student || !progressHydrated) return;
     const mastery = masterySummary(vocabularyProgress);
     recordGameProgress({
       studentName: student,
       gameId,
-      state: { mode, selectedThemes, audioTestOnly, galleryIds: gallery.map((entry) => entry.id), queueIds: queue.map((entry) => entry.id), targetId: target?.id, attempts, solved, responseDetails, vocabularyProgress },
+      state: { mode, selectedThemes, galleryIds: gallery.map((entry) => entry.id), queueIds: queue.map((entry) => entry.id), targetId: target?.id, attempts, solved, responseDetails, vocabularyProgress },
       formatVersion: 1,
       summary: { label: `Musée des mots · ${mastery.acquired} mots acquis`, completed: mastery.acquired, total: Math.max(1, mastery.total) }
     });
@@ -176,21 +205,13 @@
   }
 
   function toggleTheme(theme: string) {
-    audioTestOnly = false;
     selectedThemes = selectedThemes.includes(theme) ? selectedThemes.filter((item) => item !== theme) : [...selectedThemes, theme];
-  }
-
-  function chooseAudioTest() {
-    audioTestOnly = true;
-    selectedThemes = [...new Set(bank.filter((entry) => audioWords.has(entry.id)).map((entry) => entry.theme))];
-    printWords = [];
-    start(mode);
   }
 
   function start(next: Mode) {
     mode = next;
     settingsOpen = false;
-    playing = bank.filter((entry) => selectedThemes.includes(entry.theme) && (!audioTestOnly || audioWords.has(entry.id)));
+    playing = bank.filter((entry) => selectedThemes.includes(entry.theme));
     rememberThemes();
     const eligible = playing.filter((entry) => {
       if (next === 'syllables') return entry.syllables.length >= 2;
@@ -297,6 +318,7 @@
 
   function choose(entry: Word) {
     if (!target || solved || eliminated.includes(entry.id)) return;
+    if (mode === 'whack-image' || mode === 'millionaire') playWord(entry);
     if (entry.id === target.id) success(target);
     else {
       eliminated = [...eliminated, entry.id];
@@ -344,7 +366,7 @@
 
   function checkParts() {
     if (!target || solved || parts.some((part) => !part)) return;
-    if (parts.join('') === target.word) success(target);
+    if (parts.join('') === target.word) { playWord(target); success(target); }
     else report('Relis ton mot. Il faut changer au moins un morceau.', 'retry');
   }
 
@@ -359,11 +381,13 @@
       greenCells = [...new Set([...greenCells, ...match.path])];
       selectedCells = selectedCells.filter((cell) => !greenCells.includes(cell));
       collect(match.entry);
+      saveRemoteProgress();
       report(`« ${match.entry.word} » trouvé ! ${found.length}/${grid.targets.length}.`, found.length === grid.targets.length ? 'complete' : 'correct');
     } else report('Tes lettres sont en bleu.');
   }
 
   function selectMatch(entry: Word) {
+    playWord(entry);
     if (picked?.id !== entry.id) {
       eliminated = [];
     }
@@ -379,6 +403,7 @@
     }
     matched = [...matched, entry.id];
     collect(entry);
+    saveRemoteProgress();
     picked = undefined;
     eliminated = [];
     report('Association correcte !', matched.length === matchWords.length ? 'complete' : 'correct');
@@ -490,7 +515,7 @@
   <main class="shell no-print">
     <section class="settings" aria-label="Thèmes de vocabulaire">
       <button class="secondary" aria-expanded={settingsOpen} on:click={() => settingsOpen = !settingsOpen}>Choisir les thèmes</button>
-      <span>{audioTestOnly ? 'Test des mots audio' : `${selectedThemes.length} thème${selectedThemes.length > 1 ? 's' : ''}`} · {selectedCount} entrées</span>
+      <span>{selectedThemes.length} thème{selectedThemes.length > 1 ? 's' : ''} · {selectedCount} entrées</span>
       {#if mastery.total}<span class="mastery-chip" aria-label={`${mastery.acquired} mots acquis, ${mastery.fragile} fragiles, ${mastery.due} à revoir`}>{mastery.acquired} acquis · {mastery.fragile} fragiles · {mastery.due} à revoir</span>{/if}
       {#if settingsOpen}
         <div class="filters">
@@ -505,9 +530,8 @@
         </div>
         <div class="actions">
           <button class="primary" disabled={!selectedCount} on:click={() => { printWords = []; start(mode); }}>Utiliser ces thèmes</button>
-          <button class:audio-active={audioTestOnly} aria-pressed={audioTestOnly} on:click={chooseAudioTest}>🔊 Test des mots audio</button>
-          <button on:click={() => { audioTestOnly = false; selectedThemes = categories.map((entry) => entry.theme); }}>Tout cocher</button>
-          <button on:click={() => { audioTestOnly = false; selectedThemes = []; }}>Tout décocher</button>
+          <button on:click={() => selectedThemes = categories.map((entry) => entry.theme)}>Tout cocher</button>
+          <button on:click={() => selectedThemes = []}>Tout décocher</button>
         </div>
         <details>
           <summary>Lexique CSV et fiches</summary>
@@ -534,6 +558,7 @@
       {#each modes as [id, label], index}
         <button data-mode={id} disabled={!ready || !selectedCount} on:click={() => enterMachine(id)}><span class="machine-art" aria-hidden="true" style:background-image={`url('${base}/images/musee-vocabulaire/machines.png')`} style:background-position={`${(index % 4) * 100 / 3}% ${Math.floor(index / 4) * 100}%`}></span><span class="machine-label"><small>{String(index + 1).padStart(2, '0')}</small>{label}</span></button>
       {/each}
+      <button data-mode="workshop" disabled={!ready || !selectedCount} on:click={enterWorkshop}><span class="machine-art" aria-hidden="true" style:background-image={`url('${base}/images/musee-vocabulaire/machines.png')`} style:background-position="66.666% 100%"></span><span class="machine-label"><small>09</small>Atelier de réemploi</span></button>
     </nav>
     {:else}
     <button class="return-hall" on:click={returnToHall}>← Choisir une autre machine</button>
@@ -541,12 +566,13 @@
     {#if wordListOpen}
       <section class="word-bank" aria-label="Liste des mots choisis">
         <div><h2>Les mots de mes thèmes</h2><p>Tu peux regarder l’orthographe et le sens d’un mot.</p></div>
-        <label class="audio-choice">Voix
-          <select bind:value={audioVoice}><option value="eddy">Voix 1</option><option value="flo">Voix 2</option></select>
-        </label>
+        <p class="audio-choice">Voix : Piper · français</p>
         <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong><span>{entry.definition}</span>{#if audioPath(entry)}<audio controls preload="none" src={audioPath(entry)} aria-label={`Écouter ${entry.word}`}></audio>{/if}</li>{/each}</ul>
       </section>
     {/if}
+    {#if workshopOnly}
+      <ContextLab words={playing} studentName={student || getStudentName()} {gameId} />
+    {:else}
     <section class="game" aria-label={modeLabels[mode]}>
       <div class="machine-heading"><span class="machine-art" aria-hidden="true" style:background-image={`url('${base}/images/musee-vocabulaire/machines.png')`} style:background-position={`${(modes.findIndex(([id]) => id === mode) % 4) * 100 / 3}% ${Math.floor(modes.findIndex(([id]) => id === mode) / 4) * 100}%`}></span><h2 tabindex="-1" bind:this={gameHeading}>{modeLabels[mode]}</h2></div>
       {#if ready}
@@ -618,7 +644,7 @@
           {:else if mode === 'whack-image'}
             <span class="sprite large" role="img" aria-label={target.definition} style={spriteStyle(base, target.sprite)}></span>
           {:else if mode === 'whack-word'}
-            <p class="prompt">{target.word}</p>
+            <div class="prompt-with-audio"><p class="prompt">{target.word}</p><button aria-label={`Écouter ${target.word}`} on:click={() => target && playWord(target)}>🔊 Écouter</button></div>
           {:else}
             <p class="prompt">{mode === 'millionaire' && quizFormat === 'phrases' ? target.sentence : target.definition}</p>
           {/if}
@@ -693,7 +719,7 @@
         </div>
       {/if}
     </section>
-    {#if ready && !inHall}<ContextLab words={playing} studentName={student || getStudentName()} {gameId} />{/if}
+    {/if}
     {/if}
     <aside class="game">
       <h2>Ma collection · {gallery.length}</h2>
@@ -770,7 +796,6 @@
   .settings, .game { background: #fffaf0; border: 1px solid #d8c9ae; padding: clamp(.9rem, 3vw, 1.6rem); border-radius: 1rem; margin-bottom: 1rem; }
   .settings > span { margin-inline-start: .75rem; }
   .mastery-chip { color: #285c4a; font-weight: 800; }
-  .actions .audio-active { background:#285c4a; border-color:#285c4a; color:white; }
   .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .75rem; margin-block: .9rem; }
   fieldset { border: 1px solid #d8c9ae; border-radius: .7rem; min-width: 0; }
   legend { font-weight: 750; }
@@ -793,6 +818,7 @@
   .sprite { display: block; width: min(6rem, 100%); aspect-ratio: 1; margin: auto; background-repeat: no-repeat; }
   .sprite.large { width: min(11rem, 100%); }
   .prompt { font-size: clamp(1.1rem, 3vw, 1.65rem); font-weight: 750; }
+  .prompt-with-audio { display: flex; align-items: center; justify-content: center; gap: .65rem; flex-wrap: wrap; }
   .controls, .game .choices, .tiles, .game .actions { justify-content: center; margin-top: .85rem; }
   .choices button { min-width: min(7rem, 100%); text-align: center; }
   .slots { overflow-wrap: anywhere; font-weight: 800; }
@@ -803,8 +829,8 @@
   .vignettes .chosen { border-color: #25453c; background: #e9f0e8; }
   .matches { display: grid; gap: .75rem; }
   .search { display: grid; grid-template-columns: minmax(0, 30rem) minmax(0, 12rem); gap: 1rem; justify-content: center; margin-bottom: .75rem; }
-  .grid { display: grid; align-self: start; gap: 1px; }
-  .grid button { display: grid; place-items: center; padding: 0; border-radius: .2rem; aspect-ratio: 1; min-width: 0; text-align: center; line-height: 1; font-size: clamp(.68rem, 2.5vw, 1rem); }
+  .grid { display: grid; align-self: start; gap: .18rem; align-items: stretch; justify-items: stretch; }
+  .grid button { display: grid; place-items: center; width: 100%; height: 100%; box-sizing: border-box; padding: 0; border-radius: .2rem; aspect-ratio: 1; min-width: 0; text-align: center; line-height: 1; font-size: clamp(.68rem, 2.5vw, 1rem); }
   .grid button.blue { background: #b5dcf7; border-color: #267297; }
   button.green, .grid button.green, li.green { background: #bde6c8; color: #174c30; border-color: #387a50; opacity: 1; }
   button.faded { opacity: .35; text-decoration: line-through; }

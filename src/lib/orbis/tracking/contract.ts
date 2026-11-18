@@ -14,6 +14,8 @@ export type GameActivityInput = {
   durationSeconds?: number;
   responseDetails?: import('$lib/orbis/results/contract').ResponseDetail[];
   metadata?: Record<string, unknown>;
+  activityKind?: 'game' | 'course';
+  sessionId?: string;
 };
 
 /** Copie de progression facultative ; la structure de state reste celle du jeu. */
