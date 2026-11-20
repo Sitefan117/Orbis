@@ -4,5 +4,5 @@
 
 ## Fichiers
 
-- **[`+page.svelte](./+page.svelte)** — Écran principal de Shift.  
-  Dépend de : `src/lib/games/shift/number-engine.ts` et `src/lib/games/shift/config.ts` — autre dossier, `svelte` (dépendance npm).
+- **[`+page.svelte`](./+page.svelte)** — Écran et état de séance de Shift.
+  Dépend de : `src/lib/games/shift/task-generator.ts` pour créer les tâches, `number-engine.ts` pour les valeurs et `config.ts` pour les missions.

@@ -11,6 +11,7 @@ npm run build
 `npm test` lance `tests/run-smoke.sh`. Ce script est la liste à jour des tests
 exécutés : moteurs et contenus des jeux, routes et navigation, profils et
 sauvegardes multi-élèves, exports enseignant et simulations pédagogiques.
+Le générateur de Shift est testé pour chaque mission et chaque difficulté.
 Il comprend notamment `orbis-result-export.test.ts`, qui vérifie que les
 valeurs pouvant être interprétées comme des formules restent du texte en CSV.
 

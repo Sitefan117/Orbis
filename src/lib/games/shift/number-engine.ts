@@ -173,3 +173,27 @@ export function parseNumberInput(text: string): number | null {
   const value = Number(cleaned);
   return Number.isFinite(value) ? value : null;
 }
+
+// Relation visible sous chaque colis : elle explicite la valeur du rang.
+// Les rangs décimaux sont décrits comme une dixième du rang supérieur.
+const PLACE_RELATIONS: Record<string, string> = {
+  unit: '1 cube = 1 unité',
+  ten: '1 dizaine = 10 unités',
+  hundred: '1 centaine = 10 dizaines',
+  thousand: '1 millier = 10 centaines',
+  tenThousand: '10 milliers',
+  hundredThousand: '10 dizaines de milliers',
+  million: '10 centaines de milliers',
+  tenMillion: '10 millions',
+  hundredMillion: '10 dizaines de millions',
+  billion: '10 centaines de millions',
+  tenBillion: '10 milliards',
+  hundredBillion: '10 dizaines de milliards',
+  tenth: '1/10 d’une unité',
+  hundredth: '1/10 de dixième',
+  thousandth: '1/10 de centième'
+};
+
+export function beltItemRelation(itemKey: string): string {
+  return PLACE_RELATIONS[itemKey] || 'Un rang de numération';
+}

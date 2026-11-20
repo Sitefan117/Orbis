@@ -12,6 +12,8 @@
   Dépend de : `engine-v3-adapter.ts` ; utilisé par `src/routes/mesurovia/+page.svelte`.
 - **[`progress.ts`](./progress.ts)** — Types et normalisation des profils Mesurovia, y compris les anciennes sauvegardes.  
   Utilisé par : `src/routes/mesurovia/+page.svelte`.
+- **[`session-types.ts`](./session-types.ts)** — Contrat de séance et de bilan partagé avec la page ; les questions restent propres au moteur.
+- **[`page-config.ts`](./page-config.ts)** — Catalogues, avatars et positions des cartes ; dépend de `conversion-table.ts` et de `$app/paths` pour le préfixe GitHub Pages. La page conserve l'état de la partie.
 - **[`ActivityIllustration.svelte`](./ActivityIllustration.svelte)** — Neuf petites illustrations vectorielles animées pour les cartes d’activités.  
   Utilisé par : `src/routes/mesurovia/+page.svelte` ; les animations respectent la réduction de mouvement du jeu et du navigateur.
 - **[`GameObjectArt.svelte`](./GameObjectArt.svelte)** — Dessins vectoriels animés du gardien, du renard, du coffre, de l’enquêtrice, de l’horloge et des briques.  

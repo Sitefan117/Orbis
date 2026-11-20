@@ -1,5 +1,8 @@
 /** Types et mise à niveau des profils locaux propres à Mesurovia. */
 
+/** Clé V2 conservée pour relire les sauvegardes existantes. */
+export const MESUROVIA_STORAGE_KEY = 'mesurovia-orbis-v2';
+
 export type HouseProgress = {
   theoryDone: boolean;
   trainingDone: boolean;

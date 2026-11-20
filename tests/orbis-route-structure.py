@@ -7,6 +7,7 @@ from pathlib import Path
 root = Path(__file__).parents[1]
 route = root / 'src/routes/mesurovia/+page.svelte'
 source = route.read_text(encoding='utf-8')
+progress = (root / 'src/lib/games/mesurovia/progress.ts').read_text(encoding='utf-8')
 required = {
     'page V3': 'MESUROVIA V3',
     'menu créer personnage': 'Créer mon personnage',
@@ -30,7 +31,6 @@ required = {
     'défi horloge dédié': "startSession('clock')",
     'chantier des formes dédié': "startSession('builder')",
     'générateur de formats variés': "const standardFormats = ['choice', 'number', 'unit', 'match', 'order', 'table', 'error', 'multi']",
-    'stockage historique conservé': "const STORAGE_KEY = 'mesurovia-orbis-v2'",
     'export JSON': 'function exportSave()',
     'import JSON': 'function importSave(event: Event)',
     'pas de déplacement clavier': 'function handleMapClick(event: MouseEvent)',
@@ -41,6 +41,7 @@ required = {
 }
 missing = [name for name, snippet in required.items() if snippet not in source]
 assert not missing, f'Fonctions V3 manquantes dans +page.svelte : {missing}'
+assert "export const MESUROVIA_STORAGE_KEY = 'mesurovia-orbis-v2'" in progress, 'La clé de sauvegarde historique doit rester stable.'
 assert 'addEventListener("keydown"' not in source and "addEventListener('keydown'" not in source, 'Un écouteur de déplacement clavier ne doit pas être réintroduit.'
 assert source.count('role="button"') >= 2, 'Les maisons et personnages doivent rester interactifs.'
 assert "currentLesson?.explain || 'La mesure reste la même" not in source, 'Le corrigé de la leçon est affiché avant la question.'

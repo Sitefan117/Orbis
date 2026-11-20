@@ -4,5 +4,5 @@
 
 ## Fichiers
 
-- **[`+page.svelte](./+page.svelte)** — Écran principal de Racer.  
-  Dépend de : `src/lib/games/race/engine.ts`, `src/lib/games/race/progress.ts`, `src/lib/games/race/audio.ts` et `src/lib/games/race/scene-tools.ts` — autre dossier, `svelte` (dépendance npm), `three` (dépendance npm, chargé à la demande).
+- **[`+page.svelte`](./+page.svelte)** — Écran et état de course de Racer.
+  Dépend de : `src/lib/games/race/game-config.ts`, `engine.ts`, `progress.ts`, `audio.ts` et `scene-tools.ts` ; Three.js est chargé à la demande.

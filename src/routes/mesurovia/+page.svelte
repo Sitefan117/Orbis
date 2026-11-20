@@ -5,16 +5,19 @@
    * Choix de conception :
    * - une seule diapositive visible à la fois pour limiter la recherche d'information ;
    * - chaque cours suit 6 étapes : explication, exemple, manipulation, vérification, autonomie et réussite ;
-   * - les maisons et villages restent tous accessibles dans ce prototype ;
+   * - les maisons et villages restent accessibles ;
    * - la carte utilise le point-and-click : aucun déplacement au clavier n'est enregistré ;
-   * - profil et progression sont stockés dans une clé V2 dédiée, sans modifier les anciennes sauvegardes.
+   * - profil et progression sont stockés dans une clé V2 dédiée, sans modifier les anciennes sauvegardes ;
+   * - page-config.ts porte les catalogues et repères de carte, session-types.ts le contrat de séance.
    */
   import { onDestroy, onMount } from 'svelte';
   import { base } from '$app/paths';
+  import { gameCatalog, courseCatalog, avatars, avatarNames, avatarIndex, avatarPosition, courseTableExample, buildingLayouts, residentsByVillage, familyOrder, villageArtwork, villageMapArtwork, jokes, howToSlides } from '$lib/games/mesurovia/page-config';
+  import type { SessionMode, Feedback, Session } from '$lib/games/mesurovia/session-types';
   import { catalogHref, restoreCatalogReturn } from '$lib/orbis/navigation';
   import engine from '$lib/games/mesurovia/engine-v3-adapter';
-  import { createMemoryCards, createMemoryPairs, type MemoryCard } from '$lib/games/mesurovia/memory-game';
-  import { createBlankProfile, normalizeProfile, type HouseProgress, type Profile } from '$lib/games/mesurovia/progress';
+  import { createMemoryCards, createMemoryPairs } from '$lib/games/mesurovia/memory-game';
+  import { MESUROVIA_STORAGE_KEY as STORAGE_KEY, createBlankProfile, normalizeProfile, type HouseProgress, type Profile } from '$lib/games/mesurovia/progress';
   import ActivityIllustration from '$lib/games/mesurovia/ActivityIllustration.svelte';
   import GameObjectArt from '$lib/games/mesurovia/GameObjectArt.svelte';
   import ConversionGuide from '$lib/games/mesurovia/ConversionGuide.svelte';
@@ -23,119 +26,12 @@
   import { courseForHouse } from '$lib/games/mesurovia/courses';
   import { hasHouseQuestionBank, makeHouseQuestion } from '$lib/games/mesurovia/question-bank';
   import { coursePaths } from '$lib/orbis/catalog/course-paths';
-  import { getConversionFamily } from '$lib/games/mesurovia/conversion-table';
   import { getStudentName, studentStorageScope } from '$lib/orbis/identity/local-student';
   import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
   import { createGameProgressService } from '$lib/orbis/persistence/game-services';
-  import type { ResponseDetail } from '$lib/orbis/results/contract';
 
   type View = 'welcome' | 'games-catalog' | 'courses-catalog' | 'character' | 'villages' | 'village' | 'room' | 'pretest' | 'howto';
-  type SessionMode = 'practice' | 'battle' | 'table' | 'detective' | 'clock' | 'builder' | 'memory' | 'race' | 'exam' | 'boss' | 'pretest';
-  type Feedback = { kind: 'success' | 'hint' | 'worked' | 'notice'; title: string; text: string } | null;
-  type Session = {
-    mode: SessionMode;
-    questions: any[];
-    index: number;
-    correct: number;
-    firstTryCorrect: number;
-    wrong: number;
-    attempts: number;
-    helped: boolean;
-    answerStatus: 'correct' | 'wrong' | null;
-    selected: string;
-    typed: string;
-    tableComplete: boolean;
-    tableCommaCorrect: boolean;
-    tablePlacementCorrect: boolean;
-    tableResult: string;
-    selectedMany: string[];
-    matches: Record<string, string>;
-    matchingLeft: string;
-    orderedItems: string[];
-    gameEvent: 'player-attack' | 'enemy-attack' | 'success' | 'miss' | 'race-move' | null;
-    playerHp: number;
-    enemyHp: number;
-    raceSteps: number;
-    rivalSteps: number;
-    raceRoll: number;
-    memoryCards: MemoryCard[];
-    memoryOpenIds: string[];
-    memoryMoves: number;
-    familyResults: Record<string, { total: number; correct: number }>;
-    responseDetails: ResponseDetail[];
-  };
 
-  const STORAGE_KEY = 'mesurovia-orbis-v2';
-  const gameCatalog: Array<{ mode: SessionMode; title: string; description: string; image: string; target: [string, string] }> = [
-    { mode: 'practice', title: 'Le pupitre d’exercices', description: 'Des questions progressives sur les mesures travaillées dans la maison.', image: 'game-practice.png', target: ['fondations-mesure', 'reperes'] },
-    { mode: 'battle', title: 'Bataille des unités', description: 'Choisis la bonne carte pour faire avancer ton personnage.', image: 'game-battle.png', target: ['fondations-mesure', 'longueurs'] },
-    { mode: 'memory', title: 'Associe les mesures', description: 'Toutes les cartes sont visibles : retrouve les écritures équivalentes.', image: 'game-pairs.png', target: ['royaume-conversions', 'table-longueurs'] },
-    { mode: 'race', title: 'Course au trésor', description: 'Résous les défis et atteins le coffre avant le renard.', image: 'game-race.png', target: ['royaume-conversions', 'table-capacites'] },
-    { mode: 'table', title: 'Le Tableau magique', description: 'Place et lis les mesures dans le tableau de conversion.', image: 'game-table.png', target: ['royaume-conversions', 'table-longueurs'] },
-    { mode: 'detective', title: 'Qui a raison ?', description: 'Quatre élèves répondent : vérifie les conversions et trouve la bonne proposition.', image: 'game-detective.png', target: ['missions-maitrise', 'enquetes'] },
-    { mode: 'clock', title: 'Répare l’horloge', description: 'Travaille les secondes, minutes, heures, jours et semaines.', image: 'game-clock.png', target: ['royaume-conversions', 'table-durees'] },
-    { mode: 'builder', title: 'Le chantier des formes', description: 'Construis avec les aires, les capacités et les volumes.', image: 'game-builder.png', target: ['volumes-capacites', 'paves'] }
-  ];
-  const familyUnits = (id: string) => getConversionFamily(id).units.map((unit) => unit.alias ? `${unit.label}/${unit.alias}` : unit.label).join(' · ');
-  const courseCatalog = [
-    { id: 'length', title: 'Longueurs', units: familyUnits('length'), description: 'Mesurer, comparer puis convertir des longueurs.', image: 'course-length.png', target: ['royaume-conversions', 'table-longueurs'] },
-    { id: 'mass', title: 'Masses', units: familyUnits('mass'), description: 'Peser, comparer et convertir les masses avec toutes les unités intermédiaires.', image: 'course-mass.png', target: ['royaume-conversions', 'table-masses'] },
-    { id: 'capacity', title: 'Capacités', units: familyUnits('capacity'), description: 'Comparer des capacités et changer d’unité.', image: 'course-capacity.png', target: ['royaume-conversions', 'table-capacites'] },
-    { id: 'duration', title: 'Durées', units: 'h · min · s puis j · semaine · mois · année', description: 'Calculer des durées avec les relations 60, 24 et 7.', image: 'course-duration.png', target: ['royaume-conversions', 'table-durees'] },
-    { id: 'perimeter', title: 'Périmètres', units: 'mm · cm · dm · m · km', description: 'Distinguer le contour de la surface et calculer un périmètre.', image: 'course-length.png', target: ['aires-perimetres', 'contours'] },
-    { id: 'area', title: 'Aires', units: familyUnits('area'), description: 'Mesurer une surface et comprendre les facteurs 100.', image: 'course-area.png', target: ['aires-perimetres', 'surfaces'] },
-    { id: 'volume', title: 'Volumes et litres', units: familyUnits('volume'), description: 'Mesurer l’espace occupé et relier volume et capacité.', image: 'course-volume.png', target: ['volumes-capacites', 'litres'] }
-  ];
-  const avatars = ['hero-1', 'hero-2', 'hero-3', 'hero-4', 'hero-5', 'hero-6'];
-  const legacyAvatars = ['🧑‍🎒', '🧙🏽‍♀️', '🧑🏻‍🔬', '🧝🏾', '🧑🏼‍🚀', '🦊'];
-  const avatarNames = ['Explorateur vert', 'Exploratrice bleue', 'Explorateur blond', 'Exploratrice rousse', 'Explorateur bleu', 'Exploratrice orange'];
-  function avatarIndex(avatar?: string): number { const modern = avatars.indexOf(avatar ?? ''); return modern >= 0 ? modern : Math.max(0, legacyAvatars.indexOf(avatar ?? '')); }
-  function avatarPosition(avatar?: string): number { return avatarIndex(avatar) * 20; }
-  function courseTableExample(family = 'length') {
-    if (family === 'mass') return { value: '2,4', from: 'kg', to: 'g' };
-    if (family === 'capacity') return { value: '1,5', from: 'L', to: 'cL' };
-    if (family === 'area') return { value: '2,4', from: 'm²', to: 'dm²' };
-    if (family === 'volume') return { value: '1,2', from: 'dm³', to: 'cm³' };
-    return { value: '2,4', from: 'm', to: 'cm' };
-  }
-  // Each illustrated map has its own hotspot positions so doors and residents remain clickable.
-  const buildingLayouts: Record<string, Array<{ x: number; y: number }>> = {
-    'fondations-mesure': [{ x: 130, y: 72 }, { x: 375, y: 34 }, { x: 700, y: 68 }, { x: 815, y: 235 }],
-    'royaume-conversions': [{ x: 110, y: 68 }, { x: 375, y: 34 }, { x: 690, y: 56 }, { x: 805, y: 222 }],
-    'aires-perimetres': [{ x: 120, y: 82 }, { x: 405, y: 60 }, { x: 700, y: 72 }, { x: 815, y: 215 }],
-    'volumes-capacites': [{ x: 120, y: 72 }, { x: 380, y: 36 }, { x: 695, y: 66 }, { x: 810, y: 228 }],
-    'missions-maitrise': [{ x: 120, y: 78 }, { x: 660, y: 72 }, { x: 120, y: 330 }, { x: 680, y: 328 }]
-  };
-  const residentsByVillage: Record<string, Array<{ x: number; y: number; label: string }>> = {
-    'fondations-mesure': [{ x: 320, y: 195, label: 'Milo' }, { x: 620, y: 215, label: 'Lina' }, { x: 380, y: 450, label: 'Noé' }, { x: 810, y: 455, label: 'Papi' }],
-    'royaume-conversions': [{ x: 315, y: 195, label: 'Aïna' }, { x: 745, y: 195, label: 'Théo' }, { x: 400, y: 435, label: 'Mira' }, { x: 805, y: 440, label: 'Robin' }],
-    'aires-perimetres': [{ x: 315, y: 205, label: 'Rosa' }, { x: 700, y: 220, label: 'Jules' }, { x: 370, y: 440, label: 'Samir' }, { x: 790, y: 445, label: 'Zoé' }],
-    'volumes-capacites': [{ x: 320, y: 195, label: 'Elio' }, { x: 690, y: 215, label: 'Ariane' }, { x: 400, y: 435, label: 'Yann' }, { x: 810, y: 430, label: 'Nora' }],
-    'missions-maitrise': [{ x: 330, y: 205, label: 'Leïla' }, { x: 650, y: 225, label: 'Amir' }, { x: 400, y: 445, label: 'Lucie' }, { x: 780, y: 450, label: 'Sacha' }]
-  };
-  const familyOrder = ['length', 'mass', 'capacity', 'duration', 'area', 'volume'];
-  const villageArtwork: Record<string, string> = {
-    'fondations-mesure': `${base}/images/mesurovia/village-hero.jpg`,
-    'royaume-conversions': `${base}/images/mesurovia/regions/clairieres-compas.jpg`,
-    'aires-perimetres': `${base}/images/mesurovia/regions/canaux-artisans.jpg`,
-    'volumes-capacites': `${base}/images/mesurovia/regions/hautes-terres.jpg`,
-    'missions-maitrise': `${base}/images/mesurovia/regions/missions-maitrise.png`
-  };
-  const villageMapArtwork: Record<string, string> = {
-    'fondations-mesure': `${base}/images/mesurovia/villages/sentiers-moulin-map.jpg`,
-    'royaume-conversions': `${base}/images/mesurovia/villages/clairieres-compas-map.jpg`,
-    'aires-perimetres': `${base}/images/mesurovia/villages/canaux-artisans-map.jpg`,
-    'volumes-capacites': `${base}/images/mesurovia/villages/hautes-terres-map.jpg`,
-    'missions-maitrise': `${base}/images/mesurovia/villages/missions-maitrise-map.png`
-  };
-  const jokes = [
-    'Pourquoi le mètre est-il toujours calme ? Parce qu’il garde ses distances.',
-    'Pourquoi la règle ne raconte-t-elle jamais de mensonges ? Parce qu’elle est droite.',
-    'Mon horloge a quitté son travail. Elle en avait assez de faire des heures supplémentaires.',
-    'Pourquoi la balance est-elle une bonne amie ? Elle prend toujours les choses avec équilibre.',
-    'J’ai voulu faire une blague sur les litres… mais elle était trop pleine.',
-    'Mon ruban mesure tout. C’est quelqu’un qui voit grand, mais centimètre par centimètre.'
-  ];
 
   let ready = false;
   let view: View = 'welcome';
@@ -192,12 +88,6 @@
   let lastScrollY = 0;
   let headerHidden = false;
 
-  const howToSlides = [
-    { title: '1. Explore le village', text: 'Clique sur le sol : ton personnage court jusque-là. Clique sur une maison pour entrer. Tous les villages et toutes les maisons sont accessibles dans cette version.' },
-    { title: '2. Suis les six étapes du cours', text: 'Chaque maison avance de l’explication à l’exemple, puis à la manipulation, la vérification, l’exercice autonome et aux critères de réussite.' },
-    { title: '3. Entraîne-toi en jouant', text: 'Choisis un jeu : appariement de mesures, course au trésor, duel de cartes, enquête ou défi de construction. Tu peux toucher les éléments à l’écran ; le jeu t’aide sans chronomètre.' },
-    { title: '4. Valide ton blason', text: 'L’épreuve comporte dix questions. Il faut au moins 8 réponses justes sur 10. En cas d’échec, révise et recommence : aucun point ni badge ne sera retiré.' }
-  ];
 
   $: currentVillage = engine.VILLAGES.find((v: any) => v.id === currentVillageId) ?? engine.VILLAGES[0];
   $: villageHouses = engine.listHouses(currentVillageId);
