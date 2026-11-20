@@ -12,7 +12,8 @@ export type WorldId =
   | 'mathhunt'
   | 'fractionstower2'
   | 'grammaire_lab'
-  | 'musee_vocabulaire';
+  | 'musee_vocabulaire'
+  | 'bazar';
 
 export type WorldSubject =
   | 'MATHS'
@@ -129,6 +130,17 @@ export const worlds: World[] = [
     status: 'available'
   },
   {
+    id: 'bazar',
+    image: 'bazar.svg',
+    title: 'Le Bazar',
+    subtitle: 'Neuf échoppes pour jouer avec le français.',
+    route: '/bazar',
+    emoji: '🎪',
+    color: 'rose',
+    subject: 'FRANÇAIS',
+    status: 'prototype'
+  },
+  {
     id: 'grammaire_lab',
     image: 'grammaire_lab.svg',
     title: 'L’Atelier des phrases',
@@ -197,5 +209,6 @@ export const worldLabels: Record<WorldId, string> = {
   mathhunt: 'mathhunt',
   fractionstower2: 'Tour des Fractions 2',
   grammaire_lab: 'L’Atelier des phrases',
-  musee_vocabulaire: 'Le musée des mots'
+  musee_vocabulaire: 'Le musée des mots',
+  bazar: 'Le Bazar'
 };

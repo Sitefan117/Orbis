@@ -25,3 +25,4 @@ bash tests/run-conju-lab-smoke.sh
 
 node tests/mental-math-workshop.test.cjs
 node --import tsx tests/musee-vocabulaire.test.ts
+node --import tsx tests/bazar-curriculum.test.ts
