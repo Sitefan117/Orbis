@@ -27,8 +27,6 @@
   let conversationOrder: ConversationLine[] = [];
   let feedback = '';
   let solved = false;
-  let showContext = false;
-  let contextHintUsed = false;
   let correct = 0;
   let attempts = 0;
   let responseDetails: ResponseDetail[] = [];
@@ -75,11 +73,6 @@
     return `background-image:url('${base}/images/musee-vocabulaire/context/${theme}.jpg');background-position:${column * 50}% ${row * 100}%`;
   }
 
-  function toggleContext() {
-    showContext = !showContext;
-    if (showContext) contextHintUsed = true;
-  }
-
   function buildOrders(entries: Word[]): Ordered[] {
     const wordsSet = new Set(entries.map((entry) => entry.word.toLocaleLowerCase('fr')));
     const candidates: Ordered[] = [
@@ -110,8 +103,7 @@
       response: value,
       expected: currentDialogue.answer,
       correct: isCorrect,
-      attempts: 1,
-      hintsUsed: contextHintUsed ? 1 : 0
+      attempts: 1
     }];
   }
 
@@ -197,8 +189,6 @@
     order = [];
     conversationOrder = [];
     solved = false;
-    showContext = false;
-    contextHintUsed = false;
   }
 
   function finish() {
@@ -228,17 +218,18 @@
   </div>
 
   {#if mode === 'dialogue' && currentDialogue}
-    <p class="lab-prompt">{currentDialogue.prompt}</p>
-    {#if currentDialogue.contextIndex >= 0}
-      <button class="context-toggle" aria-expanded={showContext} on:click={toggleContext}>{showContext ? 'Masquer l’image' : 'Voir une image pour m’aider'}</button>
-      {#if showContext}
+    <div class:with-context={currentDialogue.contextIndex >= 0} class="dialogue-stage">
+      {#if currentDialogue.contextIndex >= 0}
         <figure class="context-figure">
           <span class="context-image" role="img" aria-label="Illustration de la situation" style={contextStyle(currentDialogue.theme, currentDialogue.contextIndex)}></span>
-          <figcaption>Observe la situation, puis relis la phrase.</figcaption>
+          <figcaption>Observe la situation.</figcaption>
         </figure>
       {/if}
-    {/if}
-    <div class="lab-choices">{#each currentDialogue.choices as choice}<button class:chosen={answer === choice} disabled={solved} on:click={() => { answer = choice; choose(choice); }}>{choice}</button>{/each}</div>
+      <div class="dialogue-question">
+        <p class="lab-prompt">{currentDialogue.prompt}</p>
+        <div class="lab-choices">{#each currentDialogue.choices as choice}<button class:chosen={answer === choice} disabled={solved} on:click={() => { answer = choice; choose(choice); }}>{choice}</button>{/each}</div>
+      </div>
+    </div>
   {:else if mode === 'ordre' && currentOrder}
     <p class="lab-prompt">{currentOrder.prompt} : remets la phrase dans l’ordre.</p>
     {#if !order.length}<button class="primary" on:click={shuffleOrder}>Mélanger les morceaux</button>{:else}<ol class="order-parts">{#each order as part, partIndex}<li><span>{part}</span><button aria-label="Monter" disabled={solved || partIndex === 0} on:click={() => movePart(partIndex, -1)}>↑</button><button aria-label="Descendre" disabled={solved || partIndex === order.length - 1} on:click={() => movePart(partIndex, 1)}>↓</button></li>{/each}</ol><button class="primary" disabled={solved} on:click={checkOrder}>Vérifier la phrase</button>{/if}
@@ -267,5 +258,6 @@
 </section>
 
 <style>
-  .context-lab{padding:1.25rem;border:1px solid #d8c9ae;border-radius:1rem;background:#f8f2e5;margin:1rem 0}.lab-heading{display:flex;justify-content:space-between;gap:1rem;align-items:start}.eyebrow{margin:0;color:#886126;font-size:.75rem;font-weight:900;letter-spacing:.08em}.lab-heading h2{margin:.25rem 0 0}.lab-tabs,.lab-choices,.lab-actions{display:flex;flex-wrap:wrap;gap:.55rem;margin:1rem 0}.lab-tabs button,.lab-choices button,.family-words button,.lab-actions button,.context-toggle{min-height:44px;padding:.65rem .85rem;border:1px solid #cdbd9e;border-radius:.65rem;background:#fffaf0;color:#332b1e;font-weight:800}.lab-tabs .active,.lab-choices .chosen,.family-words .chosen{background:#dfefdc;border-color:#70a36e}.lab-prompt{font-size:1.15rem;font-weight:800}.context-toggle{border-color:#886126;color:#694716}.context-figure{display:grid;justify-items:center;gap:.5rem;margin:1rem 0;padding:.75rem;border:1px solid #d8c9ae;border-radius:.85rem;background:#fffaf0}.context-image{display:block;width:min(100%,22rem);aspect-ratio:1;background-size:300% 200%;background-repeat:no-repeat;border-radius:.65rem;border:1px solid #cdbd9e}.context-figure figcaption{font-size:.95rem;font-weight:700;color:#5f5442;text-align:center}.order-parts{display:grid;gap:.5rem;padding:0;list-style:none}.order-parts li{display:flex;align-items:center;gap:.5rem;padding:.55rem;background:#fffaf0;border:1px solid #d8c9ae;border-radius:.55rem;text-align:left}.order-parts li span{flex:1;line-height:1.5}.order-parts button{min-width:44px;min-height:44px}.conversation-parts li{border-left:4px solid #886126}.lab-feedback{font-weight:800;color:#8e4d27}.lab-feedback.success{color:#267046}.lab-actions{justify-content:flex-end}
+  .context-lab{padding:1.25rem;border:1px solid #d8c9ae;border-radius:1rem;background:#f8f2e5;margin:1rem 0}.lab-heading{display:flex;justify-content:space-between;gap:1rem;align-items:start}.eyebrow{margin:0;color:#886126;font-size:.75rem;font-weight:900;letter-spacing:.08em}.lab-heading h2{margin:.25rem 0 0}.lab-tabs,.lab-choices,.lab-actions{display:flex;flex-wrap:wrap;gap:.55rem;margin:1rem 0}.lab-tabs button,.lab-choices button,.family-words button,.lab-actions button{min-height:44px;padding:.65rem .85rem;border:1px solid #cdbd9e;border-radius:.65rem;background:#fffaf0;color:#332b1e;font-weight:800}.lab-tabs .active,.lab-choices .chosen,.family-words .chosen{background:#dfefdc;border-color:#70a36e}.dialogue-stage{margin:1rem 0}.dialogue-stage.with-context{display:grid;grid-template-columns:minmax(14rem,20rem) minmax(0,1fr);gap:1.25rem;align-items:center}.dialogue-question{min-width:0}.lab-prompt{font-size:1.2rem;font-weight:800;line-height:1.55}.context-figure{display:grid;justify-items:center;gap:.45rem;margin:0;padding:.65rem;border:1px solid #d8c9ae;border-radius:.85rem;background:#fffaf0}.context-image{display:block;width:100%;aspect-ratio:1;background-size:300% 200%;background-repeat:no-repeat;border-radius:.65rem;border:1px solid #cdbd9e}.context-figure figcaption{font-size:.9rem;font-weight:700;color:#5f5442;text-align:center}.order-parts{display:grid;gap:.5rem;padding:0;list-style:none}.order-parts li{display:flex;align-items:center;gap:.5rem;padding:.55rem;background:#fffaf0;border:1px solid #d8c9ae;border-radius:.55rem;text-align:left}.order-parts li span{flex:1;line-height:1.5}.order-parts button{min-width:44px;min-height:44px}.conversation-parts li{border-left:4px solid #886126}.lab-feedback{font-weight:800;color:#8e4d27}.lab-feedback.success{color:#267046}.lab-actions{justify-content:flex-end}
+  @media(max-width:680px){.dialogue-stage.with-context{grid-template-columns:1fr}.context-figure{width:min(100%,20rem);justify-self:center}.lab-heading{align-items:flex-start}.lab-heading>span{white-space:nowrap}}
 </style>
