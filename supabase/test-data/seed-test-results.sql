@@ -1,4 +1,4 @@
--- Données de test Orbis : 10 élèves × 13 activités = 130 résultats.
+-- Données de test Orbis : 10 élèves × 12 activités = 120 résultats.
 --
 -- À exécuter uniquement dans le projet Supabase de TEST, depuis SQL Editor.
 -- Le script ne crée pas de compte Auth : les 10 comptes doivent déjà exister.
@@ -7,7 +7,7 @@
 
 do $$
 declare
-  test_activity constant text := 'test-profils-reussite-20261114';
+  test_activity constant text := 'test-profils-reussite-20261115';
 begin
   delete from public.activity_events
   where activity_id = test_activity
@@ -22,7 +22,7 @@ begin
   insert into public.activity_events (
     event_id, student_id, game_id, activity_id, skill_id,
     correct_count, question_count, error_count, error_families,
-    hints_used, duration_seconds, response_details, occurred_at
+    hints_used, duration_seconds, response_details, metadata, activity_kind, session_id, occurred_at
   )
   select
     gen_random_uuid(),
@@ -37,6 +37,9 @@ begin
     floor(random() * 3)::integer,
     45 + floor(random() * 256)::integer,
     details.response_details,
+    jsonb_build_object('simulation', true, 'profile', profile.profile, 'theme', game.category, 'difficulty', 'standard'),
+    'game',
+    gen_random_uuid(),
     now() - floor(random() * 30) * interval '1 day'
   from (
     -- Les 10 comptes visibles dans la classe de test.
@@ -74,7 +77,6 @@ begin
       ('geometrie', 'geometrie.proprietes_figures', 'geometrie.vocabulaire', 'Géométrie', 'Reconnaître une propriété de la figure', 'propriété correcte', 'propriété incorrecte', 'confusion-propriete'),
       ('calculs', 'calculs.addition_decimale', 'calculs.soustraction_decimale', 'Nombres décimaux', 'Effectuer un calcul décimal', '12,5', '125', 'virgule-mal-placee'),
       ('numeria', 'numeria.valeur_position', 'numeria.comparaison', 'Numération', 'Identifier la valeur et comparer les nombres', 'valeur correcte', 'rang voisin', 'confusion-position'),
-      ('pcp', 'pcp.interets', 'pcp.competences', 'Orientation', 'Identifier un intérêt ou une compétence', 'choix argumenté', 'réponse incomplète', 'justification-incomplete'),
       ('mesurovia', 'mesurovia.conversion_longueur', 'mesurovia.choix_unite', 'Mesures', 'Convertir une longueur et choisir l’unité', 'conversion correcte', 'unité incorrecte', 'conversion-unite'),
       ('conju_lab', 'conju_lab.temps_verbe', 'conju_lab.accord_sujet', 'Conjugaison', 'Conjuguer le verbe avec le sujet indiqué', 'forme correcte', 'terminaison incorrecte', 'terminaison-verbale'),
       ('grammaire_lab', 'grammaire_lab.accord', 'grammaire_lab.fonction', 'Grammaire', 'Analyser ou compléter la phrase', 'analyse correcte', 'accord incorrect', 'accord-grammatical'),
@@ -103,7 +105,7 @@ begin
   ) details;
 end $$;
 
--- Contrôle : doit retourner 130.
+-- Contrôle : doit retourner 120.
 select count(*) as test_results_created
 from public.activity_events
-where activity_id = 'test-profils-reussite-20261114';
+where activity_id = 'test-profils-reussite-20261115';

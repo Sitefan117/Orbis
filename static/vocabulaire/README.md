@@ -1,6 +1,6 @@
 # Lexique pour des adolescents allophones
 
-Le fichier `lexique.csv` contient 600 entrées, réparties en 20 thèmes de 30 entrées. Il est directement lu par les huit activités du musée. Le parcours `base` regroupe dix thèmes du quotidien. Le parcours `avance` contient dix thèmes complémentaires. Cette seconde série de 300 entrées est un choix de conception pris pour conserver le format de 30 entrées par thème.
+Le fichier `lexique.csv` contient 940 entrées, réparties en 31 thèmes d’au moins 30 entrées. Il est directement lu par les neuf machines du musée. Le parcours `base` regroupe les thèmes essentiels du quotidien. Le parcours `avance` contient les thèmes complémentaires, professionnels et spécialisés.
 
 ## Recherche et choix des mots
 
@@ -50,7 +50,7 @@ Les définitions emploient des mots courants et des exemples concrets. Elles dé
 
 Dans l’association, chaque série contient deux à six mots différents. « Nouvelle série » passe au groupe suivant. Une fois tous les groupes parcourus, le jeu revient au premier.
 
-Le quiz et la fiche permettent de choisir entre définitions et phrases à compléter. Le lexique propose 136 phrases, dont 24 sur les trajets et 28 pour chacun des thèmes démarches et formation. La fiche tire jusqu’à dix entrées des thèmes choisis. Son corrigé reprend les mêmes entrées dans le même ordre.
+Le quiz, l’atelier de réemploi et la fiche permettent de travailler avec des phrases à compléter. Le lexique propose 220 phrases. Chaque thème en contient au moins cinq. L’atelier ajoute des discussions de quatre ou cinq répliques à remettre dans l’ordre. La fiche tire jusqu’à dix entrées des thèmes choisis. Son corrigé reprend les mêmes entrées dans le même ordre.
 
 Chaque jeu permet d’ouvrir la liste complète des mots sélectionnés avec leur définition simple. Le cahier de vocabulaire imprimable reprend tous les mots des thèmes choisis, avec une couverture puis une page par thème. Dans le pendu, les espaces, apostrophes et traits d’union restent visibles ; l’alphabet proposé contient les lettres utiles et autant de lettres en plus. Un second clic sur une lettre choisie l’efface.
 

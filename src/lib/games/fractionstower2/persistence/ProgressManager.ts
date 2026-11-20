@@ -7,6 +7,7 @@
 import { getStudentName, studentStorageScope } from '$lib/orbis/identity/local-student';
 import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
 import { createGameProgressService } from '$lib/orbis/persistence/game-services';
+import type { ResponseDetail } from '$lib/orbis/results/contract';
 
 export interface FloorProgress {
     floorId: string;
@@ -99,7 +100,7 @@ export class ProgressManager {
      * Enregistre le score d'un étage après une session réussie.
      * Calcule automatiquement les étoiles (1 à 3) et déverrouille l'étage suivant.
      */
-    public static recordFloorCompletion(floorId: string, score: number, total: number = 10): void {
+    public static recordFloorCompletion(floorId: string, score: number, total: number = 10, responseDetails: ResponseDetail[] = []): void {
         const progress = this.getProgress();
         const percentage = score / total;
 
@@ -141,6 +142,7 @@ export class ProgressManager {
         void recordGameActivity({
             studentName: getStudentName(), gameId: 'fractionstower2', activityId: floorId,
             correctCount: score, questionCount: total, errorCount: Math.max(0, total - score),
+            responseDetails,
             metadata: { stars: earnedStars, bestScore: floorData.bestScore }
         });
     }

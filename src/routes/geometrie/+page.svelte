@@ -8,20 +8,23 @@
   import { recordGameActivity } from '$lib/orbis/tracking/client';
   import type { ResponseDetail } from '$lib/orbis/results/contract';
   import { GEOMETRY_FIGURES, getFiguresForLevel } from '$lib/games/geometrie/figures';
+  import { coursePaths } from '$lib/orbis/catalog/course-paths';
   import FigureDrawing from '$lib/games/geometrie/FigureDrawing.svelte';
-  import { generateQuestion } from '$lib/games/geometrie/question-engine';
+  import ConstructionLab from '$lib/games/geometrie/ConstructionLab.svelte';
+  import { generateQuestion, generateFocusedQuestion } from '$lib/games/geometrie/question-engine';
+  import { GEOMETRY_MISSIONS, badgesForMission, challengeUnlocked, dailyMission, dailyQuestionRandom, masteryPercent, masteryRank, missionFor, updateMastery, type GeometryBadge, type GeometryMasteryMap, type GeometryMissionId } from '$lib/games/geometrie/gamification';
   import type { ErrorFamily, GeometryFigure, Level, Mode, PlayMode, Question } from '$lib/games/geometrie/types';
 
   type Phase = 'config' | 'play' | 'done';
   type FeedbackKind = 'success' | 'retry' | 'solution' | '';
-  type GeometryProgress = { phase: Phase; level: Level; mode: Mode; questionIndex: number; question: Question; selectedOptionIds: string[]; visibleHintCount: number; pointsForQuestion: number; xp: number; correctCount: number; firstTryCorrectCount: number; attemptsForQuestion: number; locked: boolean; feedbackKind: FeedbackKind; feedbackTitle: string; feedbackDetails: string; errorFamilies: ErrorFamily[]; responseDetails: ResponseDetail[]; startedAt: number; elapsedSeconds?: number };
+  type GeometryProgress = { phase: Phase; level: Level; mode: Mode; questionIndex: number; question: Question | null; selectedOptionIds: string[]; visibleHintCount: number; pointsForQuestion: number; xp: number; correctCount: number; firstTryCorrectCount: number; attemptsForQuestion: number; locked: boolean; feedbackKind: FeedbackKind; feedbackTitle: string; feedbackDetails: string; errorFamilies: ErrorFamily[]; responseDetails: ResponseDetail[]; startedAt: number; elapsedSeconds?: number; missionId?: GeometryMissionId | null; mastery?: GeometryMasteryMap; badges?: GeometryBadge[]; streak?: number; dailyChallengeKey?: string; masteryChallenge?: boolean; explanations?: number; explainedQuestion?: boolean };
 
   const ORBIS_HOME = `${base}/`;
   let homeHref = ORBIS_HOME;
   let helpOpenButton: HTMLButtonElement | null = null;
   let helpCloseButton: HTMLButtonElement | null = null;
   let feedbackPanelElement: HTMLDivElement | null = null;
-  const QUESTION_COUNT = 10;
+  let questionCount = 10;
   const levelChoices: Level[] = ['6H', '7H', '8H'];
   const modeChoices: { id: Mode; title: string; description: string }[] = [
     { id: 'A', title: 'Enquête', description: 'Trouver une figure à partir de ses propriétés.' },
@@ -62,13 +65,24 @@
   let progressPercent = 0;
   let startedAt = Date.now();
   let elapsedSeconds = 0;
+  let missionId: GeometryMissionId | null = null;
+  let mastery: GeometryMasteryMap = {};
+  let badges: GeometryBadge[] = [];
+  let streak = 0;
+  let dailyChallengeKey = '';
+  let masteryChallenge = false;
+  let explanations = 0;
+  let explainedQuestion = false;
+  const today = dailyMission();
+  const mascotSrc = `${base}/nexus/nexus-noireaux.png`;
 
   // Les figures de l'aide sont filtrées sur le niveau choisi, pour éviter
   // d'afficher d'emblée tout le vocabulaire des niveaux supérieurs.
   $: availableFigures = level ? getFiguresForLevel(level) : GEOMETRY_FIGURES;
   $: planeFigures = availableFigures.filter((figure) => figure.kind === 'plane');
   $: solidFigures = availableFigures.filter((figure) => figure.kind === 'solid');
-  $: progressPercent = Math.min(100, ((questionIndex - 1) / QUESTION_COUNT) * 100);
+  $: questionCount = missionId && !masteryChallenge ? 5 : 10;
+  $: progressPercent = Math.min(100, ((questionIndex - 1) / questionCount) * 100);
 
   onMount(() => {
     const savedName = getStudentName();
@@ -78,9 +92,24 @@
     homeHref = studentId ? `${ORBIS_HOME}?eleve=${encodeURIComponent(studentId)}` : ORBIS_HOME;
     void (async () => {
       const loaded = await createGameProgressService<GeometryProgress>(studentName, 'geometrie').loadProgress();
-      if (!loaded.ok || !loaded.value || loaded.value.state.phase !== 'play') return;
+      if (!loaded.ok || !loaded.value) return;
       const state = loaded.value.state;
-      ({ phase, level, mode, questionIndex, question, selectedOptionIds, visibleHintCount, pointsForQuestion, xp, correctCount, firstTryCorrectCount, attemptsForQuestion, locked, feedbackKind, feedbackTitle, feedbackDetails, errorFamilies, responseDetails = [], startedAt, elapsedSeconds = 0 } = state);
+      const savedMissionId = state.missionId ?? null;
+      const savedMastery = state.mastery ?? {};
+      const savedBadges = state.badges ?? [];
+      const savedStreak = state.streak ?? 0;
+      const savedDailyChallengeKey = state.dailyChallengeKey ?? '';
+      if (state.phase === 'play' || state.phase === 'done') {
+        ({ phase, level, mode, questionIndex, question, selectedOptionIds, visibleHintCount, pointsForQuestion, xp, correctCount, firstTryCorrectCount, attemptsForQuestion, locked, feedbackKind, feedbackTitle, feedbackDetails, errorFamilies, responseDetails = [], startedAt, elapsedSeconds = 0 } = state);
+      }
+      missionId = savedMissionId;
+      mastery = savedMastery;
+      badges = savedBadges;
+      streak = savedStreak;
+      dailyChallengeKey = savedDailyChallengeKey;
+      masteryChallenge = state.masteryChallenge ?? false;
+      explanations = state.explanations ?? 0;
+      explainedQuestion = state.explainedQuestion ?? false;
       startedAt = Date.now();
     })();
   });
@@ -103,6 +132,8 @@
     errorFamilies = [];
     responseDetails = [];
     elapsedSeconds = 0;
+    explanations = 0;
+    explainedQuestion = false;
     startedAt = Date.now();
     resultSubmissionMessage = '';
     resultSubmitted = false;
@@ -111,7 +142,7 @@
 
   function loadQuestion(): void {
     if (!level || !mode) return;
-    if (questionIndex > QUESTION_COUNT) {
+    if (questionIndex > questionCount) {
       void finishMission();
       return;
     }
@@ -119,7 +150,10 @@
     generationError = '';
     try {
       // La fonction génère et valide chaque question avant de la renvoyer.
-      question = generateQuestion(level, mode);
+      const random = dailyChallengeKey ? dailyQuestionRandom(dailyChallengeKey, questionIndex) : Math.random;
+      question = missionId === 'triangles' || missionId === 'solides'
+        ? generateFocusedQuestion(level, missionId, random)
+        : generateQuestion(level, masteryChallenge ? 'Mixte' : mode, random);
       selectedOptionIds = [];
       visibleHintCount = Math.min(question.initialHintCount ?? 1, Math.max(1, question.progressiveHints.length));
       pointsForQuestion = 30;
@@ -128,6 +162,7 @@
       feedbackKind = '';
       feedbackTitle = '';
       feedbackDetails = '';
+      explainedQuestion = false;
       saveMission();
     } catch (error) {
       question = null;
@@ -136,11 +171,11 @@
   }
 
   function saveMission(): void {
-    if (phase !== 'play' || !level || !mode || !question) return;
+    if (!level || !mode || (phase === 'play' && !question)) return;
     checkpointElapsed();
     void createGameProgressService<GeometryProgress>(studentName, 'geometrie').saveProgress(
-      { phase, level, mode, questionIndex, question, selectedOptionIds, visibleHintCount, pointsForQuestion, xp, correctCount, firstTryCorrectCount, attemptsForQuestion, locked, feedbackKind, feedbackTitle, feedbackDetails, errorFamilies, responseDetails, startedAt, elapsedSeconds }, 1,
-      { label: `Géométrie ${level} : question ${questionIndex}/${QUESTION_COUNT}`, completed: questionIndex - 1, total: QUESTION_COUNT }
+      { phase, level, mode, questionIndex, question, selectedOptionIds, visibleHintCount, pointsForQuestion, xp, correctCount, firstTryCorrectCount, attemptsForQuestion, locked, feedbackKind, feedbackTitle, feedbackDetails, errorFamilies, responseDetails, startedAt, elapsedSeconds, missionId, mastery, badges, streak, dailyChallengeKey, masteryChallenge, explanations, explainedQuestion }, 1,
+      { label: `Géométrie ${level} : question ${questionIndex}/${questionCount}`, completed: questionIndex - 1, total: questionCount }
     );
   }
 
@@ -265,6 +300,7 @@
     feedbackTitle = '';
     feedbackDetails = '';
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    saveMission();
   }
 
   async function finishMission(): Promise<void> {
@@ -273,21 +309,31 @@
     if (resultSubmitted || submittingResult) return;
     resultSubmitted = true;
     submittingResult = true;
+    const activeMission = missionId ? missionFor(missionId) : null;
+    if (missionId) {
+      mastery = updateMastery(mastery, missionId, correctCount, questionCount, firstTryCorrectCount);
+      badges = badgesForMission(badges, missionId, correctCount, questionCount, firstTryCorrectCount, errorFamilies.length > 0);
+    }
+    if (explanations >= 3 && !badges.some((badge) => badge.id === 'explainer')) badges = [...badges, { id: 'explainer', title: 'Je peux expliquer', description: 'Tu as pris le temps d’expliquer trois réponses à voix haute.', icon: '◉', earnedAt: new Date().toISOString() }];
+    if (dailyChallengeKey && !badges.some((badge) => badge.id === `daily-${dailyChallengeKey}`)) badges = [...badges, { id: `daily-${dailyChallengeKey}`, title: 'Défi du jour', description: `Mission du ${dailyChallengeKey} terminée.`, icon: '☀', earnedAt: new Date().toISOString() }];
+    if (correctCount >= Math.ceil(questionCount * 0.7)) streak += 1;
+    saveMission();
     try {
       // Conserve le contrat d'intégration ORBIS du composant précédent.
-      await recordGameActivity({
+      const submission = await recordGameActivity({
         studentName,
         gameId: 'geometrie',
         activityId: `${level} mode ${mode}`,
         correctCount,
-        questionCount: QUESTION_COUNT,
-        errorCount: QUESTION_COUNT - correctCount,
+        questionCount,
+        errorCount: questionCount - correctCount,
+        skillId: activeMission?.skillId ?? 'geometrie.proprietes_figures',
         errorFamilies,
         responseDetails,
         durationSeconds: Math.max(1, elapsedSeconds + Math.round((Date.now() - startedAt) / 1000)),
-        metadata: { xp, firstTryCorrectCount, attemptedErrors: errorFamilies.length, level, mode }
+        metadata: { xp, firstTryCorrectCount, attemptedErrors: errorFamilies.length, level, mode, missionId, masteryChallenge, dailyChallengeKey, streak, badgeIds: badges.map((badge) => badge.id), masteryPercent: missionId ? masteryPercent(mastery[missionId]) : undefined }
       });
-      resultSubmissionMessage = 'Résultat transmis à ORBIS.';
+      resultSubmissionMessage = submission.message;
     } catch (error) {
       // Le bilan reste disponible même si le service de résultat est indisponible.
       console.error('Impossible de transmettre le résultat de géométrie à ORBIS.', error);
@@ -295,6 +341,45 @@
     } finally {
       submittingResult = false;
     }
+  }
+
+  function chooseMission(nextMissionId: GeometryMissionId): void {
+    missionId = nextMissionId;
+    mode = missionFor(nextMissionId).mode;
+    dailyChallengeKey = '';
+    masteryChallenge = false;
+  }
+
+  function launchMasteryChallenge(nextMissionId: GeometryMissionId): void {
+    if (!level || !challengeUnlocked(mastery[nextMissionId])) return;
+    missionId = nextMissionId;
+    mode = missionFor(nextMissionId).mode;
+    dailyChallengeKey = '';
+    masteryChallenge = true;
+    startMission();
+  }
+
+  function chooseMode(nextMode: Mode): void {
+    missionId = null;
+    mode = nextMode;
+    dailyChallengeKey = '';
+    masteryChallenge = false;
+  }
+
+  function markExplained(): void {
+    if (!locked || explainedQuestion) return;
+    explainedQuestion = true;
+    explanations += 1;
+    saveMission();
+  }
+
+  function launchDailyChallenge(): void {
+    missionId = today.mission.id;
+    level = today.level;
+    mode = today.mission.mode;
+    dailyChallengeKey = today.key;
+    masteryChallenge = false;
+    startMission();
   }
 
   function readInstructions(): void {
@@ -374,8 +459,13 @@
     {#if phase === 'config'}
       <section class="intro-block">
         <p class="eyebrow">LABORATOIRE · PLAN & ESPACE</p>
-        <h1>Observe. Compare. <span>Déduis.</span></h1>
-        <p class="lead">Des enquêtes visuelles pour comprendre les propriétés des figures, pas seulement mémoriser leur apparence.</p>
+        <div class="intro-layout">
+          <div>
+            <h1>Observe. Compare. <span>Déduis.</span></h1>
+            <p class="lead">Des enquêtes visuelles pour comprendre les propriétés des figures, pas seulement mémoriser leur apparence.</p>
+          </div>
+          <img class="nexus-mascots" src={mascotSrc} alt="Trois mascottes géométriques de Nexus" />
+        </div>
       </section>
 
       <section class="panel setup-panel" aria-labelledby="setup-title">
@@ -384,7 +474,7 @@
             <p class="eyebrow">01 / PARAMÈTRES DU PARCOURS</p>
             <h2 id="setup-title">Choisis ton niveau</h2>
           </div>
-          <span class="step-tag">10 questions par dossier</span>
+          <span class="step-tag">5 questions par mission · 10 par mode classique</span>
         </div>
 
         <div class="level-grid" role="group" aria-label="Niveau scolaire">
@@ -396,9 +486,43 @@
           {/each}
         </div>
 
+        <div class="mission-heading section-heading">
+          <div>
+            <p class="eyebrow">03 / MISSIONS DE COMPÉTENCE</p>
+            <h2>Choisis ton objectif</h2>
+          </div>
+          <span class="step-tag">{streak > 0 ? `Dossiers maîtrisés au total : ${streak}` : 'La progression compte plus que la vitesse'}</span>
+        </div>
+
+        <div class="mission-grid" role="group" aria-label="Missions de compétence">
+          {#each GEOMETRY_MISSIONS as mission}
+            <div class="mission-card" class:selected={missionId === mission.id}>
+              <span class={`mission-icon mission-${mission.accent}`} aria-hidden="true">⬡</span>
+              <span class="mission-copy"><strong>{mission.title}</strong><small>{mission.description}</small><button class="mission-action" type="button" on:click={() => chooseMission(mission.id)}>Choisir cette mission</button></span>
+              <span class="mission-mastery">{masteryPercent(mastery[mission.id])}% · {masteryRank(mastery[mission.id])}</span>
+              <div class="mission-unlock">
+                {#if challengeUnlocked(mastery[mission.id])}
+                  <button class="mission-action" type="button" disabled={!level} on:click={() => launchMasteryChallenge(mission.id)}>Défi maîtrise · 10 questions ↗</button>
+                {:else}
+                  <small>Défi maîtrise à 70 % de réussite</small>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+
+        <div class="daily-challenge">
+          <div><span class="eyebrow">DÉFI DU JOUR · {today.key}</span><strong>{today.mission.title}</strong><span>{today.level} · 5 questions identiques pour tous · badge personnel</span></div>
+          <button class="button button-secondary" type="button" on:click={launchDailyChallenge}>Lancer le défi</button>
+        </div>
+
+        {#if level}
+          <ConstructionLab {studentName} {level} />
+        {/if}
+
         <div class="section-heading mode-heading">
           <div>
-            <p class="eyebrow">02 / DOSSIER D’ENQUÊTE</p>
+            <p class="eyebrow">04 / DOSSIER D’ENQUÊTE</p>
             <h2>Choisis une activité</h2>
           </div>
           {#if level}
@@ -408,7 +532,7 @@
 
         <div class="mode-grid" role="group" aria-label="Type d'activité">
           {#each modeChoices as choice}
-            <button class="mode-card" class:selected={mode === choice.id} aria-pressed={mode === choice.id} type="button" on:click={() => (mode = choice.id)}>
+            <button class="mode-card" class:selected={mode === choice.id && missionId === null} aria-pressed={mode === choice.id && missionId === null} type="button" on:click={() => chooseMode(choice.id)}>
               <span class="mode-index">{choice.id === 'Mixte' ? '∞' : `0${['A','B','C','D'].indexOf(choice.id) + 1}`}</span>
               <span class="mode-title">{choice.title}</span>
               <span class="mode-description">{choice.description}</span>
@@ -431,10 +555,10 @@
         </div>
 
         <div class="progress-row">
-          <div class="progress-track" role="progressbar" aria-label="Progression du dossier" aria-valuemin="0" aria-valuemax={QUESTION_COUNT} aria-valuenow={questionIndex - 1}>
+          <div class="progress-track" role="progressbar" aria-label="Progression du dossier" aria-valuemin="0" aria-valuemax={questionCount} aria-valuenow={questionIndex - 1}>
             <span style={`width: ${progressPercent}%`}></span>
           </div>
-          <span class="question-counter">{questionIndex} <span>/ {QUESTION_COUNT}</span></span>
+          <span class="question-counter">{questionIndex} <span>/ {questionCount}</span></span>
           <span class="xp-counter">✦ {xp} XP</span>
         </div>
 
@@ -499,7 +623,7 @@
             {#if !locked}
               <button class="button button-primary" type="button" disabled={selectedOptionIds.length === 0} on:click={submitAnswer}>Vérifier ma réponse <span aria-hidden="true">→</span></button>
             {:else}
-              <button class="button button-primary" type="button" on:click={nextQuestion}>{questionIndex === QUESTION_COUNT ? 'Voir le bilan' : 'Continuer'} <span aria-hidden="true">→</span></button>
+              <button class="button button-primary" type="button" on:click={nextQuestion}>{questionIndex === questionCount ? 'Voir le bilan' : 'Continuer'} <span aria-hidden="true">→</span></button>
             {/if}
           </div>
 
@@ -509,6 +633,9 @@
               <h2>{feedbackTitle}</h2>
               <p>{feedbackDetails}</p>
             </div>
+          {/if}
+          {#if locked && !explainedQuestion}
+            <button class="button button-quiet" type="button" on:click={markExplained}>J’ai expliqué mon raisonnement à voix haute</button>
           {/if}
         </article>
 
@@ -526,15 +653,25 @@
       <section class="panel result-panel" aria-labelledby="result-title">
         <p class="eyebrow">RAPPORT DE MISSION · {level}</p>
         <h1 id="result-title">Dossier terminé<span>.</span></h1>
-        <p class="lead">Tu as terminé les dix questions. Le bilan distingue les réponses réussies et celles du premier essai.</p>
+        <p class="lead">Tu as terminé les {questionCount} questions. Le bilan distingue les réponses réussies et celles du premier essai.</p>
         <div class="result-stats">
-          <div><span class="result-value">{correctCount}<small> / {QUESTION_COUNT}</small></span><span class="result-label">Questions réussies</span></div>
-          <div><span class="result-value">{firstTryCorrectCount}<small> / {QUESTION_COUNT}</small></span><span class="result-label">Réussies du premier coup</span></div>
+          <div><span class="result-value">{correctCount}<small> / {questionCount}</small></span><span class="result-label">Questions réussies</span></div>
+          <div><span class="result-value">{firstTryCorrectCount}<small> / {questionCount}</small></span><span class="result-label">Réussies du premier coup</span></div>
           <div><span class="result-value">{xp}</span><span class="result-label">XP gagnés</span></div>
         </div>
+        {#if badges.length > 0}
+          <section class="badge-section" aria-labelledby="badge-title">
+            <div class="section-heading"><div><p class="eyebrow">COLLECTION NEXUS</p><h2 id="badge-title">Tes badges</h2></div><span class="step-tag">{badges.length} débloqué{badges.length > 1 ? 's' : ''}</span></div>
+            <div class="badge-grid">
+              {#each badges as badge (badge.id)}
+                <article class="badge-card"><span class="badge-icon" aria-hidden="true">{badge.icon}</span><div><strong>{badge.title}</strong><p>{badge.description}</p></div></article>
+              {/each}
+            </div>
+          </section>
+        {/if}
         <div class="result-reflection">
           <h2>Pour continuer à progresser</h2>
-          {#if correctCount === QUESTION_COUNT}
+          {#if correctCount === questionCount}
             <p>Tu as réussi toutes les questions. Pour approfondir, choisis un autre dossier ou un niveau supérieur avec des propriétés plus complexes.</p>
           {:else if firstTryCorrectCount >= 7}
             <p>Tu reconnais déjà plusieurs propriétés. Reprends les figures sur lesquelles tu as hésité et explique à voix haute ce qui distingue chacune d’elles.</p>
@@ -562,7 +699,7 @@
         <div><p class="eyebrow">OUTIL DE RÉFÉRENCE · {level}</p><h2 id="reference-title">Banque de figures</h2></div>
         <button class="close-button" type="button" aria-label="Fermer la fiche de référence" bind:this={helpCloseButton} on:click={closeHelp}>×</button>
       </header>
-      <p class="reference-intro">Utilise cette fiche pour observer et comparer. Elle reste disponible pendant le dossier, sans afficher la réponse attendue.</p>
+      <p class="reference-intro">Utilise cette fiche pour observer et comparer. Elle reste disponible pendant le dossier, sans afficher la réponse attendue. <a href={`${base}${coursePaths.geometry.aideMemoire}`} target="_blank" rel="noopener noreferrer">Ouvrir l’aide-mémoire imprimable</a>.</p>
       <h3>Figures planes</h3>
       <div class="reference-grid">
         {#each planeFigures as figure (figure.id)}
@@ -599,6 +736,8 @@
   .header-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: .65rem; }
   .main-content { width: min(1080px, calc(100% - 2rem)); margin: 0 auto; padding: clamp(1.5rem, 4vw, 3.5rem) 0 4rem; }
   .intro-block { max-width: 750px; margin: 0 auto 2rem; }
+  .intro-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 290px); align-items: center; gap: 1.5rem; }
+  .nexus-mascots { display: block; width: 100%; max-height: 210px; object-fit: contain; object-position: center; filter: drop-shadow(0 18px 20px rgba(0,0,0,.22)); }
   .eyebrow { margin: 0 0 .7rem; color: #54d8d5; font-size: .75rem; font-weight: 800; letter-spacing: .16em; }
   h1, h2, h3, h4, p { overflow-wrap: anywhere; }
   h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.06; letter-spacing: -.04em; }
@@ -617,6 +756,28 @@
   .level-description, .mode-description { color: #b7c3d3; font-size: .9rem; line-height: 1.45; }
   .mode-heading { margin-top: 2rem; }
   .mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+  .mission-heading { margin-top: 2rem; }
+  .mission-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+  .mission-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .75rem; min-width: 0; border: 1px solid #364358; border-radius: .8rem; padding: .85rem; background: #111b2a; color: #eaf2fb; text-align: left; }
+  .mission-card.selected { border-color: #54d8d5; background: #123239; }
+  .mission-action { width: fit-content; border: 1px solid #54d8d5; border-radius: .5rem; padding: .35rem .6rem; background: transparent; color: #b8f7f4; font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; }
+  .mission-action:hover { background: #214a4e; }
+  .mission-action:disabled { opacity: .5; cursor: not-allowed; }
+  .mission-unlock { grid-column: 2 / -1; color: #b7c3d3; }
+  .mission-icon { display: grid; width: 2.1rem; height: 2.1rem; place-items: center; border-radius: .65rem; font-size: 1.2rem; }
+  .mission-teal { background: rgba(84,216,213,.16); color: #54d8d5; }
+  .mission-violet { background: rgba(180,126,255,.16); color: #bd92ff; }
+  .mission-amber { background: rgba(243,182,76,.16); color: #f3b64c; }
+  .mission-rose { background: rgba(255,117,153,.16); color: #ff92ad; }
+  .mission-copy { display: flex; min-width: 0; flex-direction: column; gap: .25rem; }
+  .mission-copy strong { font-size: .93rem; }
+  .mission-copy small { color: #b7c3d3; font-size: .78rem; line-height: 1.35; }
+  .mission-mastery { color: #54d8d5; font-size: .78rem; font-weight: 850; }
+  .daily-challenge { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; padding: 1rem; border: 1px solid #765b30; border-radius: .85rem; background: linear-gradient(100deg, rgba(105,72,28,.28), rgba(23,34,51,.76)); }
+  .daily-challenge > div { display: flex; flex-direction: column; gap: .22rem; }
+  .daily-challenge strong { font-size: 1rem; }
+  .daily-challenge span:not(.eyebrow) { color: #c4ccd8; font-size: .82rem; }
+  .button-secondary { border-color: #9b712f; color: #f3c875; background: #332817; }
   .mode-index { color: #58d6d4; font-size: .78rem; font-weight: 850; letter-spacing: .12em; }
   .mode-title { font-size: 1.05rem; font-weight: 800; }
   .setup-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #2b394b; }
@@ -687,6 +848,12 @@
   .result-reflection p { color: #c2cfdd; line-height: 1.6; }
   .submission-message { min-height: 1.2rem; color: #9eb1c5; font-size: .85rem; }
   .result-actions { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1.5rem; }
+  .badge-section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #2c394d; }
+  .badge-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+  .badge-card { display: flex; align-items: center; gap: .75rem; padding: .8rem; border: 1px solid #40516a; border-radius: .8rem; background: rgba(17,27,42,.72); }
+  .badge-icon { display: grid; width: 2.25rem; height: 2.25rem; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #183b43; color: #54d8d5; font-size: 1.25rem; }
+  .badge-card strong { font-size: .9rem; }
+  .badge-card p { margin: .2rem 0 0; color: #b7c3d3; font-size: .78rem; line-height: 1.35; }
   .site-footer { display: flex; justify-content: space-between; gap: 1rem; padding: 1.2rem clamp(1rem, 4vw, 3.5rem); border-top: 1px solid #263243; color: #8799ae; font-size: .76rem; }
   .site-footer span:first-child { font-weight: 850; letter-spacing: .13em; }
   .modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 1rem; background: rgba(3, 7, 13, .86); }
@@ -704,6 +871,8 @@
   .reference-card p { margin: 0; color: #bdc9d8; font-size: .9rem; line-height: 1.5; }
   .modal-footer { display: flex; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #2f4054; }
   @media (max-width: 680px) {
+    .intro-layout { grid-template-columns: 1fr; }
+    .nexus-mascots { max-height: 160px; order: -1; }
     .site-header { align-items: flex-start; flex-direction: column; }
     .header-actions { width: 100%; justify-content: flex-start; }
     .brand-title { font-size: .85rem; }
@@ -714,6 +883,8 @@
     .level-card { padding: .75rem; }
     .level-description { font-size: .82rem; }
     .mode-grid { grid-template-columns: minmax(0, 1fr); }
+    .mission-grid, .badge-grid { grid-template-columns: minmax(0, 1fr); }
+    .daily-challenge { align-items: stretch; flex-direction: column; }
     .answer-grid { grid-template-columns: minmax(0, 1fr); }
     .answer-card { min-height: 145px; }
     .answer-heading { align-items: flex-start; flex-direction: column; gap: .2rem; }

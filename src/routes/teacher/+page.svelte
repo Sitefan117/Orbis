@@ -7,7 +7,8 @@
 	import LocalTrackingPanel from '$lib/orbis/teacher/LocalTrackingPanel.svelte';
 	import RemoteTeacherDashboard from '$lib/orbis/teacher/RemoteTeacherDashboard.svelte';
 	import { currentSession, refreshRemoteSession, sessionRole, signInWithShortId, signOut, startSessionRefresh } from '$lib/orbis/auth/client';
-	import { createStudent, createTeacherClass, deleteStudent, exportStudentData, listTeacherClasses, listTeacherStudents, listTeacherStudentDocuments, resetStudentPassword, type OrbisClass, type OrbisStudent, type RemoteStudentDocument } from '$lib/orbis/teacher/remote';
+	import { createStudent, createTeacherClass, deleteStudent, deleteTeacherClass, exportStudentData, listTeacherClasses, listTeacherStudents, listTeacherStudentDocuments, renameTeacherClass, resetStudentPassword, type OrbisClass, type OrbisStudent, type RemoteStudentDocument } from '$lib/orbis/teacher/remote';
+	import { archiveTeacherTask, createTeacherTask, listTeacherTasks, type StudentTask } from '$lib/orbis/tasks/remote';
 
 	let { mode = 'dashboard' }: { mode?: 'dashboard' | 'admin' } = $props();
 	let isAuthenticated = $state(false);
@@ -22,6 +23,10 @@
 	let newClassName = $state('');
 	let classMessage = $state('');
 	let isCreatingClass = $state(false);
+	let editingClassId = $state('');
+	let editingClassName = $state('');
+	let classActionBusy = $state(false);
+	let pendingDeleteClassId = $state('');
 	let studentLoginId = $state('');
 	let studentDisplayName = $state('');
 	let studentPassword = $state('');
@@ -36,6 +41,23 @@
 	let dataActionMessage = $state('');
 	let pendingDeleteStudentId = $state('');
 	let studentActionBusy = $state(false);
+	let demoPassword = $state('');
+	let demoMessage = $state('');
+	let demoBusy = $state(false);
+	let teacherTasks = $state<StudentTask[]>([]);
+	let taskClassId = $state('');
+	let taskTitle = $state('');
+	let taskBody = $state('');
+	let taskGameId = $state('');
+	let taskDueAt = $state('');
+	let taskMessage = $state('');
+	let taskBusy = $state(false);
+	let taskStudentIds = $state<string[]>([]);
+	const demoProfiles = [
+		['renard01', 'Renard Rapide'], ['dauphin09', 'Dauphin Serein'], ['chat10', 'Chat Curieux'], ['singe11', 'Singe Farceur'],
+		['lynx02', 'Lynx Malin'], ['hibou04', 'Hibou Futé'], ['tigre05', 'Tigre Tranquille'], ['zebre06', 'Zèbre Rigolo'],
+		['castor07', 'Castor Costaud'], ['manchot08', 'Manchot Dansant']
+	] as const;
 
 	onMount(() => {
 		startSessionRefresh();
@@ -49,7 +71,7 @@
 					return;
 				}
 			isAuthenticated = true;
-			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); try { remoteDocuments = await listTeacherStudentDocuments(); } catch { remoteDocuments = []; } }
+			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); try { remoteDocuments = await listTeacherStudentDocuments(); } catch { remoteDocuments = []; } try { teacherTasks = await listTeacherTasks(); } catch { teacherTasks = []; } }
 			catch { classMessage = 'Session restaurée, mais les classes ne sont pas encore accessibles.'; }
 		})();
 	});
@@ -63,7 +85,7 @@
 		if (result.ok && result.role === 'teacher') {
 			isAuthenticated = true;
 			password = '';
-			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); try { remoteDocuments = await listTeacherStudentDocuments(); } catch { remoteDocuments = []; } } catch { classMessage = 'Connexion réussie, mais les classes ne sont pas encore accessibles.'; }
+			try { classes = await listTeacherClasses(); remoteStudents = await listTeacherStudents(classes); try { remoteDocuments = await listTeacherStudentDocuments(); } catch { remoteDocuments = []; } try { teacherTasks = await listTeacherTasks(); } catch { teacherTasks = []; } } catch { classMessage = 'Connexion réussie, mais les classes ne sont pas encore accessibles.'; }
 			return;
 		}
 		loginMessage = result.ok ? 'Ce compte n’est pas un compte enseignant.' : result.message;
@@ -89,6 +111,41 @@
 		} finally { isCreatingClass = false; }
 	}
 
+	function startClassRename(classroom: OrbisClass) {
+		editingClassId = classroom.id;
+		editingClassName = classroom.name;
+		pendingDeleteClassId = '';
+		classMessage = '';
+	}
+
+	async function saveClassRename() {
+		const name = editingClassName.trim();
+		if (!editingClassId || !name) { classMessage = 'Le nom de classe est obligatoire.'; return; }
+		classActionBusy = true;
+		try {
+			await renameTeacherClass(editingClassId, name);
+			classes = classes.map((item) => item.id === editingClassId ? { ...item, name } : item);
+			editingClassId = ''; editingClassName = ''; classMessage = 'Classe renommée.';
+		} catch (error) { classMessage = `Renommage impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
+		finally { classActionBusy = false; }
+	}
+
+	async function removeClass(classroom: OrbisClass) {
+		if (pendingDeleteClassId !== classroom.id) {
+			pendingDeleteClassId = classroom.id;
+			classMessage = `Second clic pour supprimer « ${classroom.name} ». Les inscriptions seront retirées, mais les comptes élèves resteront conservés.`;
+			return;
+		}
+		classActionBusy = true;
+		try {
+			await deleteTeacherClass(classroom.id);
+			classes = classes.filter((item) => item.id !== classroom.id);
+			remoteStudents = await listTeacherStudents(classes);
+			pendingDeleteClassId = ''; classMessage = 'Classe supprimée. Les comptes élèves restent disponibles.';
+		} catch (error) { classMessage = `Suppression impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
+		finally { classActionBusy = false; }
+	}
+
 	async function addStudent() {
 		if (!studentClassId) { studentMessage = 'Choisis une classe.'; return; }
 		if (!/^[a-zA-Z0-9_-]{3,40}$/.test(studentLoginId.trim())) { studentMessage = 'L’identifiant doit contenir 3 à 40 caractères simples.'; return; }
@@ -105,6 +162,41 @@
 			studentMessage = `Création impossible : ${detail}`;
 		}
 		finally { isCreatingStudent = false; }
+	}
+
+	async function createDemoStudents() {
+		if (demoPassword.length < 10) { demoMessage = 'Choisis un mot de passe de 10 caractères minimum pour les comptes de test.'; return; }
+		demoBusy = true; demoMessage = '';
+		try {
+			let demoClass = classes.find((item) => item.name === 'TEST — profils de réussite');
+			if (!demoClass) { demoClass = await createTeacherClass('TEST — profils de réussite'); classes = [...classes, demoClass]; }
+			const existing = await listTeacherStudents(classes);
+			let created = 0;
+			for (const [loginId, displayName] of demoProfiles) {
+				if (existing.some((student) => student.login_id.toLowerCase() === loginId)) continue;
+				await createStudent({ loginId, displayName, password: demoPassword, classId: demoClass.id });
+				created += 1;
+			}
+			remoteStudents = await listTeacherStudents(classes);
+			demoMessage = `${created} compte(s) de simulation créé(s). Étape suivante : exécuter le script SQL de simulation sans PCP dans Supabase.`;
+		} catch (error) { demoMessage = `Simulation impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
+		finally { demoBusy = false; }
+	}
+
+	async function sendTask() {
+		if (!taskClassId || taskTitle.trim().length < 1 || taskBody.trim().length < 1) { taskMessage = 'Choisis une classe et renseigne un titre et une consigne.'; return; }
+		taskBusy = true; taskMessage = '';
+		try {
+			const recipientCount = taskStudentIds.length;
+			await createTeacherTask({ classId: taskClassId, studentIds: taskStudentIds, title: taskTitle, body: taskBody, targetGameId: taskGameId, dueAt: taskDueAt ? new Date(`${taskDueAt}T23:59:00`).toISOString() : undefined });
+			teacherTasks = await listTeacherTasks(); taskTitle = ''; taskBody = ''; taskGameId = ''; taskDueAt = ''; taskStudentIds = []; taskMessage = recipientCount ? `Consigne envoyée à ${recipientCount} élève(s).` : 'Consigne envoyée à toute la classe.';
+		} catch (error) { taskMessage = `Envoi impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
+		finally { taskBusy = false; }
+	}
+
+	async function archiveTask(task: StudentTask) {
+		try { await archiveTeacherTask(task.id); teacherTasks = teacherTasks.map((item) => item.id === task.id ? { ...item, active: false } : item); taskMessage = 'Consigne archivée.'; }
+		catch (error) { taskMessage = `Archivage impossible : ${error instanceof Error ? error.message : 'erreur inconnue'}`; }
 	}
 
 	async function applyPasswordReset() {
@@ -235,28 +327,71 @@
 		</div>
 	</div>
 {:else}
-	<div class="teacher-container">
-		<header class="teacher-header">
-				<div><p class="teacher-kicker">ORBIS · ESPACE ENSEIGNANT</p><h1>{mode === 'admin' ? 'Administration' : 'Tableau de bord pédagogique'}</h1><p>{mode === 'admin' ? 'Classes, comptes élèves et outils de maintenance.' : 'Les signaux utiles, sans remplacer ton observation professionnelle.'}</p></div>
-				<div class="teacher-header-actions"><a class="mode-link" href={mode === 'admin' ? `${base}/teacher` : `${base}/teacher/admin`}>{mode === 'admin' ? '← Retour au tableau' : 'Administration →'}</a><button class="logout-button" onclick={() => void logout()}>Se déconnecter</button></div>
-		</header>
+		{#if mode === 'dashboard'}
+			<div class="teacher-shell">
+				<aside class="teacher-sidebar" aria-label="Navigation enseignant">
+					<a class="sidebar-brand" href={`${base}/teacher`}><span class="brand-orb">✦</span><span><strong>ORBIS</strong><small>Teacher cockpit</small></span></a>
+					<p class="sidebar-label">ESPACE DE SUIVI</p>
+					<nav class="sidebar-nav">
+						<a class="active" href={`${base}/teacher`}><span>⌂</span> Vue générale</a>
+						<a href={`${base}/teacher#details` }><span>◈</span> Résultats élèves</a>
+						<a href={`${base}/teacher/admin#tasks`}><span>✓</span> Consignes</a>
+						<a href={`${base}/teacher/admin#classes`}><span>▦</span> Classes et élèves</a>
+					</nav>
+					<p class="sidebar-label">OUTILS</p>
+					<nav class="sidebar-nav">
+						<a href={`${base}/teacher/admin`}><span>⚙</span> Administration</a>
+						<a href={`${base}/confidentialite`}><span>⌁</span> Données et confidentialité</a>
+					</nav>
+					<div class="sidebar-bottom"><div class="nox-mini">N</div><div><strong>Nox</strong><small>Assistant Orbis</small></div></div>
+				</aside>
+				<main class="teacher-main">
+					<header class="teacher-header">
+						<div><p class="teacher-kicker">ORBIS · ESPACE ENSEIGNANT</p><h1>Tableau de bord pédagogique</h1><p>Les signaux utiles, sans remplacer ton observation professionnelle.</p></div>
+						<div class="teacher-header-actions"><span class="live-status"><i></i> Données synchronisées</span><a class="mode-link" href={`${base}/teacher/admin`}>Administration →</a><button class="logout-button" onclick={() => void logout()}>Se déconnecter</button></div>
+					</header>
+					<RemoteTeacherDashboard {classes} students={remoteStudents} documents={remoteDocuments} />
+				</main>
+			</div>
+		{:else}
+		<div class="teacher-shell">
+			<aside class="teacher-sidebar" aria-label="Navigation enseignant">
+				<a class="sidebar-brand" href={`${base}/teacher`}><span class="brand-orb">✦</span><span><strong>ORBIS</strong><small>Teacher cockpit</small></span></a>
+				<p class="sidebar-label">ESPACE DE SUIVI</p>
+				<nav class="sidebar-nav">
+					<a href={`${base}/teacher`}><span>⌂</span> Vue générale</a>
+					<a href={`${base}/teacher#details`}><span>◈</span> Résultats élèves</a>
+					<a href={`${base}/teacher/admin#tasks`}><span>✓</span> Consignes</a>
+					<a href={`${base}/teacher/admin#classes`}><span>▦</span> Classes et élèves</a>
+				</nav>
+				<p class="sidebar-label">OUTILS</p>
+				<nav class="sidebar-nav">
+					<a class="active" href={`${base}/teacher/admin`}><span>⚙</span> Administration</a>
+					<a href={`${base}/confidentialite`}><span>⌁</span> Données et confidentialité</a>
+				</nav>
+				<div class="sidebar-bottom"><div class="nox-mini">N</div><div><strong>Nox</strong><small>Assistant Orbis</small></div></div>
+			</aside>
+			<main class="teacher-main">
+			<header class="teacher-header">
+				<div><p class="teacher-kicker">ORBIS · ESPACE ENSEIGNANT</p><h1>Administration</h1><p>Classes, comptes élèves et outils de maintenance.</p></div>
+				<div class="teacher-header-actions"><span class="live-status"><i></i> Données synchronisées</span><a class="mode-link" href={`${base}/teacher`}>← Retour au tableau</a><button class="logout-button" onclick={() => void logout()}>Se déconnecter</button></div>
+			</header>
 
-			{#if mode === 'dashboard'}
-				<RemoteTeacherDashboard {classes} students={remoteStudents} documents={remoteDocuments} />
-			{:else}
 		<details class="secondary-zone">
 			<summary>Données locales de cet appareil</summary>
 			<LocalTrackingPanel />
 		</details>
 
-		<section class="classes-card">
+		<section class="classes-card" id="classes">
 			<h2>Mes classes</h2>
 			<div class="class-create-row">
 				<input type="text" bind:value={newClassName} placeholder="Nom de la classe" maxlength="100" />
 				<button onclick={addClass} disabled={isCreatingClass}>{isCreatingClass ? 'Création…' : 'Créer la classe'}</button>
 			</div>
 			{#if classMessage}<p class="class-message" role="status">{classMessage}</p>{/if}
-			{#if classes.length === 0}<p>Aucune classe pour le moment.</p>{:else}<ul class="class-list">{#each classes as classroom}<li><strong>{classroom.name}</strong><small>{new Date(classroom.created_at).toLocaleDateString('fr-CH')}</small></li>{/each}</ul>{/if}
+			{#if classes.length === 0}<p>Aucune classe pour le moment.</p>{:else}<ul class="class-list">{#each classes as classroom}<li>
+				{#if editingClassId === classroom.id}<span class="class-edit"><input bind:value={editingClassName} maxlength="100" aria-label="Nouveau nom de classe" /><button disabled={classActionBusy} onclick={() => void saveClassRename()}>Enregistrer</button><button disabled={classActionBusy} onclick={() => { editingClassId = ''; }}>Annuler</button></span>{:else}<span><strong>{classroom.name}</strong><small>{new Date(classroom.created_at).toLocaleDateString('fr-CH')}</small></span><span class="class-actions"><button disabled={classActionBusy} onclick={() => startClassRename(classroom)}>Renommer</button><button class:confirm-delete={pendingDeleteClassId === classroom.id} disabled={classActionBusy} onclick={() => void removeClass(classroom)}>{pendingDeleteClassId === classroom.id ? 'Confirmer' : 'Supprimer'}</button></span>{/if}
+			</li>{/each}</ul>{/if}
 		</section>
 
 		<section class="classes-card">
@@ -272,6 +407,27 @@
 				<button onclick={addStudent} disabled={isCreatingStudent}>{isCreatingStudent ? 'Création…' : 'Créer l’élève'}</button>
 			</div>
 			{#if studentMessage}<p class="class-message" role="status">{studentMessage}</p>{/if}
+		</section>
+
+		<section class="classes-card demo-card">
+			<h2>Recréer la simulation pédagogique</h2>
+			<p>Crée les 10 comptes de test (2 très bons, 2 bons, 2 moyens, 2 mauvais, 2 très mauvais) dans une classe dédiée. Les comptes existants sont conservés.</p>
+			<div class="class-create-row"><input type="password" bind:value={demoPassword} placeholder="Mot de passe commun (10 caractères min.)" autocomplete="new-password" /><button disabled={demoBusy} onclick={() => void createDemoStudents()}>{demoBusy ? 'Création…' : 'Créer les 10 comptes'}</button></div>
+			{#if demoMessage}<p class="class-message" role="status">{demoMessage}</p>{/if}
+		</section>
+
+		<section class="classes-card task-card" id="tasks">
+			<h2>Consigne à faire</h2>
+			<p>Le message restera visible dans l’espace élève jusqu’à son archivage.</p>
+			<div class="task-form">
+				<select bind:value={taskClassId} onchange={() => { taskStudentIds = []; }} aria-label="Classe destinataire"><option value="">Choisir une classe</option>{#each classes as classroom}<option value={classroom.id}>{classroom.name}</option>{/each}</select>
+				{#if taskClassId}<fieldset class="task-recipients"><legend>Destinataires <small>(aucune case = toute la classe)</small></legend>{#each remoteStudents.filter((student) => student.class_id === taskClassId) as pupil}<label><input type="checkbox" checked={taskStudentIds.includes(pupil.user_id)} onchange={() => { taskStudentIds = taskStudentIds.includes(pupil.user_id) ? taskStudentIds.filter((id) => id !== pupil.user_id) : [...taskStudentIds, pupil.user_id]; }} /> {pupil.display_name} <small>{pupil.login_id}</small></label>{/each}</fieldset>{/if}
+				<input bind:value={taskTitle} placeholder="Titre · Aujourd’hui" maxlength="140" />
+				<textarea bind:value={taskBody} placeholder="Ex. 1. Fais Race. 2. Reprends ensuite le cours sur les fractions." maxlength="2000"></textarea>
+				<div class="task-options"><select bind:value={taskGameId} aria-label="Activité conseillée"><option value="">Aucune activité liée</option>{#each ['race','calculs','livrets','geometrie','numeria','mesurovia','conju_lab','grammaire_lab','musee_vocabulaire','shift','fractionstower2','mathhunt'] as game}<option value={game}>{game.replaceAll('_',' ')}</option>{/each}</select><input type="date" bind:value={taskDueAt} aria-label="Date limite" /><button disabled={taskBusy} onclick={() => void sendTask()}>{taskBusy ? 'Envoi…' : 'Envoyer la consigne'}</button></div>
+			</div>
+			{#if taskMessage}<p class="class-message" role="status">{taskMessage}</p>{/if}
+			{#if teacherTasks.filter((task) => task.active).length}<ul class="task-list">{#each teacherTasks.filter((task) => task.active).slice(0, 8) as task}<li><div><strong>{task.title}</strong><small>{classes.find((item) => item.id === task.class_id)?.name ?? 'Classe'} · {task.student_id ? (remoteStudents.find((student) => student.user_id === task.student_id)?.display_name ?? 'Élève ciblé') : 'Toute la classe'}{task.target_game_id ? ` · ${task.target_game_id}` : ''}</small><p>{task.body}</p></div><button onclick={() => void archiveTask(task)}>Archiver</button></li>{/each}</ul>{/if}
 		</section>
 
 		<section class="classes-card">
@@ -335,9 +491,10 @@
 					</tbody>
 				</table>
 			</div>
-		{/if}
 			{/if}
-	</div>
+			</main>
+		</div>
+		{/if}
 {/if}
 
 <style>
@@ -397,6 +554,20 @@
 	.class-list { list-style: none; padding: 0; display: grid; gap: .6rem; }
 	.class-list li { display: flex; justify-content: space-between; gap: 1rem; padding: .7rem; background: rgba(0,0,0,.2); border-radius: 6px; }
 	.class-list small { opacity: .75; }
+	.class-actions, .class-edit { display:flex; gap:.45rem; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+	.class-edit input { max-width: 16rem; padding:.45rem; border-radius:6px; border:1px solid rgba(255,255,255,.25); }
+	.task-form { display:grid; gap:.65rem; }
+	.task-form textarea { min-height:6rem; resize:vertical; padding:.7rem; border-radius:8px; border:1px solid rgba(255,255,255,.25); font:inherit; }
+	.task-options { display:flex; gap:.6rem; flex-wrap:wrap; align-items:center; }
+	.task-recipients { display:flex; flex-wrap:wrap; gap:.45rem .8rem; padding:.65rem; border:1px solid rgba(255,255,255,.2); border-radius:8px; }
+	.task-recipients legend { padding:0 .35rem; font-weight:700; }
+	.task-recipients label { font-size:.88rem; }
+	.task-recipients small { opacity:.7; }
+	.task-options select,.task-options input { min-height:2.5rem; padding:.45rem; border-radius:7px; border:1px solid rgba(255,255,255,.25); }
+	.task-list { list-style:none; display:grid; gap:.6rem; padding:0; margin:1rem 0 0; }
+	.task-list li { display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; padding:.75rem; border-radius:8px; background:rgba(0,0,0,.18); }
+	.task-list small { display:block; opacity:.7; margin-top:.2rem; }
+	.task-list p { margin:.35rem 0 0; }
 	.student-actions { display:flex; gap:.45rem; flex-wrap:wrap; justify-content:flex-end; }
 	.confirm-delete { background:#9e2f2f !important; color:#fff !important; }
 	.student-form { display: grid; gap: .75rem; max-width: 520px; }
@@ -405,11 +576,6 @@
 	.reset-row { display:flex; gap:.75rem; flex-wrap:wrap; margin-top:1rem; }
 	.reset-row input { flex:1 1 260px; padding:.7rem; }
 
-	.teacher-container {
-		padding: 2rem;
-		max-width: 1200px;
-		margin: auto;
-	}
 	header {
 		display: flex;
 		justify-content: space-between;
@@ -489,7 +655,20 @@
 	.login-card button { width:100%; margin-top:1.2rem; padding:.9rem 1rem; border-radius:11px; background:#285f4c; color:white; font-size:1rem; }
 	.back-link { display:block; margin-top:1.2rem; color:#38634f; text-align:center; }
 	.login-error { color:#a52f27; background:#fff0ea; border-left:4px solid #b23c2e; padding:.7rem; border-radius:6px; }
-	.teacher-container { max-width: 1380px; padding: clamp(1rem, 3vw, 2.2rem); color:#20332e; }
+	/* Enveloppe type admin dashboard : navigation stable, contenu lisible et responsive. */
+	.teacher-shell { min-height:100vh; display:grid; grid-template-columns:248px minmax(0,1fr); background:radial-gradient(circle at 60% -10%,#24356b 0,transparent 32%),#080c1b; color:#eaf1ff; }
+	.teacher-sidebar { position:sticky; top:0; height:100vh; box-sizing:border-box; display:flex; flex-direction:column; gap:1rem; padding:1.35rem 1rem; background:linear-gradient(180deg,#101833f2,#0a1023f2); border-right:1px solid #52629455; }
+	.sidebar-brand { display:flex; align-items:center; gap:.7rem; color:#f5f8ff; text-decoration:none; padding:.35rem .4rem 1.1rem; border-bottom:1px solid #53628d44; }
+	.brand-orb { display:grid; place-items:center; width:38px; height:38px; border-radius:13px; color:#061022; background:linear-gradient(135deg,#70e6ed,#7865fa); box-shadow:0 0 24px #56d7e366; font-weight:900; }
+	.sidebar-brand strong,.sidebar-brand small,.sidebar-bottom strong,.sidebar-bottom small { display:block; }
+	.sidebar-brand strong { letter-spacing:.14em; font-size:.95rem; }.sidebar-brand small,.sidebar-bottom small { color:#8494b8; font-size:.72rem; margin-top:.15rem; }
+	.sidebar-label { margin:1rem .6rem .1rem; color:#6e7fa8!important; font-size:.65rem; font-weight:900; letter-spacing:.12em; }
+	.sidebar-nav { display:grid; gap:.35rem; }.sidebar-nav a { display:flex; align-items:center; gap:.7rem; padding:.72rem .75rem; border-radius:10px; color:#9eafd0; text-decoration:none; font-size:.86rem; font-weight:700; transition:background .18s,transform .18s,color .18s; }.sidebar-nav a span { width:1rem; text-align:center; color:#6ed9e6; }.sidebar-nav a:hover { color:white; background:#ffffff0b; transform:translateX(2px); }.sidebar-nav a.active { color:#fff; background:linear-gradient(135deg,#6257dc,#216f9f); box-shadow:0 9px 24px #304da655; }
+	.sidebar-bottom { display:flex; align-items:center; gap:.65rem; margin-top:auto; padding:.8rem; border:1px solid #52629455; border-radius:14px; background:#ffffff07; }.nox-mini { display:grid; place-items:center; width:32px; height:32px; border-radius:10px; color:#071125; font-weight:900; background:linear-gradient(135deg,#5ce0e6,#7765fa); }
+	.teacher-main { min-width:0; padding:1.25rem clamp(1rem,3vw,2.6rem) 3rem; }.teacher-main .teacher-header { max-width:1480px; margin:0 auto .8rem; padding:.4rem 0 1rem; border-bottom:1px solid #51618c44; }.teacher-main .teacher-header h1 { color:#f7f9ff; margin:.2rem 0; font-size:clamp(1.35rem,2vw,1.9rem); }.teacher-main .teacher-header p { color:#9eafd0; }.teacher-main .teacher-kicker { color:#75ddec!important; }.teacher-main .teacher-header-actions { gap:.5rem; }.live-status { display:inline-flex; align-items:center; gap:.4rem; color:#8de1c2; font-size:.76rem; font-weight:800; }.live-status i { width:7px; height:7px; border-radius:50%; background:#4de0a3; box-shadow:0 0 12px #4de0a3; }.teacher-main .mode-link { color:#dce7ff; background:#151d3b; border-color:#526494; }.teacher-main .logout-button { border:1px solid #526494; border-radius:10px; background:#111932; color:#dce7ff; padding:.55rem .9rem; cursor:pointer; }
+	.teacher-main :global(.remote-dashboard) { max-width:1480px; margin:0 auto; border-radius:20px; }
+	@media (max-width:900px) { .teacher-shell { grid-template-columns:1fr; }.teacher-sidebar { position:static; height:auto; padding:.75rem 1rem; display:block; }.sidebar-brand { display:inline-flex; border:0; padding-bottom:.65rem; }.sidebar-label { display:none; }.sidebar-nav { display:flex; overflow-x:auto; padding:.15rem 0; }.sidebar-nav a { white-space:nowrap; }.sidebar-bottom { display:none; }.teacher-main { padding:.8rem; }.teacher-main .teacher-header { flex-direction:column; align-items:flex-start; }.teacher-main .teacher-header-actions { justify-content:flex-start; } }
+	@media (prefers-reduced-motion: reduce) { .sidebar-nav a { transition:none; } }
 	.teacher-header { margin:0; padding:1rem 0 1.4rem; border-bottom:1px solid #cbd8ce; align-items:flex-end; }
 	.teacher-header h1 { margin:.25rem 0; color:#173f32; font-size:clamp(2rem,4vw,3.4rem); letter-spacing:-.04em; }
 	.teacher-header p { margin:.3rem 0; color:#64766f; }

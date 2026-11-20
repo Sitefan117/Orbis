@@ -3,6 +3,7 @@ import { currentSession } from '$lib/orbis/auth/client';
 
 export type OrbisClass = { id: string; name: string; created_at: string };
 export type OrbisStudent = { user_id: string; login_id: string; display_name: string; class_id: string };
+export type RemoteActivityKind = 'game' | 'course';
 export type RemoteActivityEvent = {
   event_id: string;
   student_id: string;
@@ -16,6 +17,9 @@ export type RemoteActivityEvent = {
   hints_used: number | null;
   duration_seconds: number | null;
   response_details: Array<{ questionIndex: number; questionId?: string; skillId?: string; category?: string; prompt?: string; response?: string; expected?: string; correct: boolean; attempts?: number; hintsUsed?: number; durationSeconds?: number; errorFamily?: string }>;
+  metadata: Record<string, unknown>;
+  activity_kind: RemoteActivityKind;
+  session_id: string | null;
   occurred_at: string;
 };
 export type RemoteStudentDocument = { student_id: string; document_kind: 'cv' | 'letter'; content: Record<string, string>; updated_at: string };
@@ -85,6 +89,24 @@ export async function createTeacherClass(name: string): Promise<OrbisClass> {
   const rows = await response.json() as OrbisClass[];
   if (!rows[0]) throw new Error('class-create-empty');
   return rows[0];
+}
+
+export async function renameTeacherClass(classId: string, name: string): Promise<void> {
+  const context = getHeaders();
+  if (!context) throw new Error('session-required');
+  const response = await fetch(`${context.config.url}/rest/v1/classes?id=eq.${encodeURIComponent(classId)}`, {
+    method: 'PATCH', headers: { ...context.headers, prefer: 'return=minimal' }, body: JSON.stringify({ name: name.trim() })
+  });
+  if (!response.ok) throw new Error(`class-rename-${response.status}`);
+}
+
+export async function deleteTeacherClass(classId: string): Promise<void> {
+  const context = getHeaders();
+  if (!context) throw new Error('session-required');
+  const response = await fetch(`${context.config.url}/rest/v1/classes?id=eq.${encodeURIComponent(classId)}`, {
+    method: 'DELETE', headers: { ...context.headers, prefer: 'return=minimal' }
+  });
+  if (!response.ok) throw new Error(`class-delete-${response.status}`);
 }
 
 export async function createStudent(input: { loginId: string; displayName: string; password: string; classId: string }): Promise<{ studentId: string }> {
@@ -168,7 +190,7 @@ export async function deleteStudent(studentId: string): Promise<void> {
 }
 
 export async function listRemoteActivityEvents(): Promise<RemoteActivityEvent[]> {
-  return fetchAllRows<RemoteActivityEvent>('activity_events?select=event_id,student_id,game_id,activity_id,skill_id,correct_count,question_count,error_count,error_families,hints_used,duration_seconds,response_details,occurred_at&order=occurred_at.desc', 'activities');
+  return fetchAllRows<RemoteActivityEvent>('activity_events?select=event_id,student_id,game_id,activity_id,skill_id,correct_count,question_count,error_count,error_families,hints_used,duration_seconds,response_details,metadata,activity_kind,session_id,occurred_at&order=occurred_at.desc', 'activities');
 }
 
 export async function listTeacherStudentDocuments(): Promise<RemoteStudentDocument[]> {

@@ -11,6 +11,7 @@
   import { getStudentName } from '$lib/orbis/identity/local-student';
   import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
+  import NumericKeypad from '$lib/components/NumericKeypad.svelte';
 
   /*
    * SHIFT — Atelier des quantités
@@ -878,6 +879,7 @@ const pixelsPerSecond = randomInt(180, 220);
             <div class="conversion-card">
               <span class="conversion-category">{activeTask.familyName.toLocaleUpperCase('fr-CH')}</span>
               <div class="conversion-equation"><strong>{formatValue(activeTask.sourceValue)}</strong><span>{activeTask.fromUnit}</span><b>→</b><div class="conversion-answer"><input bind:value={answerInput} inputmode="decimal" autocomplete="off" aria-label={`Mesure convertie en ${activeTask.toUnit}`} placeholder="?" onkeydown={(event) => event.key === 'Enter' && submitTask()} /><span>{activeTask.toUnit}</span></div></div>
+              <NumericKeypad bind:value={answerInput} onSubmit={submitTask} />
               <div class="measure-ladder" aria-label="Échelle des unités">
                 {#each MEASURE_UNITS[activeTask.familyName] as unit, index}
                   <span class:unit-active={unit.name === activeTask.fromUnit || unit.name === activeTask.toUnit}>{unit.name}</span>{#if index < MEASURE_UNITS[activeTask.familyName].length - 1}<i>·</i>{/if}
@@ -897,6 +899,7 @@ const pixelsPerSecond = randomInt(180, 220);
                 <span class="task-label">MOT-NOMBRE</span><strong class="word-target-text">{numberToSwissText(activeTask.number)}</strong>
                 <label class="answer-label" for="digits-answer">Écris le nombre en chiffres</label>
                 <input id="digits-answer" class="text-answer" bind:value={answerInput} inputmode="numeric" autocomplete="off" placeholder="ex. 2’345" onkeydown={(event) => event.key === 'Enter' && submitTask()} />
+                <NumericKeypad bind:value={answerInput} allowDecimal={false} onSubmit={submitTask} />
               {/if}
               {#if showPlaceHints}<p class="support-note">Lis le nombre par blocs de trois chiffres : unités, milliers, millions, milliards.</p>{/if}
               <button type="button" class="primary-button submit-wide" onclick={submitTask}>Vérifier ma réponse <span>↗</span></button>
@@ -950,6 +953,7 @@ const pixelsPerSecond = randomInt(180, 220);
                 {:else}
                   <label class="answer-label line-read-answer" for="line-read-answer">Écris la valeur indiquée</label>
                   <div class="rank-answer"><input id="line-read-answer" bind:value={answerInput} inputmode="decimal" autocomplete="off" aria-label="Valeur indiquée sur la droite graduée" placeholder="Valeur" onkeydown={(event) => event.key === 'Enter' && submitTask()} /></div>
+                  <NumericKeypad bind:value={answerInput} onSubmit={submitTask} />
                 {/if}
               </div>
               <p class="support-note">{activeTask.direction === 'place' ? 'Déplace le curseur ou utilise les flèches du clavier pour placer ton repère.' : 'Utilise les bornes et les graduations pour estimer la valeur du repère.'}</p>
@@ -957,7 +961,7 @@ const pixelsPerSecond = randomInt(180, 220);
             </div>
 
           {:else if activeTask.type === 'rank'}
-            <div class="rank-task-card"><div class="rank-target"><span>NOMBRE À ANALYSER</span><strong>{formatTicks(activeTask.targetTicks)}</strong></div><p class="rank-question">{activeTask.prompt}</p><div class="rank-answer"><input bind:value={answerInput} inputmode="numeric" autocomplete="off" aria-label="Nombre de groupes entiers" placeholder="?" onkeydown={(event) => event.key === 'Enter' && submitTask()} /><button type="button" class="primary-button" onclick={submitTask}>Vérifier</button></div>{#if showPlaceHints}<p class="support-note">Exemple : 4’387 contient 438 dizaines entières, mais le chiffre des dizaines est 8.</p>{/if}</div>
+            <div class="rank-task-card"><div class="rank-target"><span>NOMBRE À ANALYSER</span><strong>{formatTicks(activeTask.targetTicks)}</strong></div><p class="rank-question">{activeTask.prompt}</p><div class="rank-answer"><input bind:value={answerInput} inputmode="numeric" autocomplete="off" aria-label="Nombre de groupes entiers" placeholder="?" onkeydown={(event) => event.key === 'Enter' && submitTask()} /><button type="button" class="primary-button" onclick={submitTask}>Vérifier</button></div><NumericKeypad bind:value={answerInput} allowDecimal={false} onSubmit={submitTask} />{#if showPlaceHints}<p class="support-note">Exemple : 4’387 contient 438 dizaines entières, mais le chiffre des dizaines est 8.</p>{/if}</div>
 
           {:else if activeTask.type === 'build'}
             <div class="build-task-card">
@@ -968,7 +972,7 @@ const pixelsPerSecond = randomInt(180, 220);
                 <span class="task-label">POINT DE DÉPART</span><strong class="build-target">{formatValue(activeTask.number, 3)}</strong>
                 <div class="build-direction" class:direction-up={activeTask.direction === 'greater'}><span>{activeTask.direction === 'greater' ? '↑' : '↓'}</span><strong>{activeTask.direction === 'greater' ? 'PLUS GRAND QUE' : 'PLUS PETIT QUE'}</strong></div>
               {/if}
-              <label class="answer-label" for="build-answer">Propose ton nombre</label><div class="rank-answer"><input id="build-answer" bind:value={answerInput} inputmode="decimal" autocomplete="off" placeholder="Ton nombre" onkeydown={(event) => event.key === 'Enter' && submitTask()} /><button type="button" class="primary-button" onclick={submitTask}>Vérifier</button></div>{#if showPlaceHints}<p class="support-note">Ton nombre doit respecter la consigne. Pour une zone, les deux bornes sont exclues.</p>{/if}
+              <label class="answer-label" for="build-answer">Propose ton nombre</label><div class="rank-answer"><input id="build-answer" bind:value={answerInput} inputmode="decimal" autocomplete="off" placeholder="Ton nombre" onkeydown={(event) => event.key === 'Enter' && submitTask()} /><button type="button" class="primary-button" onclick={submitTask}>Vérifier</button></div><NumericKeypad bind:value={answerInput} onSubmit={submitTask} />{#if showPlaceHints}<p class="support-note">Ton nombre doit respecter la consigne. Pour une zone, les deux bornes sont exclues.</p>{/if}
             </div>
           {/if}
 

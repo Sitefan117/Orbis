@@ -40,7 +40,7 @@ function poolFor(code,level){
  case 'times5':case 'times9':case 'times25':{const factor={times5:5,times9:9,times25:25}[f];for(const n of range(2,[5,10,16][L]))add(n,factor,'*');break;}
  case 'mental-multiply':pairs(range([11,12,25][L],[24,49,99][L]),range(2,[3,5,6][L]),'*');break;
  case 'times-power':for(const n of range([1,10,10][L],[9,39,99][L]))for(const d of (L===0?[10]:L===1?[10,100]:[10,100,1000]))add(n,d,'*');break;
- case 'fixed-multiply':for(const n of range([1,1,4][L],[5,9,10][L]))add(n,s.factor,'*');break;
+ case 'fixed-multiply':for(const n of range(1,10))add(n,s.factor,'*');break;
  case 'fixed-divide':for(const n of range([1,1,4][L],[5,9,10][L]))add(n*s.factor,s.factor,'/');break;
  case 'division-table':for(const d of range(2,[4,6,9][L]))for(const q of range(1,[5,9,9][L]))add(q*d,d,'/');break;
  case 'remainder':for(const d of range(2,[4,6,9][L]))for(const q of range(1,[4,8,12][L]))for(const r of range(1,d-1))add(q*d+r,d,'/','remainder');break;

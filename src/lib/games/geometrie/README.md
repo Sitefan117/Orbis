@@ -4,6 +4,10 @@
 
 ## Fichiers
 
+- **[`ConstructionLab.svelte`](./ConstructionLab.svelte)** — Galerie tactile des 19 figures, avec modèles, croquis, vues de solides, défis et badges.
+- **[`construction.ts`](./construction.ts)** — Modèles et correcteurs exacts des sommets et arêtes.
+- **[`construction-progress.ts`](./construction-progress.ts)** — Progression personnelle, XP et badges conservés par élève.
+
 - **[`FigureDrawing.svelte](./FigureDrawing.svelte)** — Dessine les figures en SVG.  
   Dépend de : `src/lib/games/geometrie/types.ts`.
 - **[`figures.ts](./figures.ts)** — Catalogue des figures géométriques.  

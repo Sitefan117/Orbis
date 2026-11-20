@@ -18,6 +18,7 @@
   import { answersEqual, generateQuestions, normalizeAnswer } from '$lib/games/numeria/question-engine';
   import { clearProgress, createEmptySave, loadSave, saveProgress as saveNumeriaProgress, TEACHER_ACCESS_CODE } from '$lib/games/numeria/progress';
   import type { ActiveMissionSave, Grade, MissionFeedback, MissionMode, Question, QuestionOutcome, Realm, SessionResult, StudentSave } from '$lib/games/numeria/types';
+  import NumericKeypad from '$lib/components/NumericKeypad.svelte';
 
   type Screen = 'welcome' | 'hub' | 'realm' | 'game' | 'result' | 'codex';
   type Feedback = MissionFeedback;
@@ -693,6 +694,7 @@
               <form class="answer-entry" onsubmit={(event) => { event.preventDefault(); validateAnswer(); }}>
                 <label for="question-answer">Ta réponse</label>
                 <input id="question-answer" value={answer} oninput={updateAnswerFromInput} disabled={questionFinished} autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="Écris ta réponse…" aria-describedby="answer-format" />
+                <NumericKeypad bind:value={answer} disabled={questionFinished} onSubmit={validateAnswer} />
                 <p id="answer-format" class="input-help">Tu peux utiliser une virgule décimale. Les espaces et apostrophes des milliers sont acceptés.</p>
                 <button class="primary-button wide" type="submit" disabled={questionFinished || answer.trim() === ''}>Vérifier ma réponse <span>↗</span></button>
               </form>

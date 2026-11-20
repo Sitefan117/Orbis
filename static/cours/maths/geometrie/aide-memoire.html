@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aide mémoire de géométrie 6H à 8H</title>
+  <style>
+    :root{--ink:#243041;--muted:#536174;--green:#2e7d32;--green-bg:#f1f8e9;--blue:#1565c0;--blue-bg:#eaf3ff;--red:#b3261e;--red-bg:#fce8e6;--line:#cbd5e1;--paper:#fff}
+    *{box-sizing:border-box}html{font-size:15px}body{margin:0;color:var(--ink);font:1rem/1.48 Arial,Helvetica,sans-serif;background:#e8edf3}main{width:min(100%,210mm);margin:16px auto;padding:14mm;background:var(--paper)}header{border-bottom:3px solid var(--ink);padding-bottom:1rem;margin-bottom:1rem}h1,h2,h3{line-height:1.18}h1{font-size:2rem;margin:.2rem 0}h2{font-size:1.35rem;margin:1.3rem 0 .55rem}h3{font-size:1.05rem;margin:.7rem 0 .35rem}p{margin:.35rem 0}ul{margin:.35rem 0;padding-left:1.25rem}li{margin:.2rem 0}.meta{color:var(--muted);font-size:.9rem}.card{margin:1rem 0;padding:.9rem 1rem;border-left:6px solid;border-radius:6px;break-inside:avoid}.theory{border-color:var(--green);background:var(--green-bg)}.practice{border-color:var(--blue);background:var(--blue-bg)}.assessment{border-color:var(--red);background:var(--red-bg)}.label{font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.theory .label{color:var(--green)}.practice .label{color:var(--blue)}.assessment .label{color:var(--red)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}.mini{border:1px solid var(--line);border-radius:6px;padding:.65rem;background:#fff;break-inside:avoid}.mini strong{display:block}.shape{width:72px;height:58px;display:block;margin:.1rem auto .3rem;color:#1565c0}.solid{color:#b3261e}.table{width:100%;border-collapse:collapse;margin:.4rem 0}.table th,.table td{border:1px solid var(--line);padding:.45rem;text-align:left;vertical-align:top}.table th{background:#243041;color:#fff}.table tr:nth-child(even) td{background:#f8fafc}.formula{font-size:1.05rem;font-weight:700}.steps{counter-reset:step;list-style:none;padding:0}.steps li{counter-increment:step;display:grid;grid-template-columns:1.7rem 1fr;gap:.45rem;align-items:start;margin:.35rem 0}.steps li::before{content:counter(step);display:grid;place-items:center;width:1.45rem;height:1.45rem;border-radius:50%;background:#243041;color:#fff;font-weight:700}.error{margin:.25rem 0}.footer-note{font-size:.82rem;color:var(--muted);margin-top:1rem}@page{size:A4;margin:12mm}@media print{body{background:#fff}main{width:auto;margin:0;padding:0}.card{print-color-adjust:exact;-webkit-print-color-adjust:exact}}@media(max-width:680px){main{padding:1rem}.grid{grid-template-columns:1fr}h1{font-size:1.7rem}.table{font-size:.9rem}}
+  </style>
+  <style>
+    .level-6 .advanced{display:none}.level-choice{display:flex;gap:.6rem;flex-wrap:wrap;margin:.75rem 0}.level-choice a{display:inline-block;padding:.55rem .8rem;border:1px solid #536174;border-radius:.4rem;color:#243041;background:#fff;text-decoration:none;font-weight:700}.level-choice a[aria-current="page"]{border-color:#2e7d32;background:#f1f8e9}@media print{.level-choice,nav{display:none}}
+  </style>
+</head>
+<body>
+<main>
+  <nav aria-label="Navigation Orbis"><a href="../../../?vue=cours" data-orbis-catalog-return>← Retour aux cours</a></nav>
+  <nav class="level-choice" aria-label="Version de l’aide mémoire"><a href="?niveau=6H" id="level-six">Version 6H</a><a href="?niveau=7H-8H" id="level-upper">Version 7H–8H</a><a href="aide-memoire-6H.pdf">PDF 6H</a><a href="aide-memoire-7H-8H.pdf">PDF 7H–8H</a><button type="button" onclick="window.print()">Imprimer cette version</button></nav>
+  <header>
+    <p class="meta">Mathématiques · Espace · Nexus</p>
+    <h1>Aide mémoire de géométrie</h1>
+    <p>Repérer, décrire, classer et justifier une réponse de 6H à 8H.</p>
+    <p>Prénom : ________________________________</p>
+  </header>
+
+  <section class="card theory">
+    <p class="label">Je comprends</p>
+    <h2>Repères essentiels 6H</h2>
+    <h3>Les mots à connaître</h3>
+    <table class="table"><thead><tr><th>Mot</th><th>À retenir</th></tr></thead><tbody>
+      <tr><td><strong>Côté</strong></td><td>Segment qui forme le contour d’une figure plane.</td></tr>
+      <tr><td><strong>Sommet</strong></td><td>Point où deux côtés ou plusieurs arêtes se rencontrent.</td></tr>
+      <tr><td><strong>Angle droit</strong></td><td>Angle de 90°. On le vérifie avec une équerre.</td></tr>
+      <tr><td><strong>Face</strong></td><td>Surface plane d’un solide.</td></tr>
+      <tr><td><strong>Arête</strong></td><td>Segment commun à deux faces d’un solide.</td></tr>
+      <tr><td><strong>Solide</strong></td><td>Objet en trois dimensions : longueur, largeur et hauteur.</td></tr>
+    </tbody></table>
+  </section>
+
+  <section class="card theory advanced">
+    <p class="label">Je comprends · approfondissement 7H et 8H</p>
+    <h2>Familles de quadrilatères</h2>
+    <table class="table"><thead><tr><th>Famille</th><th>Propriété à vérifier</th></tr></thead><tbody>
+      <tr><td>Parallélogramme</td><td>Deux paires de côtés opposés parallèles.</td></tr>
+      <tr><td>Rectangle</td><td>Parallélogramme qui possède quatre angles droits.</td></tr>
+      <tr><td>Losange</td><td>Parallélogramme qui possède quatre côtés égaux.</td></tr>
+      <tr><td>Carré</td><td>Rectangle et losange : quatre angles droits et quatre côtés égaux.</td></tr>
+      <tr><td>Trapèze</td><td>Au moins une paire de côtés opposés parallèles ; la convention de classe peut préciser « exactement une ».</td></tr>
+    </tbody></table>
+    <p>Une figure tournée reste dans la même famille. Pour décider, vérifie les propriétés avec des instruments.</p>
+  </section>
+
+  <section class="card practice">
+    <p class="label">Je m’entraîne</p>
+    <h2>Figures planes</h2>
+    <div class="grid">
+      <article class="mini"><svg class="shape" viewBox="0 0 100 80" aria-label="triangle"><polygon points="50,8 10,70 90,70" fill="none" stroke="currentColor" stroke-width="4"/></svg><strong>Triangle</strong><span>3 côtés et 3 sommets.</span></article>
+      <article class="mini"><svg class="shape" viewBox="0 0 100 80" aria-label="carré"><rect x="16" y="10" width="68" height="60" fill="none" stroke="currentColor" stroke-width="4"/></svg><strong>Carré</strong><span>4 côtés égaux et 4 angles droits.</span></article>
+      <article class="mini"><svg class="shape" viewBox="0 0 100 80" aria-label="rectangle"><rect x="8" y="20" width="84" height="40" fill="none" stroke="currentColor" stroke-width="4"/></svg><strong>Rectangle</strong><span>4 angles droits ; côtés opposés égaux et parallèles.</span></article>
+      <article class="mini"><svg class="shape" viewBox="0 0 100 80" aria-label="cercle"><circle cx="50" cy="40" r="29" fill="none" stroke="currentColor" stroke-width="4"/></svg><strong>Cercle</strong><span>Contour courbe ; aucun côté droit ni sommet.</span></article>
+      <article class="mini"><svg class="shape" viewBox="0 0 100 80" aria-label="losange"><polygon points="50,7 88,40 50,73 12,40" fill="none" stroke="currentColor" stroke-width="4"/></svg><strong>Losange</strong><span>4 côtés égaux ; un carré est un cas particulier.</span></article>
+      <article class="mini"><svg class="shape" viewBox="0 0 100 80" aria-label="trapèze"><polygon points="30,14 70,14 88,68 12,68" fill="none" stroke="currentColor" stroke-width="4"/></svg><strong>Trapèze</strong><span>Au moins une paire de côtés parallèles, selon la convention utilisée.</span></article>
+    </div>
+  </section>
+
+  <section class="card theory">
+    <p class="label">Je comprends</p>
+    <h2>Solides : compter sans se tromper</h2>
+    <div class="grid">
+      <article class="mini"><svg class="shape solid" viewBox="0 0 100 80" aria-label="cube"><path d="M18 27 50 10 82 27v35L50 79 18 62Z M18 27 50 44 82 27 M50 44v35" fill="none" stroke="currentColor" stroke-width="3"/></svg><strong>Cube</strong><span>6 faces carrées, 12 arêtes, 8 sommets.</span></article>
+      <article class="mini"><svg class="shape solid" viewBox="0 0 100 80" aria-label="pavé droit"><path d="M10 28 60 12 90 28v34L40 78 10 62Z M10 28 40 45 90 28 M40 45v33" fill="none" stroke="currentColor" stroke-width="3"/></svg><strong>Pavé droit</strong><span>6 faces rectangulaires, 12 arêtes, 8 sommets.</span></article>
+      <article class="mini"><svg class="shape solid" viewBox="0 0 100 80" aria-label="pyramide"><path d="M50 8 14 67 50 76 86 67Z M50 8v68 M14 67 86 67" fill="none" stroke="currentColor" stroke-width="3"/></svg><strong>Pyramide à base carrée</strong><span>5 faces, 8 arêtes, 5 sommets.</span></article>
+      <article class="mini"><svg class="shape solid" viewBox="0 0 100 80" aria-label="prisme triangulaire"><path d="M15 60 35 20 55 60Z M45 60 65 20 85 60Z M35 20 65 20 M15 60 45 60 M55 60 85 60" fill="none" stroke="currentColor" stroke-width="3"/></svg><strong>Prisme triangulaire</strong><span>5 faces, 9 arêtes, 6 sommets.</span></article>
+    </div>
+  </section>
+
+  <section class="card practice">
+    <p class="label">Je m’entraîne</p>
+    <h2>Reconnaître une figure</h2>
+    <ol class="steps">
+      <li><span>Regarde d’abord la dimension : figure plane ou solide ?</span></li>
+      <li><span>Compte les côtés et les sommets, ou les faces, arêtes et sommets.</span></li>
+      <li><span>Observe les relations : côtés égaux, parallèles, angles droits, symétrie.</span></li>
+      <li><span>Compare les propriétés avec la définition, pas seulement avec le dessin.</span></li>
+    </ol>
+    <p class="formula">Une figure peut appartenir à plusieurs familles.</p>
+    <p>Exemple : un carré est à la fois un quadrilatère, un rectangle, un losange et un parallélogramme.</p>
+  </section>
+
+  <section class="card assessment">
+    <p class="label">Je montre ce que je sais</p>
+    <h2>Je justifie ma réponse</h2>
+    <p>Je ne dis pas seulement « c’est un carré ». Je donne une propriété vérifiable :</p>
+    <p class="formula">« C’est un carré parce qu’il possède quatre côtés égaux et quatre angles droits. »</p>
+    <ul>
+      <li>J’utilise le vocabulaire précis.</li>
+      <li>Je donne au moins une propriété importante.</li>
+      <li>Je vérifie que la propriété correspond vraiment à la figure.</li>
+    </ul>
+  </section>
+
+  <section class="card theory">
+    <p class="label">Erreurs fréquentes</p>
+    <h2>À surveiller</h2>
+    <ul class="error">
+      <li>Un dessin peut être tourné ou agrandi : ses propriétés ne changent pas.</li>
+      <li>Un carré est aussi un rectangle et un losange.</li>
+      <li>Une arête appartient à un solide ; un côté appartient à une figure plane.</li>
+      <li>Pour compter les faces cachées d’un solide, utilise le modèle ou un croquis.</li>
+      <li>Ne confonds pas « voir une forme » et « prouver une propriété ».</li>
+    </ul>
+  </section>
+
+  <p class="footer-note">Repère PER : MSN 21 — structurer le plan et l’espace. Cette fiche aide à réviser ; elle ne remplace pas les constructions avec instruments, les manipulations et les échanges en classe.</p>
+</main>
+<script src="../../../orbis/catalog-return.js" defer></script>
+<script>const level = new URLSearchParams(location.search).get('niveau'); if(level === '6H') document.body.classList.add('level-6'); document.getElementById(level === '6H' ? 'level-six' : 'level-upper').setAttribute('aria-current', 'page');</script>
+</body>
+</html>

@@ -1,15 +1,45 @@
 import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { readLexique, makeGrid, gridSize, gridWord, letterChoices, matchRounds, spriteStyle } from '../src/lib/games/musee-vocabulaire/lexique';
+import { readLexique, makeGrid, gridSize, gridWord, letterChoices, matchRounds, prioritizeRecent, spriteStyle } from '../src/lib/games/musee-vocabulaire/lexique';
+import { conversations } from '../src/lib/games/musee-vocabulaire/context-content';
 
 const bank = readLexique(readFileSync('static/vocabulaire/lexique.csv', 'utf8'));
+const englishBank = readLexique(readFileSync('static/vocabulaire/english-lab.csv', 'utf8'));
+assert.equal(englishBank.length, bank.length + 10);
+const englishThemes = new Set(englishBank.map((entry) => entry.theme));
+for (const theme of new Set(bank.map((entry) => entry.theme))) assert.ok(englishThemes.has(theme));
+assert.ok(englishThemes.has('computing'));
+assert.ok(englishThemes.has('computer-actions'));
+assert.equal(englishBank.filter((entry) => entry.sentence).length, bank.filter((entry) => entry.sentence).length);
+assert.ok(englishBank.every((entry) => entry.definition));
+const prioritised = prioritizeRecent(englishBank.slice(0, 20), englishBank.slice(0, 8).map((entry) => entry.id));
+assert.ok(prioritised.slice(0, 12).every((entry) => !englishBank.slice(0, 8).some((recent) => recent.id === entry.id)));
+assert.deepEqual(new Set(prioritised.map((entry) => entry.id)), new Set(englishBank.slice(0, 20).map((entry) => entry.id)));
+assert.ok(englishBank.filter((entry) => entry.syllables.length >= 2).length >= 500);
+assert.ok(englishBank.filter((entry) => entry.variants).length >= 30);
+const englishById = new Map(englishBank.map((entry) => [entry.id, entry]));
+for (const [id, expected] of Object.entries({
+  'ecole-tableau': 'board', 'ecole-regle': 'ruler', 'ecole-feuille': 'sheet of paper',
+  'budget-recu': 'receipt', 'budget-especes': 'cash', 'coiffeuse-salon': 'hair salon',
+  'coiffeuse-tondeuse': 'hair clippers', 'environnement-emission': 'emissions',
+  'carrossiere-rayure': 'scratch', 'logement-compteur': 'meter', 'sports-ballon': 'ball'
+})) assert.equal(englishById.get(id)?.word, expected, `Traduction anglaise incorrecte : ${id}`);
+assert.equal(new Set(englishBank.filter((entry) => entry.sprite).map((entry) => entry.sprite)).size,
+  englishBank.filter((entry) => entry.sprite).length, 'Deux mots anglais partagent la même image');
+for (const entry of englishBank) {
+  assert.ok(existsSync(`static/audio/english-lab/${entry.id}-piper.wav`), `Audio anglais manquant : ${entry.id}`);
+}
 const compoundChoices = letterChoices('rendez-vous');
 assert.equal(compoundChoices.length, new Set(gridWord('rendez-vous')).size * 2);
 assert.ok([...new Set(gridWord('rendez-vous'))].every((letter) => compoundChoices.includes(letter)));
-assert.ok(bank.length >= 600);
+assert.ok(bank.length >= 940);
 const themes = new Set(bank.map((entry) => entry.theme));
-assert.ok(themes.size >= 20);
-assert.ok(bank.filter((entry) => entry.sentence).length >= 136);
+assert.ok(themes.size >= 31);
+assert.ok(bank.filter((entry) => entry.sentence).length >= 220);
+for (const theme of themes) assert.ok(bank.filter((entry) => entry.theme === theme && entry.sentence).length >= 5);
+const conversationThemes = new Set(conversations.flatMap((conversation) => conversation.themes));
+for (const theme of themes) assert.ok(conversationThemes.has(theme), `Discussion manquante pour ${theme}`);
+for (const conversation of conversations) assert.ok(conversation.lines.length >= 4);
 
 const illustrated = bank.filter((entry) => entry.sprite);
 const uniqueImages = illustrated.slice(0, 20);
@@ -49,6 +79,11 @@ for (const entry of bank.filter((word) => word.sprite)) {
   assert.match(spriteStyle('/Orbis', entry.sprite), /Orbis/);
   assert.doesNotMatch(spriteStyle('/Orbis', entry.sprite), /NaN|Infinity/);
 }
+for (const entry of englishBank.filter((word) => word.sprite)) {
+  const sheet = entry.sprite.split(':')[0];
+  const folder = sheet.startsWith('english-lab-') ? 'english-lab' : 'musee-vocabulaire';
+  assert.ok(existsSync(`static/images/${folder}/${sheet}.png`), `Image anglaise manquante : ${sheet}`);
+}
 const header = 'id,theme,intitule,parcours,mot,definition,phrase_a_trou,syllabes_ecrites,sprite';
 assert.equal(readLexique('id;theme;intitule;parcours;mot;definition\r\na;ecole;École;base;stylo;"Objet; encre"')[0].definition, 'Objet; encre');
 assert.equal(readLexique(header + '\na,t,Thème,base,test,Définition,,,nouvelle-planche:0:4:3')[0].sprite, 'nouvelle-planche:0:4:3');
@@ -57,4 +92,4 @@ assert.throws(() => readLexique(header + '\na,t,T,base,test,Définition,,fa-ux,'
 assert.throws(() => readLexique(header + '\na,t,T,base,test,"guillemet'));
 assert.throws(() => readLexique(header + '\na,t,T,base,test,D,,,\na,t,T,base,test,D,,,'));
 assert.throws(() => readLexique(header + '\na,t,T,base,test,D,trop ___ de ___ trous,,'));
-console.log('Musée du vocabulaire — 600 entrées, 20 thèmes et 2 000 grilles validés.');
+console.log(`Musée du vocabulaire et English Lab — ${englishBank.length} entrées, ${englishThemes.size} thèmes, ${englishBank.filter((entry) => entry.sentence).length} phrases et audios validés.`);

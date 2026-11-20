@@ -2,10 +2,11 @@
   import { ExerciseGenerator, type Exercise } from '$lib/games/fractionstower2/engines/ExerciseGenerator';
   import { AudioManager } from '$lib/games/fractionstower2/audio/AudioManager';
   import VisualFractionModel from '$lib/games/fractionstower2/components/fraction/VisualFractionModel.svelte';
+  import type { ResponseDetail } from '$lib/orbis/results/contract';
 // Déclare les propriétés reçues par le composant et leur type.
 let { floorId = 'floor-1', onComplete }: {
   floorId?: string;
-  onComplete?: (score: number) => void;
+  onComplete?: (score: number, responseDetails: ResponseDetail[]) => void;
 } = $props();
 let floorNum = $derived(Number.parseInt(floorId.match(/(\d+)/)?.[1] ?? '1', 10));
 let exercises = $state<Exercise[]>([]);
@@ -19,6 +20,8 @@ let isCorrect = $state(false);
 let score = $state(0);
 let sessionCompleted = $state(false);
 let showVisualHelp = $state(false);
+let responseDetails = $state<ResponseDetail[]>([]);
+let questionStartedAt = $state(Date.now());
 // Valeur précédente utilisée uniquement pour détecter un changement d'étage.
 // Elle n'est pas initialisée depuis la prop afin d'éviter state_referenced_locally.
 let lastLoadedFloorId = '';
@@ -98,8 +101,10 @@ function startSession(sessionFloorId: string = floorId) {
     isAnswerChecked = false;
     isCorrect = false;
     score = 0;
+    responseDetails = [];
     sessionCompleted = false;
     showVisualHelp = false;
+    questionStartedAt = Date.now();
   }
 function speakQuestion() {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
@@ -203,6 +208,17 @@ function checkAnswer(answerOverride?: string) {
       score += 1;
       feedback = 'Bravo ! C’est la bonne réponse.';
       feedbackKind = 'success';
+      responseDetails = [...responseDetails, {
+        questionIndex: currentIndex,
+        questionId: currentEx.id,
+        category: `Fractions · ${currentEx.type}`,
+        prompt: currentEx.question,
+        response: userAnswer,
+        expected: currentEx.correctAnswer,
+        correct: true,
+        attempts: Math.min(2, 3 - attemptsLeft),
+        durationSeconds: Math.max(1, Math.round((Date.now() - questionStartedAt) / 1000))
+      }];
       if (typeof (AudioManager as any).play === 'function') (AudioManager as any).play('success');
       return;
     }
@@ -216,6 +232,18 @@ const hint = currentEx.hint || 'Relis la question et vérifie ta méthode.';
       isAnswerChecked = true;
       feedback = `Ce n’est pas encore juste. Piste : ${hint} Réponse attendue : ${currentEx.correctAnswer}.`;
       feedbackKind = 'error';
+      responseDetails = [...responseDetails, {
+        questionIndex: currentIndex,
+        questionId: currentEx.id,
+        category: `Fractions · ${currentEx.type}`,
+        prompt: currentEx.question,
+        response: userAnswer,
+        expected: currentEx.correctAnswer,
+        correct: false,
+        attempts: Math.min(2, 3 - attemptsLeft),
+        durationSeconds: Math.max(1, Math.round((Date.now() - questionStartedAt) / 1000)),
+        errorFamily: currentEx.type
+      }];
     }
     if (typeof (AudioManager as any).play === 'function') (AudioManager as any).play('error');
   }
@@ -226,7 +254,7 @@ function nextQuestion() {
       return;
     }
     sessionCompleted = true;
-    if (onComplete) onComplete(score);
+    if (onComplete) onComplete(score, responseDetails);
   }
 function resetCurrentQuestion() {
     userAnswer = '';
@@ -236,6 +264,7 @@ function resetCurrentQuestion() {
     isAnswerChecked = false;
     isCorrect = false;
     showVisualHelp = false;
+    questionStartedAt = Date.now();
   }
 function restartSession() {
     startSession();
@@ -492,7 +521,7 @@ const nextCount = coloredCount === i + 1 ? i : i + 1;
         {#if score < passingScore}
           <button type="button" class="btn-retry" onclick={restartSession}>Recommencer l’entraînement ↻</button>
         {/if}
-        <button type="button" class="btn-close" onclick={() => onComplete?.(score)}>
+        <button type="button" class="btn-close" onclick={() => onComplete?.(score, responseDetails)}>
           Fermer et retourner à la tour
         </button>
       </div>
