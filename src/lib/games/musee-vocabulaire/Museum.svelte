@@ -9,7 +9,7 @@
   import lexique from './data/lexique.csv?raw';
   import englishLexique from './data/english-lab.csv?raw';
   import poses from './data/mascotte.json';
-  import { gridSize, gridWord, letterChoices, makeGrid, matchRounds, normalize, readLexique, shuffle, spriteStyle, type Word } from './lexique';
+  import { gridSize, gridWord, letterChoices, makeGrid, matchRounds, normalize, prioritizeRecent, readLexique, shuffle, spriteStyle, type Word } from './lexique';
   import { masterySummary, updateWordProgress, type VocabularyProgress } from './progress';
   import ContextLab from './ContextLab.svelte';
 
@@ -56,6 +56,7 @@
   let mode: Mode = 'whack-image';
   let playing: Word[] = [];
   let queue: Word[] = [];
+  let recentIds: string[] = [];
   let seriesSize = 0;
   let target: Word | undefined;
   let options: Word[] = [];
@@ -183,6 +184,7 @@
         if (validThemes.length) selectedThemes = validThemes;
       }
       if (Array.isArray(state.galleryIds)) gallery = bank.filter((entry) => state.galleryIds.includes(entry.id));
+      if (Array.isArray(state.recentIds)) recentIds = state.recentIds.filter((id): id is string => typeof id === 'string').slice(-12);
       responseDetails = Array.isArray(state.responseDetails) ? state.responseDetails : [];
       vocabularyProgress = state.vocabularyProgress && typeof state.vocabularyProgress === 'object' ? state.vocabularyProgress : {};
       playing = bank.filter((entry) => selectedThemes.includes(entry.theme));
@@ -196,7 +198,7 @@
     recordGameProgress({
       studentName: student,
       gameId,
-      state: { mode, selectedThemes, galleryIds: gallery.map((entry) => entry.id), queueIds: queue.map((entry) => entry.id), targetId: target?.id, attempts, solved, responseDetails, vocabularyProgress },
+      state: { mode, selectedThemes, galleryIds: gallery.map((entry) => entry.id), queueIds: queue.map((entry) => entry.id), targetId: target?.id, recentIds, attempts, solved, responseDetails, vocabularyProgress },
       formatVersion: 1,
       summary: { label: `Musée des mots · ${mastery.acquired} mots acquis`, completed: mastery.acquired, total: Math.max(1, mastery.total) }
     });
@@ -226,7 +228,7 @@
       if (next === 'letters' || next === 'pendu') return gridWord(entry.word).length >= 2;
       return next !== 'millionaire' || quizFormat === 'definitions' || Boolean(entry.sentence);
     });
-    queue = shuffle(eligible);
+    queue = prioritizeRecent(eligible, recentIds);
     seriesSize = queue.length;
     if (next === 'match') {
       matchSets = matchRounds(queue);
@@ -238,6 +240,10 @@
 
   function distinctWords(entries: Word[]) {
     return Array.from(new Map(entries.map((entry) => [normalize(entry.word), entry])).values());
+  }
+
+  function noteRecent(ids: string[]) {
+    recentIds = [...recentIds.filter((id) => !ids.includes(id)), ...ids].slice(-12);
   }
 
   function nextRound() {
@@ -257,7 +263,10 @@
     report(opening[mode], 'ready');
 
     if (mode === 'search') {
-      grid = makeGrid(distinctWords(playing));
+      const candidates = distinctWords(playing);
+      const fresh = candidates.filter((entry) => !recentIds.includes(entry.id));
+      grid = makeGrid(fresh.length >= 6 ? fresh : candidates);
+      noteRecent(grid.targets.map(({ entry }) => entry.id));
       selectedCells = [];
       greenCells = [];
       fadedCells = [];
@@ -267,6 +276,7 @@
     if (mode === 'match') {
       matchIndex = matchSets.length ? (matchIndex + 1) % matchSets.length : -1;
       matchWords = shuffle(matchSets[matchIndex] ?? []);
+      noteRecent(matchWords.map((entry) => entry.id));
       options = shuffle(matchWords);
       matched = [];
       return;
@@ -278,6 +288,7 @@
     }
     const [entry, ...rest] = queue;
     target = entry;
+    noteRecent([entry.id]);
     if (mode === 'pendu') alphabet = letterChoices(entry.word);
     queue = rest;
     const distractors = distinctWords(playing.filter((item) =>
@@ -320,7 +331,7 @@
     });
     responseDetails = [...responseDetails, { questionIndex: gallery.length - 1, prompt: opening[mode], response: entry.word, expected: entry.word, correct: true, attempts: Math.max(1, attempts), hintsUsed: reaction === 'hint' ? 1 : 0 }];
     saveRemoteProgress();
-    report(isEnglish ? `Well done! “${entry.word}” means “${entry.definition}”.` : `Bien joué ! « ${entry.word} » est dans ta collection.`, 'correct');
+    report(isEnglish ? `Well done! “${entry.word}” means “${entry.definition}”.${entry.variants ? ` ${entry.variants}` : ''}` : `Bien joué ! « ${entry.word} » est dans ta collection.`, 'correct');
   }
 
   function choose(entry: Word) {
@@ -574,7 +585,7 @@
       <section class="word-bank" aria-label="Liste des mots choisis">
         <div><h2>Les mots de mes thèmes</h2><p>Tu peux regarder l’orthographe et le sens d’un mot.</p></div>
         <p class="audio-choice">Voix : Piper · {isEnglish ? 'anglais britannique' : 'français'}</p>
-        <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong><span>{entry.definition}</span>{#if audioPath(entry)}<audio controls preload="none" src={audioPath(entry)} aria-label={`Écouter ${entry.word}`}></audio>{/if}</li>{/each}</ul>
+        <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong>{#if entry.variants}<small class="variants">{entry.variants}</small>{/if}<span>{entry.definition}</span>{#if audioPath(entry)}<audio controls preload="none" src={audioPath(entry)} aria-label={`Écouter ${entry.word}`}></audio>{/if}</li>{/each}</ul>
       </section>
     {/if}
     {#if workshopOnly}
@@ -735,7 +746,7 @@
           {#each gallery as entry (entry.id)}
             <li>
               {#if entry.sprite}<span class="sprite" style={spriteStyle(base, entry.sprite)}></span>{/if}
-              {entry.word}
+              {entry.word}{#if entry.variants}<small class="variants">{entry.variants}</small>{/if}
             </li>
           {/each}
         </ul>
@@ -760,7 +771,7 @@
             <p class="page-goal">Lis les mots. Cache une colonne pour t’entraîner à retrouver le mot ou son sens.</p>
             <table><thead><tr><th>Mot</th><th>Définition simple</th></tr></thead><tbody>
               {#each printWords.filter((entry) => entry.theme === theme.theme) as entry}
-                <tr><td>{entry.word}</td><td>{entry.definition}</td></tr>
+                <tr><td>{entry.word}{#if entry.variants}<br /><small>{entry.variants}</small>{/if}</td><td>{entry.definition}</td></tr>
               {/each}
             </tbody></table>
           </section>
@@ -897,6 +908,8 @@
   .word-bank ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .55rem; max-height: 24rem; overflow: auto; margin: 1rem 0 0; padding: 0; list-style: none; }
   .word-bank li { display: grid; gap: .2rem; padding: .7rem; background: white; border: 1px solid #d8c9ae; }
   .word-bank li span { line-height: 1.45; }
+  .variants { display: block; color: #38596b; font-size: .82rem; line-height: 1.35; }
+  .collection .variants { max-width: 12rem; margin-top: .2rem; }
   .chosen-letter { background: #dce9ee; border-color: #315f76; box-shadow: inset 0 0 0 2px #315f76; }
   .vocabulary-cover { min-height: 16rem; display: grid; align-content: center; padding: 2rem; color: #fff; background: #25453c; }
   .vocabulary-cover h2 { font-size: 2rem; }
