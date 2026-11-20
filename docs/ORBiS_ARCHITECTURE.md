@@ -1,4 +1,11 @@
-# Architecture Orbis — état du dépôt et cible proposée
+# Architecture Orbis — historique de la refonte
+
+> **Document historique.** Son inventaire et ses états « proposés » datent
+> d’octobre 2026. Pour l’architecture actuellement implémentée, lire le
+> [README du dépôt](../README.md), le [guide développeur](ORBiS_GUIDE_DEVELOPPEUR.md)
+> et le [guide Supabase](../supabase/README.md). Les anciennes mentions de
+> `/ma-classeV3`, d’API SQLite utilisée en production ou de Supabase non connecté
+> ne décrivent plus la publication actuelle.
 
 Audit initial : 25 octobre 2026 ; refactor de l’arborescence : 26 octobre 2026. Ce document décrit le dépôt inspecté et une cible à valider. Il ne signifie pas que le service distant est déjà installé.
 

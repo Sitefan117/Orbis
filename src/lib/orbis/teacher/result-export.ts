@@ -1,3 +1,5 @@
+import { csvCell } from './csv';
+
 export type ResultExportRow = {
   student: string;
   classroom: string;
@@ -11,8 +13,6 @@ export type ResultExportRow = {
   durationSeconds: number | null;
   occurredAt: string;
 };
-
-const csvCell = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
 
 export function resultRowsToCsv(rows: ResultExportRow[]): string {
   const header = ['Élève', 'Classe', 'Jeu', 'Activité', 'Compétence', 'Justes', 'Questions', 'Réussite (%)', 'Erreurs', 'Indices', 'Durée (s)', 'Date'];

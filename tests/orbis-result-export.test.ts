@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { resultRowsToCsv, resultRowsToPdf, safeExportPart } from '../src/lib/orbis/teacher/result-export';
+import { csvCell } from '../src/lib/orbis/teacher/csv';
 
 const rows = [{
   student: 'Panda "Rigolo"', classroom: 'Classe 6H', game: 'Calculs', activity: 'Décimaux', skill: 'Addition',
@@ -9,6 +10,9 @@ const csv = resultRowsToCsv(rows);
 
 assert.ok(csv.startsWith('"Élève";"Classe";'));
 assert.ok(csv.includes('"Panda ""Rigolo"""'), 'Les guillemets doivent rester valides dans Excel.');
+assert.equal(csvCell('=1+1'), '"\t=1+1"', 'Une formule doit rester du texte.');
+assert.equal(csvCell('  @SUM(1)'), '"\t  @SUM(1)"', 'Les espaces ne doivent pas contourner la protection.');
+assert.equal(csvCell('="x";=2'), '"\t=""x"";=2"', 'Les séparateurs et guillemets restent dans une cellule.');
 assert.ok(csv.includes('"80"'), 'Le taux de réussite doit être calculé.');
 assert.ok(csv.includes('"";"";"2026-11-14T10:00:00Z"'), 'Une mesure inconnue doit rester vide, jamais devenir zéro.');
 assert.equal(safeExportPart('Classe test 6H — Élèves'), 'classe-test-6h-eleves');

@@ -14,7 +14,12 @@ Guide mis à jour le 14 novembre 2026 pour le projet Supabase **Free** connecté
 
 1. Ouvrir Supabase et créer **un projet Free de test** appelé par exemple `orbis-test`.
 2. Ne placer au début que de faux élèves dans ce projet.
-3. Dans le tableau Supabase, ouvrir l’éditeur SQL et exécuter `supabase/migrations/202610250001_orbis_free_pilot.sql`.
+3. Dans le tableau Supabase, ouvrir l’éditeur SQL et exécuter tous les fichiers
+   de `supabase/migrations/` dans l’ordre indiqué par
+   [`supabase/migrations/README.md`](../supabase/migrations/README.md).
+   Sur un projet déjà configuré, appliquer seulement les migrations manquantes,
+   après essai sur un projet de test. La migration de durcissement du 20 novembre
+   déplace les aides RLS hors du schéma public ; elle ne se déploie pas avec GitHub Pages.
 4. Dans la fenêtre **Connect** ou **API Keys**, copier :
    - l’URL du projet ;
    - la clé **Publishable** commençant par `sb_publishable_`.

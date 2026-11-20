@@ -8,6 +8,13 @@ Le dépôt publie un site statique sur GitHub Pages. Le workflow `.github/workfl
 
 Le dépôt contient aussi d’anciennes routes API SvelteKit et un stockage SQLite côté serveur. GitHub Pages ne peut pas les exécuter. Les bilans passent donc par un stockage local compatible avec GitHub Pages puis, pour les comptes connectés, par le projet Supabase Orbis. L’Edge Function `orbis-admin` réalise les opérations privilégiées sans exposer de clé secrète au navigateur.
 
+Les migrations Supabase sont versionnées sous `supabase/migrations/` et se
+déploient séparément du site. La migration du 20 novembre 2026 durcit les
+fonctions utilisées par les politiques RLS ; consulter
+[`supabase/migrations/README.md`](supabase/migrations/README.md) avant de
+l’appliquer sur un projet de test. L’isolation de deux enseignants distincts
+reste à vérifier sur le service distant.
+
 ## Démarrer en local
 
 Prérequis : Node.js 20 ou plus récent et npm.

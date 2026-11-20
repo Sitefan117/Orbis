@@ -8,7 +8,7 @@
 - `supabase-rest.ts` traduit les objets Orbis vers les tables Supabase sans exposer la logique aux jeux.
 - `sync.ts` vide la file locale lorsque Supabase est configuré, que l’élève est connecté et que le réseau répond.
 
-Les variables publiques attendues sont `PUBLIC_SUPABASE_URL` et `PUBLIC_SUPABASE_PUBLISHABLE_KEY`. L’ancienne `PUBLIC_SUPABASE_ANON_KEY` reste acceptée pendant la transition. La clé publiable est visible par conception ; les droits réels sont imposés par l’authentification et les règles RLS. Aucune clé `sb_secret_...` ou `service_role` ne doit être ajoutée au site.
+Les variables publiques attendues sont `PUBLIC_SUPABASE_URL` et `PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Une configuration publique de repli existe actuellement dans `supabase-rest.ts`. La clé publiable est visible par conception ; les droits réels sont imposés par l’authentification et les règles RLS. Aucune clé `sb_secret_...` ou `service_role` ne doit être ajoutée au site.
 
 ## État de l’intégration
 

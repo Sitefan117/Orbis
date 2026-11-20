@@ -5,6 +5,7 @@
   import type { ActivityEvent } from '$lib/orbis/results/contract';
   import { studentStorageScope } from '$lib/orbis/identity/local-student';
   import { GEOMETRY_FIGURES } from '$lib/games/geometrie/figures';
+  import { csvCell } from './csv';
 
   let events = $state<ActivityEvent[]>([]);
   let saves = $state<LocalSaveEnvelope[]>([]);
@@ -74,10 +75,6 @@
 
   function percentage(event: ActivityEvent): number {
     return event.questionCount ? Math.round((event.correctCount / event.questionCount) * 100) : 0;
-  }
-
-  function csvCell(value: unknown): string {
-    return `"${String(value ?? '').replaceAll('"', '""')}"`;
   }
 
   function exportCsv(): void {
