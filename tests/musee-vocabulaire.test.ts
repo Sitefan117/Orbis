@@ -11,7 +11,10 @@ assert.ok(bank.length >= 940);
 const themes = new Set(bank.map((entry) => entry.theme));
 assert.ok(themes.size >= 31);
 assert.ok(bank.filter((entry) => entry.sentence).length >= 220);
-for (const theme of themes) assert.ok(bank.filter((entry) => entry.theme === theme && entry.sentence).length >= 5);
+for (const theme of themes) {
+  assert.ok(bank.filter((entry) => entry.theme === theme && entry.sentence).length >= 5);
+  assert.ok(existsSync(`static/images/musee-vocabulaire/context/${theme}.jpg`), `Planche de situations manquante pour ${theme}`);
+}
 const conversationThemes = new Set(conversations.flatMap((conversation) => conversation.themes));
 for (const theme of themes) assert.ok(conversationThemes.has(theme), `Discussion manquante pour ${theme}`);
 for (const conversation of conversations) assert.ok(conversation.lines.length >= 4);
@@ -62,4 +65,4 @@ assert.throws(() => readLexique(header + '\na,t,T,base,test,Définition,,fa-ux,'
 assert.throws(() => readLexique(header + '\na,t,T,base,test,"guillemet'));
 assert.throws(() => readLexique(header + '\na,t,T,base,test,D,,,\na,t,T,base,test,D,,,'));
 assert.throws(() => readLexique(header + '\na,t,T,base,test,D,trop ___ de ___ trous,,'));
-console.log('Musée du vocabulaire — 940 entrées, 31 thèmes, 220 phrases et discussions validés.');
+console.log('Musée du vocabulaire — 940 entrées, 31 thèmes, 220 phrases, 155 contextes illustrés et discussions validés.');

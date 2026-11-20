@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import { recordGameActivity } from '$lib/orbis/tracking/client';
   import type { ResponseDetail } from '$lib/orbis/results/contract';
   import { normalize, shuffle, type Word } from './lexique';
@@ -8,7 +9,7 @@
   export let studentName = '';
 
   type LabMode = 'dialogue' | 'ordre' | 'discussion' | 'familles';
-  type Dialogue = { id: string; prompt: string; choices: string[]; answer: string; theme: string };
+  type Dialogue = { id: string; prompt: string; choices: string[]; answer: string; theme: string; contextIndex: number };
   type Ordered = { prompt: string; parts: string[] };
   const familyMap: Record<string, string[]> = {
     soigner: ['soigner', 'soin', 'soignant'],
@@ -26,6 +27,8 @@
   let conversationOrder: ConversationLine[] = [];
   let feedback = '';
   let solved = false;
+  let showContext = false;
+  let contextHintUsed = false;
   let correct = 0;
   let attempts = 0;
   let responseDetails: ResponseDetail[] = [];
@@ -42,6 +45,12 @@
   $: currentConversation = availableConversations[index % Math.max(1, availableConversations.length)];
 
   function buildDialogues(entries: Word[]): Dialogue[] {
+    const contextIndexes = new Map<string, number>();
+    for (const entry of entries.filter((item) => item.sentence.includes('___'))) {
+      const themeIndex = contextIndexes.get(entry.theme) ?? 0;
+      contextIndexes.set(entry.id, themeIndex);
+      contextIndexes.set(entry.theme, themeIndex + 1);
+    }
     return entries.filter((entry) => entry.sentence.includes('___')).map((entry, entryIndex) => {
       const sameTheme = entries.filter((item) => item.id !== entry.id && item.theme === entry.theme);
       const otherThemes = entries.filter((item) => item.id !== entry.id && item.theme !== entry.theme);
@@ -55,8 +64,20 @@
         seen.add(normalize(item.word));
         if (distractors.length === 2) break;
       }
-      return { id: entry.id, prompt: entry.sentence, choices: shuffle([entry.word, ...distractors]), answer: entry.word, theme: entry.theme };
+      const contextIndex = contextIndexes.get(entry.id) ?? -1;
+      return { id: entry.id, prompt: entry.sentence, choices: shuffle([entry.word, ...distractors]), answer: entry.word, theme: entry.theme, contextIndex: contextIndex < 5 ? contextIndex : -1 };
     }).filter((item) => item.choices.length >= 2);
+  }
+
+  function contextStyle(theme: string, contextIndex: number) {
+    const column = contextIndex % 3;
+    const row = Math.floor(contextIndex / 3);
+    return `background-image:url('${base}/images/musee-vocabulaire/context/${theme}.jpg');background-position:${column * 50}% ${row * 100}%`;
+  }
+
+  function toggleContext() {
+    showContext = !showContext;
+    if (showContext) contextHintUsed = true;
   }
 
   function buildOrders(entries: Word[]): Ordered[] {
@@ -89,7 +110,8 @@
       response: value,
       expected: currentDialogue.answer,
       correct: isCorrect,
-      attempts: 1
+      attempts: 1,
+      hintsUsed: contextHintUsed ? 1 : 0
     }];
   }
 
@@ -175,6 +197,8 @@
     order = [];
     conversationOrder = [];
     solved = false;
+    showContext = false;
+    contextHintUsed = false;
   }
 
   function finish() {
@@ -205,6 +229,15 @@
 
   {#if mode === 'dialogue' && currentDialogue}
     <p class="lab-prompt">{currentDialogue.prompt}</p>
+    {#if currentDialogue.contextIndex >= 0}
+      <button class="context-toggle" aria-expanded={showContext} on:click={toggleContext}>{showContext ? 'Masquer l’image' : 'Voir une image pour m’aider'}</button>
+      {#if showContext}
+        <figure class="context-figure">
+          <span class="context-image" role="img" aria-label="Illustration de la situation" style={contextStyle(currentDialogue.theme, currentDialogue.contextIndex)}></span>
+          <figcaption>Observe la situation, puis relis la phrase.</figcaption>
+        </figure>
+      {/if}
+    {/if}
     <div class="lab-choices">{#each currentDialogue.choices as choice}<button class:chosen={answer === choice} disabled={solved} on:click={() => { answer = choice; choose(choice); }}>{choice}</button>{/each}</div>
   {:else if mode === 'ordre' && currentOrder}
     <p class="lab-prompt">{currentOrder.prompt} : remets la phrase dans l’ordre.</p>
@@ -234,5 +267,5 @@
 </section>
 
 <style>
-  .context-lab{padding:1.25rem;border:1px solid #d8c9ae;border-radius:1rem;background:#f8f2e5;margin:1rem 0}.lab-heading{display:flex;justify-content:space-between;gap:1rem;align-items:start}.eyebrow{margin:0;color:#886126;font-size:.75rem;font-weight:900;letter-spacing:.08em}.lab-heading h2{margin:.25rem 0 0}.lab-tabs,.lab-choices,.lab-actions{display:flex;flex-wrap:wrap;gap:.55rem;margin:1rem 0}.lab-tabs button,.lab-choices button,.family-words button,.lab-actions button{min-height:44px;padding:.65rem .85rem;border:1px solid #cdbd9e;border-radius:.65rem;background:#fffaf0;color:#332b1e;font-weight:800}.lab-tabs .active,.lab-choices .chosen,.family-words .chosen{background:#dfefdc;border-color:#70a36e}.lab-prompt{font-size:1.15rem;font-weight:800}.order-parts{display:grid;gap:.5rem;padding:0;list-style:none}.order-parts li{display:flex;align-items:center;gap:.5rem;padding:.55rem;background:#fffaf0;border:1px solid #d8c9ae;border-radius:.55rem;text-align:left}.order-parts li span{flex:1;line-height:1.5}.order-parts button{min-width:44px;min-height:44px}.conversation-parts li{border-left:4px solid #886126}.lab-feedback{font-weight:800;color:#8e4d27}.lab-feedback.success{color:#267046}.lab-actions{justify-content:flex-end}
+  .context-lab{padding:1.25rem;border:1px solid #d8c9ae;border-radius:1rem;background:#f8f2e5;margin:1rem 0}.lab-heading{display:flex;justify-content:space-between;gap:1rem;align-items:start}.eyebrow{margin:0;color:#886126;font-size:.75rem;font-weight:900;letter-spacing:.08em}.lab-heading h2{margin:.25rem 0 0}.lab-tabs,.lab-choices,.lab-actions{display:flex;flex-wrap:wrap;gap:.55rem;margin:1rem 0}.lab-tabs button,.lab-choices button,.family-words button,.lab-actions button,.context-toggle{min-height:44px;padding:.65rem .85rem;border:1px solid #cdbd9e;border-radius:.65rem;background:#fffaf0;color:#332b1e;font-weight:800}.lab-tabs .active,.lab-choices .chosen,.family-words .chosen{background:#dfefdc;border-color:#70a36e}.lab-prompt{font-size:1.15rem;font-weight:800}.context-toggle{border-color:#886126;color:#694716}.context-figure{display:grid;justify-items:center;gap:.5rem;margin:1rem 0;padding:.75rem;border:1px solid #d8c9ae;border-radius:.85rem;background:#fffaf0}.context-image{display:block;width:min(100%,22rem);aspect-ratio:1;background-size:300% 200%;background-repeat:no-repeat;border-radius:.65rem;border:1px solid #cdbd9e}.context-figure figcaption{font-size:.95rem;font-weight:700;color:#5f5442;text-align:center}.order-parts{display:grid;gap:.5rem;padding:0;list-style:none}.order-parts li{display:flex;align-items:center;gap:.5rem;padding:.55rem;background:#fffaf0;border:1px solid #d8c9ae;border-radius:.55rem;text-align:left}.order-parts li span{flex:1;line-height:1.5}.order-parts button{min-width:44px;min-height:44px}.conversation-parts li{border-left:4px solid #886126}.lab-feedback{font-weight:800;color:#8e4d27}.lab-feedback.success{color:#267046}.lab-actions{justify-content:flex-end}
 </style>
