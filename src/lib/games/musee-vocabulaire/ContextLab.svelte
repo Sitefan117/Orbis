@@ -7,6 +7,7 @@
 
   export let words: Word[] = [];
   export let studentName = '';
+  export let gameId: 'musee_vocabulaire' | 'english_lab' = 'musee_vocabulaire';
 
   type LabMode = 'dialogue' | 'ordre' | 'discussion' | 'familles';
   type Dialogue = { id: string; prompt: string; choices: string[]; answer: string; theme: string; contextIndex: number };
@@ -196,7 +197,7 @@
     const questionCount = new Set(responseDetails.map((item) => item.questionId ?? String(item.questionIndex))).size;
     void recordGameActivity({
       studentName,
-      gameId: 'musee_vocabulaire',
+      gameId,
       activityId: `atelier-${mode}`,
       correctCount: correct,
       questionCount,

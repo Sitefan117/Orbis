@@ -4,22 +4,24 @@
   display: none;
 }
 
-.course-exercises > ol,
-.course-validation > ol,
+.course-exercises > ul,
+.course-validation > ul,
 .course-answer-key > ol {
   padding-left: 24px;
 }
 
-.course-exercises > ol,
-.course-validation > ol {
+.course-exercises > ul,
+.course-validation > ul {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 34px;
   align-items: start;
+  list-style: none;
+  padding-left: 0;
 }
 
-.course-exercises > ol > li,
-.course-validation > ol > li,
+.course-exercises > ul > li,
+.course-validation > ul > li,
 .course-answer-key > ol > li {
   margin: 12px 0;
   padding: 8px 0;
@@ -65,8 +67,8 @@
 }
 
 @media (max-width: 680px) {
-  .course-exercises > ol,
-  .course-validation > ol {
+  .course-exercises > ul,
+  .course-validation > ul {
     grid-template-columns: 1fr;
   }
 }
@@ -120,12 +122,12 @@
   body[data-print-kind="course"] .course-exercises .memo-chapter,
   body[data-print-kind="course"] .course-exercises h3,
   body[data-print-kind="course"] .course-exercises > p,
-  body[data-print-kind="course"] .course-exercises > ol {
+  body[data-print-kind="course"] .course-exercises > ul {
     margin-top: 3px;
     margin-bottom: 5px;
   }
 
-  body[data-print-kind="course"] .course-exercises > ol > li {
+  body[data-print-kind="course"] .course-exercises > ul > li {
     margin: 0;
     padding: 3px 0;
   }

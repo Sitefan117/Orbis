@@ -8,9 +8,10 @@ export type Word = {
   sentence: string;
   syllables: string[];
   sprite: string;
+  variants: string;
 };
 
-const columns = ['id', 'theme', 'intitule', 'parcours', 'mot', 'definition', 'phrase_a_trou', 'syllabes_ecrites', 'sprite'];
+const columns = ['id', 'theme', 'intitule', 'parcours', 'mot', 'definition', 'phrase_a_trou', 'syllabes_ecrites', 'sprite', 'variants'];
 
 export const normalize = (value: string) => value.normalize('NFC').trim().toLocaleLowerCase('fr').replaceAll('’', "'");
 export const gridWord = (value: string) => value.toLocaleUpperCase('fr').replace(/[^\p{L}]/gu, '');
@@ -68,7 +69,8 @@ export function spriteStyle(base: string, sprite: string): string {
   if (!coords) return '';
   const { sheet, index, cols, rows } = coords;
   const [x, y, w, h] = irregular[sprite] ?? [index % cols / cols, Math.floor(index / cols) / rows, 1 / cols, 1 / rows];
-  return `background-image:url('${base}/images/musee-vocabulaire/${sheet}.png');background-size:${100 / w}% ${100 / h}%;background-position:${w === 1 ? 0 : 100 * x / (1 - w)}% ${h === 1 ? 0 : 100 * y / (1 - h)}%;`;
+  const folder = sheet.startsWith('english-lab-') ? 'english-lab' : 'musee-vocabulaire';
+  return `background-image:url('${base}/images/${folder}/${sheet}.png');background-size:${100 / w}% ${100 / h}%;background-position:${w === 1 ? 0 : 100 * x / (1 - w)}% ${h === 1 ? 0 : 100 * y / (1 - h)}%;`;
 }
 
 export function readLexique(input: string): Word[] {
@@ -110,17 +112,17 @@ export function readLexique(input: string): Word[] {
   const ids = new Set<string>();
   return rows.map((fields, index) => {
     const get = (key: string) => fields[headers.indexOf(key)]?.normalize('NFC') ?? '';
-    const [id, theme, label, tier, word, definition, sentence, syllables, sprite] = columns.map(get);
+    const [id, theme, label, tier, word, definition, sentence, syllables, sprite, variants] = columns.map(get);
     const parts = syllables ? syllables.split('-') : [];
     const validSprite = !sprite || spriteCoordinates(sprite);
     if (fields.length !== headers.length || !id || ids.has(id) || !theme || !label || !word || !definition ||
         (tier !== 'base' && tier !== 'avance') || !validSprite ||
         (sentence && sentence.split('___').length !== 2) ||
-        (parts.length && (parts.length < 2 || !parts.every(Boolean) || normalize(parts.join('')) !== normalize(word)))) {
+        (parts.length && (!parts.every(Boolean) || normalize(parts.join('')) !== normalize(word)))) {
       throw new Error(`Entrée CSV ${index + 2} invalide (${id || 'identifiant manquant'}).`);
     }
     ids.add(id);
-    return { id, theme, label, tier, word, definition, sentence, syllables: parts, sprite };
+    return { id, theme, label, tier, word, definition, sentence, syllables: parts, sprite, variants };
   });
 }
 
@@ -131,6 +133,11 @@ export function shuffle<T>(items: readonly T[]): T[] {
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
+}
+
+export function prioritizeRecent<T extends { id: string }>(items: readonly T[], recentIds: readonly string[]): T[] {
+  const recent = new Set(recentIds);
+  return [...shuffle(items.filter((item) => !recent.has(item.id))), ...shuffle(items.filter((item) => recent.has(item.id)))];
 }
 
 export const gridSize = 14;

@@ -12,12 +12,16 @@ export type WorldId =
   | 'mathhunt'
   | 'fractionstower2'
   | 'grammaire_lab'
-  | 'musee_vocabulaire';
+  | 'musee_vocabulaire'
+  | 'english_lab';
 
 export type WorldSubject =
   | 'MATHS'
   | 'FRANÇAIS'
+  | 'ANGLAIS'
+  | 'ALLEMAND'
   | 'SCIENCES'
+  | 'ÉDUCATION NUMÉRIQUE'
   | 'AUTRES'
   | 'À CLASSER';
 
@@ -151,6 +155,17 @@ export const worlds: World[] = [
     status: 'prototype'
   },
   {
+    id: 'english_lab',
+    image: 'english_lab.png',
+    title: 'English Lab',
+    subtitle: 'Teste les mots et les phrases dans un laboratoire de langue.',
+    route: '/english_lab',
+    emoji: '🧪',
+    color: 'blue',
+    subject: 'ANGLAIS',
+    status: 'prototype'
+  },
+  {
     id: 'shift',
     title: 'Shift',
     subtitle: 'Arriveras-tu maîtriser petits et grands nombres ?',
@@ -197,5 +212,6 @@ export const worldLabels: Record<WorldId, string> = {
   mathhunt: 'mathhunt',
   fractionstower2: 'Tour des Fractions 2',
   grammaire_lab: 'L’Atelier des phrases',
-  musee_vocabulaire: 'Le musée des mots'
+  musee_vocabulaire: 'Le musée des mots',
+  english_lab: 'English Lab'
 };

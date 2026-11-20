@@ -6,13 +6,18 @@
   import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
   import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import type { ResponseDetail } from '$lib/orbis/results/contract';
-  import lexique from '../../../../static/vocabulaire/lexique.csv?raw';
-  import poses from '../../../../static/mascotte-noireau/index.json';
-  import { gridSize, gridWord, letterChoices, makeGrid, matchRounds, normalize, readLexique, shuffle, spriteStyle, type Word } from './lexique';
+  import lexique from './data/lexique.csv?raw';
+  import englishLexique from './data/english-lab.csv?raw';
+  import poses from './data/mascotte.json';
+  import { gridSize, gridWord, letterChoices, makeGrid, matchRounds, normalize, prioritizeRecent, readLexique, shuffle, spriteStyle, type Word } from './lexique';
   import { masterySummary, updateWordProgress, type VocabularyProgress } from './progress';
   import ContextLab from './ContextLab.svelte';
 
   export let initialMode = 'whack-image';
+  export let variant: 'museum' | 'english' = 'museum';
+  const isEnglish = variant === 'english';
+  const gameId = isEnglish ? 'english_lab' : 'musee_vocabulaire';
+  const machineImage = `${base}/images/${isEnglish ? 'english-lab' : 'musee-vocabulaire'}/machines.png`;
   const modes = [
     ['pendu', 'Pendu restaurateur'], ['whack-image', 'Image → mot'],
     ['whack-word', 'Mot → image'], ['millionaire', 'Qui veut gagner des mots ?'],
@@ -25,8 +30,11 @@
   type ExerciseFormat = 'definitions' | 'phrases';
   const latinAlphabet = Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
   const modeLabels = Object.fromEntries(modes);
-  const original = readLexique(lexique);
+  const original = readLexique(isEnglish ? englishLexique : lexique);
   const sheet = poses.planches.find((entry) => entry.id === 'catalogue-guide')!;
+  const assistantImage = isEnglish
+    ? `${base}/images/english-lab/lab-assistant.png`
+    : `${base}/mascotte-noireau/${sheet.fichier}`;
   const poseByReaction: Record<Reaction, string> = {
     ready: 'presenter', correct: 'celebrer', retry: 'oups', hint: 'pointer bas',
     progress: 'reflechir', complete: 'saluer'
@@ -43,11 +51,12 @@
   };
 
   let bank = original;
-  let selectedThemes = ['ecole'];
+  let selectedThemes = original.length ? [original[0].theme] : [];
   let categories = getCategories(bank);
   let mode: Mode = 'whack-image';
   let playing: Word[] = [];
   let queue: Word[] = [];
+  let recentIds: string[] = [];
   let seriesSize = 0;
   let target: Word | undefined;
   let options: Word[] = [];
@@ -131,7 +140,7 @@
   let alphabet: string[] = [];
   $: visibleVocabulary = distinctWords(playing).sort((a, b) => a.word.localeCompare(b.word, 'fr'));
   $: mastery = masterySummary(vocabularyProgress);
-  function audioPath(entry: Word) { return `${base}/audio/musee-vocabulaire/${entry.id}-piper.wav`; }
+  function audioPath(entry: Word) { return `${base}/audio/${isEnglish ? 'english-lab' : 'musee-vocabulaire'}/${entry.id}-piper.wav`; }
   function playWord(entry: Word) {
     if (typeof Audio === 'undefined') return;
     const src = audioPath(entry);
@@ -165,15 +174,17 @@
   });
 
   async function restoreRemoteProgress() {
-    if (!student) {
-      progressHydrated = true;
-      return;
-    }
-    const loaded = await createGameProgressService(student, 'musee_vocabulaire').loadProgress();
+    if (!student) return;
+    const loaded = await createGameProgressService(student, gameId).loadProgress();
     if (loaded.ok && loaded.value?.state) {
       const state = loaded.value.state as Record<string, any>;
-      if (Array.isArray(state.selectedThemes) && state.selectedThemes.length) selectedThemes = state.selectedThemes;
+      if (Array.isArray(state.selectedThemes) && state.selectedThemes.length) {
+        const validThemes = state.selectedThemes.filter((theme) =>
+          typeof theme === 'string' && categories.some((category) => category.theme === theme));
+        if (validThemes.length) selectedThemes = validThemes;
+      }
       if (Array.isArray(state.galleryIds)) gallery = bank.filter((entry) => state.galleryIds.includes(entry.id));
+      if (Array.isArray(state.recentIds)) recentIds = state.recentIds.filter((id): id is string => typeof id === 'string').slice(-12);
       responseDetails = Array.isArray(state.responseDetails) ? state.responseDetails : [];
       vocabularyProgress = state.vocabularyProgress && typeof state.vocabularyProgress === 'object' ? state.vocabularyProgress : {};
       playing = bank.filter((entry) => selectedThemes.includes(entry.theme));
@@ -186,8 +197,8 @@
     const mastery = masterySummary(vocabularyProgress);
     recordGameProgress({
       studentName: student,
-      gameId: 'musee_vocabulaire',
-      state: { mode, selectedThemes, galleryIds: gallery.map((entry) => entry.id), queueIds: queue.map((entry) => entry.id), targetId: target?.id, attempts, solved, responseDetails, vocabularyProgress },
+      gameId,
+      state: { mode, selectedThemes, galleryIds: gallery.map((entry) => entry.id), queueIds: queue.map((entry) => entry.id), targetId: target?.id, recentIds, attempts, solved, responseDetails, vocabularyProgress },
       formatVersion: 1,
       summary: { label: `Musée des mots · ${mastery.acquired} mots acquis`, completed: mastery.acquired, total: Math.max(1, mastery.total) }
     });
@@ -217,7 +228,7 @@
       if (next === 'letters' || next === 'pendu') return gridWord(entry.word).length >= 2;
       return next !== 'millionaire' || quizFormat === 'definitions' || Boolean(entry.sentence);
     });
-    queue = shuffle(eligible);
+    queue = prioritizeRecent(eligible, recentIds);
     seriesSize = queue.length;
     if (next === 'match') {
       matchSets = matchRounds(queue);
@@ -229,6 +240,10 @@
 
   function distinctWords(entries: Word[]) {
     return Array.from(new Map(entries.map((entry) => [normalize(entry.word), entry])).values());
+  }
+
+  function noteRecent(ids: string[]) {
+    recentIds = [...recentIds.filter((id) => !ids.includes(id)), ...ids].slice(-12);
   }
 
   function nextRound() {
@@ -248,7 +263,10 @@
     report(opening[mode], 'ready');
 
     if (mode === 'search') {
-      grid = makeGrid(distinctWords(playing));
+      const candidates = distinctWords(playing);
+      const fresh = candidates.filter((entry) => !recentIds.includes(entry.id));
+      grid = makeGrid(fresh.length >= 6 ? fresh : candidates);
+      noteRecent(grid.targets.map(({ entry }) => entry.id));
       selectedCells = [];
       greenCells = [];
       fadedCells = [];
@@ -258,6 +276,7 @@
     if (mode === 'match') {
       matchIndex = matchSets.length ? (matchIndex + 1) % matchSets.length : -1;
       matchWords = shuffle(matchSets[matchIndex] ?? []);
+      noteRecent(matchWords.map((entry) => entry.id));
       options = shuffle(matchWords);
       matched = [];
       return;
@@ -269,6 +288,7 @@
     }
     const [entry, ...rest] = queue;
     target = entry;
+    noteRecent([entry.id]);
     if (mode === 'pendu') alphabet = letterChoices(entry.word);
     queue = rest;
     const distractors = distinctWords(playing.filter((item) =>
@@ -303,7 +323,7 @@
     solved = true;
     vocabularyProgress = { ...vocabularyProgress, [entry.id]: updateWordProgress(vocabularyProgress[entry.id], true, reaction === 'hint' ? 1 : 0) };
     void recordGameActivity({
-      studentName: student || getStudentName(), gameId: 'musee_vocabulaire', activityId: mode,
+      studentName: student || getStudentName(), gameId, activityId: mode,
       correctCount: 1, questionCount: 1, errorCount: 0,
       hintsUsed: reaction === 'hint' ? 1 : 0,
       responseDetails: [{ questionIndex: gallery.length - 1, prompt: opening[mode], response: entry.word, expected: entry.word, correct: true, attempts: Math.max(1, attempts), hintsUsed: reaction === 'hint' ? 1 : 0 }],
@@ -311,7 +331,7 @@
     });
     responseDetails = [...responseDetails, { questionIndex: gallery.length - 1, prompt: opening[mode], response: entry.word, expected: entry.word, correct: true, attempts: Math.max(1, attempts), hintsUsed: reaction === 'hint' ? 1 : 0 }];
     saveRemoteProgress();
-    report(`Bien joué ! « ${entry.word} » est dans ta collection.`, 'correct');
+    report(isEnglish ? `Well done! “${entry.word}” means “${entry.definition}”.${entry.variants ? ` ${entry.variants}` : ''}` : `Bien joué ! « ${entry.word} » est dans ta collection.`, 'correct');
   }
 
   function choose(entry: Word) {
@@ -500,14 +520,14 @@
   }
 </script>
 
-<svelte:head><title>Le musée des mots · Orbis</title></svelte:head>
+<svelte:head><title>{isEnglish ? 'English Lab' : 'Le musée des mots'} · Orbis</title></svelte:head>
 
-<div class="museum" class:studio={mode === 'millionaire'} class:workshop={mode === 'match'}>
+<div class="museum" class:english-lab={isEnglish} class:studio={mode === 'millionaire'} class:workshop={mode === 'match'} style={`--lab-background:url('${base}/images/english-lab/lab-background.png')`}>
   <header class="no-print">
     <div class="shell">
       <a href={catalogHref(base, 'jeux', student)} use:restoreCatalogReturn={base}>← Arcade Orbis</a>
-      <h1>Le musée des mots</h1>
-      <p>La salle des machines</p>
+      <h1>{isEnglish ? 'English Lab' : 'Le musée des mots'}</h1>
+      <p>{isEnglish ? 'Le laboratoire des mots et des phrases' : 'La salle des machines'}</p>
     </div>
   </header>
   <main class="shell no-print">
@@ -534,7 +554,7 @@
         <details>
           <summary>Lexique CSV et fiches</summary>
           <div class="actions">
-            <a href={`${base}/vocabulaire/lexique.csv`} download>Télécharger le lexique CSV</a>
+            <a href={`${base}/${isEnglish ? 'vocabulaire/english-lab.csv' : 'vocabulaire/lexique.csv'}`} download>Télécharger le lexique CSV</a>
             <label>Ajouter un CSV <input type="file" accept=".csv,text/csv" on:change={importCsv} /></label>
             <label>Type de fiche
               <select bind:value={sheetFormat}>
@@ -551,12 +571,12 @@
     </section>
 
     {#if inHall}
-    <div class="hall-guide"><span class="noireau" role="img" aria-label="Noireau, ton guide" style:background-image={`url('${base}/mascotte-noireau/${sheet.fichier}')`} style:background-position="0% 0%"></span><div><h2>Bienvenue au musée.</h2><p>Choisis une machine pour jouer.<br />Je suis là si tu as besoin d’aide.</p></div></div>
+    <div class="hall-guide"><span class="noireau" class:lab-assistant={isEnglish} role="img" aria-label={isEnglish ? 'Assistant English Lab' : 'Guide du laboratoire'} style:background-image={`url('${assistantImage}')`} style:background-position="0% 0%"></span><div><h2>{isEnglish ? 'Welcome to English Lab.' : 'Bienvenue au musée.'}</h2><p>{isEnglish ? 'Choose a machine and test your English.' : 'Choisis une machine pour jouer.'}<br />Je suis là si tu as besoin d’aide.</p></div></div>
     <nav class="machine-hall" aria-label="Choisir un jeu" bind:this={hallNavigation}>
       {#each modes as [id, label], index}
-        <button data-mode={id} disabled={!ready || !selectedCount} on:click={() => enterMachine(id)}><span class="machine-art" aria-hidden="true" style:background-image={`url('${base}/images/musee-vocabulaire/machines.png')`} style:background-position={`${(index % 4) * 100 / 3}% ${Math.floor(index / 4) * 100}%`}></span><span class="machine-label"><small>{String(index + 1).padStart(2, '0')}</small>{label}</span></button>
+        <button data-mode={id} disabled={!ready || !selectedCount} on:click={() => enterMachine(id)}><span class="machine-art" aria-hidden="true" style:background-image={`url('${machineImage}')`} style:background-position={`${(index % 4) * 100 / 3}% ${Math.floor(index / 4) * 100}%`}></span><span class="machine-label"><small>{String(index + 1).padStart(2, '0')}</small>{label}</span></button>
       {/each}
-      <button data-mode="workshop" disabled={!ready || !selectedCount} on:click={enterWorkshop}><span class="machine-art" aria-hidden="true" style:background-image={`url('${base}/images/musee-vocabulaire/machines.png')`} style:background-position="66.666% 100%"></span><span class="machine-label"><small>09</small>Atelier de réemploi</span></button>
+      <button data-mode="workshop" disabled={!ready || !selectedCount} on:click={enterWorkshop}><span class="machine-art" aria-hidden="true" style:background-image={`url('${machineImage}')`} style:background-position="66.666% 100%"></span><span class="machine-label"><small>09</small>Atelier de réemploi</span></button>
     </nav>
     {:else}
     <button class="return-hall" on:click={returnToHall}>← Choisir une autre machine</button>
@@ -564,15 +584,15 @@
     {#if wordListOpen}
       <section class="word-bank" aria-label="Liste des mots choisis">
         <div><h2>Les mots de mes thèmes</h2><p>Tu peux regarder l’orthographe et le sens d’un mot.</p></div>
-        <p class="audio-choice">Voix : Piper · français</p>
-        <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong><span>{entry.definition}</span>{#if audioPath(entry)}<audio controls preload="none" src={audioPath(entry)} aria-label={`Écouter ${entry.word}`}></audio>{/if}</li>{/each}</ul>
+        <p class="audio-choice">Voix : Piper · {isEnglish ? 'anglais britannique' : 'français'}</p>
+        <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong>{#if entry.variants}<small class="variants">{entry.variants}</small>{/if}<span>{entry.definition}</span>{#if audioPath(entry)}<audio controls preload="none" src={audioPath(entry)} aria-label={`Écouter ${entry.word}`}></audio>{/if}</li>{/each}</ul>
       </section>
     {/if}
     {#if workshopOnly}
-      <ContextLab words={playing} studentName={student || getStudentName()} />
+      <ContextLab words={playing} studentName={student || getStudentName()} {gameId} />
     {:else}
     <section class="game" aria-label={modeLabels[mode]}>
-      <div class="machine-heading"><span class="machine-art" aria-hidden="true" style:background-image={`url('${base}/images/musee-vocabulaire/machines.png')`} style:background-position={`${(modes.findIndex(([id]) => id === mode) % 4) * 100 / 3}% ${Math.floor(modes.findIndex(([id]) => id === mode) / 4) * 100}%`}></span><h2 tabindex="-1" bind:this={gameHeading}>{modeLabels[mode]}</h2></div>
+      <div class="machine-heading"><span class="machine-art" aria-hidden="true" style:background-image={`url('${machineImage}')`} style:background-position={`${(modes.findIndex(([id]) => id === mode) % 4) * 100 / 3}% ${Math.floor(modes.findIndex(([id]) => id === mode) / 4) * 100}%`}></span><h2 tabindex="-1" bind:this={gameHeading}>{modeLabels[mode]}</h2></div>
       {#if ready}
         {#if mode === 'millionaire'}
           <label class="quiz-format">Type de question
@@ -583,9 +603,9 @@
           </label>
         {/if}
         <div class="coach">
-          <span class="noireau" role="img" aria-label="Noireau"
-            style:background-image={`url('${base}/mascotte-noireau/${sheet.fichier}')`}
-            style:background-position={`${poseCol * 100 / 3}% ${poseRow * 100}%`}></span>
+          <span class="noireau" class:lab-assistant={isEnglish} role="img" aria-label={isEnglish ? 'Assistant English Lab' : 'Noireau'}
+            style:background-image={`url('${assistantImage}')`}
+            style:background-position={isEnglish ? 'center' : `${poseCol * 100 / 3}% ${poseRow * 100}%`}></span>
           <p aria-live="polite">{message}</p>
         </div>
         {#if mode === 'search' && grid.targets.length}
@@ -726,7 +746,7 @@
           {#each gallery as entry (entry.id)}
             <li>
               {#if entry.sprite}<span class="sprite" style={spriteStyle(base, entry.sprite)}></span>{/if}
-              {entry.word}
+              {entry.word}{#if entry.variants}<small class="variants">{entry.variants}</small>{/if}
             </li>
           {/each}
         </ul>
@@ -751,7 +771,7 @@
             <p class="page-goal">Lis les mots. Cache une colonne pour t’entraîner à retrouver le mot ou son sens.</p>
             <table><thead><tr><th>Mot</th><th>Définition simple</th></tr></thead><tbody>
               {#each printWords.filter((entry) => entry.theme === theme.theme) as entry}
-                <tr><td>{entry.word}</td><td>{entry.definition}</td></tr>
+                <tr><td>{entry.word}{#if entry.variants}<br /><small>{entry.variants}</small>{/if}</td><td>{entry.definition}</td></tr>
               {/each}
             </tbody></table>
           </section>
@@ -782,6 +802,10 @@
 
 <style>
   .museum { min-height: 100vh; background: #f5efe3; color: #322820; }
+  .museum.english-lab { background: #102337 var(--lab-background) center top / cover fixed; color: #eef4f3; }
+  .museum.english-lab .shell, .museum.english-lab .game, .museum.english-lab .settings, .museum.english-lab .word-bank { background: rgba(12, 28, 45, .92); border-color: #79b8bd66; }
+  .museum.english-lab h1, .museum.english-lab h2 { color: #f1b24b; }
+  .museum.english-lab .machine-hall button, .museum.english-lab .hall-guide { background: #16344b; border-color: #79b8bd88; color: #eef4f3; }
   .shell { width: min(72rem, 100%); margin: auto; padding: 1.25rem; }
   header { background: #25453c; color: #fff9ee; }
   header a { color: #eee5d3; }
@@ -884,6 +908,8 @@
   .word-bank ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .55rem; max-height: 24rem; overflow: auto; margin: 1rem 0 0; padding: 0; list-style: none; }
   .word-bank li { display: grid; gap: .2rem; padding: .7rem; background: white; border: 1px solid #d8c9ae; }
   .word-bank li span { line-height: 1.45; }
+  .variants { display: block; color: #38596b; font-size: .82rem; line-height: 1.35; }
+  .collection .variants { max-width: 12rem; margin-top: .2rem; }
   .chosen-letter { background: #dce9ee; border-color: #315f76; box-shadow: inset 0 0 0 2px #315f76; }
   .vocabulary-cover { min-height: 16rem; display: grid; align-content: center; padding: 2rem; color: #fff; background: #25453c; }
   .vocabulary-cover h2 { font-size: 2rem; }
@@ -911,4 +937,20 @@
     .vocabulary-page tr { break-inside: avoid; }
     .vocabulary-page h3 { color: black; background: #e8eee9; border-left: 6px solid #25453c; }
   }
+  .museum.english-lab { background: #102337 var(--lab-background) center top / cover fixed; color: #eef4f3; }
+  .museum.english-lab .shell, .museum.english-lab .game, .museum.english-lab .settings, .museum.english-lab .word-bank { background: rgba(12, 28, 45, .92); border-color: #79b8bd66; }
+  .museum.english-lab h1, .museum.english-lab h2 { color: #f1b24b; }
+  .museum.english-lab .machine-hall button, .museum.english-lab .hall-guide { background: #16344b; border-color: #79b8bd88; color: #eef4f3; }
+  .museum.english-lab button { background: #f8fbf8; border-color: #83b8b8; color: #102337; }
+  .museum.english-lab button:hover:not(:disabled) { background: #dcefee; border-color: #f1b24b; color: #071725; }
+  .museum.english-lab button.primary,
+  .museum.english-lab button[aria-pressed=true]:not(.grid button) { background: #167c80; border-color: #8ed6d2; color: #fff; }
+  .museum.english-lab .word-bank li,
+  .museum.english-lab .collection li,
+  .museum.english-lab .vignettes > div { background: #f8fbf8; color: #102337; }
+  .museum.english-lab .coach { color: #eef4f3; border-color: #6ca1a5; }
+  .museum.english-lab .machine-label { background: #f8fbf8; color: #102337; border-color: #83b8b8; }
+  .museum.english-lab .machine-art { aspect-ratio: 1; border: 1px solid #83b8b8; background-color: #ebe7df; }
+  .museum.english-lab .noireau.lab-assistant { aspect-ratio: 1; background-size: contain; background-position: center; }
+  .museum.english-lab .sprite { padding: .3rem; border: 2px solid #8fbdbc; border-radius: .4rem; background-color: #eef4ef; box-shadow: 0 0 0 4px #17364a, 0 0 16px #72c9c633; }
 </style>
