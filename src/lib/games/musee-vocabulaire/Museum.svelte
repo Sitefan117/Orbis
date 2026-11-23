@@ -358,6 +358,8 @@
     if (mode === 'whack-image' || mode === 'millionaire') playWord(entry);
     if (entry.id === target.id) success(target);
     else {
+      vocabularyProgress = { ...vocabularyProgress, [target.id]: updateWordProgress(vocabularyProgress[target.id], false) };
+      saveRemoteProgress();
       eliminated = [...eliminated, entry.id];
       report('Ce n’est pas le bon choix. Essaie encore.', 'retry');
     }
