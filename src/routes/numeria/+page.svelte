@@ -19,6 +19,7 @@
   import { clearProgress, createEmptySave, loadSave, saveProgress as saveNumeriaProgress, TEACHER_ACCESS_CODE } from '$lib/games/numeria/progress';
   import type { ActiveMissionSave, Grade, MissionFeedback, MissionMode, Question, QuestionOutcome, Realm, SessionResult, StudentSave } from '$lib/games/numeria/types';
   import NumericKeypad from '$lib/components/NumericKeypad.svelte';
+  import { usesTouchKeypad } from '$lib/components/touch-input';
 
   type Screen = 'welcome' | 'hub' | 'realm' | 'game' | 'result' | 'codex';
   type Feedback = MissionFeedback;
@@ -56,6 +57,7 @@
   let soundOn = false;
   let soundContext: AudioContext | null = null;
   let disposed = false;
+  let touchKeypad = false;
 
   // Variables calculées par Svelte à partir de l'état courant.
   // Elles sont recalculées automatiquement quand leurs dépendances changent.
@@ -150,6 +152,7 @@
 
   // Au chargement, on essaie de récupérer l'élève transmis par ORBIS ou mémorisé localement.
   onMount(() => {
+    touchKeypad = usesTouchKeypad();
     // ORBIS peut transmettre le profil via ?eleve=Prénom. À défaut, on lit son profil local.
     const urlName = new URLSearchParams(window.location.search).get('eleve')?.trim();
     const connectedName = urlName || getStudentName() || '';
@@ -693,7 +696,7 @@
             {:else}
               <form class="answer-entry" onsubmit={(event) => { event.preventDefault(); validateAnswer(); }}>
                 <label for="question-answer">Ta réponse</label>
-                <input id="question-answer" value={answer} oninput={updateAnswerFromInput} disabled={questionFinished} autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="Écris ta réponse…" aria-describedby="answer-format" />
+                <input id="question-answer" value={answer} oninput={updateAnswerFromInput} disabled={questionFinished} readonly={touchKeypad} autocomplete="off" autocapitalize="off" spellcheck="false" inputmode={touchKeypad ? 'none' : 'decimal'} placeholder="Écris ta réponse…" aria-describedby="answer-format" />
                 <NumericKeypad bind:value={answer} disabled={questionFinished} onSubmit={validateAnswer} />
                 <p id="answer-format" class="input-help">Tu peux utiliser une virgule décimale. Les espaces et apostrophes des milliers sont acceptés.</p>
                 <button class="primary-button wide" type="submit" disabled={questionFinished || answer.trim() === ''}>Vérifier ma réponse <span>↗</span></button>
@@ -709,6 +712,7 @@
               <div class="hint-row"><button class="text-button" disabled={showHint || questionFinished} onclick={revealHint}>Afficher un indice</button></div>
             {/if}
 
+            <div class="feedback-slot">
             {#if showHint}
               <aside class="hint-box"><span aria-hidden="true">✧</span><div><strong>Indice</strong><p>{currentQuestion.hint}</p></div></aside>
             {/if}
@@ -719,10 +723,10 @@
                 <div><strong>{feedback === 'success' ? 'Bien joué !' : feedback === 'reveal' ? 'Le savoir se construit.' : 'On réessaie.'}</strong><p>{feedbackText}</p>{#if feedback === 'reveal'}<p class="explanation-text">{currentQuestion.explanation}</p>{/if}</div>
               </div>
             {/if}
-
             {#if questionFinished}
               <button class="primary-button wide next-question-button" onclick={advanceQuestion}>{questionIndex === questions.length - 1 ? 'Voir le bilan' : 'Question suivante'} <span>→</span></button>
             {/if}
+            </div>
           </div>
         </div>
         <p class="session-note">Les erreurs servent à apprendre. Tu as deux essais avant de voir la correction, sans perdre la possibilité de continuer.</p>
@@ -928,6 +932,11 @@
   /* Modal enseignant : voile d’arrière-plan et panneau centré accessible. */
   .modal-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 20px; background: #060912ce; backdrop-filter: blur(9px); }.teacher-modal { position: relative; width: min(100%, 450px); max-height: min(90vh, 700px); overflow: auto; padding: 29px; border: 1px solid #d9ba704e; border-radius: 20px; background: radial-gradient(ellipse at 50% 0, #d9ba7011, transparent 50%), #151b2b; box-shadow: 0 25px 90px #0008; }.modal-close { position: absolute; top: 13px; right: 13px; width: 34px; height: 34px; border: 1px solid #ffffff1b; border-radius: 9px; background: #ffffff08; color: #b9c1d0; font-size: 21px; cursor: pointer; }.modal-symbol { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 17px; border: 1px solid #e5c4775a; border-radius: 14px 14px 14px 3px; color: #e4c276; font-size: 26px; }.teacher-modal h2 { margin-bottom: 9px; font-family: Georgia, serif; font-size: 30px; font-weight: 500; }.teacher-modal > p:not(.eyebrow):not(.teacher-message):not(.small-note) { color: #a8b2c4; font-size: 12px; line-height: 1.7; }.teacher-modal form { display: grid; gap: 10px; margin: 19px 0 12px; }.teacher-modal input { margin-bottom: 6px; }.teacher-message { color: #f0d28d; font-size: 12px; line-height: 1.5; }
   .site-footer { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 18px clamp(16px, 4vw, 56px); border-top: 1px solid #ffffff10; color: #626d84; font-size: 9px; letter-spacing: .14em; }.site-footer i { margin: 0 6px; color: #d6bb76; font-style: normal; }.site-footer button { padding: 8px 0 8px 8px; border: 0; background: transparent; color: #adb5c5; font-size: 10px; letter-spacing: 0; cursor: pointer; }
+
+  /* L'indice et la correction ont leur place avant validation. */
+  .feedback-slot { min-height: 205px; margin-top: 17px; }
+  .feedback-slot .hint-box, .feedback-slot .feedback-box { margin-top: 0; }
+  .feedback-slot .feedback-box + .hint-box { margin-top: 12px; }
 
   /* Animations décoratives ; la préférence de mouvement réduit est gérée en bas du fichier. */
   @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }

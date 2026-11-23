@@ -7,6 +7,7 @@
   import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import { recordGameActivity } from '$lib/orbis/tracking/client';
   import NumericKeypad from '$lib/components/NumericKeypad.svelte';
+  import { usesTouchKeypad } from '$lib/components/touch-input';
   import type { ResponseDetail } from '$lib/orbis/results/contract';
   import { generateDecimalQuestion, type DecimalQuestion } from '$lib/games/calculs/question-engine';
 
@@ -29,9 +30,11 @@
   let drawing = false;
   let startedAt = Date.now();
   let elapsedSeconds = 0;
+  let touchKeypad = false;
 
   // Prépare le profil et le canvas quand le navigateur rend la page.
   onMount(() => {
+    touchKeypad = usesTouchKeypad();
     studentName = getStudentName();
     void (async () => {
       const loaded = await createGameProgressService<CalculsProgress>(studentName, 'calculs').loadProgress();
@@ -224,7 +227,7 @@
           </div>
           <label class="label" style="color: #cbd5e1; text-align: center;">
             Saisis ta réponse de précision
-            <input class="dark-input" style="text-align: center; font-size: 1.7rem; font-weight: 1000;" bind:value={answerInput} on:keydown={(event) => event.key === 'Enter' && validateAnswer()} inputmode="decimal" placeholder="0.00" />
+            <input class="dark-input" style="text-align: center; font-size: 1.7rem; font-weight: 1000;" bind:value={answerInput} on:keydown={(event) => event.key === 'Enter' && validateAnswer()} inputmode={touchKeypad ? 'none' : 'decimal'} readonly={touchKeypad} placeholder="0.00" />
           </label>
           <NumericKeypad bind:value={answerInput} disabled={blocked} onSubmit={validateAnswer} />
           <button class="btn warn" disabled={blocked} type="button" on:click={validateAnswer}>Soumettre le calcul ⚔️</button>

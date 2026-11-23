@@ -1152,9 +1152,11 @@
             {#if !['exam', 'boss', 'pretest'].includes(session.mode)}
               <div class="question-tools"><button class="secondary-button" onclick={showExampleAgain} disabled={!!session.answerStatus}>Voir la méthode</button><button class="secondary-button" onclick={() => (conversionGuideOpen = true)}>Ouvrir le tableau</button><span>Une erreur est une occasion de réessayer.</span></div>
             {/if}
+            <div class="feedback-slot">
             {#if currentFeedback}
               <div class={`feedback-box ${currentFeedback.kind}`} role="status"><strong>{currentFeedback.title}</strong><p>{currentFeedback.text}</p></div>
             {/if}
+            </div>
             <div class="slide-actions">
               {#if session.answerStatus}<button class="primary-button" onclick={continueSession}>{session.index + 1 === session.questions.length || (session.mode === 'race' && session.raceSteps >= 10) ? 'Voir le résultat' : 'Question suivante →'}</button>
               {:else}<button class="primary-button" onclick={submitSessionAnswer}>{session.mode === 'battle' ? (session.attempts > 0 ? 'Rejouer cette carte' : 'Jouer cette carte') : session.mode === 'race' ? 'Valider et avancer' : session.attempts > 0 && session.mode !== 'exam' && session.mode !== 'boss' ? 'Réessayer' : 'Valider ma réponse'}</button>{/if}
@@ -1246,7 +1248,6 @@
     {/if}
     <button class="guide-fab" onclick={() => (conversionGuideOpen = true)}>Tableau de conversion</button>
     {#if conversionGuideOpen}<ConversionGuide onClose={() => (conversionGuideOpen = false)} />{/if}
-    <div class="portrait-notice" role="status"><strong>Tourne l’iPad en portrait</strong><span>Mesurovia est conçu pour être joué verticalement.</span></div>
     <footer class="game-footer"><span>MESUROVIA · Prototype V3</span><div class="display-tools"><label><input type="checkbox" bind:checked={largeText} onchange={persist} /> Texte plus grand</label><label><input type="checkbox" bind:checked={highContrast} onchange={persist} /> Contraste renforcé</label><label><input type="checkbox" bind:checked={reduceMotion} onchange={persist} /> Réduire les animations</label></div><span>Sauvegarde locale par profil</span></footer>
   </main>
 {/if}
@@ -1263,7 +1264,9 @@
   .game-header { transition:transform 180ms ease; }
   .game-header.header-hidden { transform:translateY(-110%); }
   .guide-fab { position:fixed; z-index:30; right:16px; bottom:16px; border:2px solid #24563e; border-radius:12px; padding:12px; background:#f4da90; color:#244b34; font-weight:900; box-shadow:0 4px 14px #1d3d3155; }
-  .portrait-notice { display:none; }
+  /* La correction occupe déjà sa place avant que l'élève valide. */
+  .feedback-slot { min-height: 118px; }
+  .feedback-slot .feedback-box { margin-top: 0; }
   .house-nameplate { display:flex; align-items:center; justify-content:center; width:100%; height:100%; padding:3px 5px; box-sizing:border-box; border:2px solid #765c40; border-radius:7px; background:#fff9e9ee; color:#354d37; text-align:center; font:800 11px/1.1 Arial,sans-serif; overflow-wrap:anywhere; }
   .curriculum-code { display:inline-block; padding:5px 9px; border-radius:7px; background:#e8efdc; color:#315840; font-size:.78rem; font-weight:850; }
   .house-objective { max-width:760px; margin:8px 0 0; color:#42584a; line-height:1.5; }
@@ -1291,7 +1294,6 @@
   .catalog-units { margin:0 0 8px; color:#315f46 !important; font-weight:900; }
   .course-zone-status { display:inline-block; margin:2px 0 14px; padding:6px 8px; border-radius:7px; background:#edf0df; color:#58634d; font-size:.74rem; font-weight:850; }
   .memory-card.card-picked .memory-card-front { outline:4px solid #d3a33d; outline-offset:-4px; }
-  @media (pointer:coarse) and (orientation:landscape) and (min-width:700px) { .portrait-notice { position:fixed; inset:0; z-index:90; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; background:#f5f1e5; color:#2c593f; text-align:center; font-size:1.2rem; } .portrait-notice strong { font:700 2rem Georgia,serif; } }
   @media (pointer:coarse) and (orientation:portrait) and (min-width:700px) and (max-width:950px) { .classroom-scene { display:none; } .room-header h1 { font-size:1.55rem; margin:3px 0; } .room-header p { margin:0; } .classroom-page { padding-top:8px; } .slide-card { padding:14px 18px; } .number-pad { margin:4px auto; gap:4px; } .number-pad button { min-height:37px; } .session-progress { margin:6px 0; } .question-tools { margin:6px 0; } .game-footer { display:none; } }
   :global(html) { background: #f5f1e5; }
   :global(body) { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #2e3c35; }

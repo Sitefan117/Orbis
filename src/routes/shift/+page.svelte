@@ -13,6 +13,7 @@
   import { createGameProgressService } from '$lib/orbis/persistence/game-services';
   import { recordGameActivity, recordGameProgress } from '$lib/orbis/tracking/client';
   import NumericKeypad from '$lib/components/NumericKeypad.svelte';
+  import { usesTouchKeypad } from '$lib/components/touch-input';
 
   /*
    * SHIFT — Atelier des quantités
@@ -57,6 +58,7 @@
   let resultReported = false;
   let responseDetails = [];
   let studentName = '';
+  let touchKeypad = false;
 
   function saveShiftProgress() {
     if (!studentName || view !== 'game' || !activeTask) return;
@@ -70,6 +72,7 @@
   }
 
   onMount(() => {
+    touchKeypad = usesTouchKeypad();
     studentName = getStudentName();
     void (async () => {
       const loaded = await createGameProgressService(studentName, 'shift').loadProgress();
@@ -686,7 +689,7 @@ const pixelsPerSecond = randomInt(180, 220);
           {:else if activeTask.type === 'measure'}
             <div class="conversion-card">
               <span class="conversion-category">{activeTask.familyName.toLocaleUpperCase('fr-CH')}</span>
-              <div class="conversion-equation"><strong>{formatValue(activeTask.sourceValue)}</strong><span>{activeTask.fromUnit}</span><b>→</b><div class="conversion-answer"><input bind:value={answerInput} inputmode="decimal" autocomplete="off" aria-label={`Mesure convertie en ${activeTask.toUnit}`} placeholder="?" onkeydown={(event) => event.key === 'Enter' && submitTask()} /><span>{activeTask.toUnit}</span></div></div>
+              <div class="conversion-equation"><strong>{formatValue(activeTask.sourceValue)}</strong><span>{activeTask.fromUnit}</span><b>→</b><div class="conversion-answer"><input bind:value={answerInput} inputmode={touchKeypad ? 'none' : 'decimal'} readonly={touchKeypad} autocomplete="off" aria-label={`Mesure convertie en ${activeTask.toUnit}`} placeholder="?" onkeydown={(event) => event.key === 'Enter' && submitTask()} /><span>{activeTask.toUnit}</span></div></div>
               <NumericKeypad bind:value={answerInput} onSubmit={submitTask} />
               <div class="measure-ladder" aria-label="Échelle des unités">
                 {#each MEASURE_UNITS[activeTask.familyName] as unit, index}
@@ -706,7 +709,7 @@ const pixelsPerSecond = randomInt(180, 220);
               {:else}
                 <span class="task-label">MOT-NOMBRE</span><strong class="word-target-text">{numberToSwissText(activeTask.number)}</strong>
                 <label class="answer-label" for="digits-answer">Écris le nombre en chiffres</label>
-                <input id="digits-answer" class="text-answer" bind:value={answerInput} inputmode="numeric" autocomplete="off" placeholder="ex. 2’345" onkeydown={(event) => event.key === 'Enter' && submitTask()} />
+                <input id="digits-answer" class="text-answer" bind:value={answerInput} inputmode={touchKeypad ? 'none' : 'numeric'} readonly={touchKeypad} autocomplete="off" placeholder="ex. 2’345" onkeydown={(event) => event.key === 'Enter' && submitTask()} />
                 <NumericKeypad bind:value={answerInput} allowDecimal={false} onSubmit={submitTask} />
               {/if}
               {#if showPlaceHints}<p class="support-note">Lis le nombre par blocs de trois chiffres : unités, milliers, millions, milliards.</p>{/if}
@@ -760,7 +763,7 @@ const pixelsPerSecond = randomInt(180, 220);
                   <input class="line-slider" type="range" min="0" max="100" step="5" bind:value={lineGuess} aria-label="Position sur la droite graduée" />
                 {:else}
                   <label class="answer-label line-read-answer" for="line-read-answer">Écris la valeur indiquée</label>
-                  <div class="rank-answer"><input id="line-read-answer" bind:value={answerInput} inputmode="decimal" autocomplete="off" aria-label="Valeur indiquée sur la droite graduée" placeholder="Valeur" onkeydown={(event) => event.key === 'Enter' && submitTask()} /></div>
+                  <div class="rank-answer"><input id="line-read-answer" bind:value={answerInput} inputmode={touchKeypad ? 'none' : 'decimal'} readonly={touchKeypad} autocomplete="off" aria-label="Valeur indiquée sur la droite graduée" placeholder="Valeur" onkeydown={(event) => event.key === 'Enter' && submitTask()} /></div>
                   <NumericKeypad bind:value={answerInput} onSubmit={submitTask} />
                 {/if}
               </div>
@@ -769,7 +772,7 @@ const pixelsPerSecond = randomInt(180, 220);
             </div>
 
           {:else if activeTask.type === 'rank'}
-            <div class="rank-task-card"><div class="rank-target"><span>NOMBRE À ANALYSER</span><strong>{formatTicks(activeTask.targetTicks)}</strong></div><p class="rank-question">{activeTask.prompt}</p><div class="rank-answer"><input bind:value={answerInput} inputmode="numeric" autocomplete="off" aria-label="Nombre de groupes entiers" placeholder="?" onkeydown={(event) => event.key === 'Enter' && submitTask()} /><button type="button" class="primary-button" onclick={submitTask}>Vérifier</button></div><NumericKeypad bind:value={answerInput} allowDecimal={false} onSubmit={submitTask} />{#if showPlaceHints}<p class="support-note">Exemple : 4’387 contient 438 dizaines entières, mais le chiffre des dizaines est 8.</p>{/if}</div>
+            <div class="rank-task-card"><div class="rank-target"><span>NOMBRE À ANALYSER</span><strong>{formatTicks(activeTask.targetTicks)}</strong></div><p class="rank-question">{activeTask.prompt}</p><div class="rank-answer"><input bind:value={answerInput} inputmode={touchKeypad ? 'none' : 'numeric'} readonly={touchKeypad} autocomplete="off" aria-label="Nombre de groupes entiers" placeholder="?" onkeydown={(event) => event.key === 'Enter' && submitTask()} /><button type="button" class="primary-button" onclick={submitTask}>Vérifier</button></div><NumericKeypad bind:value={answerInput} allowDecimal={false} onSubmit={submitTask} />{#if showPlaceHints}<p class="support-note">Exemple : 4’387 contient 438 dizaines entières, mais le chiffre des dizaines est 8.</p>{/if}</div>
 
           {:else if activeTask.type === 'build'}
             <div class="build-task-card">
@@ -780,10 +783,11 @@ const pixelsPerSecond = randomInt(180, 220);
                 <span class="task-label">POINT DE DÉPART</span><strong class="build-target">{formatValue(activeTask.number, 3)}</strong>
                 <div class="build-direction" class:direction-up={activeTask.direction === 'greater'}><span>{activeTask.direction === 'greater' ? '↑' : '↓'}</span><strong>{activeTask.direction === 'greater' ? 'PLUS GRAND QUE' : 'PLUS PETIT QUE'}</strong></div>
               {/if}
-              <label class="answer-label" for="build-answer">Propose ton nombre</label><div class="rank-answer"><input id="build-answer" bind:value={answerInput} inputmode="decimal" autocomplete="off" placeholder="Ton nombre" onkeydown={(event) => event.key === 'Enter' && submitTask()} /><button type="button" class="primary-button" onclick={submitTask}>Vérifier</button></div><NumericKeypad bind:value={answerInput} onSubmit={submitTask} />{#if showPlaceHints}<p class="support-note">Ton nombre doit respecter la consigne. Pour une zone, les deux bornes sont exclues.</p>{/if}
+              <label class="answer-label" for="build-answer">Propose ton nombre</label><div class="rank-answer"><input id="build-answer" bind:value={answerInput} inputmode={touchKeypad ? 'none' : 'decimal'} readonly={touchKeypad} autocomplete="off" placeholder="Ton nombre" onkeydown={(event) => event.key === 'Enter' && submitTask()} /><button type="button" class="primary-button" onclick={submitTask}>Vérifier</button></div><NumericKeypad bind:value={answerInput} onSubmit={submitTask} />{#if showPlaceHints}<p class="support-note">Ton nombre doit respecter la consigne. Pour une zone, les deux bornes sont exclues.</p>{/if}
             </div>
           {/if}
 
+          <div class="feedback-slot">
           {#if feedback}
             <section class={`feedback-panel ${feedback.kind}`} role="status" aria-live="polite">
               <span class="feedback-symbol" aria-hidden="true">{feedback.kind === 'success' ? '✓' : '↻'}</span>
@@ -791,6 +795,7 @@ const pixelsPerSecond = randomInt(180, 220);
               {#if feedback.kind === 'success'}<button type="button" class="primary-button feedback-next" onclick={submitNext}>Question suivante <span>→</span></button>{:else if !gameOver}<button type="button" class="secondary-button feedback-retry" onclick={() => (feedback = null)}>Je réessaie</button>{/if}
             </section>
           {/if}
+          </div>
         </section>
       {/if}
       <footer class="game-footer"><span>SHIFT / CENTRE DE CONTRÔLE</span><span>{activeMission.skills}</span><button type="button" onclick={goToMenu}>Changer de mission ↗</button></footer>
@@ -937,6 +942,9 @@ const pixelsPerSecond = randomInt(180, 220);
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .reduce-motion *, .reduce-motion *::before, .reduce-motion *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .001ms !important; }
 
+  /* Réserve la hauteur du retour avant validation pour stabiliser la page. */
+  .feedback-slot { min-height: 116px; margin-top: 22px; }
+  .feedback-panel { margin-top: 0; }
   @media (max-width: 1050px) {
     .mission-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .mission-card { min-height: 270px; }
@@ -946,6 +954,7 @@ const pixelsPerSecond = randomInt(180, 220);
     .place-row { grid-template-columns: 37px minmax(100px, .8fr) 40px minmax(0, 1.7fr); }
   }
   @media (max-width: 700px) {
+    .feedback-slot { min-height: 154px; }
     .topbar { grid-template-columns: auto 1fr; min-height: 66px; padding: 0 14px; gap: 12px; }.brand-lockup { justify-self: start; }.brand-lockup strong { font-size: 21px; }.brand-kicker { font-size: 7px; }.topbar > .top-return { grid-column: 1 / -1; justify-self: stretch; text-align: center; margin-bottom: 10px; }.topbar:has(.top-return) { padding-top: 10px; }.top-actions { grid-column: 1 / -1; justify-self: stretch; display: flex; flex-wrap: wrap; padding-bottom: 10px; }.top-actions .back-button { margin-left: auto; }.mode-pill { margin-right: auto; }
     .menu-view, .game-view { width: min(100% - 26px, 600px); }.menu-view { padding-top: 16px; }.hero-grid { display: flex; flex-direction: column; align-items: stretch; padding: 31px 0 29px; gap: 27px; }.hero-copy h1 { font-size: clamp(42px, 13vw, 67px); }.hero-description { font-size: 14px; }.hero-visual { min-height: 235px; }.cargo-large { width: 110px; height: 110px; top: 43px; right: 11%; font-size: 32px; }.cargo-mid { width: 75px; height: 75px; top: 107px; left: 13%; }.cargo-small { right: 22%; bottom: 22px; width: 43px; height: 43px; }.section-heading { align-items: flex-start; flex-direction: column; gap: 12px; }.section-heading h2 { font-size: 25px; }.section-heading > p, .section-heading > div + p { font-size: 11px; }.difficulty-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }.difficulty-card { min-height: 102px; padding: 13px; }.difficulty-card strong { font-size: 12px; }.difficulty-card > span:last-of-type { font-size: 10px; }.playstyle-row { align-items: flex-start; flex-direction: column; }.segmented-control { width: 100%; }.segmented-control button { flex: 1; padding: 10px 8px; font-size: 10px; }.mission-section { margin-top: 31px; }.mission-grid { grid-template-columns: 1fr; gap: 9px; }.mission-card { min-height: auto; padding: 16px; display: grid; grid-template-columns: 1fr auto; gap: 0 12px; }.mission-topline { grid-column: 1 / -1; margin-bottom: 9px; }.mission-section-label, .mission-title, .mission-subtitle, .mission-description, .skill-tags, .mission-launch { grid-column: 1 / -1; }.mission-title { font-size: 17px; }.mission-description { margin-bottom: 11px; }.skill-tags { margin-top: 0; }.mission-count { align-self: flex-start; }.settings-grid { grid-template-columns: 1fr; }.setting-row { padding: 12px 0; }
     .game-view { padding-top: 22px; }.game-heading { align-items: flex-start; flex-direction: column; gap: 16px; }.game-heading h1 { font-size: 31px; }.score-panel { width: 100%; justify-content: space-around; padding: 12px; }.task-card { padding: 15px; }.task-card > h2 { font-size: 21px; }.target-readout { padding: 13px; gap: 8px; }.target-readout > span { width: 100%; }.target-readout strong { font-size: 36px; }.conveyor-caption { align-items: flex-start; flex-direction: column; gap: 4px; }.conveyor-lane { height: 128px; }.belt-item { width: 120px; min-width: 120px; height: 94px; left: -150px; padding: 5px 6px; }.belt-rank-name { font-size: 8.5px; }.belt-rank-relation { font-size: 7.5px; }.factory-workspace { display: flex; flex-direction: column; }.bench-panel, .shipment-panel { padding: 13px; }.panel-heading { align-items: flex-start; flex-direction: column; gap: 8px; }.panel-heading h3 { font-size: 16px; }.place-row { grid-template-columns: 34px minmax(0, 1fr) 32px; gap: 8px; padding: 10px 0; }.place-token { width: 33px; height: 33px; }.place-name strong { font-size: 10px; }.row-actions { grid-column: 1 / -1; justify-content: stretch; padding-left: 42px; }.icon-button { min-height: 38px; flex: 0 0 47px; }.transfer-button { flex: 1; min-height: 38px; font-size: 10px; }.count-number { font-size: 19px; }.shipment-box { min-height: 125px; }.conversion-card, .word-task-card, .decomposition-task, .sort-task-card, .number-line-task, .rank-task-card, .build-task-card { padding: 18px 14px; margin-top: 18px; }.conversion-equation { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; }.conversion-equation > strong { font-size: 42px; }.conversion-equation > span { font-size: 17px; justify-self: end; }.conversion-equation > b { grid-column: 1; grid-row: 2; }.conversion-answer { grid-column: 2; grid-row: 2; }.conversion-answer input { min-width: 0; width: 100px; font-size: 26px; padding: 10px; }.conversion-answer span { font-size: 16px; }.measure-ladder { gap: 2px; font-size: 10px; }.measure-ladder span { padding: 7px 0; }.decomp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.decomp-cell { padding: 9px; }.decomp-target { align-items: flex-start; flex-direction: column; gap: 6px; }.sort-value { flex: 1 1 calc(50% - 8px); justify-content: space-between; font-size: 16px; padding: 12px; min-width: 110px; }.line-target-number { align-items: flex-start; flex-direction: column; gap: 5px; margin-bottom: 55px; }.rank-question { font-size: 15px; }.rank-answer { flex-direction: column; }.rank-answer input { max-width: none; }.rank-answer .primary-button { flex: 0 0 auto; }.feedback-panel { grid-template-columns: 34px minmax(0, 1fr); gap: 10px; padding: 12px; }.feedback-symbol { width: 32px; height: 32px; }.feedback-next, .feedback-retry { grid-column: 1 / -1; width: 100%; }.game-footer { align-items: flex-start; flex-direction: column; gap: 8px; }.site-footer { flex-wrap: wrap; justify-content: space-between; padding: 16px 13px 22px; }.site-footer > span:nth-child(2) { display: none; }

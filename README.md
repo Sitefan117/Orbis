@@ -1,5 +1,7 @@
 # Orbis
 
+La carte commentée des fichiers de code se trouve dans [l’arborescence Orbis](docs/ORBiS_ARBORESCENCE_CODE.md).
+
 Orbis est un portail pédagogique construit avec SvelteKit, Svelte et TypeScript. Il regroupe des jeux indépendants et des ressources de cours. Les jeux gardent leurs propres règles et moteurs.
 
 ## Où le site est hébergé
