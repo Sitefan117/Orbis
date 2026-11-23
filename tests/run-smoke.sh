@@ -2,6 +2,8 @@
 # Lance les vérifications rapides qui peuvent s’exécuter sans démarrer le site.
 set -euo pipefail
 
+node tests/orbis-update-detection.test.cjs
+
 node tests/engine.test.cjs
 node tests/engine-v3.test.cjs
 node tests/content-quality-v3.test.cjs
@@ -28,3 +30,4 @@ bash tests/run-conju-lab-smoke.sh
 
 node tests/mental-math-workshop.test.cjs
 node --import tsx tests/musee-vocabulaire.test.ts
+node --import tsx tests/bazar-curriculum.test.ts
