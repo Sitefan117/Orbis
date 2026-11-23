@@ -1,7 +1,5 @@
 // GitHub Pages est un site statique : les variables doivent être injectées
 // pendant le build. `$env/dynamic/public` reste vide une fois déployé sans
-// serveur SvelteKit, alors que `$env/static/public` est remplacé par Vite.
-import { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL } from '$env/static/public';
 import type { ActivityEvent } from '$lib/orbis/results/contract';
 import type { LocalSaveEnvelope } from './local-store';
 import type { OrbisRemoteSession } from './remote-session';
@@ -22,9 +20,11 @@ const fallbackPublicConfig: SupabasePublicConfig = {
   publicKey: 'sb_publishable_ZbvCrE0wm-FLqUCww-VvRg_gSMTTakX'
 };
 
+const buildPublicEnv = import.meta.env as Record<string, string | undefined>;
+
 export function getSupabasePublicConfig(): SupabasePublicConfig | null {
-  const url = (PUBLIC_SUPABASE_URL || fallbackPublicConfig.url).replace(/\/$/, '');
-  const publicKey = PUBLIC_SUPABASE_PUBLISHABLE_KEY || fallbackPublicConfig.publicKey;
+  const url = (buildPublicEnv.PUBLIC_SUPABASE_URL || fallbackPublicConfig.url).replace(/\/$/, '');
+  const publicKey = buildPublicEnv.PUBLIC_SUPABASE_PUBLISHABLE_KEY || fallbackPublicConfig.publicKey;
   return url && publicKey ? { url, publicKey } : null;
 }
 
