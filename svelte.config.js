@@ -15,6 +15,11 @@ const config = {
             // ORBIS_BASE_PATH permet de conserver une prévisualisation flexible si besoin.
             base: process.env.NODE_ENV === 'production' ? (process.env.ORBIS_BASE_PATH ?? '/Orbis') : ''
         },
+        version: {
+            // Les onglets Orbis restent parfois ouverts pendant plusieurs cours.
+            // Détecte les nouvelles publications sans dépendre du cache GitHub Pages.
+            pollInterval: 60_000
+        },
         prerender: {
             handleHttpError: ({ path, referrer, message }) => {
                 // Ignore les erreurs de prerender pour les formulaires de la zone teacher

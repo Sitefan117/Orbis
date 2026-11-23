@@ -5,6 +5,7 @@
 	import { languageState } from '$lib/games/fractionstower2/persistence/LanguageManager';
 	import { SaveManager, type SaveData } from '$lib/games/fractionstower2/persistence/SaveManager';
 	import LocalTrackingPanel from '$lib/orbis/teacher/LocalTrackingPanel.svelte';
+	import CompetencyTracker from '$lib/orbis/teacher/CompetencyTracker.svelte';
 	import RemoteTeacherDashboard from '$lib/orbis/teacher/RemoteTeacherDashboard.svelte';
 	import { currentSession, refreshRemoteSession, sessionRole, signInWithShortId, signOut, startSessionRefresh } from '$lib/orbis/auth/client';
 	import { createStudent, createTeacherClass, deleteStudent, deleteTeacherClass, exportStudentData, listTeacherClasses, listTeacherStudents, listTeacherStudentDocuments, renameTeacherClass, resetStudentPassword, type OrbisClass, type OrbisStudent, type RemoteStudentDocument } from '$lib/orbis/teacher/remote';
@@ -351,6 +352,7 @@
 						<div class="teacher-header-actions"><span class="live-status"><i></i> Données synchronisées</span><a class="mode-link" href={`${base}/teacher/admin`}>Administration →</a><button class="logout-button" onclick={() => void logout()}>Se déconnecter</button></div>
 					</header>
 					<RemoteTeacherDashboard {classes} students={remoteStudents} documents={remoteDocuments} />
+					<CompetencyTracker />
 				</main>
 			</div>
 		{:else}

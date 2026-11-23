@@ -13,6 +13,8 @@ tsconfig.json  — règles TypeScript
 scripts/
   backup-supabase.sh  — outil de maintenance : backup supabase
   build-nexus-memory-pdf.py  — outil de maintenance : build nexus memory pdf
+  curate-english-lab.mjs  — outil de maintenance : curate english lab
+  english-lab-curation.mjs  — outil de maintenance : english lab curation
   enrich-musee-phrases.mjs  — outil de maintenance : enrich musee phrases
   generate-english-audio.py  — outil de maintenance : generate english audio
   generate-english-lexique.mjs  — outil de maintenance : generate english lexique
@@ -26,6 +28,9 @@ src/
       NumericKeypad.svelte  — pavé numérique partagé des jeux
       touch-input.ts  — détecte les tablettes utilisant le pavé intégré
     games/
+      bazar/
+        curriculum.ts  — programme et progression pédagogique
+        types.ts  — types et contrats du jeu
       calculs/
         question-engine.ts  — génération et contrôle des questions
       conju-lab/
@@ -159,6 +164,7 @@ src/
       tasks/
         remote.ts  — tâches assignées à distance
       teacher/
+        CompetencyTracker.svelte  — fonction de suivi enseignant : CompetencyTracker
         LocalTrackingPanel.svelte  — fonction de suivi enseignant : LocalTrackingPanel
         RemoteTeacherDashboard.svelte  — fonction de suivi enseignant : RemoteTeacherDashboard
         csv.ts  — sécurise les cellules CSV
@@ -188,6 +194,8 @@ src/
         +server.ts  — API locale des résultats
       chat/
         +server.ts  — API locale de conversation PCP
+    bazar/
+      +page.svelte  — page bazar
     calculs/
       +page.svelte  — page Calcul décimal
     confidentialite/
@@ -251,6 +259,7 @@ supabase/
     seed-test-results.sql  — données de démonstration pour tests
 svelte.config.js  — adaptateur statique et préfixe /Orbis
 tests/
+  bazar-curriculum.test.ts  — test automatisé : bazar curriculum
   conju-lab-engine-smoke.cjs  — test automatisé : conju lab engine smoke
   content-quality-v3.test.cjs  — test automatisé : content quality v3
   engine-v3.test.cjs  — test automatisé : engine v3
@@ -276,6 +285,7 @@ tests/
   orbis-result-export.test.ts  — test automatisé : orbis result export
   orbis-route-structure.py  — test automatisé : orbis route structure
   orbis-student-profile-simulation.test.cjs  — test automatisé : orbis student profile simulation
+  orbis-update-detection.test.cjs  — test automatisé : orbis update detection
   race-table-selection.test.ts  — test automatisé : race table selection
   run-conju-lab-smoke.sh  — test automatisé : run conju lab smoke
   run-smoke.sh  — test automatisé : run smoke

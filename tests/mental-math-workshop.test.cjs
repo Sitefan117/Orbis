@@ -38,5 +38,8 @@ const index=fs.readFileSync(path.join(root,'index.html'),'utf8');assert(index.in
 assert(E.poolFor('LM07',3).some(p=>p.b===1000));assert(E.poolFor('DM06',3).some(p=>p.b===1000));assert(E.poolFor('CD03',3).some(p=>p.b===1000));assert(E.poolFor('CD04',3).some(p=>p.b===1000));
 for(const p of [E.makeProblem('DC04',{a:23,b:9,op:'+'},2),E.makeProblem('DC05',{a:45,b:9,op:'-'},2)]){const diagram=E.diagram(p);assert(diagram.includes('chaque graduation vaut une unité'),p.prompt);assert(diagram.includes('>25<')||diagram.includes('>40<'),p.prompt);}
 for(const code of ['TM01','TM02','TM03','TM04','TM05','TM06','TM07','TM08']){const p=E.makeProblem(code,E.poolFor(code,2).find(x=>x.a===5),2),a=E.strategy(p);assert(!a.h3.includes('0 groupe'),code);}
+for(const code of ['TM01','TM02','TM03','TM04','TM05','TM06','TM07','TM08'])for(const level of [1,2,3]){const factors=E.poolFor(code,level).map(p=>p.a);assert.equal(Math.min(...factors),1,code);assert.equal(Math.max(...factors),10,`${code} niveau ${level}`);}
+assert(app.includes('paper-question-list'));assert(!app.includes('${index+1}. ${escape(p.prompt)}'));
+for(const match of memo.matchAll(/<section class="course-(?:exercises|validation)">([\s\S]*?)<\/section>/g)){assert(match[1].includes('<ul>'));assert(!match[1].includes('<ol>'));}
 assert(!E.catalog.skills.find(s=>s.code==='PC02').manipulation.includes('Retires-en'));
 console.log(`Calcul mental : ${cases} calculs vérifiés, 52 compétences × 3 niveaux, séries équilibrées, corrections, aides et bilans.`);
