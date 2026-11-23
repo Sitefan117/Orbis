@@ -10,7 +10,7 @@
   import englishLexique from './data/english-lab.csv?raw';
   import poses from './data/mascotte.json';
   import { gridSize, gridWord, letterChoices, makeGrid, matchRounds, normalize, prioritizeRecent, readLexique, shuffle, spriteStyle, type Word } from './lexique';
-  import { masterySummary, updateWordProgress, type VocabularyProgress } from './progress';
+  import { masterySummary, reviewableWordIds, updateWordProgress, type VocabularyProgress } from './progress';
   import ContextLab from './ContextLab.svelte';
 
   export let initialMode = 'whack-image';
@@ -64,6 +64,7 @@
   let inHall = true;
   let workshopOnly = false;
   let lastHallChoice: Mode | 'workshop' = 'whack-image';
+  let smartList: 'review' | null = null;
   let wordListOpen = false;
   let gameHeading: HTMLHeadingElement;
   let hallNavigation: HTMLElement;
@@ -79,7 +80,7 @@
     workshopOnly = true;
     lastHallChoice = 'workshop';
     settingsOpen = false;
-    playing = bank.filter((entry) => selectedThemes.includes(entry.theme));
+    playing = activeEntries;
     rememberThemes();
     inHall = false;
     await tick();
@@ -128,7 +129,9 @@
   const audioCache = new Map<string, HTMLAudioElement>();
 
   $: categories = getCategories(bank);
-  $: selectedEntries = bank.filter((entry) => selectedThemes.includes(entry.theme));
+  $: reviewEntries = getReviewEntries();
+  $: activeEntries = smartList === 'review' ? reviewEntries : bank.filter((entry) => selectedThemes.includes(entry.theme));
+  $: selectedEntries = activeEntries;
   $: selectedCount = selectedEntries.length;
   $: selectedSentenceCount = selectedEntries.filter((entry) => entry.sentence).length;
   $: isImageMode = mode === 'whack-image' || mode === 'whack-word' || mode === 'match';
@@ -140,6 +143,7 @@
   let alphabet: string[] = [];
   $: visibleVocabulary = distinctWords(playing).sort((a, b) => a.word.localeCompare(b.word, 'fr'));
   $: mastery = masterySummary(vocabularyProgress);
+  $: reviewCount = reviewEntries.length;
   function audioPath(entry: Word) { return `${base}/audio/${isEnglish ? 'english-lab' : 'musee-vocabulaire'}/${entry.id}-piper.wav`; }
   function playWord(entry: Word) {
     if (typeof Audio === 'undefined') return;
@@ -158,6 +162,13 @@
 
   function getCategories(entries: Word[]) {
     return Array.from(new Map(entries.map((word) => [word.theme, word])).values());
+  }
+
+  function getReviewEntries() {
+    const dueIds = new Set(reviewableWordIds(vocabularyProgress));
+    const due = bank.filter((entry) => dueIds.has(entry.id));
+    const unseen = bank.filter((entry) => !vocabularyProgress[entry.id]);
+    return [...due, ...unseen].filter((entry, index, entries) => entries.findIndex((item) => item.id === entry.id) === index).slice(0, 20);
   }
 
   onMount(() => {
@@ -213,14 +224,22 @@
     try { localStorage.setItem('orbis-musee-themes', JSON.stringify(selectedThemes)); } catch { /* Optional. */ }
   }
 
+  function chooseReviewList() {
+    smartList = 'review';
+    settingsOpen = false;
+    playing = reviewEntries;
+    report(reviewEntries.length ? `${reviewEntries.length} mots sont prêts pour ta révision.` : 'Aucun mot à revoir pour le moment.', 'progress');
+  }
+
   function toggleTheme(theme: string) {
+    smartList = null;
     selectedThemes = selectedThemes.includes(theme) ? selectedThemes.filter((item) => item !== theme) : [...selectedThemes, theme];
   }
 
   function start(next: Mode) {
     mode = next;
     settingsOpen = false;
-    playing = bank.filter((entry) => selectedThemes.includes(entry.theme));
+    playing = activeEntries;
     rememberThemes();
     const eligible = playing.filter((entry) => {
       if (next === 'syllables') return entry.syllables.length >= 2;
@@ -533,7 +552,8 @@
   <main class="shell no-print">
     <section class="settings" aria-label="Thèmes de vocabulaire">
       <button class="secondary" aria-expanded={settingsOpen} on:click={() => settingsOpen = !settingsOpen}>Choisir les thèmes</button>
-      <span>{selectedThemes.length} thème{selectedThemes.length > 1 ? 's' : ''} · {selectedCount} entrées</span>
+      <span>{smartList === 'review' ? `Liste personnalisée · ${selectedCount} mots` : `${selectedThemes.length} thème${selectedThemes.length > 1 ? 's' : ''} · ${selectedCount} entrées`}</span>
+      {#if !isEnglish}<button class="smart-list-button" class:active={smartList === 'review'} on:click={chooseReviewList} aria-pressed={smartList === 'review'}>Mes mots à revoir <span>{reviewCount}</span></button>{/if}
       {#if mastery.total}<span class="mastery-chip" aria-label={`${mastery.acquired} mots acquis, ${mastery.fragile} fragiles, ${mastery.due} à revoir`}>{mastery.acquired} acquis · {mastery.fragile} fragiles · {mastery.due} à revoir</span>{/if}
       {#if settingsOpen}
         <div class="filters">
@@ -547,7 +567,7 @@
           {/each}
         </div>
         <div class="actions">
-          <button class="primary" disabled={!selectedCount} on:click={() => { printWords = []; start(mode); }}>Utiliser ces thèmes</button>
+          <button class="primary" disabled={!selectedCount} on:click={() => { smartList = null; printWords = []; start(mode); }}>Utiliser ces thèmes</button>
           <button on:click={() => selectedThemes = categories.map((entry) => entry.theme)}>Tout cocher</button>
           <button on:click={() => selectedThemes = []}>Tout décocher</button>
         </div>
@@ -814,6 +834,9 @@
   .settings, .game { background: #fffaf0; border: 1px solid #d8c9ae; padding: clamp(.9rem, 3vw, 1.6rem); border-radius: 1rem; margin-bottom: 1rem; }
   .settings > span { margin-inline-start: .75rem; }
   .mastery-chip { color: #285c4a; font-weight: 800; }
+  .smart-list-button { margin-inline-start: .75rem; border: 2px solid #b7603c; background: #fff2df; color: #6d321f; font-weight: 800; }
+  .smart-list-button span { display: inline-grid; min-width: 1.5rem; min-height: 1.5rem; place-items: center; margin-inline-start: .35rem; border-radius: 999px; background: #b7603c; color: white; }
+  .smart-list-button.active { background: #dce9ee; border-color: #315f76; color: #173e51; }
   .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .75rem; margin-block: .9rem; }
   fieldset { border: 1px solid #d8c9ae; border-radius: .7rem; min-width: 0; }
   legend { font-weight: 750; }
