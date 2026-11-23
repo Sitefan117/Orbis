@@ -13,6 +13,14 @@ const soundFiles: Record<string, string> = {
 const audioCache: Record<string, HTMLAudioElement> = {};
 
 export class AudioManager {
+    static speak(text: string) {
+        if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'fr-FR';
+        window.speechSynthesis.speak(utterance);
+    }
+
     static playClick() {
         this.play('click');
     }

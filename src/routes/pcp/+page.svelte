@@ -482,6 +482,10 @@ Consignes strictes :
     background-color: #475569;
     border-radius: 4px;
   }
+  .chat-messages {
+    scrollbar-color: #475569 transparent;
+    scrollbar-width: thin;
+  }
 
   @media print {
     .no-print {

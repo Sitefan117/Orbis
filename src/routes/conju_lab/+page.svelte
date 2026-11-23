@@ -77,7 +77,6 @@
   $: availableTenses = getTensesForGrade(grade);
   $: gradeVerbCount = getVerbsForGrade(grade).length;
   $: selectedGradeFocus = FOCI.find((item) => item.id === focus)?.label ?? 'Mission mixte';
-  $: progressPercent = Math.round((questionIndex / SESSION_LENGTH) * 100);
   $: currentHint = errorHint || currentQuestion?.hintSteps[Math.min(hintIndex, (currentQuestion?.hintSteps.length ?? 1) - 1)] || 'Repère le sujet, le temps et le verbe avant de répondre.';
 
   function chooseGrade(nextGrade: Grade) {
@@ -283,7 +282,7 @@
       // dans localStorage et aucune donnée de session n’est conservée par ConjuLab.
       const send = submitActivityResult as unknown as (payload: Record<string, unknown>) => Promise<unknown>;
       await send({
-        world: 'conjugaison',
+        world: 'conju_lab',
         mission: `${grade} · ${playPath === 'guide' ? 'parcours guidé' : 'parcours libre'} · ${selectedGradeFocus}`,
         score,
         totalQuestions: SESSION_LENGTH,
@@ -542,7 +541,7 @@
         <div><p class="eyebrow">SESSION {grade} · {playPath === 'guide' ? 'PARCOURS GUIDÉ' : 'ACCÈS LIBRE'}</p><p class="game-progress-label">Question {questionIndex + 1} sur {SESSION_LENGTH}</p></div>
         <div class="topbar-actions"><button type="button" class="secondary-button small-button" onclick={toggleHelp} aria-expanded={showHelp}>{showHelp ? 'Fermer les fiches' : 'Aide et règles'}</button><button type="button" class="text-button back-menu" onclick={returnToMenu}>↩ Menu des niveaux</button></div>
       </div>
-      <div class="progress-track" role="progressbar" aria-label="Progression de la session" aria-valuemin="0" aria-valuemax={SESSION_LENGTH} aria-valuenow={questionIndex}><span style={`width: ${progressPercent}%`}></span></div>
+      <progress class="progress-track" aria-label="Progression de la session" value={questionIndex} max={SESSION_LENGTH}></progress>
 
       <div class="game-columns">
         <section class="question-panel panel" aria-labelledby="question-title">
@@ -765,8 +764,11 @@
   .topbar-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
   .back-menu { white-space: nowrap; }
   .progress-track, .mini-track { background: #202d46; border-radius: 999px; overflow: hidden; }
-  .progress-track { height: 6px; margin-bottom: 18px; }
-  .progress-track span, .mini-track span { display: block; height: 100%; background: linear-gradient(90deg, var(--cyan-strong), var(--purple)); border-radius: inherit; transition: width .18s ease; }
+  .progress-track { display: block; width: 100%; height: 6px; margin-bottom: 18px; appearance: none; border: 0; }
+  .progress-track::-webkit-progress-bar { background: #202d46; border-radius: inherit; }
+  .progress-track::-webkit-progress-value { background: linear-gradient(90deg, var(--cyan-strong), var(--purple)); border-radius: inherit; transition: width .18s ease; }
+  .progress-track::-moz-progress-bar { background: linear-gradient(90deg, var(--cyan-strong), var(--purple)); border-radius: inherit; transition: width .18s ease; }
+  .mini-track span { display: block; height: 100%; background: linear-gradient(90deg, var(--cyan-strong), var(--purple)); border-radius: inherit; transition: width .18s ease; }
   .game-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(245px, .35fr); gap: 18px; align-items: start; }
   .question-panel { padding: clamp(18px, 3.4vw, 38px); min-width: 0; }
   .question-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }

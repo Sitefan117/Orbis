@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '..');
 const tempDir = path.join(__dirname, '.compiled-progress');
 fs.rmSync(tempDir, { recursive: true, force: true });
 fs.mkdirSync(tempDir, { recursive: true });
+fs.writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ type: 'commonjs' }));
 for (const name of ['types.ts', 'curriculum.ts', 'progress.ts']) {
   const file = path.join(root, 'src/lib/numeria', name);
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;

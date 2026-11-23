@@ -71,9 +71,7 @@
 			return;
 		}
 
-		const targetNumerator = typeof currentExercise.correctAnswer === 'object' 
-			? currentExercise.correctAnswer.numerator 
-			: 0;
+		const targetNumerator = Number.parseInt(currentExercise.correctAnswer.split('/')[0] ?? '', 10);
 
 		if (val === targetNumerator) {
 			feedback = t('feedback.correct');

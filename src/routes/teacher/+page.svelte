@@ -1,20 +1,13 @@
 <script lang="ts">
 	import { languageState } from '$lib/fractionstower2/persistence/LanguageManager';
 	import { SaveManager, type SaveData } from '$lib/fractionstower2/persistence/SaveManager';
+	import type { TeacherDashboardData } from '$lib/server/activity-results';
 
-	let isAuthenticated = $state(false);
-	let password = $state('');
+	let { data, form } = $props<{
+		data: { authenticated: boolean; dashboard: TeacherDashboardData | null };
+		form?: { success?: boolean; message?: string };
+	}>();
 	let students = $state<SaveData[]>([]);
-	
-	const TEACHER_PASSWORD = 'admin';
-
-	function login() {
-		if (password === TEACHER_PASSWORD) {
-			isAuthenticated = true;
-		} else {
-			alert(languageState.current === 'fr-FR' ? "Mot de passe incorrect." : "Неверный пароль.");
-		}
-	}
 
 	async function handleFileUpload(e: Event) {
 		const target = e.target as HTMLInputElement;
@@ -82,13 +75,17 @@
 	}
 </script>
 
-{#if !isAuthenticated}
+{#if !data.authenticated}
 	<div class="login-container">
 		<div class="login-card">
 			<h1>{languageState.current === 'fr-FR' ? 'Espace Enseignant' : 'Пространство учителя'}</h1>
 			<p>{languageState.current === 'fr-FR' ? 'Veuillez entrer le mot de passe pour accéder au tableau de bord.' : 'Пожалуйста, введите пароль для доступа к панели управления.'}</p>
-			<input type="password" bind:value={password} placeholder="Mot de passe..." />
-			<button onclick={login}>{languageState.current === 'fr-FR' ? 'Se connecter' : 'Войти'}</button>
+			<form method="POST" action="?/login">
+				<label for="teacher-password">{languageState.current === 'fr-FR' ? 'Mot de passe enseignant' : 'Пароль учителя'}</label>
+				<input id="teacher-password" name="password" type="password" placeholder="Mot de passe..." autocomplete="current-password" required />
+				<button type="submit">{languageState.current === 'fr-FR' ? 'Se connecter' : 'Войти'}</button>
+			</form>
+			{#if form?.message}<p class="login-message" role="alert">{form.message}</p>{/if}
 		</div>
 	</div>
 {:else}
@@ -96,6 +93,9 @@
 		<header>
 			<h1>{languageState.current === 'fr-FR' ? 'Tableau de Bord des Élèves' : 'Панель управления учениками'}</h1>
 			<div class="actions">
+				<form method="POST" action="?/logout">
+					<button class="logout-btn" type="submit">{languageState.current === 'fr-FR' ? 'Se déconnecter' : 'Выйти'}</button>
+				</form>
 				<label class="import-btn">
 					{languageState.current === 'fr-FR' ? '📂 Importer' : '📂 Импортировать'}
 					<input type="file" multiple accept=".fracsave" onchange={handleFileUpload} />
@@ -108,6 +108,29 @@
 				</button>
 			</div>
 		</header>
+
+		{#if data.dashboard}
+			<section class="server-dashboard" aria-labelledby="server-dashboard-title">
+				<h2 id="server-dashboard-title">Résultats enregistrés</h2>
+				<p class="dashboard-summary">{data.dashboard.students.length} élève(s) · {data.dashboard.results.length} bilan(s) · {data.dashboard.progress.length} progression(s)</p>
+				{#if data.dashboard.results.length > 0}
+					<div class="dashboard-table-wrap">
+						<table>
+							<thead><tr><th>Élève</th><th>Monde</th><th>Mission</th><th>Score</th><th>Date</th></tr></thead>
+							<tbody>
+								{#each data.dashboard.results as result}
+									<tr>
+										<td>{result.studentName}</td><td>{result.world}</td><td>{result.mission}</td><td>{result.score} / {result.total}</td><td>{new Date(result.createdAt).toLocaleString('fr-CH')}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{:else}
+					<p>Aucun bilan enregistré pour le moment.</p>
+				{/if}
+			</section>
+		{/if}
 
 		{#if students.length === 0}
 			<div class="empty-state">
@@ -173,7 +196,7 @@
 		backdrop-filter: blur(10px);
 		border: 1px solid rgba(255, 255, 255, 0.2);
 		text-align: center;
-		width: 400px;
+		width: min(400px, calc(100% - 2rem));
 		box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 	}
 	.login-card h1 { color: #ffcc00; margin-bottom: 1rem; }
@@ -186,6 +209,9 @@
 		text-align: center;
 		font-size: 1rem;
 	}
+	.login-card label { display: block; margin-top: 12px; color: #eee; font-size: .9rem; }
+	.login-card form { display: grid; gap: 8px; }
+	.login-message { color: #ff8a80; }
 	.login-card button {
 		background: #ffcc00;
 		color: #000;
@@ -211,7 +237,7 @@
 	}
 	header h1 { color: #ffcc00; }
 	.actions { display: flex; gap: 15px; align-items: center; }
-	.import-btn, .clear-btn, .excel-btn {
+	.import-btn, .clear-btn, .excel-btn, .logout-btn {
 		padding: 10px 20px;
 		border-radius: 8px;
 		cursor: pointer;
@@ -222,6 +248,7 @@
 	.import-btn { background: #1976d2; color: white; }
 	.excel-btn { background: #2e7d32; color: white; }
 	.clear-btn { background: #d32f2f; color: white; }
+	.logout-btn { background: #5d4037; color: white; }
 	.import-btn input { display: none; }
 
 	.empty-state {
@@ -238,6 +265,10 @@
 		border: 1px solid #333;
 		box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 	}
+	.server-dashboard { margin-bottom: 2rem; padding: 1.25rem; border: 1px solid #444; border-radius: 12px; background: #181818; }
+	.server-dashboard h2 { margin-top: 0; color: #ffcc00; }
+	.dashboard-summary { color: #bbb; }
+	.dashboard-table-wrap { overflow-x: auto; }
 	table {
 		width: 100%;
 		border-collapse: collapse;
@@ -253,4 +284,14 @@
 	.status-complete { color: #4caf50; font-weight: bold; }
 	.status-progress { color: #ffcc00; }
 	.status-stuck { color: #ff5252; }
+
+	@media (max-width: 700px) {
+		.teacher-container { padding: 1rem; }
+		header { align-items: stretch; flex-direction: column; gap: 1rem; }
+		header h1 { margin: 0; font-size: 1.55rem; }
+		.actions { width: 100%; flex-wrap: wrap; gap: 8px; }
+		.actions form { flex: 1 1 140px; }
+		.actions button, .actions .import-btn { width: 100%; box-sizing: border-box; text-align: center; }
+		.server-dashboard { padding: 1rem; }
+	}
 </style>

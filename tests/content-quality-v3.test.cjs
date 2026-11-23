@@ -7,7 +7,8 @@ const path = require('node:path');
 const enginePath = fs.existsSync(path.join(__dirname, '../drop-in/lib/mesurovia/engine-legacy.js'))
   ? '../drop-in/lib/mesurovia/engine-legacy.js'
   : '../src/lib/mesurovia/engine-legacy.js';
-const E = require(enginePath);
+require(enginePath);
+const E = globalThis.MesuEngine;
 
 const normalize = E.normalizeAnswer;
 const stripMarkup = (value) => String(value ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -77,8 +78,8 @@ assert.deepEqual(problems, [], problems.join('\n'));
 
 // Contrôle mathématique des paires d'associations : les deux étiquettes doivent vraiment être équivalentes.
 const numericLabel = (label) => {
-  const m = String(label).trim().match(/^([0-9][0-9 ]*(?:[.,][0-9]+)?)\s*([a-z²³]+)$/i);
-  return m ? { value: Number(m[1].replace(/ /g, '').replace(',', '.')), unit: m[2] } : null;
+  const m = String(label).trim().match(/^([0-9][0-9 '\u202f]*(?:[.,][0-9]+)?)\s*([a-z²³]+)$/i);
+  return m ? { value: Number(m[1].replace(/[ '\u202f]/g, '').replace(',', '.')), unit: m[2] } : null;
 };
 function valueInBaseUnit(family, label) {
   const parsed = numericLabel(label);

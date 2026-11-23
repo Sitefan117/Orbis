@@ -1,8 +1,30 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 
+const MAX_MESSAGE_LENGTH = 2000;
+const MAX_HISTORY_ITEMS = 20;
+
 export const POST: RequestHandler = async ({ request }) => {
   try {
-    const { message, history } = await request.json();
+    const payload = await request.json();
+    const message = typeof payload?.message === 'string' ? payload.message.trim() : '';
+    const history = Array.isArray(payload?.history) ? payload.history : [];
+
+    if (!message || message.length > MAX_MESSAGE_LENGTH || history.length > MAX_HISTORY_ITEMS) {
+      return new Response('Message invalide ou trop volumineux.', { status: 400 });
+    }
+
+    const safeHistory = history
+      .filter(
+        (item: unknown): item is { role: 'user' | 'assistant'; content: string } =>
+          typeof item === 'object' &&
+          item !== null &&
+          ((item as { role?: unknown }).role === 'user' || (item as { role?: unknown }).role === 'assistant') &&
+          typeof (item as { content?: unknown }).content === 'string'
+      )
+      .map((item: { role: 'user' | 'assistant'; content: string }) => ({
+        role: item.role,
+        content: item.content.slice(0, MAX_MESSAGE_LENGTH)
+      }));
 
     // 💡 CONSIGNE CACHÉE (SYSTEM PROMPT)
     // Plus tard, on pourra lier ça à ton espace enseignant (ex: db.select().from(teacherSettings))
@@ -17,7 +39,7 @@ CONSIGNES STRICTES :
     // Préparation des messages pour Ollama (avec l'historique pour qu'il ait de la mémoire)
     const formattedMessages = [
       { role: 'system', content: systemPrompt },
-      ...history,
+      ...safeHistory,
       { role: 'user', content: message }
     ];
 
@@ -37,7 +59,10 @@ CONSIGNES STRICTES :
     }
 
     const data = await ollamaResponse.json();
-    return json({ response: data.message.content });
+    const response = typeof data?.message?.content === 'string' ? data.message.content : '';
+    if (!response) return new Response('Réponse invalide du modèle local.', { status: 502 });
+
+    return json({ response }, { headers: { 'cache-control': 'no-store' } });
 
   } catch (error) {
     console.error(error);

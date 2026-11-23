@@ -31,7 +31,7 @@
     ];
 
     function shuffled<T>(items: T[]): T[] {
-        return [...items].sort(() => Math.random() - 0.5);
+        return items.toSorted(() => Math.random() - 0.5);
     }
 
     function randomFraction(): FractionItem {

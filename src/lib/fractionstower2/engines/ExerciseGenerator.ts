@@ -786,6 +786,16 @@ const target = randomInt(1, total - 1);
   return exercises;
 }
 export class ExerciseGenerator {
+  static generate(options: {
+    floorId: string;
+    difficulty?: 'easy' | 'medium' | 'hard';
+    type?: 'comparison' | 'standard';
+    index?: number;
+  }): Exercise {
+    const session = this.generateSession(options.floorId, Math.max(1, (options.index ?? 0) + 1));
+    return session[options.index ?? 0] ?? session[0];
+  }
+
 /**
    * Produit une session avec un choix équilibré des types d'exercices.
    * Les données sont régénérées à chaque appel pour renouveler les questions.

@@ -706,7 +706,7 @@ const pixelsPerSecond = randomInt(180, 220);
         break;
       }
       case 'sort': {
-        const sorted = [...activeTask.values].sort((a, b) => a - b);
+        const sorted = activeTask.values.toSorted((a, b) => a - b);
         isCorrect = selectedOrder.length === sorted.length && selectedOrder.every((value, index) => value === sorted[index]);
         message = 'L’ordre n’est pas encore correct. Compare d’abord le rang le plus élevé, puis passe au rang suivant si les chiffres sont égaux.';
         hint = attemptCount >= 3 ? `Pour vérifier : ${sorted.map((ticks) => formatTicks(ticks)).join(' → ')}.` : '';

@@ -10,14 +10,15 @@
 		size?: 'small' | 'medium' | 'large';
 	}>();
 
-	const sizeClasses = {
+	type FractionSize = 'small' | 'medium' | 'large';
+	const sizeClasses: Record<FractionSize, string> = {
 		small: 'text-sm',
 		medium: 'text-base',
 		large: 'text-xl'
 	};
 </script>
 
-<div class="fraction {sizeClasses[size]}" style="display: inline-flex; vertical-align: middle;">
+	<div class="fraction {sizeClasses[size as FractionSize] ?? sizeClasses.medium}" style="display: inline-flex; vertical-align: middle;">
 	<div class="frac-container">
 		<div class="num">{numerator !== undefined ? numerator : ''}</div>
 		<div class="line"></div>

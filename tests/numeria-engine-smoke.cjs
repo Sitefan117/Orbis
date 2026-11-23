@@ -9,6 +9,7 @@ const sourceFiles = ['types.ts', 'curriculum.ts', 'question-engine.ts'].map((nam
 const tempDir = path.join(__dirname, '.compiled');
 fs.rmSync(tempDir, { recursive: true, force: true });
 fs.mkdirSync(tempDir, { recursive: true });
+fs.writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ type: 'commonjs' }));
 for (const file of sourceFiles) {
   const source = fs.readFileSync(file, 'utf8');
   const out = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;

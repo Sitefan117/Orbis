@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --host 0.0.0.0",
+    "test": "node tests/engine.test.cjs && node tests/engine-v3.test.cjs && node tests/content-quality-v3.test.cjs && node tests/numeria-engine-smoke.cjs && node tests/numeria-progress-smoke.cjs && node tests/geometry-engine-smoke.cjs && bash tests/run-conju-lab-smoke.sh && python3 tests/orbis-route-structure.py",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",

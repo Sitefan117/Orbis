@@ -59,7 +59,6 @@
   $: availableFigures = level ? getFiguresForLevel(level) : GEOMETRY_FIGURES;
   $: planeFigures = availableFigures.filter((figure) => figure.kind === 'plane');
   $: solidFigures = availableFigures.filter((figure) => figure.kind === 'solid');
-  $: progressPercent = Math.min(100, ((questionIndex - 1) / QUESTION_COUNT) * 100);
 
   onMount(() => {
     const savedName = getStudentName();
@@ -223,7 +222,7 @@
       // Conserve le contrat d'intégration ORBIS du composant précédent.
       await submitActivityResult({
         studentName,
-        world: 'geometrie',
+        world: 'nexus',
         mission: `${level} mode ${mode}`,
         score: correctCount,
         total: QUESTION_COUNT,
@@ -375,9 +374,7 @@
         </div>
 
         <div class="progress-row">
-          <div class="progress-track" role="progressbar" aria-label="Progression du dossier" aria-valuemin="0" aria-valuemax={QUESTION_COUNT} aria-valuenow={questionIndex - 1}>
-            <span style={`width: ${progressPercent}%`}></span>
-          </div>
+          <progress class="progress-track" aria-label="Progression du dossier" value={questionIndex - 1} max={QUESTION_COUNT}></progress>
           <span class="question-counter">{questionIndex} <span>/ {QUESTION_COUNT}</span></span>
           <span class="xp-counter">✦ {xp} XP</span>
         </div>
@@ -576,8 +573,10 @@
   .crumbs { display: flex; flex-wrap: wrap; gap: .5rem; color: #9cadbf; font-size: .78rem; letter-spacing: .05em; }
   .crumbs strong { color: #e7eff8; }
   .progress-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.1rem; }
-  .progress-track { height: .5rem; flex: 1 1 auto; overflow: hidden; border-radius: 99px; background: #202b3b; }
-  .progress-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #45c7c8, #a0e7d5); transition: width .2s ease; }
+  .progress-track { height: .5rem; flex: 1 1 auto; min-width: 0; overflow: hidden; appearance: none; border: 0; border-radius: 99px; background: #202b3b; }
+  .progress-track::-webkit-progress-bar { background: #202b3b; border-radius: inherit; }
+  .progress-track::-webkit-progress-value { background: linear-gradient(90deg, #45c7c8, #a0e7d5); border-radius: inherit; transition: width .2s ease; }
+  .progress-track::-moz-progress-bar { background: linear-gradient(90deg, #45c7c8, #a0e7d5); border-radius: inherit; transition: width .2s ease; }
   .question-counter { font-weight: 900; white-space: nowrap; }
   .question-counter span { color: #98a8bb; font-weight: 600; }
   .xp-counter { color: #f2c06a; font-weight: 850; white-space: nowrap; }
