@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { readLexique, makeGrid, gridSize, gridWord, letterChoices, matchRounds, prioritizeRecent, spriteStyle } from '../src/lib/games/musee-vocabulaire/lexique';
+import { readLexique, makeGrid, gridSize, gridWord, letterChoices, matchRounds, normalize, prioritizeRecent, spriteStyle } from '../src/lib/games/musee-vocabulaire/lexique';
 import { conversations } from '../src/lib/games/musee-vocabulaire/context-content';
 
 const bank = readLexique(readFileSync('static/vocabulaire/lexique.csv', 'utf8'));
@@ -22,13 +22,39 @@ for (const [id, expected] of Object.entries({
   'ecole-tableau': 'board', 'ecole-regle': 'ruler', 'ecole-feuille': 'sheet of paper',
   'budget-recu': 'receipt', 'budget-especes': 'cash', 'coiffeuse-salon': 'hair salon',
   'coiffeuse-tondeuse': 'hair clippers', 'environnement-emission': 'emissions',
-  'carrossiere-rayure': 'scratch', 'logement-compteur': 'meter', 'sports-ballon': 'ball'
+  'carrossiere-rayure': 'scratch', 'logement-compteur': 'meter', 'sports-ballon': 'ball',
+  'actions-porter': 'carry', 'coiffeuse-coupe': 'haircut', 'logement-concierge': 'caretaker',
+  'citoyennete-s-engager': 'get involved', 'travail-serieux': 'conscientious',
+  'hygiene-intime': 'personal', 'pharmacie-guerir': 'recover', 'formation-diplome': 'diploma'
 })) assert.equal(englishById.get(id)?.word, expected, `Traduction anglaise incorrecte : ${id}`);
+const englishByThemeAndWord = new Map<string, string>();
+for (const entry of englishBank) {
+  const key = `${entry.theme}:${normalize(entry.word)}`;
+  assert.ok(!englishByThemeAndWord.has(key) || englishByThemeAndWord.get(key) === entry.definition,
+    `Deux notions du même thème partagent la réponse « ${entry.word} » : ${englishByThemeAndWord.get(key)} / ${entry.definition}`);
+  englishByThemeAndWord.set(key, entry.definition);
+}
+for (const [id, expected] of Object.entries({
+  'actions-fermer': 'Remember to ___ the window before you leave.',
+  'nature-piscine': 'We are going to the ___, so take your swimsuit.',
+  'formation-respecter-un-delai': 'The work must be finished before Friday. You need to ___.',
+  'numerique-telecharger': 'I will ___ the document to my phone.'
+})) assert.equal(englishById.get(id)?.sentence, expected, `Phrase anglaise incorrecte : ${id}`);
 assert.equal(new Set(englishBank.filter((entry) => entry.sprite).map((entry) => entry.sprite)).size,
   englishBank.filter((entry) => entry.sprite).length, 'Deux mots anglais partagent la même image');
+assert.equal(englishById.get('ecole-tableau')?.sprite, 'ecole-sprites-v1:2', 'Le tableau doit garder son image scolaire');
+assert.equal(englishById.get('coiffeuse-salon')?.sprite, 'metiers:0', 'Le salon de coiffure doit utiliser son image métier');
 for (const entry of englishBank) {
-  assert.ok(existsSync(`static/audio/english-lab/${entry.id}-piper.wav`), `Audio anglais manquant : ${entry.id}`);
+  const path = `static/audio/english-lab/${entry.id}-piper.wav`;
+  assert.ok(existsSync(path), `Audio anglais manquant : ${entry.id}`);
+  const audio = readFileSync(path);
+  assert.ok(audio.length > 1_000, `Audio anglais vide ou tronqué : ${entry.id}`);
+  assert.equal(audio.subarray(0, 4).toString('ascii'), 'RIFF', `En-tête WAV invalide : ${entry.id}`);
+  assert.equal(audio.subarray(8, 12).toString('ascii'), 'WAVE', `Format WAV invalide : ${entry.id}`);
 }
+const audioManifest = JSON.parse(readFileSync('static/audio/english-lab/manifest.json', 'utf8')) as { voices: string[]; words: string[] };
+assert.deepEqual(audioManifest.voices, ['piper-en-GB-alan']);
+assert.deepEqual(new Set(audioManifest.words), new Set(englishBank.map((entry) => entry.id)));
 const compoundChoices = letterChoices('rendez-vous');
 assert.equal(compoundChoices.length, new Set(gridWord('rendez-vous')).size * 2);
 assert.ok([...new Set(gridWord('rendez-vous'))].every((letter) => compoundChoices.includes(letter)));

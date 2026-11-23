@@ -9,14 +9,18 @@
   import lexique from './data/lexique.csv?raw';
   import englishLexique from './data/english-lab.csv?raw';
   import poses from './data/mascotte.json';
-  import { gridSize, gridWord, letterChoices, makeGrid, matchRounds, normalize, prioritizeRecent, readLexique, shuffle, spriteStyle, type Word } from './lexique';
-  import { masterySummary, reviewableWordIds, updateWordProgress, type VocabularyProgress } from './progress';
+  import { gridSize, gridWord, letterChoices, makeGrid, matchRounds, normalize, readLexique, shuffle, spriteStyle, type Word } from './lexique';
+  import {
+    gradeEncounter, masteryLists, masterySummary, normalizeWordProgress, prioritizeAdaptive,
+    reviewableWordIds, updateWordProgress, type EvidenceStrength, type VocabularyProgress, type WordEncounter
+  } from './progress';
   import ContextLab from './ContextLab.svelte';
 
   export let initialMode = 'whack-image';
   export let variant: 'museum' | 'english' = 'museum';
   const isEnglish = variant === 'english';
   const gameId = isEnglish ? 'english_lab' : 'musee_vocabulaire';
+  const themeStorageKey = isEnglish ? 'orbis-english-lab-themes' : 'orbis-musee-themes';
   const machineImage = `${base}/images/${isEnglish ? 'english-lab' : 'musee-vocabulaire'}/machines.png`;
   const modes = [
     ['pendu', 'Pendu restaurateur'], ['whack-image', 'Image → mot'],
@@ -28,6 +32,13 @@
   type Reaction = 'ready' | 'correct' | 'retry' | 'hint' | 'progress' | 'complete';
   type Tile = { id: number; text: string; decoy: boolean };
   type ExerciseFormat = 'definitions' | 'phrases';
+  const masterySections = [
+    ['pas-encore', 'Pas encore connus'],
+    ['fragile', 'Peu connus'],
+    ['a-consolider', 'À consolider'],
+    ['solide', 'Bien connus'],
+    ['nouveau', 'Nouveaux']
+  ] as const;
   const latinAlphabet = Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
   const modeLabels = Object.fromEntries(modes);
   const original = readLexique(isEnglish ? englishLexique : lexique);
@@ -96,6 +107,10 @@
   let solved = false;
   let skipped = false;
   let attempts = 0;
+  let hintsUsed = 0;
+  let sessionId = '';
+  let roundErrorsById: Record<string, number> = {};
+  let roundHintsById: Record<string, number> = {};
   let eliminated: string[] = [];
   let gallery: Word[] = [];
   let tiles: Tile[] = [];
@@ -144,6 +159,7 @@
   $: visibleVocabulary = distinctWords(playing).sort((a, b) => a.word.localeCompare(b.word, 'fr'));
   $: mastery = masterySummary(vocabularyProgress);
   $: reviewCount = reviewEntries.length;
+  $: masteryGroups = masteryLists(selectedEntries, vocabularyProgress);
   function audioPath(entry: Word) { return `${base}/audio/${isEnglish ? 'english-lab' : 'musee-vocabulaire'}/${entry.id}-piper.wav`; }
   function playWord(entry: Word) {
     if (typeof Audio === 'undefined') return;
@@ -171,21 +187,35 @@
     return [...due, ...unseen].filter((entry, index, entries) => entries.findIndex((item) => item.id === entry.id) === index).slice(0, 20);
   }
 
+  function createSessionId() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (token) => {
+      const random = Math.floor(Math.random() * 16);
+      return (token === 'x' ? random : (random & 0x3) | 0x8).toString(16);
+    });
+  }
+
   onMount(() => {
     inHall = !new URLSearchParams(window.location.search).has('mode');
     const requested = new URLSearchParams(window.location.search).get('mode') ?? initialMode;
+    sessionId = createSessionId();
     student = getStudentName('');
     try {
-      const saved: unknown = JSON.parse(localStorage.getItem('orbis-musee-themes') ?? 'null');
+      const saved: unknown = JSON.parse(localStorage.getItem(themeStorageKey) ?? 'null');
       if (Array.isArray(saved) && saved.length && saved.every((id) => categories.some((word) => word.theme === id))) selectedThemes = saved;
     } catch { /* The default theme works without storage. */ }
-    start(modes.find(([id]) => id === requested)?.[0] ?? 'whack-image');
-    ready = true;
-    void restoreRemoteProgress();
+    const requestedMode = modes.find(([id]) => id === requested)?.[0] ?? 'whack-image';
+    void restoreRemoteProgress().finally(() => {
+      start(requestedMode);
+      ready = true;
+    });
   });
 
   async function restoreRemoteProgress() {
-    if (!student) return;
+    if (!student) {
+      progressHydrated = true;
+      return;
+    }
     const loaded = await createGameProgressService(student, gameId).loadProgress();
     if (loaded.ok && loaded.value?.state) {
       const state = loaded.value.state as Record<string, any>;
@@ -197,7 +227,9 @@
       if (Array.isArray(state.galleryIds)) gallery = bank.filter((entry) => state.galleryIds.includes(entry.id));
       if (Array.isArray(state.recentIds)) recentIds = state.recentIds.filter((id): id is string => typeof id === 'string').slice(-12);
       responseDetails = Array.isArray(state.responseDetails) ? state.responseDetails : [];
-      vocabularyProgress = state.vocabularyProgress && typeof state.vocabularyProgress === 'object' ? state.vocabularyProgress : {};
+      vocabularyProgress = state.vocabularyProgress && typeof state.vocabularyProgress === 'object'
+        ? Object.fromEntries(Object.entries(state.vocabularyProgress).map(([id, value]) => [id, normalizeWordProgress(value as any)]))
+        : {};
       playing = bank.filter((entry) => selectedThemes.includes(entry.theme));
     }
     progressHydrated = true;
@@ -209,9 +241,9 @@
     recordGameProgress({
       studentName: student,
       gameId,
-      state: { mode, selectedThemes, galleryIds: gallery.map((entry) => entry.id), queueIds: queue.map((entry) => entry.id), targetId: target?.id, recentIds, attempts, solved, responseDetails, vocabularyProgress },
-      formatVersion: 1,
-      summary: { label: `Musée des mots · ${mastery.acquired} mots acquis`, completed: mastery.acquired, total: Math.max(1, mastery.total) }
+      state: { mode, selectedThemes, galleryIds: gallery.map((entry) => entry.id), recentIds, vocabularyProgress },
+      formatVersion: 2,
+      summary: { label: `${isEnglish ? 'English Lab' : 'Musée des mots'} · ${mastery.acquired} mots solides`, completed: mastery.acquired, total: Math.max(1, mastery.total) }
     });
   }
 
@@ -221,7 +253,7 @@
   }
 
   function rememberThemes() {
-    try { localStorage.setItem('orbis-musee-themes', JSON.stringify(selectedThemes)); } catch { /* Optional. */ }
+    try { localStorage.setItem(themeStorageKey, JSON.stringify(selectedThemes)); } catch { /* Optional. */ }
   }
 
   function chooseReviewList() {
@@ -237,6 +269,17 @@
   }
 
   function start(next: Mode) {
+    if (target && !solved) {
+      recordWordEncounter(target, {
+        correct: false,
+        errors: Math.max(1, attempts),
+        hints: hintsUsed,
+        mode,
+        sessionId,
+        strength: strengthForMode(mode)
+      });
+      target = undefined;
+    }
     mode = next;
     settingsOpen = false;
     playing = activeEntries;
@@ -247,7 +290,7 @@
       if (next === 'letters' || next === 'pendu') return gridWord(entry.word).length >= 2;
       return next !== 'millionaire' || quizFormat === 'definitions' || Boolean(entry.sentence);
     });
-    queue = prioritizeRecent(eligible, recentIds);
+    queue = prioritizeAdaptive(eligible, vocabularyProgress, recentIds);
     seriesSize = queue.length;
     if (next === 'match') {
       matchSets = matchRounds(queue);
@@ -266,6 +309,16 @@
   }
 
   function nextRound() {
+    if (target && !solved) {
+      recordWordEncounter(target, {
+        correct: false,
+        errors: Math.max(1, attempts),
+        hints: hintsUsed,
+        mode,
+        sessionId,
+        strength: strengthForMode(mode)
+      });
+    }
     target = undefined;
     options = [];
     eliminated = [];
@@ -278,6 +331,9 @@
     solved = false;
     skipped = false;
     attempts = 0;
+    hintsUsed = 0;
+    roundErrorsById = {};
+    roundHintsById = {};
     alphabet = [];
     report(opening[mode], 'ready');
 
@@ -337,19 +393,71 @@
     if (!gallery.some((item) => item.id === entry.id)) gallery = [...gallery, entry];
   }
 
+  function strengthForMode(currentMode: Mode): EvidenceStrength {
+    if (currentMode === 'search') return 'practice';
+    if (currentMode === 'whack-image' || currentMode === 'whack-word' || currentMode === 'millionaire' || currentMode === 'match') return 'recognition';
+    return 'recall';
+  }
+
+  function requeueWeakWord(entry: Word, grade: ReturnType<typeof gradeEncounter>) {
+    if (grade !== 'again' && grade !== 'hard') return;
+    if (queue.some((item) => item.id === entry.id)) return;
+    const delay = grade === 'again' ? 3 + Math.floor(Math.random() * 3) : 4 + Math.floor(Math.random() * 4);
+    queue = [...queue.slice(0, delay), entry, ...queue.slice(delay)];
+  }
+
+  function recordWordEncounter(entry: Word, encounter: WordEncounter) {
+    const previous = normalizeWordProgress(vocabularyProgress[entry.id]);
+    const next = updateWordProgress(previous, encounter);
+    const grade = gradeEncounter(encounter);
+    const errorCount = Math.max(encounter.correct ? 0 : 1, encounter.errors ?? 0);
+    vocabularyProgress = { ...vocabularyProgress, [entry.id]: next };
+    requeueWeakWord(entry, grade);
+    const detail: ResponseDetail = {
+      questionIndex: responseDetails.length,
+      questionId: entry.id,
+      skillId: entry.id,
+      category: entry.theme,
+      prompt: opening[mode],
+      response: encounter.correct ? entry.word : '',
+      expected: entry.word,
+      correct: encounter.correct,
+      attempts: Math.max(1, errorCount + (encounter.correct ? 1 : 0)),
+      hintsUsed: encounter.hints ?? 0,
+      ...(errorCount ? { errorFamily: grade === 'again' ? 'mot-non-retrouve' : 'reponse-apres-erreur' } : {})
+    };
+    responseDetails = [...responseDetails, detail].slice(-100);
+    void recordGameActivity({
+      studentName: student || getStudentName(), gameId, activityId: mode,
+      skillId: entry.id,
+      correctCount: encounter.correct ? 1 : 0,
+      questionCount: 1,
+      errorCount,
+      errorFamilies: errorCount ? [detail.errorFamily ?? 'vocabulaire'] : [],
+      hintsUsed: encounter.hints ?? 0,
+      responseDetails: [detail],
+      sessionId,
+      metadata: {
+        wordId: entry.id, theme: entry.theme, format: mode, grade, strength: encounter.strength,
+        firstTryCorrect: grade === 'good' || grade === 'easy', statusBefore: previous.status,
+        statusAfter: next.status, nextReview: next.nextReview
+      }
+    });
+    saveRemoteProgress();
+  }
+
   function success(entry: Word) {
     collect(entry);
     solved = true;
-    vocabularyProgress = { ...vocabularyProgress, [entry.id]: updateWordProgress(vocabularyProgress[entry.id], true, reaction === 'hint' ? 1 : 0) };
-    void recordGameActivity({
-      studentName: student || getStudentName(), gameId, activityId: mode,
-      correctCount: 1, questionCount: 1, errorCount: 0,
-      hintsUsed: reaction === 'hint' ? 1 : 0,
-      responseDetails: [{ questionIndex: gallery.length - 1, prompt: opening[mode], response: entry.word, expected: entry.word, correct: true, attempts: Math.max(1, attempts), hintsUsed: reaction === 'hint' ? 1 : 0 }],
-      metadata: { wordId: entry.id, theme: entry.theme, format: mode }
+    recordWordEncounter(entry, {
+      correct: true,
+      errors: attempts,
+      hints: hintsUsed,
+      mode,
+      sessionId,
+      strength: strengthForMode(mode),
+      easy: attempts === 0 && hintsUsed === 0 && strengthForMode(mode) === 'recall'
     });
-    responseDetails = [...responseDetails, { questionIndex: gallery.length - 1, prompt: opening[mode], response: entry.word, expected: entry.word, correct: true, attempts: Math.max(1, attempts), hintsUsed: reaction === 'hint' ? 1 : 0 }];
-    saveRemoteProgress();
     report(isEnglish ? `Well done! “${entry.word}” means “${entry.definition}”.${entry.variants ? ` ${entry.variants}` : ''}` : `Bien joué ! « ${entry.word} » est dans ta collection.`, 'correct');
   }
 
@@ -358,8 +466,7 @@
     if (mode === 'whack-image' || mode === 'millionaire') playWord(entry);
     if (entry.id === target.id) success(target);
     else {
-      vocabularyProgress = { ...vocabularyProgress, [target.id]: updateWordProgress(vocabularyProgress[target.id], false) };
-      saveRemoteProgress();
+      attempts++;
       eliminated = [...eliminated, entry.id];
       report('Ce n’est pas le bon choix. Essaie encore.', 'retry');
     }
@@ -369,7 +476,6 @@
     if (!target || solved || eliminated.includes(letter)) return;
     if (guesses.includes(letter)) {
       guesses = guesses.filter((item) => item !== letter);
-      if (!gridWord(target.word).includes(letter)) attempts = Math.max(0, attempts - 1);
       skipped = false;
       report('Lettre effacée. Tu peux en choisir une autre.', 'progress');
       return;
@@ -399,14 +505,20 @@
     typed = [...typed, tile];
     const guess = typed.map((item) => item.text).join('');
     if (guess === gridWord(target.word)) success(target);
-    else if (guess.length === gridWord(target.word).length) report('Vérifie les lettres et leur ordre. Essaie encore.', 'retry');
+    else if (guess.length === gridWord(target.word).length) {
+      attempts++;
+      report('Vérifie les lettres et leur ordre. Essaie encore.', 'retry');
+    }
     else report('Continue à chercher les lettres.');
   }
 
   function checkParts() {
     if (!target || solved || parts.some((part) => !part)) return;
     if (parts.join('') === target.word) { playWord(target); success(target); }
-    else report('Relis ton mot. Il faut changer au moins un morceau.', 'retry');
+    else {
+      attempts++;
+      report('Relis ton mot. Il faut changer au moins un morceau.', 'retry');
+    }
   }
 
   function selectCell(index: number) {
@@ -420,7 +532,9 @@
       greenCells = [...new Set([...greenCells, ...match.path])];
       selectedCells = selectedCells.filter((cell) => !greenCells.includes(cell));
       collect(match.entry);
-      saveRemoteProgress();
+      recordWordEncounter(match.entry, {
+        correct: true, errors: 0, hints: hintsUsed, mode, sessionId, strength: 'practice'
+      });
       report(`« ${match.entry.word} » trouvé ! ${found.length}/${grid.targets.length}.`, found.length === grid.targets.length ? 'complete' : 'correct');
     } else report('Tes lettres sont en bleu.');
   }
@@ -436,13 +550,21 @@
   function matchImage(entry: Word) {
     if (!picked || matched.includes(entry.id) || eliminated.includes(entry.id)) return;
     if (picked.id !== entry.id) {
+      roundErrorsById = { ...roundErrorsById, [picked.id]: (roundErrorsById[picked.id] ?? 0) + 1 };
       eliminated = [...eliminated, entry.id];
       report('Cette image ne correspond pas au mot choisi.', 'retry');
       return;
     }
     matched = [...matched, entry.id];
     collect(entry);
-    saveRemoteProgress();
+    recordWordEncounter(entry, {
+      correct: true,
+      errors: roundErrorsById[entry.id] ?? 0,
+      hints: roundHintsById[entry.id] ?? 0,
+      mode,
+      sessionId,
+      strength: 'recognition'
+    });
     picked = undefined;
     eliminated = [];
     report('Association correcte !', matched.length === matchWords.length ? 'complete' : 'correct');
@@ -452,6 +574,7 @@
     if (solved || skipped || reaction === 'complete') return;
     let text = '';
     if (mode === 'search') {
+      hintsUsed++;
       const useful = new Set(grid.targets.flatMap(({ paths }) => paths.flat()));
       const faded = new Set(fadedCells);
       const extra = shuffle(grid.cells.map((_, i) => i).filter((i) => !useful.has(i) && !faded.has(i))).slice(0, 8);
@@ -460,12 +583,15 @@
       if (extra.length) text = `Noireau a mis ${extra.length} case${extra.length === 1 ? '' : 's'} en gris.`;
     } else if (mode === 'match') {
       if (!picked) return report('Choisis d’abord un mot.', 'hint');
+      hintsUsed++;
+      roundHintsById = { ...roundHintsById, [picked.id]: (roundHintsById[picked.id] ?? 0) + 1 };
       const candidate = options.find((entry) => entry.id !== picked?.id && !matched.includes(entry.id) && !eliminated.includes(entry.id));
       if (candidate) {
         eliminated = [...eliminated, candidate.id];
         text = 'Noireau a retiré une image.';
       }
     } else if (target) {
+      hintsUsed++;
       if (mode === 'pendu') {
         const answer = gridWord(target.word);
         const extra = shuffle(alphabet.filter((letter) =>
@@ -556,7 +682,7 @@
       <button class="secondary" aria-expanded={settingsOpen} on:click={() => settingsOpen = !settingsOpen}>Choisir les thèmes</button>
       <span>{smartList === 'review' ? `Liste personnalisée · ${selectedCount} mots` : `${selectedThemes.length} thème${selectedThemes.length > 1 ? 's' : ''} · ${selectedCount} entrées`}</span>
       {#if !isEnglish}<button class="smart-list-button" class:active={smartList === 'review'} on:click={chooseReviewList} aria-pressed={smartList === 'review'}>Mes mots à revoir <span>{reviewCount}</span></button>{/if}
-      {#if mastery.total}<span class="mastery-chip" aria-label={`${mastery.acquired} mots acquis, ${mastery.fragile} fragiles, ${mastery.due} à revoir`}>{mastery.acquired} acquis · {mastery.fragile} fragiles · {mastery.due} à revoir</span>{/if}
+      {#if mastery.total}<span class="mastery-chip" aria-label={`${mastery.acquired} mots solides, ${mastery.fragile + mastery.unknown} fragiles, ${mastery.due} à revoir`}>{mastery.acquired} solides · {mastery.fragile + mastery.unknown} fragiles · {mastery.due} à revoir</span>{/if}
       {#if settingsOpen}
         <div class="filters">
           {#each [['base', 'Les essentiels'], ['avance', 'Pour aller plus loin']] as [tier, title]}
@@ -591,6 +717,27 @@
         </details>
       {/if}
     </section>
+
+    {#if student && selectedCount}
+      <details class="mastery-lists">
+        <summary>Mes listes dynamiques</summary>
+        <p>Les listes évoluent après chaque mot. Les mots les moins connus et ceux à réviser reviennent plus souvent.</p>
+        <div class="mastery-grid">
+          {#each masterySections as [status, label]}
+            <section aria-labelledby={`mastery-${status}`}>
+              <h2 id={`mastery-${status}`}>{label} <span>{masteryGroups[status].length}</span></h2>
+              {#if masteryGroups[status].length}
+                <ul>
+                  {#each masteryGroups[status] as entry (entry.id)}
+                    <li><strong>{entry.word}</strong><span>{entry.definition}</span></li>
+                  {/each}
+                </ul>
+              {:else}<p>Aucun mot pour le moment.</p>{/if}
+            </section>
+          {/each}
+        </div>
+      </details>
+    {/if}
 
     {#if inHall}
     <div class="hall-guide"><span class="noireau" class:lab-assistant={isEnglish} role="img" aria-label={isEnglish ? 'Assistant English Lab' : 'Guide du laboratoire'} style:background-image={`url('${assistantImage}')`} style:background-position="0% 0%"></span><div><h2>{isEnglish ? 'Welcome to English Lab.' : 'Bienvenue au musée.'}</h2><p>{isEnglish ? 'Choose a machine and test your English.' : 'Choisis une machine pour jouer.'}<br />Je suis là si tu as besoin d’aide.</p></div></div>
@@ -839,6 +986,16 @@
   .smart-list-button { margin-inline-start: .75rem; border: 2px solid #b7603c; background: #fff2df; color: #6d321f; font-weight: 800; }
   .smart-list-button span { display: inline-grid; min-width: 1.5rem; min-height: 1.5rem; place-items: center; margin-inline-start: .35rem; border-radius: 999px; background: #b7603c; color: white; }
   .smart-list-button.active { background: #dce9ee; border-color: #315f76; color: #173e51; }
+  .mastery-lists { margin: 0 0 1.25rem; padding: 1rem; border: 1px solid #b5b8ab; background: #faf8f1; color: #213735; }
+  .mastery-lists > summary { min-height: 44px; align-content: center; font-weight: 850; cursor: pointer; }
+  .mastery-lists > p { line-height: 1.55; }
+  .mastery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: .75rem; }
+  .mastery-grid section { min-width: 0; padding: .8rem; border: 1px solid #d8c9ae; background: #fffdf7; }
+  .mastery-grid h2 { display: flex; justify-content: space-between; gap: .5rem; margin: 0 0 .55rem; font-size: 1rem; }
+  .mastery-grid h2 span { min-width: 1.8rem; padding: .1rem .35rem; border-radius: 99px; background: #25453c; color: white; text-align: center; }
+  .mastery-grid ul { display: grid; gap: .35rem; max-height: 16rem; overflow: auto; margin: 0; padding: 0; list-style: none; }
+  .mastery-grid li { display: grid; gap: .1rem; padding: .4rem; border-bottom: 1px solid #e2ded2; text-align: left; }
+  .mastery-grid li span { font-size: .85rem; line-height: 1.35; }
   .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .75rem; margin-block: .9rem; }
   fieldset { border: 1px solid #d8c9ae; border-radius: .7rem; min-width: 0; }
   legend { font-weight: 750; }
@@ -963,7 +1120,7 @@
     .vocabulary-page h3 { color: black; background: #e8eee9; border-left: 6px solid #25453c; }
   }
   .museum.english-lab { background: #102337 var(--lab-background) center top / cover fixed; color: #eef4f3; }
-  .museum.english-lab .shell, .museum.english-lab .game, .museum.english-lab .settings, .museum.english-lab .word-bank { background: rgba(12, 28, 45, .92); border-color: #79b8bd66; }
+  .museum.english-lab .shell, .museum.english-lab .game, .museum.english-lab .settings, .museum.english-lab .word-bank, .museum.english-lab .mastery-lists { background: rgba(12, 28, 45, .92); border-color: #79b8bd66; color: #eef4f3; }
   .museum.english-lab h1, .museum.english-lab h2 { color: #f1b24b; }
   .museum.english-lab .machine-hall button, .museum.english-lab .hall-guide { background: #16344b; border-color: #79b8bd88; color: #eef4f3; }
   .museum.english-lab button { background: #f8fbf8; border-color: #83b8b8; color: #102337; }
@@ -972,7 +1129,8 @@
   .museum.english-lab button[aria-pressed=true]:not(.grid button) { background: #167c80; border-color: #8ed6d2; color: #fff; }
   .museum.english-lab .word-bank li,
   .museum.english-lab .collection li,
-  .museum.english-lab .vignettes > div { background: #f8fbf8; color: #102337; }
+  .museum.english-lab .vignettes > div,
+  .museum.english-lab .mastery-grid section { background: #f8fbf8; color: #102337; }
   .museum.english-lab .coach { color: #eef4f3; border-color: #6ca1a5; }
   .museum.english-lab .machine-label { background: #f8fbf8; color: #102337; border-color: #83b8b8; }
   .museum.english-lab .machine-art { aspect-ratio: 1; border: 1px solid #83b8b8; background-color: #ebe7df; }
