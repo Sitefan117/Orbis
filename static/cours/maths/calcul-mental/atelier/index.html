@@ -5,6 +5,7 @@
 <title>Calcul mental — mon atelier | Orbis</title>
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/worksheet.css">
+<link rel="stylesheet" href="assets/course-print.css">
 <script defer src="assets/catalogue.js"></script><script defer src="assets/engine.js"></script><script defer src="assets/app.js"></script>
 </head>
 <body>
@@ -27,10 +28,10 @@
  <div class="config-card">
   <p class="eyebrow">1 · JE PRÉPARE MA SÉANCE</p><h2 id="config-title">Comment veux-tu travailler ?</h2>
   <fieldset class="mode-picker"><legend class="visually-hidden">Mode de travail</legend>
-   <label><input type="radio" name="mode" value="print" checked><span><strong>Fiches imprimables</strong><small>Les calculs sont regroupés par compétence.</small></span></label>
-   <label><input type="radio" name="mode" value="drill"><span><strong>Entraînement en ligne</strong><small>Les compétences sont mélangées dans la série.</small></span></label>
-   <label><input type="radio" name="mode" value="course"><span><strong>Séance complète</strong><small>Une théorie courte, 6 exercices progressifs et 3 validations.</small></span></label>
-   <label><input type="radio" name="mode" value="theory-print"><span><strong>Dossier complet</strong><small>Théorie, exercices et validation pour chaque compétence.</small></span></label>
+   <label><input type="radio" name="mode" value="course" checked><span><strong>Séance complète</strong><small>Choisis plusieurs séquences à enchaîner : théorie, exercices progressifs et validation.</small></span></label>
+   <label><input type="radio" name="mode" value="drill"><span><strong>Entraînement en ligne</strong><small>Les compétences choisies sont mélangées dans une série de calculs.</small></span></label>
+   <label><input type="radio" name="mode" value="theory-print"><span><strong>Dossier complet</strong><small>Sélectionne ci-dessous les compétences à imprimer sur cette page.</small></span></label>
+   <label><input type="radio" name="mode" value="print"><span><strong>Fiches d’exercices imprimables</strong><small>Une fiche de calculs par compétence, avec le corrigé séparé.</small></span></label>
   </fieldset>
   <div class="settings">
    <label for="count">Nombre total de calculs<select id="count"><option value="10">10 calculs</option><option value="20">20 calculs</option><option value="30">30 calculs</option><option value="52">52 calculs · toutes les compétences</option></select></label>
