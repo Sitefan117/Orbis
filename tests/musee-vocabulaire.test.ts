@@ -5,11 +5,13 @@ import { conversations } from '../src/lib/games/musee-vocabulaire/context-conten
 
 const bank = readLexique(readFileSync('static/vocabulaire/lexique.csv', 'utf8'));
 const englishBank = readLexique(readFileSync('static/vocabulaire/english-lab.csv', 'utf8'));
-assert.equal(englishBank.length, bank.length + 10);
+assert.equal(englishBank.length, bank.length + 10 + 349 + 375);
 const englishThemes = new Set(englishBank.map((entry) => entry.theme));
 for (const theme of new Set(bank.map((entry) => entry.theme))) assert.ok(englishThemes.has(theme));
 assert.ok(englishThemes.has('computing'));
 assert.ok(englishThemes.has('computer-actions'));
+assert.ok(englishThemes.has('official-7e-u1-pets'));
+assert.ok(englishThemes.has('official-8e-u7-natural-science'));
 assert.equal(englishBank.filter((entry) => entry.sentence).length, bank.filter((entry) => entry.sentence).length);
 assert.ok(englishBank.every((entry) => entry.definition));
 const prioritised = prioritizeRecent(englishBank.slice(0, 20), englishBank.slice(0, 8).map((entry) => entry.id));
@@ -18,6 +20,18 @@ assert.deepEqual(new Set(prioritised.map((entry) => entry.id)), new Set(englishB
 assert.ok(englishBank.filter((entry) => entry.syllables.length >= 2).length >= 500);
 assert.ok(englishBank.filter((entry) => entry.variants).length >= 30);
 const englishById = new Map(englishBank.map((entry) => [entry.id, entry]));
+assert.equal(englishBank.filter((entry) => entry.id.startsWith('official-7e-')).length, 349);
+assert.equal(englishBank.filter((entry) => entry.id.startsWith('official-8e-')).length, 375);
+const officialBank = englishBank.filter((entry) => entry.id.startsWith('official-'));
+assert.ok(officialBank.every((entry) => /^[78]ᵉ — Unité [1-7] — .+$/u.test(entry.label)));
+assert.ok(officialBank.every((entry) => !/[\t\r\n]/u.test(`${entry.word}${entry.definition}${entry.variants}`)));
+assert.equal(englishById.get('official-7e-u1-pets-cat')?.label, '7ᵉ — Unité 1 — Pets');
+assert.equal(englishById.get('official-8e-u1-school-subjects-art')?.label, '8ᵉ — Unité 1 — School subjects');
+assert.equal(englishById.get('official-8e-u5-words-and-phrases-can-i-try-on-this-shirt-please')?.word,
+  'Can I try on this shirt, please?');
+assert.equal(englishById.get('official-8e-u1-words-and-phrases-love-from-aisha')?.definition,
+  'Affectueusement, Aisha');
+assert.equal(englishById.get('official-7e-u1-pets-mouse')?.variants, 'Pluriel : mice');
 for (const [id, expected] of Object.entries({
   'ecole-tableau': 'board', 'ecole-regle': 'ruler', 'ecole-feuille': 'sheet of paper',
   'budget-recu': 'receipt', 'budget-especes': 'cash', 'coiffeuse-salon': 'hair salon',

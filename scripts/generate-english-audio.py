@@ -19,6 +19,7 @@ MODEL = os.environ.get("PIPER_MODEL")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--ids", nargs="*", help="Ne régénérer que ces identifiants (le manifeste reste complet).")
+parser.add_argument("--prefix", action="append", default=[], help="Ne régénérer que les identifiants commençant par ce préfixe.")
 args = parser.parse_args()
 
 if not MODEL:
@@ -31,7 +32,9 @@ config = SynthesisConfig(length_scale=1.08)
 with SOURCE.open(encoding="utf-8", newline="") as source_file:
     rows = list(csv.DictReader(source_file))
 
-selected_rows = rows if not args.ids else [row for row in rows if row["id"] in set(args.ids)]
+selected_rows = rows if not args.ids and not args.prefix else [
+    row for row in rows if row["id"] in set(args.ids or []) or any(row["id"].startswith(prefix) for prefix in args.prefix)
+]
 missing_ids = set(args.ids or []) - {row["id"] for row in selected_rows}
 if missing_ids:
     raise SystemExit(f"Identifiants absents du lexique : {', '.join(sorted(missing_ids))}")

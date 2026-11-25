@@ -11,7 +11,7 @@
   import poses from './data/mascotte.json';
   import { gridSize, gridWord, letterChoices, makeGrid, matchRounds, normalize, readLexique, shuffle, spriteStyle, type Word } from './lexique';
   import {
-    gradeEncounter, masteryLists, masterySummary, normalizeWordProgress, prioritizeAdaptive,
+    compactVocabularyProgress, gradeEncounter, masteryLists, masterySummary, normalizeWordProgress, prioritizeAdaptive,
     reviewableWordIds, updateWordProgress, type EvidenceStrength, type VocabularyProgress, type WordEncounter
   } from './progress';
   import ContextLab from './ContextLab.svelte';
@@ -144,6 +144,12 @@
   const audioCache = new Map<string, HTMLAudioElement>();
 
   $: categories = getCategories(bank);
+  $: themeSections = [
+    { title: 'Moyen officiel · 7ᵉ', themes: categories.filter((entry) => entry.theme.startsWith('official-7e-')) },
+    { title: 'Moyen officiel · 8ᵉ', themes: categories.filter((entry) => entry.theme.startsWith('official-8e-')) },
+    { title: 'Les essentiels', themes: categories.filter((entry) => entry.tier === 'base' && !entry.theme.startsWith('official-')) },
+    { title: 'Pour aller plus loin', themes: categories.filter((entry) => entry.tier === 'avance' && !entry.theme.startsWith('official-')) }
+  ].filter((section) => section.themes.length);
   $: reviewEntries = getReviewEntries();
   $: activeEntries = smartList === 'review' ? reviewEntries : bank.filter((entry) => selectedThemes.includes(entry.theme));
   $: selectedEntries = activeEntries;
@@ -241,8 +247,8 @@
     recordGameProgress({
       studentName: student,
       gameId,
-      state: { mode, selectedThemes, galleryIds: gallery.map((entry) => entry.id), recentIds, vocabularyProgress },
-      formatVersion: 2,
+      state: { mode, selectedThemes, galleryIds: gallery.map((entry) => entry.id), recentIds, vocabularyProgress: compactVocabularyProgress(vocabularyProgress) },
+      formatVersion: 3,
       summary: { label: `${isEnglish ? 'English Lab' : 'Musée des mots'} · ${mastery.acquired} mots solides`, completed: mastery.acquired, total: Math.max(1, mastery.total) }
     });
   }
@@ -685,10 +691,10 @@
       {#if mastery.total}<span class="mastery-chip" aria-label={`${mastery.acquired} mots solides, ${mastery.fragile + mastery.unknown} fragiles, ${mastery.due} à revoir`}>{mastery.acquired} solides · {mastery.fragile + mastery.unknown} fragiles · {mastery.due} à revoir</span>{/if}
       {#if settingsOpen}
         <div class="filters">
-          {#each [['base', 'Les essentiels'], ['avance', 'Pour aller plus loin']] as [tier, title]}
+          {#each themeSections as section (section.title)}
             <fieldset>
-              <legend>{title}</legend>
-              {#each categories.filter((entry) => entry.tier === tier) as theme (theme.theme)}
+              <legend>{section.title}</legend>
+              {#each section.themes as theme (theme.theme)}
                 <label><input type="checkbox" checked={selectedThemes.includes(theme.theme)} on:change={() => toggleTheme(theme.theme)} /> {theme.label}</label>
               {/each}
             </fieldset>

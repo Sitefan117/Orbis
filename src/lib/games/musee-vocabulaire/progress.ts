@@ -33,6 +33,10 @@ export type WordProgress = {
 };
 
 export type VocabularyProgress = Record<string, WordProgress>;
+export type StoredWordProgress = [
+  number, number, number, number, number, number, number, number, number, number,
+  Array<[0 | 1, number, string, number]>, number, number
+];
 
 const DAY = 86_400_000;
 const MINUTE = 60_000;
@@ -47,15 +51,61 @@ export function emptyWordProgress(): WordProgress {
 }
 
 /** Accepte aussi les sauvegardes v1 sans inventer de nouvelles observations. */
-export function normalizeWordProgress(value: (Omit<Partial<WordProgress>, 'status'> & { status?: string }) | undefined): WordProgress {
+const masteryCodes: WordMastery[] = ['nouveau', 'pas-encore', 'fragile', 'a-consolider', 'solide'];
+const strengthCodes: EvidenceStrength[] = ['practice', 'recognition', 'recall'];
+const toMinute = (value?: string) => value ? Math.round(new Date(value).getTime() / MINUTE) : 0;
+const fromMinute = (value: unknown) => Number.isFinite(Number(value)) && Number(value) > 0
+  ? new Date(Number(value) * MINUTE).toISOString() : undefined;
+
+export function compactVocabularyProgress(progress: VocabularyProgress): Record<string, StoredWordProgress> {
+  return Object.fromEntries(Object.entries(progress).map(([id, raw]) => {
+    const item = normalizeWordProgress(raw);
+    const evidence: StoredWordProgress[10] = item.evidence.map(([result, at, session, strength]) => [
+      result, toMinute(at), session.slice(0, 12), Math.max(0, strengthCodes.indexOf(strength))
+    ]);
+    return [id, [
+      masteryCodes.indexOf(item.status), item.attempts, item.correct, item.firstTryCorrect,
+      item.errors, item.hints, item.streak, item.lapses,
+      Math.round(item.difficulty * 100) / 100, Math.round(item.stabilityDays * 1000) / 1000,
+      evidence, toMinute(item.lastSeen), toMinute(item.nextReview)
+    ] satisfies StoredWordProgress];
+  }));
+}
+
+export function normalizeWordProgress(value: unknown): WordProgress {
   const fallback = emptyWordProgress();
+  if (Array.isArray(value)) {
+    const stored = value as Partial<StoredWordProgress>;
+    const evidence: WordEvidence[] = Array.isArray(stored[10]) ? stored[10].flatMap((item): WordEvidence[] => {
+      if (!Array.isArray(item) || (item[0] !== 0 && item[0] !== 1)) return [];
+      const at = fromMinute(item[1]);
+      if (!at || typeof item[2] !== 'string') return [];
+      return [[item[0], at, item[2], strengthCodes[Number(item[3])] ?? 'recognition']];
+    }).slice(-3) : [];
+    return {
+      status: masteryCodes[Number(stored[0])] ?? fallback.status,
+      attempts: Math.max(0, Number(stored[1]) || 0),
+      correct: Math.max(0, Number(stored[2]) || 0),
+      firstTryCorrect: Math.max(0, Number(stored[3]) || 0),
+      errors: Math.max(0, Number(stored[4]) || 0),
+      hints: Math.max(0, Number(stored[5]) || 0),
+      streak: Math.max(0, Number(stored[6]) || 0),
+      lapses: Math.max(0, Number(stored[7]) || 0),
+      difficulty: clamp(Number(stored[8]) || 5, 1, 10),
+      stabilityDays: Math.max(0, Number(stored[9]) || 0),
+      evidence,
+      ...(fromMinute(stored[11]) ? { lastSeen: fromMinute(stored[11]) } : {}),
+      ...(fromMinute(stored[12]) ? { nextReview: fromMinute(stored[12]) } : {})
+    };
+  }
   if (!value || typeof value !== 'object') return fallback;
+  const source = value as Omit<Partial<WordProgress>, 'status'> & { status?: string };
   const legacyStatus: Record<string, WordMastery> = {
     nouveau: 'nouveau', fragile: 'fragile', 'a-revoir': 'a-consolider', acquis: 'solide',
     'pas-encore': 'pas-encore', 'a-consolider': 'a-consolider', solide: 'solide'
   };
-  const evidence: WordEvidence[] = Array.isArray(value.evidence)
-    ? value.evidence.flatMap((item): WordEvidence[] => {
+  const evidence: WordEvidence[] = Array.isArray(source.evidence)
+    ? source.evidence.flatMap((item): WordEvidence[] => {
       if (Array.isArray(item) && (item[0] === 0 || item[0] === 1)
         && typeof item[1] === 'string' && typeof item[2] === 'string') {
         const strength = item[3] === 'practice' || item[3] === 'recognition' || item[3] === 'recall'
@@ -76,19 +126,19 @@ export function normalizeWordProgress(value: (Omit<Partial<WordProgress>, 'statu
     }).slice(-3)
     : [];
   return {
-    status: legacyStatus[value.status ?? ''] ?? fallback.status,
-    attempts: Math.max(0, Number(value.attempts) || 0),
-    correct: Math.max(0, Number(value.correct) || 0),
-    firstTryCorrect: Math.max(0, Number(value.firstTryCorrect) || 0),
-    errors: Math.max(0, Number(value.errors) || 0),
-    hints: Math.max(0, Number(value.hints) || 0),
-    streak: Math.max(0, Number(value.streak) || 0),
-    lapses: Math.max(0, Number(value.lapses) || 0),
-    difficulty: clamp(Number(value.difficulty) || 5, 1, 10),
-    stabilityDays: Math.max(0, Number(value.stabilityDays) || 0),
+    status: legacyStatus[source.status ?? ''] ?? fallback.status,
+    attempts: Math.max(0, Number(source.attempts) || 0),
+    correct: Math.max(0, Number(source.correct) || 0),
+    firstTryCorrect: Math.max(0, Number(source.firstTryCorrect) || 0),
+    errors: Math.max(0, Number(source.errors) || 0),
+    hints: Math.max(0, Number(source.hints) || 0),
+    streak: Math.max(0, Number(source.streak) || 0),
+    lapses: Math.max(0, Number(source.lapses) || 0),
+    difficulty: clamp(Number(source.difficulty) || 5, 1, 10),
+    stabilityDays: Math.max(0, Number(source.stabilityDays) || 0),
     evidence,
-    ...(typeof value.lastSeen === 'string' ? { lastSeen: value.lastSeen } : {}),
-    ...(typeof value.nextReview === 'string' ? { nextReview: value.nextReview } : {})
+    ...(typeof source.lastSeen === 'string' ? { lastSeen: source.lastSeen } : {}),
+    ...(typeof source.nextReview === 'string' ? { nextReview: source.nextReview } : {})
   };
 }
 

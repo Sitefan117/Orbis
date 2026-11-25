@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {
-  gradeEncounter, masterySummary, normalizeWordProgress, prioritizeAdaptive, reviewableWordIds,
+  compactVocabularyProgress, gradeEncounter, masterySummary, normalizeWordProgress, prioritizeAdaptive, reviewableWordIds,
   updateWordProgress, type WordEncounter, type WordProgress
 } from '../src/lib/games/musee-vocabulaire/progress';
 
@@ -78,9 +78,10 @@ assert.deepEqual(masterySummary({ solid: spaced!, weak: unknown!, fragile: fragi
 });
 
 const fullSave = {
-  formatVersion: 2,
-  vocabularyProgress: Object.fromEntries(Array.from({ length: 950 }, (_, index) => [`word-${index}`, spaced]))
+  formatVersion: 3,
+  vocabularyProgress: compactVocabularyProgress(Object.fromEntries(Array.from({ length: 1674 }, (_, index) => [`word-${index}`, spaced])))
 };
 assert.ok(Buffer.byteLength(JSON.stringify(fullSave)) < 500_000, 'la sauvegarde complète reste sous la limite Supabase de 500 Ko');
+assert.deepEqual(normalizeWordProgress(fullSave.vocabularyProgress['word-0']).status, spaced.status);
 
 console.log('Progression adaptative : preuves espacées, erreurs, migration, échéances et priorité validées.');

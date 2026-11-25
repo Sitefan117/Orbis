@@ -75,9 +75,11 @@
   const selectedStudentSaves = $derived(selectedStudent ? visibleSaves.filter((item) => item.student_id === selectedStudent.user_id) : []);
   const selectedVocabularySave = $derived(selectedStudentSaves.find((save) => save.game_id === 'english_lab')
     ?? selectedStudentSaves.find((save) => save.game_id === 'musee_vocabulaire'));
-  const selectedVocabulary = $derived(selectedVocabularySave?.state?.vocabularyProgress as Record<string, { status?: string }> | undefined);
+  const selectedVocabulary = $derived(selectedVocabularySave?.state?.vocabularyProgress as Record<string, { status?: string } | unknown[]> | undefined);
   const vocabularyCounts = $derived(Object.values(selectedVocabulary ?? {}).reduce<Record<string, number>>((counts, item) => {
-    const raw = item.status ?? 'nouveau';
+    const raw = Array.isArray(item)
+      ? (['nouveau', 'pas-encore', 'fragile', 'a-consolider', 'solide'][Number(item[0])] ?? 'nouveau')
+      : item.status ?? 'nouveau';
     const status = raw === 'solide' ? 'acquis' : raw === 'a-consolider' ? 'a-revoir' : raw === 'pas-encore' ? 'fragile' : raw;
     counts[status] = (counts[status] ?? 0) + 1;
     return counts;
