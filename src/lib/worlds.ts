@@ -1,5 +1,6 @@
 export type WorldId =
   | 'livrets'
+  | 'geometrie'
   | 'nexus'
   | 'calculs'
   | 'numeria'
@@ -9,12 +10,14 @@ export type WorldId =
   | 'race'
   | 'shift'
   | 'mathhunt'
-  | 'fractionstower2';
+  | 'fractionstower2'
+  | 'deutsch_werkstatt';
 
 export type WorldSubject =
   | 'MATHS'
   | 'FRANÇAIS'
   | 'SCIENCES'
+  | 'ALLEMAND'
   | 'AUTRES'
   | 'À CLASSER';
 
@@ -144,11 +147,22 @@ export const worlds: World[] = [
     color: 'yellow',
     subject: 'MATHS',
     status: 'available'
+  },
+  {
+    id: 'deutsch_werkstatt',
+    title: 'Deutsch Werkstatt',
+    subtitle: 'La fabrique des mots allemands.',
+    route: '/deutsch-werkstatt',
+    emoji: '⚙️',
+    color: 'vermilion',
+    subject: 'ALLEMAND',
+    status: 'available'
   }
 ];
 
 export const worldLabels: Record<WorldId, string> = {
   livrets: "L'Atelier des Livrets",
+  geometrie: 'Nexus - Le Défi des Formes',
   nexus: 'Nexus - Le Défi des Formes',
   calculs: 'Le Calcul Décimal',
   numeria: 'Les Royaumes de Numéria',
@@ -158,5 +172,6 @@ export const worldLabels: Record<WorldId, string> = {
   race: 'race',
   shift: 'shift',
   mathhunt: 'mathhunt',
-  fractionstower2: 'Tour des Fractions 2'
+  fractionstower2: 'Tour des Fractions 2',
+  deutsch_werkstatt: 'Deutsch Werkstatt'
 };

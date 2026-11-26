@@ -17,7 +17,7 @@
 
   // Filtres de l'Arcade : les matières sont définies explicitement dans worlds.ts.
   let selectedArcadeCategory = 'TOUS';
-  const arcadeCategories = ['TOUS', 'MATHS', 'FRANÇAIS', 'SCIENCES', 'AUTRES', 'À CLASSER'];
+  const arcadeCategories = ['TOUS', 'MATHS', 'FRANÇAIS', 'ALLEMAND', 'SCIENCES', 'AUTRES', 'À CLASSER'];
 
   const statusLabels = {
     available: 'Disponible',
