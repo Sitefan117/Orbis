@@ -1,6 +1,6 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { getDb } from './db/client';
-import { activityResults, students, teacherNotes, worldProgress } from './db/schema';
+import { activityResults, learningMissions, students, teacherNotes, worldProgress } from './db/schema';
 
 export type ScoreBasis = 'last' | 'best';
 
@@ -14,6 +14,7 @@ export type ActivityResultInput = {
   errorCount?: number;
   errorFamilies?: unknown;
   metadata?: unknown;
+  missionId?: string;
 };
 
 export type TeacherDashboardData = {
@@ -88,6 +89,10 @@ export function recordActivityResult(input: ActivityResultInput) {
   const world = input.world.trim().slice(0, 80);
   const mission = input.mission.trim().slice(0, 140);
   const scoreBasis = input.scoreBasis ?? 'last';
+  const requestedMissionId = input.missionId?.trim();
+  const missionId = requestedMissionId
+    ? db.select({ id: learningMissions.id }).from(learningMissions).where(eq(learningMissions.id, requestedMissionId)).get()?.id ?? null
+    : null;
 
   const student = db
     .insert(students)
@@ -111,6 +116,7 @@ export function recordActivityResult(input: ActivityResultInput) {
       errorCount,
       errorFamiliesJson: serializeUnknown(input.errorFamilies),
       metadataJson: serializeUnknown(input.metadata),
+      missionId,
       createdAt: now
     })
     .returning()

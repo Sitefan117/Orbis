@@ -2,6 +2,8 @@
   import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { getStudentName, submitActivityResult } from '$lib/client/activity';
+  import MissionCodeTools from '$lib/missions/MissionCodeTools.svelte';
+  import { normalizeLivretsConfiguration, type LivretsMissionConfiguration } from '$lib/missions/livrets';
 
   type Phase = 'setup' | 'play' | 'done';
 
@@ -9,6 +11,8 @@
   let phase: Phase = 'setup';
   let studentName = 'Explorateur';
   let selectedTables: number[] = [2, 3, 4, 5];
+  let questionCount = 10;
+  let activeMissionId: string | null = null;
   let question = 1;
   let score = 0;
   let factorA = 2;
@@ -21,6 +25,7 @@
   let showTable = false;
   let sentMessage = '';
   let errorFamilies: string[] = [];
+  $: missionConfiguration = { schemaVersion: 1, selectedTables, questionCount } satisfies LivretsMissionConfiguration;
 
   onMount(() => {
     studentName = getStudentName();
@@ -42,7 +47,7 @@
   }
 
   function nextQuestion() {
-    if (question > 10) {
+    if (question > questionCount) {
       finishMission();
       return;
     }
@@ -87,12 +92,21 @@
       world: 'livrets',
       mission: `Tables ${selectedTables.join(', ')}`,
       score,
-      total: 10,
+      total: questionCount,
       scoreBasis: 'last',
-      errorCount: 10 - score,
-      errorFamilies: Array.from(new Set(errorFamilies))
+      errorCount: questionCount - score,
+      errorFamilies: Array.from(new Set(errorFamilies)),
+      missionId: activeMissionId ?? undefined
     });
     sentMessage = report.message;
+  }
+
+  function applyMission(mission: { id: string; configuration: unknown }) {
+    const configuration = normalizeLivretsConfiguration(mission.configuration);
+    if (!configuration) return;
+    selectedTables = [...configuration.selectedTables];
+    questionCount = configuration.questionCount;
+    activeMissionId = mission.id;
   }
 </script>
 
@@ -115,10 +129,11 @@
   </header>
 
   <main class="main" style="max-width: 34rem;">
+    <MissionCodeTools game="livrets" configuration={missionConfiguration} onMission={applyMission} />
     {#if phase === 'setup'}
       <section class="dark-card stack center">
         <h2>Sélection des livrets</h2>
-        <p class="muted">Coche les tables que tu veux travailler : défi de 10 questions avec aide visuelle.</p>
+        <p class="muted">Coche les tables que tu veux travailler : défi de {questionCount} questions avec aide visuelle.</p>
         <div class="grid" style="grid-template-columns: repeat(3, 1fr);">
           {#each tables as table}
             <label class="dark-option" class:selected={selectedTables.includes(table)}>
@@ -132,7 +147,7 @@
     {:else if phase === 'play'}
       <section class="dark-card stack">
         <div class="mission-top">
-          <span class="badge">Calcul {Math.min(question, 10)} / 10</span>
+          <span class="badge">Calcul {Math.min(question, questionCount)} / {questionCount}</span>
           <span class="badge">Score : {score}</span>
         </div>
 
@@ -179,7 +194,7 @@
     {:else}
       <section class="dark-card stack center">
         <h2>💻 Matrice décodée avec succès !</h2>
-        <p style="font-size: 3rem; font-weight: 1000; color: var(--cyan);">{score} / 10</p>
+        <p style="font-size: 3rem; font-weight: 1000; color: var(--cyan);">{score} / {questionCount}</p>
         <p>{score >= 8 ? '🏆 Maître de la Matrice ! Performance exceptionnelle.' : '⚔️ Flux instable. Revois tes protocoles de calcul.'}</p>
         <p class="muted small">{sentMessage}</p>
         <div class="actions" style="justify-content: center;">

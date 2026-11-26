@@ -16,6 +16,8 @@ TEACHER_PASSWORD="test" npm run dev
 
 L'application est disponible sur `http://localhost:5173`. Le serveur de développement écoute aussi sur le réseau local.
 
+Le mode local utilise SvelteKit côté serveur et SQLite. Le déploiement statique historique peut encore être construit avec `ORBIS_DEPLOY_TARGET=static`, mais les codes de mission et le tableau enseignant nécessitent le serveur local ou un futur service distant.
+
 ## Pages
 
 1. `/` : QG de la classe, choix du prénom et accès aux mondes
@@ -25,7 +27,7 @@ L'application est disponible sur `http://localhost:5173`. Le serveur de dévelop
 5. `/numeria` : Les Royaumes de Numéria, quête de numération HarmoS, étoiles et codex
 6. `/pcp` : Espace PCP / Orientation, CV, lettre de motivation et projet professionnel
 7. `/teacher` : tableau enseignant protégé
-8. `/teacher/login` et `/teacher/logout` : connexion et déconnexion de l'enseignant
+8. `/race`, `/mathhunt`, `/conju_lab` et `/shift` : autres jeux compatibles avec les missions enseignant
 
 Les anciennes adresses en `.html` (par exemple `/pcp.html`) sont redirigées automatiquement vers les nouvelles routes.
 
@@ -72,6 +74,12 @@ TEACHER_PASSWORD_HASH="pbkdf2_sha256$..."
 ```
 
 La session enseignant dure 8 heures et vit côté serveur dans la table `teacher_sessions`. Si aucune de ces variables n'est définie, la connexion est refusée.
+
+## Codes mission
+
+L'enseignant peut créer une mission depuis `/teacher` ou depuis le menu du jeu. Le code court de six caractères se saisit dans le portail Orbis ; le code direct ajoute le préfixe du jeu : `RACE-`, `LIV-`, `HUNT-`, `CALC-`, `CONJ-` ou `SHIFT-`. Une même configuration réutilise sa mission canonique, tandis que les jetons restent uniques entre les jeux.
+
+Les codes configurent Math Racer, l'Atelier des Livrets, Math Hunt, le Calcul Décimal, Conju Lab et Shift. Ils nécessitent le serveur local : ils ne sont pas disponibles dans le déploiement GitHub Pages purement statique.
 
 ## Scripts
 

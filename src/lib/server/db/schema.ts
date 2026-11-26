@@ -1,5 +1,25 @@
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
+export const learningMissions = sqliteTable(
+  'learning_missions',
+  {
+    id: text('id').primaryKey(),
+    code: text('code').notNull(),
+    scope: text('scope').notNull(),
+    game: text('game').notNull(),
+    configurationJson: text('configuration_json').notNull(),
+    configurationKey: text('configuration_key').notNull(),
+    createdAt: integer('created_at').notNull(),
+    expiresAt: integer('expires_at'),
+    disabledAt: integer('disabled_at')
+  },
+  (table) => ({
+    codeIdx: uniqueIndex('learning_missions_code_idx').on(table.code),
+    gameIdx: index('learning_missions_game_idx').on(table.game),
+    gameConfigurationIdx: uniqueIndex('learning_missions_game_configuration_key_idx').on(table.game, table.configurationKey)
+  })
+);
+
 export const students = sqliteTable(
   'students',
   {
@@ -29,6 +49,7 @@ export const activityResults = sqliteTable(
     errorCount: integer('error_count').notNull().default(0),
     errorFamiliesJson: text('error_families_json'),
     metadataJson: text('metadata_json'),
+    missionId: text('mission_id').references(() => learningMissions.id, { onDelete: 'set null' }),
     createdAt: integer('created_at').notNull()
   },
   (table) => ({
@@ -95,3 +116,4 @@ export type ActivityResult = typeof activityResults.$inferSelect;
 export type WorldProgress = typeof worldProgress.$inferSelect;
 export type TeacherNote = typeof teacherNotes.$inferSelect;
 export type TeacherSession = typeof teacherSessions.$inferSelect;
+export type LearningMission = typeof learningMissions.$inferSelect;

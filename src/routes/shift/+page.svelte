@@ -1,6 +1,8 @@
 <script>
   import { base } from '$app/paths';
   import { onDestroy } from 'svelte';
+  import MissionCodeTools from '$lib/missions/MissionCodeTools.svelte';
+  import { normalizeShiftConfiguration } from '$lib/missions/shift';
 
   /*
    * SHIFT — Atelier des quantités
@@ -133,6 +135,7 @@
   let activeMissionId = 'factory';
   let selectedDifficulty = 'starter';
   let playStyle = 'practice'; // practice : sans vies ; challenge : trois vies
+  let activeMissionCodeId = null;
   let activeTask = null;
   let answerInput = '';
   let decompositionInputs = {};
@@ -148,6 +151,16 @@
   let readAloudEnabled = false;
   let soundEnabled = true;
   let animationsEnabled = true;
+  $: missionConfiguration = { schemaVersion: 1, missionId: activeMissionId, difficulty: selectedDifficulty, playStyle };
+
+  function applyMissionCode(mission) {
+    const configuration = normalizeShiftConfiguration(mission.configuration);
+    if (!configuration) return;
+    activeMissionId = configuration.missionId;
+    selectedDifficulty = configuration.difficulty;
+    playStyle = configuration.playStyle;
+    activeMissionCodeId = mission.id;
+  }
   let reduceMotion = false;
   let workbench = emptyCounts();
   let shipment = emptyCounts();
@@ -884,6 +897,8 @@ const pixelsPerSecond = randomInt(180, 220);
           <div class="visual-cross cross-one">+</div><div class="visual-cross cross-two">×10</div>
         </div>
       </section>
+
+      <MissionCodeTools game="shift" configuration={missionConfiguration} onMission={applyMissionCode} />
 
       <section class="setup-panel" aria-labelledby="difficulty-title">
         <div class="section-heading compact-heading">

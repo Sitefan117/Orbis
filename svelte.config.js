@@ -1,17 +1,18 @@
-import adapter from '@sveltejs/adapter-static';
+import adapterNode from '@sveltejs/adapter-node';
+import adapterStatic from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+
+const staticDeployment = process.env.ORBIS_DEPLOY_TARGET === 'static';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
     preprocess: vitePreprocess(),
     kit: {
-        adapter: adapter({
-            pages: 'build',
-            assets: 'build',
-            fallback: '404.html'
-        }),
+        adapter: staticDeployment
+            ? adapterStatic({ pages: 'build', assets: 'build', fallback: '404.html' })
+            : adapterNode(),
         paths: {
-            base: process.env.NODE_ENV === 'production' ? '/ma-classeV3' : ''
+            base: staticDeployment ? '/ma-classeV3' : ''
         },
         prerender: {
             handleHttpError: ({ path, referrer, message }) => {

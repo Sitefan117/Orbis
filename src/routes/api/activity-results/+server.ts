@@ -2,7 +2,9 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { recordActivityResult, type ActivityResultInput } from '$lib/server/activity-results';
 import type { WorldId } from '$lib/worlds';
 
-const allowedWorlds = new Set<WorldId>(['livrets', 'geometrie', 'calculs', 'numeria', 'pcp']);
+export const prerender = false;
+
+const allowedWorlds = new Set<WorldId>(['livrets', 'nexus', 'calculs', 'numeria', 'pcp', 'race']);
 
 function readString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
@@ -42,7 +44,8 @@ export const POST: RequestHandler = async ({ request }) => {
     scoreBasis: raw.scoreBasis === 'best' ? 'best' : 'last',
     errorCount: raw.errorCount === undefined ? undefined : readNumber(raw.errorCount),
     errorFamilies: raw.errorFamilies,
-    metadata: raw.metadata
+    metadata: raw.metadata,
+    missionId: readString(raw.missionId) || undefined
   };
 
   const { result, student } = recordActivityResult(input);

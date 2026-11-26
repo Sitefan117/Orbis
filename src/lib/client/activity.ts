@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { base } from '$app/paths';
 import type { WorldId } from '$lib/worlds';
 
 const STUDENT_STORAGE_KEY = 'nomEleve';
@@ -13,6 +14,7 @@ export type ActivityPayload = {
   errorCount?: number;
   errorFamilies?: unknown;
   metadata?: unknown;
+  missionId?: string;
 };
 
 export function getStudentName(fallback = 'Explorateur'): string {
@@ -37,7 +39,7 @@ export function clearStudentName(): void {
 }
 
 export async function submitActivityResult(payload: ActivityPayload): Promise<{ ok: boolean; message: string }> {
-  const response = await fetch('/api/activity-results', {
+  const response = await fetch(`${base}/api/activity-results`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(payload)

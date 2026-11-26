@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
 import * as schema from './schema';
 
 const FOUNDATION_SCHEMA_SQL = `
@@ -15,6 +16,20 @@ CREATE TABLE IF NOT EXISTS students (
 
 CREATE UNIQUE INDEX IF NOT EXISTS students_normalized_name_idx ON students (normalized_name);
 
+CREATE TABLE IF NOT EXISTS learning_missions (
+  id TEXT PRIMARY KEY NOT NULL,
+  code TEXT NOT NULL,
+  scope TEXT NOT NULL,
+  game TEXT NOT NULL,
+  configuration_json TEXT NOT NULL,
+  configuration_key TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER,
+  disabled_at INTEGER
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS learning_missions_code_idx ON learning_missions (code);
+CREATE INDEX IF NOT EXISTS learning_missions_game_idx ON learning_missions (game);
 CREATE TABLE IF NOT EXISTS activity_results (
   id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
   student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
@@ -26,6 +41,7 @@ CREATE TABLE IF NOT EXISTS activity_results (
   error_count INTEGER NOT NULL DEFAULT 0,
   error_families_json TEXT,
   metadata_json TEXT,
+  mission_id TEXT REFERENCES learning_missions(id) ON DELETE SET NULL,
   created_at INTEGER NOT NULL
 );
 
@@ -87,6 +103,27 @@ export function getDatabasePath(): string {
 function runFoundationSchema(database: Database.Database): void {
   if (schemaReady) return;
   database.exec(FOUNDATION_SCHEMA_SQL);
+  const activityColumns = database.prepare("PRAGMA table_info('activity_results')").all() as Array<{ name: string }>;
+  if (!activityColumns.some((column) => column.name === 'mission_id')) {
+    database.exec('ALTER TABLE activity_results ADD COLUMN mission_id TEXT REFERENCES learning_missions(id) ON DELETE SET NULL');
+  }
+  const missionColumns = database.prepare("PRAGMA table_info('learning_missions')").all() as Array<{ name: string }>;
+  if (!missionColumns.some((column) => column.name === 'configuration_key')) {
+    database.exec('ALTER TABLE learning_missions ADD COLUMN configuration_key TEXT');
+  }
+  const missions = database.prepare('SELECT id, game, configuration_json, created_at FROM learning_missions ORDER BY created_at ASC').all() as Array<{ id: string; game: string; configuration_json: string; created_at: number }>;
+  const claimedKeys = new Set<string>();
+  const updateKey = database.prepare('UPDATE learning_missions SET configuration_key = ? WHERE id = ?');
+  const migrateKeys = database.transaction(() => {
+    for (const mission of missions) {
+      const key = createHash('sha256').update(`${mission.game}:${mission.configuration_json}`).digest('hex');
+      if (claimedKeys.has(`${mission.game}:${key}`)) continue;
+      claimedKeys.add(`${mission.game}:${key}`);
+      updateKey.run(key, mission.id);
+    }
+  });
+  migrateKeys();
+  database.exec('CREATE UNIQUE INDEX IF NOT EXISTS learning_missions_game_configuration_key_idx ON learning_missions (game, configuration_key)');
   schemaReady = true;
 }
 

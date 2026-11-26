@@ -6,6 +6,7 @@
   import { clearStudentName, getStudentName, storeStudentName } from '$lib/client/activity';
   import { worlds } from '$lib/worlds';
   import { labModules } from '$lib/modules';
+  import { MISSION_GAME_INFO, type MissionGame } from '$lib/missions/catalog';
 
   // =========================================================
   // ÉTAT DE LA PAGE ET PROFIL ÉLÈVE
@@ -14,6 +15,9 @@
   let studentName = '';
   let nameInput = '';
   let currentView: 'HUB' | 'ARCADE' | 'LAB' = 'HUB';
+  let missionCode = '';
+  let missionMessage = '';
+  let missionLoading = false;
 
   // Filtres de l'Arcade : les matières sont définies explicitement dans worlds.ts.
   let selectedArcadeCategory = 'TOUS';
@@ -158,6 +162,26 @@
   function routeFor(route: string): string {
     const cleanRoute = route.startsWith('/') ? route : `/${route}`;
     return `${base}${cleanRoute}?eleve=${encodeURIComponent(studentName)}`;
+  }
+
+  async function openMissionFromCode() {
+    const code = missionCode.trim().toUpperCase().replace(/\s+/g, '');
+    if (!code) { missionMessage = 'Entre le code donné par ton enseignant.'; return; }
+    missionLoading = true;
+    missionMessage = '';
+    try {
+      const response = await fetch(`${base}/api/learning-missions/${encodeURIComponent(code)}`);
+      const data = await response.json();
+      if (!response.ok || !data.mission) throw new Error(data.message || 'Code introuvable.');
+      const game = data.mission.game as MissionGame;
+      const info = MISSION_GAME_INFO[game];
+      if (!info) throw new Error('Ce jeu ne prend pas encore en charge les codes mission.');
+      window.location.href = `${routeFor(info.route)}&mission=${encodeURIComponent(data.mission.gameCode)}`;
+    } catch (error) {
+      missionMessage = error instanceof Error ? error.message : 'Impossible de vérifier ce code.';
+    } finally {
+      missionLoading = false;
+    }
   }
 
   // Les matières sont renseignées dans worlds.ts. Les jeux non classés restent visibles.
@@ -505,6 +529,18 @@
       {:else if currentView === 'ARCADE'}
         <!-- ARCADE : présentation modernisée des cartes uniquement. -->
         <section class="library-section">
+          <form class="mission-code-card" on:submit|preventDefault={openMissionFromCode}>
+            <div>
+              <p class="eyebrow">MISSION ENSEIGNANT</p>
+              <h2>Tu as reçu un code ?</h2>
+              <p>Entre-le ici : Orbis ouvrira le bon jeu avec les bons exercices.</p>
+            </div>
+            <div class="mission-code-controls">
+              <label for="portal-mission-code">Code de mission</label>
+              <div><input id="portal-mission-code" bind:value={missionCode} placeholder="Ex. ABC234" autocomplete="off" /><button class="btn btn-primary" type="submit" disabled={missionLoading}>{missionLoading ? 'Vérification…' : 'Ouvrir la mission'}</button></div>
+              {#if missionMessage}<p role="alert">{missionMessage}</p>{/if}
+            </div>
+          </form>
           <div class="library-header">
             <div>
               <p class="eyebrow">JOUER ET S'ENTRAÎNER</p>
@@ -1017,6 +1053,14 @@
 
   /* Les filtres partagent le même style, mais restent groupés par fonction. */
   .arcade-filters { display: flex; flex-direction: column; gap: .65rem; width: min(100%, 42rem); min-width: 0; }
+  .mission-code-card { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,.85fr); gap:1.2rem; align-items:center; margin-bottom:1.4rem; padding:1.2rem; border:2px solid #2458a6; border-radius:16px; background:linear-gradient(135deg,#f4f8ff,#fff); box-shadow:0 12px 30px rgb(36 88 166 / 10%); }
+  .mission-code-card h2 { margin:.2rem 0 .35rem; }
+  .mission-code-card p { margin:.2rem 0; line-height:1.5; }
+  .mission-code-controls>label { display:block; margin-bottom:.35rem; font-weight:800; }
+  .mission-code-controls>div { display:flex; gap:.55rem; }
+  .mission-code-controls input { flex:1; min-width:0; min-height:46px; padding:0 .85rem; border:1px solid var(--orbis-line); border-radius:.65rem; background:var(--orbis-card); color:var(--orbis-ink); font:800 1rem ui-monospace,monospace; text-transform:uppercase; }
+  .mission-code-controls .btn { white-space:nowrap; }
+  .mission-code-controls>p { margin-top:.5rem; color:#9b2c2c; font-weight:700; }
   .filter-group { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
   .filter-caption { color: #625e55; font-size: .68rem; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
   .filter-bar { display: flex; flex-wrap: wrap; gap: .35rem; max-width: 100%; min-width: 0; padding: .3rem; border-radius: 10px; background: #e9eef5; }
@@ -1211,6 +1255,8 @@
   }
 
   @media (max-width: 760px) {
+    .mission-code-card { grid-template-columns:1fr; }
+    .mission-code-controls>div { flex-direction:column; }
     .hub-portals-grid { grid-template-columns: 1fr; }
     .header-inner { padding: .75rem 1rem; }
     .main-content { padding: 1.4rem 1rem 2rem; }

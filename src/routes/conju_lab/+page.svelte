@@ -2,6 +2,8 @@
   import { onMount, onDestroy } from 'svelte';
   import { base } from '$app/paths';
   import { submitActivityResult } from '$lib/client/activity';
+  import MissionCodeTools from '$lib/missions/MissionCodeTools.svelte';
+  import { normalizeConjuLabConfiguration, type ConjuLabMissionConfiguration } from '$lib/missions/conju-lab';
   import { getTenseInfo, getTensesForGrade, RULE_CARDS } from '$lib/conju-lab/curriculum';
   import { getGroupLabel, getVerbsForGrade } from '$lib/conju-lab/verbs';
   import {
@@ -43,6 +45,7 @@
   let selectedTenses: TenseId[] = ['present', 'imparfait', 'futurSimple', 'passeCompose'];
   let selectedGroups: VerbGroup[] = [1, 2, 3];
   let timedChallenge = false;
+  let activeMissionId: string | null = null;
 
   // Réglages d’accessibilité disponibles depuis le menu et pendant les activités.
   let largeText = false;
@@ -79,6 +82,20 @@
   $: selectedGradeFocus = FOCI.find((item) => item.id === focus)?.label ?? 'Mission mixte';
   $: progressPercent = Math.round((questionIndex / SESSION_LENGTH) * 100);
   $: currentHint = errorHint || currentQuestion?.hintSteps[Math.min(hintIndex, (currentQuestion?.hintSteps.length ?? 1) - 1)] || 'Repère le sujet, le temps et le verbe avant de répondre.';
+  $: missionConfiguration = { schemaVersion: 1, grade, playPath, focus, answerStyle, selectedTenses, selectedGroups } satisfies ConjuLabMissionConfiguration;
+
+  function applyMission(mission: { id: string; configuration: unknown }) {
+    const configuration = normalizeConjuLabConfiguration(mission.configuration);
+    if (!configuration) return;
+    grade = configuration.grade;
+    playPath = configuration.playPath;
+    focus = configuration.focus;
+    answerStyle = configuration.answerStyle;
+    selectedTenses = [...configuration.selectedTenses];
+    selectedGroups = [...configuration.selectedGroups];
+    activeMissionId = mission.id;
+    configError = '';
+  }
 
   function chooseGrade(nextGrade: Grade) {
     grade = nextGrade;
@@ -288,7 +305,8 @@
         score,
         totalQuestions: SESSION_LENGTH,
         correctQuestions,
-        metadata: { grade, playPath, selectedTenses, selectedGroups, answerStyle, retrySuccesses, totalErrors }
+        metadata: { grade, playPath, selectedTenses, selectedGroups, answerStyle, retrySuccesses, totalErrors },
+        missionId: activeMissionId ?? undefined
       });
       resultStatus = 'sent';
     } catch (error) {
@@ -421,6 +439,8 @@
           <div><p class="eyebrow">PRÉPARER UNE SESSION</p><h2 id="setup-title">Configure ton labo</h2></div>
           <span class="level-tag">{grade}</span>
         </div>
+
+        <MissionCodeTools game="conju_lab" configuration={missionConfiguration} onMission={applyMission} />
 
         <div class="setup-block">
           <h3><span class="step-number">01</span> Choisis ton niveau</h3>

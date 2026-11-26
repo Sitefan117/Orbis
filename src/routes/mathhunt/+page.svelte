@@ -1,5 +1,8 @@
 <script>
     import { onMount } from 'svelte';
+    import { getStudentName, submitActivityResult } from '$lib/client/activity';
+    import MissionCodeTools from '$lib/missions/MissionCodeTools.svelte';
+    import { normalizeMathHuntConfiguration } from '$lib/missions/mathhunt';
 
     // État de l'interface Svelte. Les choix commencent avec les 12 livrets actifs.
     let canvas;
@@ -15,6 +18,11 @@
     let helpVisible = false;
     let finalAccuracy = 100;
     let finalStars = '★ ★ ★ ★ ★';
+    let studentName = 'Explorateur';
+    let activeMissionId = null;
+    let resultSubmitted = false;
+
+    $: missionConfiguration = { schemaVersion: 1, selectedTables, difficulty, movementOn };
 
     const ALL_TABLES = Array.from({ length: 12 }, (_, index) => index + 1);
     const CANVAS_WIDTH = 320;
@@ -34,7 +42,33 @@
         if (state.phase === 'victory') {
             finalAccuracy = state.accuracy;
             finalStars = state.stars;
+            if (!resultSubmitted) void submitResult();
         }
+    }
+
+    async function submitResult() {
+        resultSubmitted = true;
+        await submitActivityResult({
+            studentName,
+            world: 'mathhunt',
+            mission: `Tables ${selectedTables.join(', ')} · ${difficulty}`,
+            score: correctHits,
+            total: TARGET_SCORE,
+            scoreBasis: 'last',
+            errorCount: Math.max(0, totalShots - correctHits),
+            errorFamilies: [],
+            missionId: activeMissionId ?? undefined
+        });
+    }
+
+    function applyMission(mission) {
+        const configuration = normalizeMathHuntConfiguration(mission.configuration);
+        if (!configuration) return;
+        selectedTables = [...configuration.selectedTables];
+        difficulty = configuration.difficulty;
+        movementOn = configuration.movementOn;
+        activeMissionId = mission.id;
+        syncSettingsToGame();
     }
 
     function syncSettingsToGame() {
@@ -75,6 +109,7 @@
 
     function startGame() {
         if (!game || selectedTables.length === 0) return;
+        resultSubmitted = false;
         syncSettingsToGame();
         game.audio.init();
         game.startGame();
@@ -591,6 +626,7 @@
     }
 
     onMount(() => {
+        studentName = getStudentName();
     // Permet de savoir si le composant a été démonté pendant le chargement.
     let disposed = false;
 
@@ -664,6 +700,8 @@
                         <h1>TABLE HUNT</h1>
                         <p>JEU DE TIR ARCADE SUR LES MULTIPLICATIONS</p>
                     </header>
+
+                    <MissionCodeTools game="mathhunt" configuration={missionConfiguration} onMission={applyMission} />
 
                     <section class="table-picker" aria-label="Choix des livrets">
                         <div class="section-title-row">

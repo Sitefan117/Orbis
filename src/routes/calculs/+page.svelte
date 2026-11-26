@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { base } from '$app/paths';
   import { getStudentName, submitActivityResult } from '$lib/client/activity';
+  import MissionCodeTools from '$lib/missions/MissionCodeTools.svelte';
+  import { normalizeCalculsConfiguration, type CalculsMissionConfiguration, type DecimalOperation } from '$lib/missions/calculs';
 
   type Phase = 'setup' | 'play' | 'done';
   type DecimalQuestion = { left: string; right: string; operation: '+' | '-'; answer: number; level: number };
@@ -9,6 +11,9 @@
   let studentName = 'Explorateur';
   let phase: Phase = 'setup';
   let activeLevels: number[] = [1];
+  let operations: DecimalOperation[] = ['+', '-'];
+  let questionCount = 10;
+  let activeMissionId: string | null = null;
   let question = 1;
   let score = 0;
   let current: DecimalQuestion = { left: '12', right: '4.5', operation: '+', answer: 16.5, level: 1 };
@@ -20,6 +25,7 @@
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null = null;
   let drawing = false;
+  $: missionConfiguration = { schemaVersion: 1, activeLevels, operations, questionCount } satisfies CalculsMissionConfiguration;
 
   onMount(() => {
     studentName = getStudentName();
@@ -81,6 +87,10 @@
       feedback = 'Activation impossible : choisis au moins un niveau.';
       return;
     }
+    if (operations.length === 0) {
+      feedback = 'Activation impossible : choisis au moins une opération.';
+      return;
+    }
 
     phase = 'play';
     question = 1;
@@ -94,7 +104,7 @@
   }
 
   function nextQuestion() {
-    if (question > 10) {
+    if (question > questionCount) {
       finishMission();
       return;
     }
@@ -103,7 +113,7 @@
     feedback = '';
     answerInput = '';
     const level = activeLevels[Math.floor(Math.random() * activeLevels.length)];
-    const operation: '+' | '-' = Math.random() > 0.5 ? '+' : '-';
+    const operation = operations[Math.floor(Math.random() * operations.length)];
     let left = '0';
     let right = '0';
 
@@ -153,12 +163,22 @@
       world: 'calculs',
       mission: `Niveaux ${activeLevels.join(', ')}`,
       score,
-      total: 10,
+      total: questionCount,
       scoreBasis: 'last',
-      errorCount: 10 - score,
-      errorFamilies: Array.from(new Set(errorFamilies))
+      errorCount: questionCount - score,
+      errorFamilies: Array.from(new Set(errorFamilies)),
+      missionId: activeMissionId ?? undefined
     });
     sentMessage = report.message;
+  }
+
+  function applyMission(mission: { id: string; configuration: unknown }) {
+    const configuration = normalizeCalculsConfiguration(mission.configuration);
+    if (!configuration) return;
+    activeLevels = [...configuration.activeLevels];
+    operations = [...configuration.operations];
+    questionCount = configuration.questionCount;
+    activeMissionId = mission.id;
   }
 </script>
 
@@ -176,6 +196,7 @@
 
   <main class="main split">
     <section class="stack">
+      <MissionCodeTools game="calculs" configuration={missionConfiguration} onMission={applyMission} />
       {#if phase === 'setup'}
         <div class="dark-card stack">
           <h2>🛰️ Configuration des paramètres de vol</h2>
@@ -189,12 +210,16 @@
               </span>
             </label>
           {/each}
+          <fieldset class="stack"><legend>Opérations</legend>
+            <label class="dark-option" class:selected={operations.includes('+')}><input type="checkbox" bind:group={operations} value="+" /> Addition</label>
+            <label class="dark-option" class:selected={operations.includes('-')}><input type="checkbox" bind:group={operations} value="-" /> Soustraction</label>
+          </fieldset>
           {#if feedback}<p class="feedback bad">{feedback}</p>{/if}
           <button class="btn primary" type="button" on:click={startMission}>Enclencher la propulsion 🚀</button>
         </div>
       {:else if phase === 'play'}
         <div class="dark-card stack">
-          <div class="mission-top"><span class="badge">Question {Math.min(question, 10)} / 10</span><span class="badge">Score : {score}</span></div>
+          <div class="mission-top"><span class="badge">Question {Math.min(question, questionCount)} / {questionCount}</span><span class="badge">Score : {score}</span></div>
           <div class="center">
             <p class="kicker">Résous l’opération suivante</p>
             <div style="font-size: 2.7rem; font-weight: 1000; font-family: ui-monospace, monospace; background: #090d16; display: inline-block; padding: 1rem 2rem; border-radius: 1rem; border: 1px solid #25314a;">
@@ -212,7 +237,7 @@
         <div class="dark-card stack center">
           <h2>🏁 Mission Terminée !</h2>
           <p class="muted">Votre rapport d’exactitude a été transmis à la console maître.</p>
-          <p style="font-size: 3rem; font-weight: 1000; color: var(--amber);">{score} / 10</p>
+          <p style="font-size: 3rem; font-weight: 1000; color: var(--amber);">{score} / {questionCount}</p>
           <p>{score >= 8 ? '🏆 Victoire éclatante ! Excellents calculs.' : '⚔️ Objectif incomplet. Poursuis l’entraînement.'}</p>
           <p class="muted small">{sentMessage}</p>
           <div class="actions" style="justify-content: center;"><button class="btn primary" type="button" on:click={startMission}>Rejouer</button><a class="btn dark" href="{base}/">Retour au QG</a></div>

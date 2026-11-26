@@ -2,28 +2,26 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { base } from '$app/paths';
+    import { getStudentName, submitActivityResult } from '$lib/client/activity';
+    import { normalizeRaceConfiguration, type RaceGameMode, type RaceMissionConfiguration, type RaceNotion, type RacePracticeLevel } from '$lib/missions/race';
     // -------------------------------------------------------------------------
     // MATH RACER — prototype amélioré
-    // Le jeu reste indépendant du portail, mais conserve un petit bilan local.
-    // Aucune donnée n'est envoyée à un serveur dans cette version.
+    // Le suivi fin reste local et un bilan de séance est transmis au serveur local.
     // -------------------------------------------------------------------------
 
     type GameState = 'MENU' | 'PLAYING' | 'PAUSED_ERROR' | 'SUMMARY' | 'GAMEOVER';
-    type GameMode = 'training' | 'arcade';
-    type PracticeLevel = 'guided' | 'standard' | 'challenge';
-    type Notion =
-        | 'livrets'
-        | 'doubles'
-        | 'triples'
-        | 'quadruples'
-        | 'complements10'
-        | 'complements100'
-        | 'complements1000'
-        | 'dizaineSuivante'
-        | 'centaineSuivante'
-        | 'millierSuivant'
-        | 'trous'
-        | 'divisions';
+    type GameMode = RaceGameMode;
+    type PracticeLevel = RacePracticeLevel;
+    type Notion = RaceNotion;
+
+    interface ActiveMission {
+        id: string;
+        code: string;
+        scope: 'portal' | 'game';
+        game: 'race';
+        configuration: RaceMissionConfiguration;
+        summary: string[];
+    }
 
     interface NotionOption {
         id: Notion;
@@ -117,6 +115,18 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
     let engineReady = $state(false);
     let engineError = $state('');
     let selectedNotions = $state<Notion[]>(['livrets', 'doubles', 'complements10']);
+    let selectedTables = $state<number[]>([2, 3, 4, 5]);
+    let configuredQuestionCount = $state(BASE_SESSION_QUESTIONS);
+    let activeMission = $state<ActiveMission | null>(null);
+    let missionCodeInput = $state('');
+    let missionMessage = $state('');
+    let missionBusy = $state(false);
+    let teacherToolsOpen = $state(false);
+    let teacherAuthenticated = $state(false);
+    let teacherPassword = $state('');
+    let teacherMessage = $state('');
+    let teacherScope = $state<'portal' | 'game'>('game');
+    let generatedCode = $state('');
 
     let musicEnabled = $state(true);
     let sfxEnabled = $state(true);
@@ -134,6 +144,11 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
     let correctAnswers = $state(0);
     let plannedQuestions = $state(BASE_SESSION_QUESTIONS);
     let sessionWrongFacts = $state<string[]>([]);
+    let sessionErrorNotions = $state<Notion[]>([]);
+    let sessionByNotion = $state<Partial<Record<Notion, { correct: number; total: number }>>>({});
+    let resultSubmitted = false;
+    let resultMessage = $state('');
+    let studentName = $state('Explorateur');
     let factStats = $state<Record<string, FactStat>>({});
     // Le bilan final attend que l'élève ait lu la correction et appuyé sur BOOST.
     let pendingPauseOutcome: 'SUMMARY' | 'GAMEOVER' | null = null;
@@ -287,10 +302,10 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
         let factKey = '';
 
         if (notion === 'livrets') {
-            // La gamme limite d'abord la charge de calcul, sans enfermer l'élève dans ce niveau.
             const minFactor = practiceLevel === 'guided' ? 2 : 1;
             const maxFactor = practiceLevel === 'guided' ? 6 : 12;
-            const a = randomInt(minFactor, maxFactor);
+            const availableTables = selectedTables.length > 0 ? selectedTables : [2, 3, 4, 5];
+            const a = choose(availableTables);
             const b = randomInt(minFactor, maxFactor);
             answer = a * b;
             questionText = `${a} × ${b}`;
@@ -556,6 +571,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
             // La dernière erreur est corrigée avant l'affichage du bilan final.
             gameState = outcome;
             clearActiveGates();
+            void submitRaceResult();
             return;
         }
 
@@ -615,6 +631,139 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
         gameState = 'MENU';
         targetQuestionText = 'À toi de jouer !';
         clearActiveGates();
+    }
+
+    function applyMission(mission: ActiveMission) {
+        const configuration = normalizeRaceConfiguration(mission.configuration);
+        if (!configuration) throw new Error('La configuration de cette mission est invalide.');
+        activeMission = { ...mission, configuration };
+        selectedNotions = [...configuration.selectedNotions];
+        selectedTables = [...configuration.selectedTables];
+        practiceLevel = configuration.practiceLevel;
+        gameMode = configuration.gameMode;
+        configuredQuestionCount = configuration.questionCount;
+        missionCodeInput = mission.code;
+        missionMessage = `Mission chargée : ${mission.summary.join(' · ')}`;
+    }
+
+    async function loadMission(codeInput = missionCodeInput, requireGamePrefix = false) {
+        const code = codeInput.trim().toUpperCase().replace(/\s+/g, '');
+        if (!code) { missionMessage = 'Entre le code donné par ton enseignant.'; return; }
+        if (requireGamePrefix && !code.startsWith('RACE-')) {
+            missionMessage = 'Dans Math Racer, le code commence par RACE-. Le code court se saisit dans le portail Orbis.';
+            return;
+        }
+        missionBusy = true;
+        missionMessage = '';
+        try {
+            const response = await fetch(`${base}/api/learning-missions/${encodeURIComponent(code)}`);
+            const data = await response.json();
+            if (!response.ok || !data.mission) throw new Error(data.message || 'Code introuvable.');
+            if (data.mission.game !== 'race') throw new Error('Ce code concerne un autre jeu.');
+            applyMission(data.mission as ActiveMission);
+        } catch (error) {
+            activeMission = null;
+            missionMessage = error instanceof Error ? error.message : 'Impossible de charger cette mission.';
+        } finally {
+            missionBusy = false;
+        }
+    }
+
+    function leaveMission() {
+        activeMission = null;
+        missionCodeInput = '';
+        missionMessage = 'Mode libre réactivé.';
+    }
+
+    async function openTeacherTools() {
+        teacherToolsOpen = !teacherToolsOpen;
+        teacherMessage = '';
+        generatedCode = '';
+        if (!teacherToolsOpen) return;
+        try {
+            const response = await fetch(`${base}/api/teacher/session`);
+            const data = await response.json();
+            teacherAuthenticated = data.authenticated === true;
+        } catch {
+            teacherMessage = 'Le serveur enseignant ne répond pas.';
+        }
+    }
+
+    async function loginTeacherInGame() {
+        teacherMessage = '';
+        try {
+            const response = await fetch(`${base}/api/teacher/session`, {
+                method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password: teacherPassword })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Connexion impossible.');
+            teacherAuthenticated = true;
+            teacherPassword = '';
+            teacherMessage = 'Accès enseignant ouvert.';
+        } catch (error) {
+            teacherMessage = error instanceof Error ? error.message : 'Connexion impossible.';
+        }
+    }
+
+    async function generateMissionInGame() {
+        teacherMessage = '';
+        generatedCode = '';
+        if (selectedNotions.length === 0) { teacherMessage = 'Choisis au moins une compétence.'; return; }
+        if (selectedNotions.includes('livrets') && selectedTables.length === 0) { teacherMessage = 'Choisis au moins une table.'; return; }
+        try {
+            const response = await fetch(`${base}/api/teacher/learning-missions`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    scope: teacherScope,
+                    game: 'race',
+                    configuration: { schemaVersion: 1, selectedNotions, selectedTables, practiceLevel, gameMode, questionCount: configuredQuestionCount }
+                })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Création impossible.');
+            generatedCode = data.mission.code;
+            teacherMessage = 'Code créé. Tu peux le transmettre aux élèves.';
+        } catch (error) {
+            teacherMessage = error instanceof Error ? error.message : 'Création impossible.';
+        }
+    }
+
+    function matchesSelectedTables(base: QuestionBase): boolean {
+        if (base.notion !== 'livrets' || selectedTables.length === 0) return true;
+        const match = base.factKey.match(/livrets:(\d+)x(\d+)/);
+        return Boolean(match && selectedTables.some((table) => table === Number(match[1]) || table === Number(match[2])));
+    }
+
+    async function submitRaceResult() {
+        if (resultSubmitted || questionsAnswered === 0) return;
+        resultSubmitted = true;
+        try {
+            const report = await submitActivityResult({
+                studentName,
+                world: 'race',
+                mission: activeMission ? `Mission ${activeMission.code}` : `Math Racer · ${gameMode === 'training' ? 'entraînement' : 'arcade'}`,
+                missionId: activeMission?.id,
+                score: correctAnswers,
+                total: questionsAnswered,
+                scoreBasis: 'last',
+                errorCount: questionsAnswered - correctAnswers,
+                errorFamilies: [...new Set(sessionErrorNotions)],
+                metadata: {
+                    configurationVersion: 1,
+                    selectedNotions,
+                    selectedTables,
+                    practiceLevel,
+                    gameMode,
+                    questionCount: configuredQuestionCount,
+                    missionCode: activeMission?.code,
+                    bySkill: sessionByNotion
+                }
+            });
+            resultMessage = report.message;
+        } catch {
+            resultMessage = 'Résultat conservé localement, mais transmission impossible.';
+        }
     }
 
     function moveLeft() {
@@ -1000,6 +1149,11 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
 
         questionsAnswered++;
         recordFactResult(base, isCorrect);
+        const notionResult = sessionByNotion[base.notion] ?? { correct: 0, total: 0 };
+        sessionByNotion = {
+            ...sessionByNotion,
+            [base.notion]: { correct: notionResult.correct + (isCorrect ? 1 : 0), total: notionResult.total + 1 }
+        };
 
         if (isCorrect) {
             correctAnswers++;
@@ -1023,6 +1177,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
             combo = 0;
             audioEngine?.playWrong();
             if (!sessionWrongFacts.includes(base.fullFormula)) sessionWrongFacts = [...sessionWrongFacts, base.fullFormula];
+            if (!sessionErrorNotions.includes(base.notion)) sessionErrorNotions = [...sessionErrorNotions, base.notion];
             queueFailedFact(base);
 
             if (gameMode === 'arcade') lives = Math.max(0, lives - 1);
@@ -1047,6 +1202,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
             isAccelerating = false;
             isBraking = false;
             audioEngine?.playStart();
+            void submitRaceResult();
         }
     }
 
@@ -1069,9 +1225,14 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
         correctAnswers = 0;
         plannedQuestions = BASE_SESSION_QUESTIONS;
         sessionWrongFacts = [];
+        sessionErrorNotions = [];
+        sessionByNotion = {};
+        resultSubmitted = false;
+        resultMessage = '';
         generatedQuestions = 0;
         normalQuestionsGenerated = 0;
-        normalQuestionTarget = BASE_SESSION_QUESTIONS;
+        plannedQuestions = gameMode === 'training' ? configuredQuestionCount : BASE_SESSION_QUESTIONS;
+        normalQuestionTarget = gameMode === 'training' ? configuredQuestionCount : BASE_SESSION_QUESTIONS;
         retryQueue = [];
         scheduledRetryKeys = new Set<string>();
         currentLane = 1;
@@ -1091,7 +1252,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
         // enregistrés lors des séances précédentes. Ils remplacent des questions aléatoires.
         const levelOrder: Record<PracticeLevel, number> = { guided: 0, standard: 1, challenge: 2 };
         const reviews = Object.values(factStats)
-            .filter((stat) => Boolean(stat.base?.factKey) && selectedNotions.includes(stat.base.notion) &&
+            .filter((stat) => Boolean(stat.base?.factKey) && selectedNotions.includes(stat.base.notion) && matchesSelectedTables(stat.base) &&
                 levelOrder[stat.level ?? 'guided'] <= levelOrder[practiceLevel] && stat.attempts > 0 &&
                 (stat.streak < 2 || stat.correct / stat.attempts < 0.8))
             .sort((a, b) =>
@@ -1102,7 +1263,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
             .slice(0, 2);
         // Les rappels des anciennes séances remplacent autant de questions aléatoires,
         // afin que la séance de base conserve sa taille et ne s'allonge pas sans raison.
-        normalQuestionTarget = BASE_SESSION_QUESTIONS - reviews.length;
+        normalQuestionTarget = (gameMode === 'training' ? configuredQuestionCount : BASE_SESSION_QUESTIONS) - reviews.length;
         retryQueue = reviews.map((stat, index) => ({ base: stat.base, dueSpawn: index + 1 }));
         // Les faits de rappel peuvent eux aussi échouer : ils auront alors un second rappel.
         scheduledRetryKeys = new Set<string>();
@@ -1215,6 +1376,9 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
         let disposed = false;
         audioEngine = new ArcadeAudioEngine();
         factStats = loadFactStats();
+        studentName = getStudentName();
+        const missionFromUrl = new URLSearchParams(window.location.search).get('mission');
+        if (missionFromUrl) void loadMission(missionFromUrl);
 
         const handleResize = () => resizeRenderer();
         window.addEventListener('resize', handleResize);
@@ -1347,6 +1511,21 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
                 <p class="tagline">Lis le calcul. Choisis la porte. Enchaîne les réussites.</p>
                 <p class="encouragement">Ici, on progresse run après run. Même une erreur peut t’aider à monter en niveau.</p>
 
+                <section class="mission-card" class:mission-active={Boolean(activeMission)}>
+                    {#if activeMission}
+                        <div><span>MISSION ACTIVE</span><strong>{activeMission.code}</strong></div>
+                        <p>{activeMission.summary.join(' · ')}</p>
+                        <button type="button" class="compact-button" onclick={leaveMission}>Quitter la mission</button>
+                    {:else}
+                        <div><span>CODE DE MISSION</span><strong>Tu as reçu un code ?</strong></div>
+                        <form onsubmit={(event) => { event.preventDefault(); void loadMission(missionCodeInput, true); }}>
+                            <label for="race-mission-code">Code enseignant</label>
+                            <div><input id="race-mission-code" bind:value={missionCodeInput} placeholder="RACE-ABC234" autocomplete="off" /><button type="submit" class="compact-button" disabled={missionBusy}>{missionBusy ? 'Vérification…' : 'Appliquer'}</button></div>
+                        </form>
+                    {/if}
+                    {#if missionMessage}<p class="mission-message" role="status">{missionMessage}</p>{/if}
+                </section>
+
                 <div class="menu-section-title"><span>01</span><h2>CHOISIS TON TERRAIN</h2></div>
                 <div class="notion-groups">
                     {#each notionGroups as group}
@@ -1355,7 +1534,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
                             <div class="notion-grid">
                                 {#each group.items as notion}
                                     <label class="notion-option" class:chosen={selectedNotions.includes(notion.id)}>
-                                        <input type="checkbox" bind:group={selectedNotions} value={notion.id} />
+                                        <input type="checkbox" bind:group={selectedNotions} value={notion.id} disabled={Boolean(activeMission)} />
                                         <span class="checkmark" aria-hidden="true">✓</span>
                                         <span class="notion-copy"><strong>{notion.label}</strong><small>{notion.help}</small></span>
                                     </label>
@@ -1365,20 +1544,27 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
                     {/each}
                 </div>
 
+                {#if selectedNotions.includes('livrets')}
+                    <fieldset class="table-selector">
+                        <legend>TABLES À TRAVAILLER</legend>
+                        <div>{#each Array.from({ length: 12 }, (_, index) => index + 1) as table}<label class:chosen={selectedTables.includes(table)}><input type="checkbox" bind:group={selectedTables} value={table} disabled={Boolean(activeMission)} /><span>{table}</span></label>{/each}</div>
+                    </fieldset>
+                {/if}
+
                 <div class="menu-section-title"><span>02</span><h2>RÈGLE LA GAMME DES CALCULS</h2></div>
                 <div class="level-grid">
                     <label class="level-option" class:selected={practiceLevel === 'guided'}>
-                        <input type="radio" bind:group={practiceLevel} value="guided" />
+                        <input type="radio" bind:group={practiceLevel} value="guided" disabled={Boolean(activeMission)} />
                         <strong>DÉPART</strong>
                         <small>Nombres plus accessibles pour prendre confiance.</small>
                     </label>
                     <label class="level-option" class:selected={practiceLevel === 'standard'}>
-                        <input type="radio" bind:group={practiceLevel} value="standard" />
+                        <input type="radio" bind:group={practiceLevel} value="standard" disabled={Boolean(activeMission)} />
                         <strong>STANDARD</strong>
                         <small>Une gamme plus large pour consolider les acquis.</small>
                     </label>
                     <label class="level-option" class:selected={practiceLevel === 'challenge'}>
-                        <input type="radio" bind:group={practiceLevel} value="challenge" />
+                        <input type="radio" bind:group={practiceLevel} value="challenge" disabled={Boolean(activeMission)} />
                         <strong>CHALLENGE</strong>
                         <small>Nombres plus grands pour pousser le calcul mental.</small>
                     </label>
@@ -1387,16 +1573,18 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
                 <div class="menu-section-title"><span>03</span><h2>CHOISIS TON MODE</h2></div>
                 <div class="mode-grid">
                     <label class="mode-option" class:selected={gameMode === 'training'}>
-                        <input type="radio" bind:group={gameMode} value="training" />
+                        <input type="radio" bind:group={gameMode} value="training" disabled={Boolean(activeMission)} />
                         <span class="mode-icon">◆</span>
                         <span><strong>ENTRAÎNEMENT</strong><small>Rythme réglable · 12 portes + rappels · les erreurs reviennent pour t’aider.</small></span>
                     </label>
                     <label class="mode-option" class:selected={gameMode === 'arcade'}>
-                        <input type="radio" bind:group={gameMode} value="arcade" />
+                        <input type="radio" bind:group={gameMode} value="arcade" disabled={Boolean(activeMission)} />
                         <span class="mode-icon">⚡</span>
                         <span><strong>MODE ARCADE</strong><small>3 vies · boost et frein · la vitesse monte avec tes réussites.</small></span>
                     </label>
                 </div>
+
+                <label class="question-count">Nombre de questions en entraînement <input type="number" min="6" max="15" bind:value={configuredQuestionCount} disabled={Boolean(activeMission)} /></label>
 
                 <div class="sound-row">
                     <button type="button" class="sound-toggle" aria-pressed={musicEnabled} onclick={toggleMusic}>♫ MUSIQUE 8-BIT : {musicEnabled ? 'ON' : 'OFF'}</button>
@@ -1409,6 +1597,22 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
                 <button type="button" class="primary-button" disabled={!engineReady || Boolean(engineError)} onclick={startGame}>
                     {#if engineReady}▶ LANCER LA COURSE{:else if engineError}CIRCUIT INDISPONIBLE{:else}CHARGEMENT DU CIRCUIT…{/if}
                 </button>
+                <button type="button" class="teacher-tools-toggle" onclick={() => void openTeacherTools()}>⚙ ESPACE ENSEIGNANT · GÉNÉRER UN CODE</button>
+                {#if teacherToolsOpen}
+                    <section class="teacher-tools">
+                        <h2>Générateur Math Racer</h2>
+                        {#if !teacherAuthenticated}
+                            <p>Connecte-toi avec le mot de passe enseignant du serveur local.</p>
+                            <form onsubmit={(event) => { event.preventDefault(); void loginTeacherInGame(); }}><label for="race-teacher-password">Mot de passe</label><div><input id="race-teacher-password" type="password" bind:value={teacherPassword} autocomplete="current-password" /><button class="compact-button" type="submit">Se connecter</button></div></form>
+                        {:else}
+                            <p>Le code reprendra exactement les réglages visibles ci-dessus.</p>
+                            <div class="scope-row"><label><input type="radio" bind:group={teacherScope} value="game" /> Code Math Racer</label><label><input type="radio" bind:group={teacherScope} value="portal" /> Code portail</label></div>
+                            <button type="button" class="compact-button generate-button" onclick={() => void generateMissionInGame()}>Générer ce code</button>
+                            {#if generatedCode}<div class="generated-code"><span>CODE PRÊT</span><strong>{generatedCode}</strong></div>{/if}
+                        {/if}
+                        {#if teacherMessage}<p class="teacher-message" role="status">{teacherMessage}</p>{/if}
+                    </section>
+                {/if}
                 <a class="orbis-link" href={ORBIS_HOME} onclick={(event) => { event.preventDefault(); void returnToOrbis(); }}>↩ RETOUR À ORBIS</a>
                 <div class="menu-footnote"><span>CLAVIER : ← → / A D · ↑ ↓ : VITESSE</span><span>TACTILE : COMMANDES À L’ÉCRAN</span></div>
             </div>
@@ -1442,6 +1646,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
                 {:else if questionsAnswered > 0}
                     <div class="review-box positive-review"><strong>RUN SANS ERREUR : BIEN VU !</strong><p>La prochaine fois, on espacera les rappels pour vérifier que ça tient dans le temps.</p></div>
                 {/if}
+                {#if resultMessage}<p class="result-message">{resultMessage}</p>{/if}
                 <div class="summary-actions">
                     <button type="button" class="primary-button" onclick={startGame}>↻ REJOUER</button>
                     <button type="button" class="secondary-button" onclick={showStartMenu}>⌂ MENU PRINCIPAL</button>
@@ -1628,6 +1833,36 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
     h1 b { color: #ff4fab; font-size: 0.6em; vertical-align: top; }
     .tagline { margin: 0; color: #e1faff; font-size: clamp(0.48rem, 1vw, 0.68rem); line-height: 2; }
     .encouragement { max-width: 690px; margin: 0.55rem 0 1.15rem; color: #a8bbd9; font: 0.93rem/1.65 'Oxanium', sans-serif; }
+    .mission-card { margin: 1rem 0; padding: 0.9rem; border: 1px solid #40557d; border-radius: 7px; background: rgb(4 8 23 / 72%); }
+    .mission-card.mission-active { border-color: #77f6ff; background: rgb(0 234 255 / 7%); }
+    .mission-card>div:first-child { display: flex; justify-content: space-between; gap: 0.7rem; align-items: center; }
+    .mission-card span, .generated-code span { color: #00eaff; font-size: 0.52rem; letter-spacing: .08em; }
+    .mission-card strong { color: #fff; font-size: .72rem; }
+    .mission-card p { color: #bdcbe3; font: .8rem/1.55 'Oxanium', sans-serif; }
+    .mission-card form label, .teacher-tools form label { display: block; margin-bottom: .35rem; color: #a9b8d3; font-size: .65rem; }
+    .mission-card form>div, .teacher-tools form>div { display: flex; gap: .5rem; }
+    .mission-card input, .teacher-tools input[type="password"], .question-count input { min-width: 0; min-height: 42px; padding: 0 .7rem; border: 1px solid #536789; border-radius: 5px; background: #090f25; color: #fff; font: 700 .82rem 'Oxanium', sans-serif; }
+    .mission-card form input { flex: 1; text-transform: uppercase; }
+    .compact-button, .teacher-tools-toggle { min-height: 42px; padding: .55rem .8rem; border: 1px solid #00cfe3; border-radius: 5px; background: #10233b; color: #a5fbff; font: 700 .58rem/1.5 'Oxanium', sans-serif; cursor: pointer; }
+    .mission-message, .teacher-message, .result-message { color: #ffd98b !important; font: .78rem/1.55 'Oxanium', sans-serif !important; }
+    .table-selector { margin: .7rem 0; padding: .75rem; border: 1px solid #29375c; border-radius: 5px; }
+    .table-selector legend { padding: 0 .4rem; color: #00eaff; font-size: .55rem; }
+    .table-selector>div { display: grid; grid-template-columns: repeat(12, 1fr); gap: .35rem; }
+    .table-selector label { display: grid; place-items: center; min-height: 38px; border: 1px solid #344365; border-radius: 4px; color: #a0b0cf; cursor: pointer; }
+    .table-selector label.chosen { border-color: #00eaff; background: #073649; color: #fff; }
+    .table-selector input { position: absolute; opacity: 0; }
+    .question-count { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: .75rem; padding: .7rem; border: 1px solid #344365; border-radius: 5px; color: #b5c4dd; font-size: .65rem; }
+    .question-count input { width: 84px; }
+    .teacher-tools-toggle { width: 100%; margin-top: .7rem; border-color: #a168d5; color: #e0c4ff; background: #19112d; }
+    .teacher-tools { margin-top: .7rem; padding: 1rem; border: 1px solid #a168d5; border-radius: 6px; background: #100b23; }
+    .teacher-tools h2 { margin: 0; color: #eddaff; font-size: .7rem; }
+    .teacher-tools p { color: #acb8d0; font: .8rem/1.55 'Oxanium', sans-serif; }
+    .scope-row { display: flex; flex-wrap: wrap; gap: .6rem; margin: .7rem 0; }
+    .scope-row label { padding: .5rem; border: 1px solid #4d4168; border-radius: 4px; font-size: .7rem; }
+    .generate-button { width: 100%; }
+    .generated-code { margin-top: .7rem; padding: .8rem; border: 1px solid #00eaff; text-align: center; }
+    .generated-code strong { display: block; margin-top: .35rem; color: #fff; font-size: 1rem; letter-spacing: .06em; }
+    .result-message { margin-top: .8rem; text-align: center; }
 
     .menu-section-title { display: flex; align-items: center; gap: 0.7rem; margin: 1.1rem 0 0.75rem; }
     .menu-section-title > span { display: grid; place-items: center; flex: 0 0 32px; height: 28px; border: 1px solid #f02bff; color: #ff9bef; font-size: 0.65rem; }
@@ -1716,6 +1951,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
         .speed-control { flex: 0 0 54px; min-width: 54px; min-height: 54px; }
         .touch-control span { font-size: 0.55rem; }
         .notion-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .table-selector>div { grid-template-columns: repeat(6, 1fr); }
         .menu-panel { max-height: calc(100dvh - 1rem); }
     }
 
@@ -1731,6 +1967,7 @@ const ORBIS_HOME = `${base}/`; // Modifier cette constante si l'accueil d'Orbis 
         .target-hint { font-size: 0.6rem; }
         .quit-run { top: 82px; font-size: 0.42rem; }
         .notion-grid, .mode-grid, .level-grid { grid-template-columns: 1fr; }
+        .mission-card form>div, .teacher-tools form>div { flex-direction: column; }
         .notion-option { min-height: 54px; }
         .menu-panel { padding: 0.9rem; }
         .encouragement { font-size: 0.85rem; }

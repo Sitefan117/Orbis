@@ -223,7 +223,7 @@
       // Conserve le contrat d'intégration ORBIS du composant précédent.
       await submitActivityResult({
         studentName,
-        world: 'geometrie',
+        world: 'nexus',
         mission: `${level} mode ${mode}`,
         score: correctCount,
         total: QUESTION_COUNT,
