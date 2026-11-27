@@ -85,7 +85,7 @@
     return 'Heute übe ich: _____. ';
   }
   function start(mode: Mode) {
-    activeMode = mode; stage = 'play'; currentIndex = 0; score = 0; errors = 0; attempts = 0; feedback = ''; answer = ''; selected = ''; selectedFrench = '';
+    activeMode = mode; stage = 'play'; currentIndex = 0; score = 0; errors = 0; attempts = 0; submitted = false; feedback = ''; answer = ''; selected = ''; selectedFrench = '';
     shuffledLetters = activeMode === 'rebuild' ? currentWord.de.replace(/^der |^die |^das /i, '').split('').sort(() => Math.random() - 0.5) : (currentWord.parts ?? []);
     if (voiceEnabled) playWord();
   }
@@ -140,7 +140,7 @@
   }
   async function sendResult() {
     if (submitted) return; submitted = true;
-    await submitActivityResult({ studentName: student, world: 'deutsch_werkstatt', mission: activeMode, score, total: 10, errorCount: errors, metadata: { mastery: progress[currentWord.id], voiceEnabled } });
+    await submitActivityResult({ studentName: student, world: 'deutsch_werkstatt', mission: activeMode, score, total: 10, errorCount: errors, metadata: { mastery: progress[currentWord.id], voiceEnabled, selectedThemes, entryCount: words.length, level: '6H + Musée des mots' } });
   }
   function chooseLetter(letter: string) { answer += letter; shuffledLetters = shuffledLetters.filter((item, index) => index !== shuffledLetters.indexOf(letter)); }
   function chooseFrench(fr: string) { selectedFrench = fr; selected = words.find((item) => item.fr === fr)?.de ?? ''; }

@@ -2,7 +2,7 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { recordActivityResult, type ActivityResultInput } from '$lib/server/activity-results';
 import type { WorldId } from '$lib/worlds';
 
-const allowedWorlds = new Set<WorldId>(['livrets', 'geometrie', 'calculs', 'numeria', 'pcp']);
+const allowedWorlds = new Set<WorldId>(['livrets', 'geometrie', 'calculs', 'numeria', 'pcp', 'deutsch_werkstatt']);
 
 function readString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
