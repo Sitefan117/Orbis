@@ -77,6 +77,17 @@ export const courses: CourseEntry[] = [
     gameLink: { title: "Fraction Tower", route: "/fractionstower2" }
   },
   {
+    id: "algebre-debut",
+    title: "Algèbre — découvrir l’inconnue et les égalités",
+    subject: "Mathématiques",
+    domain: "Algèbre",
+    description: "Un parcours en cinq séquences pour découvrir l’inconnue, les expressions, les égalités, les inégalités et les premiers essais de résolution.",
+    level: "Progressif · cycle 3",
+    duration: "5 séquences",
+    isInteractive: true,
+    href: coursePaths.algebra.complete
+  },
+  {
     id: "mesures-reference",
     title: "Conversions de mesures — référence",
     subject: "Mathématiques",

@@ -4,6 +4,9 @@ export const coursePaths = {
     complete: '/cours/maths/fractions/complet.html',
     stages: '/cours/maths/fractions/etapes.html'
   },
+  algebra: {
+    algebra: { complete: '/cours/maths/algebre/cours-algebre-sequences-0-a-4.html' },
+  },
   measures: {
     reference: '/cours/maths/mesures/reference.html',
     mesurovia: {
