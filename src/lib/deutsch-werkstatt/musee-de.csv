@@ -1,0 +1,941 @@
+id,theme,intitule,source,niveau,francais,allemand,definition_fr
+musee-ecole-ecole,ecole,École et consignes,Musée des mots,12–16 ans,école,Schule,Lieu où l’on suit des cours
+musee-ecole-classe,ecole,École et consignes,Musée des mots,12–16 ans,classe,Klasse,Groupe d’élèves qui suit les cours ensemble
+musee-ecole-cahier,ecole,École et consignes,Musée des mots,12–16 ans,cahier,Heft,Objet fait de pages attachées où tu écris tes notes
+musee-ecole-cartable,ecole,École et consignes,Musée des mots,12–16 ans,cartable,Schulranzen,Sac pour les affaires d’école
+musee-ecole-tableau,ecole,École et consignes,Musée des mots,12–16 ans,tableau,Tafel,Grande surface où le professeur écrit pour toute la classe
+musee-ecole-recreation,ecole,École et consignes,Musée des mots,12–16 ans,récréation,Pause,Pause entre les cours
+musee-ecole-bibliotheque,ecole,École et consignes,Musée des mots,12–16 ans,bibliothèque,Bücherschrank,Endroit où tu peux lire des livres ou en prendre pour les lire chez toi
+musee-ecole-trousse,ecole,École et consignes,Musée des mots,12–16 ans,trousse,Federmäppchen,Petite pochette pour les crayons et les stylos
+musee-ecole-regle,ecole,École et consignes,Musée des mots,12–16 ans,règle,Lineal,Objet droit avec des marques pour mesurer ou tirer un trait
+musee-ecole-ciseaux,ecole,École et consignes,Musée des mots,12–16 ans,ciseaux,Schere,Outil à deux lames qui sert à couper
+musee-ecole-gomme,ecole,École et consignes,Musée des mots,12–16 ans,gomme,Radiergummi,Petit objet qui efface les traces de crayon
+musee-ecole-crayon,ecole,École et consignes,Musée des mots,12–16 ans,crayon,Bleistift,Objet pour écrire ou dessiner. On peut effacer ses traits avec une gomme.
+musee-ecole-agenda,ecole,École et consignes,Musée des mots,12–16 ans,agenda,Terminkalender,Carnet où tu notes tes devoirs et tes rendez-vous
+musee-ecole-calculatrice,ecole,École et consignes,Musée des mots,12–16 ans,calculatrice,Rechner,Petit appareil qui fait des calculs
+musee-ecole-ordinateur,ecole,École et consignes,Musée des mots,12–16 ans,ordinateur,ein Computer oder Laptop,"Appareil avec un écran et un clavier. Il sert à écrire, à travailler ou à aller sur Internet."
+musee-ecole-stylo,ecole,École et consignes,Musée des mots,12–16 ans,stylo,Füller,Outil qui écrit avec de l’encre
+musee-ecole-feuille,ecole,École et consignes,Musée des mots,12–16 ans,feuille,Blatt,Morceau de papier sur lequel on peut écrire
+musee-ecole-professeur,ecole,École et consignes,Musée des mots,12–16 ans,professeur,Lehrer,Personne qui donne les cours
+musee-ecole-eleve,ecole,École et consignes,Musée des mots,12–16 ans,élève,Student,Personne qui suit les cours dans une école
+musee-ecole-devoir,ecole,École et consignes,Musée des mots,12–16 ans,devoir,Pflicht,Travail que le professeur te demande de faire
+musee-ecole-exercice,ecole,École et consignes,Musée des mots,12–16 ans,exercice,Geschäftsjahr 	Vorjahr,Petit travail pour apprendre ou pour t’entraîner
+musee-ecole-consigne,ecole,École et consignes,Musée des mots,12–16 ans,consigne,Sollwert,Ce qui te dit ce que tu dois faire
+musee-ecole-question,ecole,École et consignes,Musée des mots,12–16 ans,question,question,Ce que tu dis ou écris pour demander quelque chose
+musee-ecole-reponse,ecole,École et consignes,Musée des mots,12–16 ans,réponse,Antwort,Ce que tu dis ou écris après une question
+musee-ecole-lire,ecole,École et consignes,Musée des mots,12–16 ans,lire,lesen,Comprendre ce qui est écrit
+musee-ecole-ecrire,ecole,École et consignes,Musée des mots,12–16 ans,écrire,schreiben,Faire des lettres et des mots pour laisser un message ou raconter quelque chose
+musee-ecole-ecouter,ecole,École et consignes,Musée des mots,12–16 ans,écouter,Auditive Wahrnehmung,Faire attention à ce que l’on entend
+musee-ecole-souligner,ecole,École et consignes,Musée des mots,12–16 ans,souligner,unterstreichen,Faire un trait sous un mot
+musee-ecole-entourer,ecole,École et consignes,Musée des mots,12–16 ans,entourer,umgeben,Faire un cercle autour de quelque chose
+musee-ecole-completer,ecole,École et consignes,Musée des mots,12–16 ans,compléter,Text vervollständigen,Ajouter ce qui manque
+musee-famille-famille,famille,Famille et relations,Musée des mots,12–16 ans,famille,Familie,"Tes parents, tes frères, tes sœurs et tes grands-parents, par exemple"
+musee-famille-parent,famille,Famille et relations,Musée des mots,12–16 ans,parent,parent,Père ou mère d’une personne
+musee-famille-mere,famille,Famille et relations,Musée des mots,12–16 ans,mère,mutter,Femme qui a un ou plusieurs enfants
+musee-famille-pere,famille,Famille et relations,Musée des mots,12–16 ans,père,vater,Homme qui a un ou plusieurs enfants
+musee-famille-soeur,famille,Famille et relations,Musée des mots,12–16 ans,sœur,Schwester,Fille qui a au moins un parent en commun avec toi
+musee-famille-frere,famille,Famille et relations,Musée des mots,12–16 ans,frère,bruder,Garçon qui a au moins un parent en commun avec toi
+musee-famille-grand-mere,famille,Famille et relations,Musée des mots,12–16 ans,grand-mère,Großmutter,Mère de l’un de ses parents
+musee-famille-grand-pere,famille,Famille et relations,Musée des mots,12–16 ans,grand-père,Großvater,Père de l’un de ses parents
+musee-famille-tante,famille,Famille et relations,Musée des mots,12–16 ans,tante,Tante,Sœur de son père ou de sa mère
+musee-famille-oncle,famille,Famille et relations,Musée des mots,12–16 ans,oncle,Onkel,Frère de son père ou de sa mère
+musee-famille-cousine,famille,Famille et relations,Musée des mots,12–16 ans,cousine,Cousine,Fille de sa tante ou de son oncle
+musee-famille-cousin,famille,Famille et relations,Musée des mots,12–16 ans,cousin,Cousin,Fils de sa tante ou de son oncle
+musee-famille-enfant,famille,Famille et relations,Musée des mots,12–16 ans,enfant,Kindermotive,Jeune personne qui n’est pas encore adulte
+musee-famille-adolescent,famille,Famille et relations,Musée des mots,12–16 ans,adolescent,Teenager-,"Jeune entre l’enfance et l’âge adulte, comme un jeune de 15 ans"
+musee-famille-adulte,famille,Famille et relations,Musée des mots,12–16 ans,adulte,erwachsene,Personne qui n’est plus un enfant ni un adolescent
+musee-famille-ami,famille,Famille et relations,Musée des mots,12–16 ans,ami,Freund,Personne que tu connais bien et avec qui tu aimes passer du temps
+musee-famille-voisin,famille,Famille et relations,Musée des mots,12–16 ans,voisin,Nachbar,Personne qui habite près de chez soi
+musee-famille-prenom,famille,Famille et relations,Musée des mots,12–16 ans,prénom,Vorname,"Nom qu’on te donne à la naissance, comme Lina ou Adam"
+musee-famille-nom-de-famille,famille,Famille et relations,Musée des mots,12–16 ans,nom de famille,Familienname,Nom que les membres d’une même famille peuvent avoir en commun
+musee-famille-age,famille,Famille et relations,Musée des mots,12–16 ans,âge,alter,Nombre d’années depuis ta naissance
+musee-famille-anniversaire,famille,Famille et relations,Musée des mots,12–16 ans,anniversaire,Geburtstag,"Jour où tu fêtes ta naissance, chaque année"
+musee-famille-inviter,famille,Famille et relations,Musée des mots,12–16 ans,inviter,Laden,Proposer à quelqu’un de venir
+musee-famille-saluer,famille,Famille et relations,Musée des mots,12–16 ans,saluer,grüßen,Dire bonjour ou faire un geste pour dire bonjour
+musee-famille-rencontrer,famille,Famille et relations,Musée des mots,12–16 ans,rencontrer,treffen,"Voir quelqu’un, souvent pour la première fois"
+musee-famille-remercier,famille,Famille et relations,Musée des mots,12–16 ans,remercier,danken,Dire merci
+musee-famille-presenter,famille,Famille et relations,Musée des mots,12–16 ans,présenter,vorstellen,Faire connaître une personne à une autre
+musee-famille-partager,famille,Famille et relations,Musée des mots,12–16 ans,partager,teilen,Donner une partie de ce que l’on a
+musee-famille-s-entendre,famille,Famille et relations,Musée des mots,12–16 ans,s’entendre,sich verstehen,Être bien ensemble et avoir peu de disputes
+musee-famille-rendre-visite,famille,Famille et relations,Musée des mots,12–16 ans,rendre visite,besuchen,Aller voir quelqu’un chez lui
+musee-famille-faire-connaissance,famille,Famille et relations,Musée des mots,12–16 ans,faire connaissance,sich kennenlernen,Commencer à connaître une personne
+musee-corps-main,corps,Corps et santé,Musée des mots,12–16 ans,main,hand,Partie au bout du bras qui sert à tenir des objets
+musee-corps-pied,corps,Corps et santé,Musée des mots,12–16 ans,pied,fuß,Partie du corps au bout de la jambe qui touche le sol
+musee-corps-oreille,corps,Corps et santé,Musée des mots,12–16 ans,oreille,Ohr,Partie du corps qui permet d’entendre
+musee-corps-oeil,corps,Corps et santé,Musée des mots,12–16 ans,œil,Auge,Partie du visage qui permet de voir
+musee-corps-nez,corps,Corps et santé,Musée des mots,12–16 ans,nez,Nase,Partie du visage qui sert à sentir les odeurs
+musee-corps-bouche,corps,Corps et santé,Musée des mots,12–16 ans,bouche,mund,Partie du visage que tu ouvres pour parler et manger
+musee-corps-dent,corps,Corps et santé,Musée des mots,12–16 ans,dent,Zahn,Petite partie dure dans la bouche qui sert à couper et à écraser la nourriture
+musee-corps-genou,corps,Corps et santé,Musée des mots,12–16 ans,genou,Knie,"Partie au milieu de la jambe, là où elle se plie"
+musee-corps-thermometre,corps,Corps et santé,Musée des mots,12–16 ans,thermomètre,Thermometer,Objet qui indique la température
+musee-corps-pansement,corps,Corps et santé,Musée des mots,12–16 ans,pansement,Pflaster,Petit morceau qu’on colle sur une coupure pour la protéger
+musee-corps-bequilles,corps,Corps et santé,Musée des mots,12–16 ans,béquilles,Ständer,Deux bâtons sur lesquels tu t’appuies pour marcher quand tu as mal à la jambe
+musee-corps-fauteuil-roulant,corps,Corps et santé,Musée des mots,12–16 ans,fauteuil roulant,Rollstuhl,Chaise avec des roues pour se déplacer en restant assis
+musee-corps-tete,corps,Corps et santé,Musée des mots,12–16 ans,tête,schmerzen,"Partie du corps au-dessus du cou, avec le visage"
+musee-corps-bras,corps,Corps et santé,Musée des mots,12–16 ans,bras,bras,Partie du corps entre l’épaule et la main
+musee-corps-jambe,corps,Corps et santé,Musée des mots,12–16 ans,jambe,Unterschenkel,Partie du corps qui va de la hanche au pied
+musee-corps-dos,corps,Corps et santé,Musée des mots,12–16 ans,dos,Rücken,"Partie du corps derrière toi, entre le cou et le bas du corps"
+musee-corps-ventre,corps,Corps et santé,Musée des mots,12–16 ans,ventre,Bauch,"Partie du corps devant toi, sous la poitrine"
+musee-corps-gorge,corps,Corps et santé,Musée des mots,12–16 ans,gorge,Kehle,Intérieur du cou. L’eau y passe quand tu bois.
+musee-corps-peau,corps,Corps et santé,Musée des mots,12–16 ans,peau,Haut,Ce qui couvre ton corps
+musee-corps-douleur,corps,Corps et santé,Musée des mots,12–16 ans,douleur,Schmerz,Ce que tu sens quand tu as mal
+musee-corps-fievre,corps,Corps et santé,Musée des mots,12–16 ans,fièvre,Fieber,Ton corps est plus chaud que d’habitude parce que tu es malade
+musee-corps-toux,corps,Corps et santé,Musée des mots,12–16 ans,toux,Husten,"Quand de l’air sort brusquement de ta bouche et que ça fait « kheu, kheu »"
+musee-corps-rhume,corps,Corps et santé,Musée des mots,12–16 ans,rhume,Erkältung,Maladie courante qui donne le nez bouché ou qui coule
+musee-corps-blessure,corps,Corps et santé,Musée des mots,12–16 ans,blessure,Wunde,Coupure ou autre mal sur une partie du corps après un accident ou un coup
+musee-corps-medecin,corps,Corps et santé,Musée des mots,12–16 ans,médecin,Arzt,Personne qui examine les malades et leur dit comment se soigner
+musee-corps-medicament,corps,Corps et santé,Musée des mots,12–16 ans,médicament,Medikament,Ce que tu prends pour aller mieux quand tu es malade
+musee-corps-pharmacie,corps,Corps et santé,Musée des mots,12–16 ans,pharmacie,Apotheke,Endroit où tu peux acheter ou chercher des médicaments
+musee-corps-avoir-mal,corps,Corps et santé,Musée des mots,12–16 ans,avoir mal,Schmerzen haben,Sentir une douleur dans une partie du corps
+musee-corps-se-reposer,corps,Corps et santé,Musée des mots,12–16 ans,se reposer,ausruhen,Faire une pause pour être moins fatigué
+musee-corps-se-laver,corps,Corps et santé,Musée des mots,12–16 ans,se laver,"waschen, sich",Nettoyer son corps
+musee-alimentation-pain,alimentation,Alimentation et courses,Musée des mots,12–16 ans,pain,Brot,"Aliment fait avec de la farine et de l’eau, comme la baguette"
+musee-alimentation-pomme,alimentation,Alimentation et courses,Musée des mots,12–16 ans,pomme,apfel,"Fruit rond qui peut être rouge, vert ou jaune"
+musee-alimentation-banane,alimentation,Alimentation et courses,Musée des mots,12–16 ans,banane,Banane,Fruit allongé à peau jaune
+musee-alimentation-riz,alimentation,Alimentation et courses,Musée des mots,12–16 ans,riz,Reis,Petits grains qu’on fait cuire dans l’eau avant de les manger
+musee-alimentation-pates,alimentation,Alimentation et courses,Musée des mots,12–16 ans,pâtes,Nudeln,Nourriture comme les spaghettis ou les macaronis
+musee-alimentation-lait,alimentation,Alimentation et courses,Musée des mots,12–16 ans,lait,milch,Liquide blanc que la vache donne et qu’on peut boire
+musee-alimentation-fromage,alimentation,Alimentation et courses,Musée des mots,12–16 ans,fromage,Käse,"Aliment fait avec du lait, comme le gruyère"
+musee-alimentation-oeuf,alimentation,Alimentation et courses,Musée des mots,12–16 ans,œuf,Ei,Aliment avec une coque dure que donne la poule
+musee-alimentation-carotte,alimentation,Alimentation et courses,Musée des mots,12–16 ans,carotte,Karotte,Légume orange qui pousse dans la terre
+musee-alimentation-tomate,alimentation,Alimentation et courses,Musée des mots,12–16 ans,tomate,Tomate,Aliment souvent rouge qu’on met dans une salade ou une sauce
+musee-alimentation-poisson,alimentation,Alimentation et courses,Musée des mots,12–16 ans,poisson,Fisch,Animal qui vit dans l’eau et qu’on peut manger
+musee-alimentation-eau,alimentation,Alimentation et courses,Musée des mots,12–16 ans,eau,Wasser,Liquide sans couleur que tu peux boire
+musee-alimentation-viande,alimentation,Alimentation et courses,Musée des mots,12–16 ans,viande,Fleisch,Partie d’un animal qu’on prépare pour la manger
+musee-alimentation-poulet,alimentation,Alimentation et courses,Musée des mots,12–16 ans,poulet,Huhn,Jeune poule ou jeune coq qu’on peut manger
+musee-alimentation-legume,alimentation,Alimentation et courses,Musée des mots,12–16 ans,légume,Gemüse,"Nourriture comme la carotte, le poireau ou la salade"
+musee-alimentation-fruit,alimentation,Alimentation et courses,Musée des mots,12–16 ans,fruit,Frucht,"Nourriture comme la pomme, la poire ou la banane"
+musee-alimentation-huile,alimentation,Alimentation et courses,Musée des mots,12–16 ans,huile,olfullung,Liquide gras qu’on met dans la poêle ou dans une salade
+musee-alimentation-sel,alimentation,Alimentation et courses,Musée des mots,12–16 ans,sel,Salz,Petits grains blancs qui donnent le goût salé
+musee-alimentation-sucre,alimentation,Alimentation et courses,Musée des mots,12–16 ans,sucre,Zucker,"Petits grains blancs qu’on ajoute, par exemple, pour rendre un thé sucré"
+musee-alimentation-farine,alimentation,Alimentation et courses,Musée des mots,12–16 ans,farine,MEHL,Poudre qu’on fait avec du blé. Elle sert à faire du pain ou des gâteaux.
+musee-alimentation-soupe,alimentation,Alimentation et courses,Musée des mots,12–16 ans,soupe,Suppe,"Plat qu’on mange à la cuillère, souvent avec des légumes dans du liquide"
+musee-alimentation-repas,alimentation,Alimentation et courses,Musée des mots,12–16 ans,repas,Mahlzeit,Moment où l’on mange des aliments
+musee-alimentation-petit-dejeuner,alimentation,Alimentation et courses,Musée des mots,12–16 ans,petit-déjeuner,Frühstück,Premier repas de la journée
+musee-alimentation-avoir-faim,alimentation,Alimentation et courses,Musée des mots,12–16 ans,avoir faim,Hunger haben,Avoir besoin de manger
+musee-alimentation-avoir-soif,alimentation,Alimentation et courses,Musée des mots,12–16 ans,avoir soif,Durst haben,Avoir besoin de boire
+musee-alimentation-cuisiner,alimentation,Alimentation et courses,Musée des mots,12–16 ans,cuisiner,kochen,Préparer des plats à manger
+musee-alimentation-prix,alimentation,Alimentation et courses,Musée des mots,12–16 ans,prix,preis,Argent qu’il faut donner pour acheter quelque chose
+musee-alimentation-payer,alimentation,Alimentation et courses,Musée des mots,12–16 ans,payer,Zu zahlen,Donner l’argent demandé pour un achat
+musee-alimentation-caisse,alimentation,Alimentation et courses,Musée des mots,12–16 ans,caisse,Kasse,Endroit d’un magasin où l’on paie
+musee-alimentation-boulangerie,alimentation,Alimentation et courses,Musée des mots,12–16 ans,boulangerie,Bäckerei,Magasin où on achète du pain
+musee-maison-maison,maison,Maison et vêtements,Musée des mots,12–16 ans,maison,maison,Bâtiment dans lequel on habite
+musee-maison-lit,maison,Maison et vêtements,Musée des mots,12–16 ans,lit,liest,Meuble sur lequel on dort
+musee-maison-table,maison,Maison et vêtements,Musée des mots,12–16 ans,table,Tisch,Meuble plat sur lequel on pose son assiette ou ses affaires de travail
+musee-maison-chaise,maison,Maison et vêtements,Musée des mots,12–16 ans,chaise,Stuhl,Siège avec un dossier pour une personne
+musee-maison-porte,maison,Maison et vêtements,Musée des mots,12–16 ans,porte,Tür,Ce que tu ouvres pour entrer dans une pièce et que tu peux refermer
+musee-maison-fenetre,maison,Maison et vêtements,Musée des mots,12–16 ans,fenêtre,ein Fenster,Ouverture avec une vitre pour voir dehors et faire entrer la lumière
+musee-maison-cle,maison,Maison et vêtements,Musée des mots,12–16 ans,clé,Schlüssel,Petit objet qu’on tourne dans la serrure pour ouvrir ou fermer une porte
+musee-maison-douche,maison,Maison et vêtements,Musée des mots,12–16 ans,douche,Dusche,Endroit où tu te laves avec de l’eau qui tombe d’en haut
+musee-maison-refrigerateur,maison,Maison et vêtements,Musée des mots,12–16 ans,réfrigérateur,Kühlschrank,Appareil qui garde les aliments au froid
+musee-maison-machine-a-laver,maison,Maison et vêtements,Musée des mots,12–16 ans,machine à laver,Waschmaschine,Appareil qui nettoie le linge
+musee-maison-canape,maison,Maison et vêtements,Musée des mots,12–16 ans,canapé,Couch,Grand siège doux où plusieurs personnes peuvent s’asseoir
+musee-maison-casserole,maison,Maison et vêtements,Musée des mots,12–16 ans,casserole,Kasserolle,Objet avec un manche pour faire cuire des aliments sur le feu ou sur une plaque
+musee-maison-manteau,maison,Maison et vêtements,Musée des mots,12–16 ans,manteau,Mantel,Vêtement chaud que l’on porte par-dessus les autres
+musee-maison-chaussures,maison,Maison et vêtements,Musée des mots,12–16 ans,chaussures,Schuhe,Ce que l’on porte aux pieds pour marcher dehors
+musee-maison-tee-shirt,maison,Maison et vêtements,Musée des mots,12–16 ans,tee-shirt,T-Shirt,Haut léger avec des manches courtes
+musee-maison-casquette,maison,Maison et vêtements,Musée des mots,12–16 ans,casquette,Kappe,"Ce qu’on met sur la tête, avec une partie dure devant pour cacher le soleil"
+musee-maison-appartement,maison,Maison et vêtements,Musée des mots,12–16 ans,appartement,Appartement,Maison à l’intérieur d’un bâtiment où vivent aussi d’autres personnes
+musee-maison-chambre,maison,Maison et vêtements,Musée des mots,12–16 ans,chambre,Kammer,Pièce où l’on dort
+musee-maison-cuisine,maison,Maison et vêtements,Musée des mots,12–16 ans,cuisine,kocht,Pièce où l’on prépare les repas
+musee-maison-salle-de-bains,maison,Maison et vêtements,Musée des mots,12–16 ans,salle de bains,badezimmer,Pièce de la maison où l’on se lave
+musee-maison-salon,maison,Maison et vêtements,Musée des mots,12–16 ans,salon,Stube,Pièce de la maison où on s’assoit pour parler ou regarder la télévision
+musee-maison-escalier,maison,Maison et vêtements,Musée des mots,12–16 ans,escalier,TREPPENAUFGANG,Marches pour aller en haut ou en bas
+musee-maison-lampe,maison,Maison et vêtements,Musée des mots,12–16 ans,lampe,Lampe,Objet qui donne de la lumière
+musee-maison-armoire,maison,Maison et vêtements,Musée des mots,12–16 ans,armoire,Geschirrschrank,Meuble fermé dans lequel on range ses affaires
+musee-maison-pantalon,maison,Maison et vêtements,Musée des mots,12–16 ans,pantalon,kurze,"Vêtement qui couvre les deux jambes, avec une partie pour chaque jambe"
+musee-maison-pull,maison,Maison et vêtements,Musée des mots,12–16 ans,pull,Pullover,Vêtement chaud que l’on enfile par la tête
+musee-maison-chaussettes,maison,Maison et vêtements,Musée des mots,12–16 ans,chaussettes,Socken,Vêtements qui couvrent les pieds dans les chaussures
+musee-maison-veste,maison,Maison et vêtements,Musée des mots,12–16 ans,veste,Jacke,Vêtement du haut du corps qui s’ouvre sur le devant
+musee-maison-ranger,maison,Maison et vêtements,Musée des mots,12–16 ans,ranger,aufräumen,Mettre les choses à leur place
+musee-maison-habiter,maison,Maison et vêtements,Musée des mots,12–16 ans,habiter,wohnst,Vivre à un endroit
+musee-actions-se-lever,actions,Actions du quotidien,Musée des mots,12–16 ans,se lever,aufstehen,Se mettre debout après avoir été au lit ou assis
+musee-actions-se-reveiller,actions,Actions du quotidien,Musée des mots,12–16 ans,se réveiller,erwachen,Ouvrir les yeux et ne plus dormir
+musee-actions-s-habiller,actions,Actions du quotidien,Musée des mots,12–16 ans,s’habiller,sich anziehen,Mettre ses vêtements
+musee-actions-manger,actions,Actions du quotidien,Musée des mots,12–16 ans,manger,essen,Mettre de la nourriture dans sa bouche et l’avaler
+musee-actions-boire,actions,Actions du quotidien,Musée des mots,12–16 ans,boire,trinken,Avaler un liquide
+musee-actions-dormir,actions,Actions du quotidien,Musée des mots,12–16 ans,dormir,schlafen,Se reposer avec les yeux fermés pendant le sommeil
+musee-actions-marcher,actions,Actions du quotidien,Musée des mots,12–16 ans,marcher,laufen,Avancer à pied sans courir
+musee-actions-courir,actions,Actions du quotidien,Musée des mots,12–16 ans,courir,rennen,Avancer à pied en allant plus vite qu’en marchant
+musee-actions-entrer,actions,Actions du quotidien,Musée des mots,12–16 ans,entrer,einzutragen,Aller du dehors vers le dedans
+musee-actions-sortir,actions,Actions du quotidien,Musée des mots,12–16 ans,sortir,ausgehen,Aller du dedans vers le dehors
+musee-actions-partir,actions,Actions du quotidien,Musée des mots,12–16 ans,partir,starten,S’en aller
+musee-actions-arriver,actions,Actions du quotidien,Musée des mots,12–16 ans,arriver,ankommen,Être enfin à l’endroit où tu voulais aller
+musee-actions-attendre,actions,Actions du quotidien,Musée des mots,12–16 ans,attendre,erwarten,Rester jusqu’à ce que quelque chose se passe
+musee-actions-chercher,actions,Actions du quotidien,Musée des mots,12–16 ans,chercher,suchen,Essayer de trouver quelqu’un ou quelque chose
+musee-actions-trouver,actions,Actions du quotidien,Musée des mots,12–16 ans,trouver,entdecken,Voir ou obtenir ce que tu cherchais
+musee-actions-prendre,actions,Actions du quotidien,Musée des mots,12–16 ans,prendre,nehmen,Mettre quelque chose dans sa main ou l’emporter
+musee-actions-donner,actions,Actions du quotidien,Musée des mots,12–16 ans,donner,geben,Faire passer quelque chose de toi à quelqu’un d’autre
+musee-actions-ouvrir,actions,Actions du quotidien,Musée des mots,12–16 ans,ouvrir,oeffnen,"Bouger une porte, une boîte ou un sac pour pouvoir passer ou voir dedans"
+musee-actions-fermer,actions,Actions du quotidien,Musée des mots,12–16 ans,fermer,schliessen,Remettre une porte ou le couvercle d’une boîte pour que tu ne puisses plus passer ou voir dedans
+musee-actions-acheter,actions,Actions du quotidien,Musée des mots,12–16 ans,acheter,kaufen,Donner de l’argent pour avoir quelque chose
+musee-actions-vendre,actions,Actions du quotidien,Musée des mots,12–16 ans,vendre,verkaufen,Donner quelque chose à quelqu’un qui te paie
+musee-actions-porter,actions,Actions du quotidien,Musée des mots,12–16 ans,porter,tragen,Transporter quelque chose sur soi ou dans ses mains
+musee-actions-nettoyer,actions,Actions du quotidien,Musée des mots,12–16 ans,nettoyer,reinigen,Enlever la saleté
+musee-actions-mettre,actions,Actions du quotidien,Musée des mots,12–16 ans,mettre,anhaben,Poser ou placer quelque chose
+musee-actions-enlever,actions,Actions du quotidien,Musée des mots,12–16 ans,enlever,entführen,Prendre quelque chose pour le retirer de l’endroit où il est
+musee-actions-commencer,actions,Actions du quotidien,Musée des mots,12–16 ans,commencer,beginnen,Faire la première partie d’une activité
+musee-actions-finir,actions,Actions du quotidien,Musée des mots,12–16 ans,finir,Beenden,Arriver au bout d’une activité
+musee-actions-oublier,actions,Actions du quotidien,Musée des mots,12–16 ans,oublier,vergessen,Ne plus se souvenir de quelque chose
+musee-actions-aider,actions,Actions du quotidien,Musée des mots,12–16 ans,aider,helfen.,Faire quelque chose pour que ce soit plus facile pour quelqu’un
+musee-actions-choisir,actions,Actions du quotidien,Musée des mots,12–16 ans,choisir,wählen,Dire ou prendre ce que tu veux parmi plusieurs choses
+musee-ville-bus,ville,Ville et transports,Musée des mots,12–16 ans,bus,Bus,Grand véhicule qui prend beaucoup de personnes et s’arrête à plusieurs arrêts
+musee-ville-train,ville,Ville et transports,Musée des mots,12–16 ans,train,Zug,Véhicule qui roule sur des rails et s’arrête dans des gares
+musee-ville-velo,ville,Ville et transports,Musée des mots,12–16 ans,vélo,Fahrrad,Véhicule à deux roues qui avance quand tu pousses sur les pédales
+musee-ville-tram,ville,Ville et transports,Musée des mots,12–16 ans,tram,Straßenbahn,Véhicule qui roule sur des rails dans les rues et prend des voyageurs
+musee-ville-gare,ville,Ville et transports,Musée des mots,12–16 ans,gare,Bahnhof,Endroit où les gens prennent le train
+musee-ville-passage-pieton,ville,Ville et transports,Musée des mots,12–16 ans,passage piéton,Fuβgängerüberweg,Bandes blanches sur la rue pour montrer où passer à pied
+musee-ville-feu-de-circulation,ville,Ville et transports,Musée des mots,12–16 ans,feu de circulation,Verkehrsampel,"Lumières rouge, orange et verte qui disent aux voitures quand s’arrêter et quand passer"
+musee-ville-pont,ville,Ville et transports,Musée des mots,12–16 ans,pont,Brücke,Ce qui permet de passer au-dessus d’une rivière ou d’une route
+musee-ville-arret-de-bus,ville,Ville et transports,Musée des mots,12–16 ans,arrêt de bus,Bushaltestelle,Endroit où tu attends le bus
+musee-ville-rue,ville,Ville et transports,Musée des mots,12–16 ans,rue,Straße,"Chemin entre des bâtiments, dans une ville ou un village"
+musee-ville-route,ville,Ville et transports,Musée des mots,12–16 ans,route,Fahrweg,"Chemin où roulent les voitures, par exemple entre deux villes"
+musee-ville-trottoir,ville,Ville et transports,Musée des mots,12–16 ans,trottoir,Bürgersteig,Partie sur le bord de la rue où les gens marchent
+musee-ville-carrefour,ville,Ville et transports,Musée des mots,12–16 ans,carrefour,Kreuzung,Endroit où deux rues ou plus se croisent
+musee-ville-place,ville,Ville et transports,Musée des mots,12–16 ans,place,Platz,"Grand espace ouvert dans une ville, souvent avec des bâtiments autour"
+musee-ville-quartier,ville,Ville et transports,Musée des mots,12–16 ans,quartier,Stadtviertel,Partie d’une ville où vivent des gens
+musee-ville-ville,ville,Ville et transports,Musée des mots,12–16 ans,ville,Stadt,"Grand endroit avec beaucoup d’habitants, de rues et de magasins"
+musee-ville-village,ville,Ville et transports,Musée des mots,12–16 ans,village,dorf,Petit endroit où vivent moins de gens que dans une ville
+musee-ville-magasin,ville,Ville et transports,Musée des mots,12–16 ans,magasin,GeschÃ¤ft,Lieu où l’on vend des produits
+musee-ville-supermarche,ville,Ville et transports,Musée des mots,12–16 ans,supermarché,Supermarkt,Grand magasin où tu prends toi-même les aliments avant de payer
+musee-ville-hopital,ville,Ville et transports,Musée des mots,12–16 ans,hôpital,Krankenhaus,Endroit où l’on soigne les malades ou les blessés. Certains y dorment pour être soignés.
+musee-ville-billet,ville,Ville et transports,Musée des mots,12–16 ans,billet,Banknote,Petit papier ou code qui te permet de prendre le train ou d’entrer à un spectacle
+musee-ville-abonnement,ville,Ville et transports,Musée des mots,12–16 ans,abonnement,Abonnement,"Ce qui te permet d’utiliser quelque chose plusieurs fois pendant un mois ou un an, par exemple le bus"
+musee-ville-horaire,ville,Ville et transports,Musée des mots,12–16 ans,horaire,Stundenplan,"Liste qui montre à quelle heure le bus part, le cours commence ou le magasin ouvre"
+musee-ville-direction,ville,Ville et transports,Musée des mots,12–16 ans,direction,Leitungen,Côté vers lequel il faut aller
+musee-ville-a-gauche,ville,Ville et transports,Musée des mots,12–16 ans,à gauche,links,Du côté opposé à la droite
+musee-ville-a-droite,ville,Ville et transports,Musée des mots,12–16 ans,à droite,rechts,Du côté opposé à la gauche
+musee-ville-tout-droit,ville,Ville et transports,Musée des mots,12–16 ans,tout droit,"Geradeaus,",Dans la même direction sans tourner
+musee-ville-traverser,ville,Ville et transports,Musée des mots,12–16 ans,traverser,überqueren,Passer d’un côté à l’autre
+musee-ville-descendre,ville,Ville et transports,Musée des mots,12–16 ans,descendre,steigen (hinunter),Sortir d’un bus ou aller vers le bas
+musee-ville-monter,ville,Ville et transports,Musée des mots,12–16 ans,monter,aufsteigen,Entrer dans un bus ou aller vers le haut
+musee-temps-jour,temps,Temps et organisation,Musée des mots,12–16 ans,jour,-Tg.,"Vingt-quatre heures, du début d’une journée au début de la suivante"
+musee-temps-semaine,temps,Temps et organisation,Musée des mots,12–16 ans,semaine,Woche,"Sept jours, du lundi au dimanche"
+musee-temps-mois,temps,Temps et organisation,Musée des mots,12–16 ans,mois,Monat,Une des douze parties de l’année
+musee-temps-annee,temps,Temps et organisation,Musée des mots,12–16 ans,année,Jahr,"Douze mois, de janvier à décembre"
+musee-temps-lundi,temps,Temps et organisation,Musée des mots,12–16 ans,lundi,Montag,Jour qui vient après le dimanche
+musee-temps-mardi,temps,Temps et organisation,Musée des mots,12–16 ans,mardi,Dienstag,Jour entre le lundi et le mercredi
+musee-temps-mercredi,temps,Temps et organisation,Musée des mots,12–16 ans,mercredi,Mittwoch,Jour entre le mardi et le jeudi
+musee-temps-jeudi,temps,Temps et organisation,Musée des mots,12–16 ans,jeudi,Donnerstag,Jour entre le mercredi et le vendredi
+musee-temps-vendredi,temps,Temps et organisation,Musée des mots,12–16 ans,vendredi,Freitag,Jour entre le jeudi et le samedi
+musee-temps-samedi,temps,Temps et organisation,Musée des mots,12–16 ans,samedi,Samstag,Premier jour du week-end
+musee-temps-dimanche,temps,Temps et organisation,Musée des mots,12–16 ans,dimanche,Sonntag,Dernier jour du week-end
+musee-temps-matin,temps,Temps et organisation,Musée des mots,12–16 ans,matin,Morgen,Partie de la journée entre le réveil et midi
+musee-temps-midi,temps,Temps et organisation,Musée des mots,12–16 ans,midi,mittags,Moment où il est douze heures dans la journée
+musee-temps-apres-midi,temps,Temps et organisation,Musée des mots,12–16 ans,après-midi,nachmittags,Partie de la journée entre midi et le soir
+musee-temps-soir,temps,Temps et organisation,Musée des mots,12–16 ans,soir,abends,Partie de la journée entre l’après-midi et la nuit
+musee-temps-nuit,temps,Temps et organisation,Musée des mots,12–16 ans,nuit,Nacht,Période entre le soir et le matin
+musee-temps-hier,temps,Temps et organisation,Musée des mots,12–16 ans,hier,gestern,Le jour avant aujourd’hui
+musee-temps-aujourd-hui,temps,Temps et organisation,Musée des mots,12–16 ans,aujourd’hui,Heute,Le jour où nous sommes
+musee-temps-demain,temps,Temps et organisation,Musée des mots,12–16 ans,demain,Morgen,Le jour après aujourd’hui
+musee-temps-maintenant,temps,Temps et organisation,Musée des mots,12–16 ans,maintenant,jetzt,En ce moment
+musee-temps-bientot,temps,Temps et organisation,Musée des mots,12–16 ans,bientôt,bald,Dans peu de temps
+musee-temps-tot,temps,Temps et organisation,Musée des mots,12–16 ans,tôt,früh,Avant l’heure prévue ou avant l’heure où cela arrive d’habitude
+musee-temps-tard,temps,Temps et organisation,Musée des mots,12–16 ans,tard,spät,Après l’heure prévue ou après l’heure où cela arrive d’habitude
+musee-temps-minute,temps,Temps et organisation,Musée des mots,12–16 ans,minute,Minute,Durée de soixante secondes
+musee-temps-heure,temps,Temps et organisation,Musée des mots,12–16 ans,heure,Stunde,Durée de soixante minutes
+musee-temps-date,temps,Temps et organisation,Musée des mots,12–16 ans,date,Datum,"Le numéro du jour et le mois, par exemple le 12 mai"
+musee-temps-duree,temps,Temps et organisation,Musée des mots,12–16 ans,durée,Dauer,Le temps que prend quelque chose
+musee-temps-rendez-vous,temps,Temps et organisation,Musée des mots,12–16 ans,rendez-vous,Terminvereinbarung,Moment où tu as prévu de voir quelqu’un
+musee-temps-a-l-heure,temps,Temps et organisation,Musée des mots,12–16 ans,à l’heure,pro Stunde,Au moment prévu
+musee-temps-en-retard,temps,Temps et organisation,Musée des mots,12–16 ans,en retard,verspätete,Après le moment prévu
+musee-emotions-content,emotions,Émotions et communication,Musée des mots,12–16 ans,content,content,Heureux parce que quelque chose se passe bien
+musee-emotions-triste,emotions,Émotions et communication,Musée des mots,12–16 ans,triste,beklagenswert,"Qui a de la peine, par exemple parce qu’une personne lui manque"
+musee-emotions-inquiet,emotions,Émotions et communication,Musée des mots,12–16 ans,inquiet,besorgt,Qui pense qu’un problème pourrait arriver
+musee-emotions-surpris,emotions,Émotions et communication,Musée des mots,12–16 ans,surpris,überraschend,Qui ne s’attendait pas à ce qui vient d’arriver
+musee-emotions-fatigue,emotions,Émotions et communication,Musée des mots,12–16 ans,fatigué,mÃ¼de,Qui a besoin de repos
+musee-emotions-calme,emotions,Émotions et communication,Musée des mots,12–16 ans,calme,ruhig,"Tranquille, sans être énervé"
+musee-emotions-fier,emotions,Émotions et communication,Musée des mots,12–16 ans,fier,stolz,Heureux de ce que toi ou quelqu’un d’autre a réussi à faire
+musee-emotions-gene,emotions,Émotions et communication,Musée des mots,12–16 ans,gêné,verlegen,Qui se sent mal à l’aise dans une situation
+musee-emotions-decu,emotions,Émotions et communication,Musée des mots,12–16 ans,déçu,enttäuscht,Qui pensait que ça irait mieux et qui est triste du résultat
+musee-emotions-soulage,emotions,Émotions et communication,Musée des mots,12–16 ans,soulagé,erleichtert,Qui se sent mieux parce que le problème est fini
+musee-emotions-peur,emotions,Émotions et communication,Musée des mots,12–16 ans,peur,Angst,Ce que tu ressens quand tu crois qu’un danger ou un problème peut arriver
+musee-emotions-colere,emotions,Émotions et communication,Musée des mots,12–16 ans,colère,Ã„rger,Ce que tu ressens quand quelque chose t’énerve très fort
+musee-emotions-joie,emotions,Émotions et communication,Musée des mots,12–16 ans,joie,Freude,Ce que tu ressens quand quelque chose te rend très heureux
+musee-emotions-sourire,emotions,Émotions et communication,Musée des mots,12–16 ans,sourire,Lächeln,Faire un petit mouvement de la bouche vers le haut quand on est content
+musee-emotions-rire,emotions,Émotions et communication,Musée des mots,12–16 ans,rire,lachen,Faire « ha ha » parce que quelque chose est drôle
+musee-emotions-pleurer,emotions,Émotions et communication,Musée des mots,12–16 ans,pleurer,weinen,Avoir des larmes qui sortent des yeux
+musee-emotions-parler,emotions,Émotions et communication,Musée des mots,12–16 ans,parler,sprechen,Dire des mots à voix haute
+musee-emotions-demander,emotions,Émotions et communication,Musée des mots,12–16 ans,demander,verlangen,Poser une question ou dire ce que tu veux recevoir
+musee-emotions-repondre,emotions,Émotions et communication,Musée des mots,12–16 ans,répondre,antworten,Dire ou écrire quelque chose après une question
+musee-emotions-comprendre,emotions,Émotions et communication,Musée des mots,12–16 ans,comprendre,einschließen,Savoir ce que veulent dire des mots ou une idée
+musee-emotions-repeter,emotions,Émotions et communication,Musée des mots,12–16 ans,répéter,wiederholen,Dire de nouveau ce qui a déjà été dit
+musee-emotions-expliquer,emotions,Émotions et communication,Musée des mots,12–16 ans,expliquer,erklären,Rendre une idée plus facile à comprendre
+musee-emotions-dire,emotions,Émotions et communication,Musée des mots,12–16 ans,dire,sagen,Utiliser des mots pour faire savoir quelque chose
+musee-emotions-bonjour,emotions,Émotions et communication,Musée des mots,12–16 ans,bonjour,guten Tag,Mot qu’on dit quand on rencontre quelqu’un dans la journée
+musee-emotions-merci,emotions,Émotions et communication,Musée des mots,12–16 ans,merci,danke,Mot qu’on dit quand quelqu’un nous aide ou nous donne quelque chose
+musee-emotions-pardon,emotions,Émotions et communication,Musée des mots,12–16 ans,pardon,vergebung,Mot qu’on dit quand on est désolé ou qu’on veut passer
+musee-emotions-s-il-vous-plait,emotions,Émotions et communication,Musée des mots,12–16 ans,s’il vous plaît,Ich bitte Sie darum!,Mots qu’on ajoute à une demande pour être poli
+musee-emotions-etre-d-accord,emotions,Émotions et communication,Musée des mots,12–16 ans,être d’accord,Beide müssen damit einverstanden sein!,Penser la même chose que quelqu’un ou dire oui à son idée
+musee-emotions-avoir-besoin,emotions,Émotions et communication,Musée des mots,12–16 ans,avoir besoin,benötigen,Devoir avoir quelque chose pour pouvoir faire ce qu’on veut
+musee-emotions-se-tromper,emotions,Émotions et communication,Musée des mots,12–16 ans,se tromper,"irren, sich '33@Qm30",Faire une erreur
+musee-nature-arbre,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,arbre,Baum,Grande plante avec un tronc et des branches
+musee-nature-lac,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,lac,See,Beaucoup d’eau avec de la terre tout autour
+musee-nature-montagne,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,montagne,Berg,Grande forme de terre ou de pierre qui monte très haut
+musee-nature-parapluie,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,parapluie,Regenschirm,Objet que l’on ouvre au-dessus de soi pour rester au sec
+musee-nature-ballon,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,ballon,Ball,Objet rond rempli d’air qu’on lance ou qu’on frappe pour jouer
+musee-nature-guitare,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,guitare,Gitarre,Objet pour faire de la musique avec des cordes qu’on touche avec les doigts
+musee-nature-appareil-photo,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,appareil photo,Kamera,Objet qui sert à prendre des photos
+musee-nature-casque-audio,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,casque audio,Kopfhörer,Objet qu’on met sur les oreilles pour écouter de la musique
+musee-nature-piscine,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,piscine,Schwimmbeckens,Grand endroit rempli d’eau où l’on va nager
+musee-nature-roman,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,roman,Roman,Livre qui raconte le plus souvent une histoire inventée
+musee-nature-theatre,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,théâtre,Schauspielhaus,Spectacle où des personnes jouent une histoire devant des gens
+musee-nature-film,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,film,Film,"Histoire en images qui bougent, par exemple au cinéma"
+musee-nature-soleil,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,soleil,schützen,Étoile qui éclaire et réchauffe la Terre
+musee-nature-pluie,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,pluie,Regen,Gouttes d’eau qui tombent des nuages
+musee-nature-neige,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,neige,Schnee,Flocons blancs qui tombent quand il fait froid
+musee-nature-vent,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,vent,Wind,Déplacement de l’air que l’on peut sentir
+musee-nature-nuage,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,nuage,Wolke,"Forme blanche ou grise dans le ciel, faite de très petites gouttes d’eau ou de glace"
+musee-nature-orage,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,orage,Gewitter,Temps avec du tonnerre et des éclairs
+musee-nature-foret,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,forêt,wald,Grand endroit avec beaucoup d’arbres
+musee-nature-riviere,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,rivière,Fluss,Eau qui coule entre deux bords de terre
+musee-nature-fleur,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,fleur,Blume,Partie souvent colorée d’une plante
+musee-nature-chien,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,chien,Hund,Animal qui fait « ouaf » et que beaucoup de gens ont chez eux
+musee-nature-chat,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,chat,Katze,Animal qui fait « miaou » et que beaucoup de gens ont chez eux
+musee-nature-oiseau,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,oiseau,Vogel,Animal à plumes et à bec
+musee-nature-musique,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,musique,musik,"Sons qu’on écoute ou qu’on joue, par exemple avec une guitare"
+musee-nature-sport,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,sport,Sport,"Activité où tu bouges pour t’amuser, t’entraîner ou gagner, comme le foot"
+musee-nature-jeu,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,jeu,Thu,"Activité qu’on fait pour s’amuser, souvent avec des règles"
+musee-nature-nager,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,nager,schwimmen,Se déplacer dans l’eau grâce aux mouvements du corps
+musee-nature-dessiner,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,dessiner,malen,Faire une image avec un crayon ou un stylo
+musee-nature-jouer,nature,"Nature, météo et loisirs",Musée des mots,12–16 ans,jouer,Französisch arab google Widerspruch,Faire un jeu ou s’amuser avec quelque chose
+musee-formation-stage,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,stage,Probezeit,Quelques jours ou semaines dans un lieu de travail pour découvrir ou apprendre un métier
+musee-formation-apprentissage,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,apprentissage,Lehre,Façon d’apprendre un métier en travaillant et en suivant des cours
+musee-formation-entreprise,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,entreprise,zu,Groupe de personnes qui travaillent ensemble pour vendre des choses ou faire un travail pour des clients
+musee-formation-employeur,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,employeur,Arbeitgeber,Personne ou entreprise qui donne du travail et paie les personnes qui le font
+musee-formation-employe,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,employé,Mitarbeiter,Personne qui travaille pour quelqu’un ou pour une entreprise et reçoit un salaire
+musee-formation-collegue,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,collègue,Kollegen/Kollegin,Personne avec laquelle on travaille
+musee-formation-metier,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,métier,Handwerk,"Travail qu’on apprend à faire, comme cuisiner dans un restaurant"
+musee-formation-candidature,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,candidature,Kandidatur,"Demande pour avoir une place, un stage ou un travail"
+musee-formation-postuler,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,postuler,bewerben,Envoyer une demande pour avoir un stage ou un travail
+musee-formation-curriculum-vit,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,curriculum vitæ,LEBENSLAUF,"Papier ou fichier qui présente tes études, ce que tu sais faire et les endroits où tu as travaillé"
+musee-formation-lettre-de-motivation,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,lettre de motivation,Bewerbungsschreiben,Lettre où tu expliques pourquoi tu veux ce travail ou ce stage
+musee-formation-entretien,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,entretien,Unterhalt,Rencontre où l’on te pose des questions avant de décider si tu peux avoir le travail
+musee-formation-competence,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,compétence,nachweis,"Ce que tu sais faire, par exemple réparer un vélo"
+musee-formation-experience,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,expérience,Erfahrung,Ce que l’on a appris en faisant une activité
+musee-formation-qualification,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,qualification,Qualifikation,Preuve que tu as appris ce qu’il faut pour faire un métier
+musee-formation-formation,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,formation,Ausbildung,Cours et exercices pour apprendre quelque chose ou apprendre un métier
+musee-formation-diplome,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,diplôme,Eidg.,Papier officiel qui montre que tu as réussi des études ou des cours
+musee-formation-contrat,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,contrat,Vertrages,"Accord entre deux personnes ou groupes, souvent écrit. Il dit ce que chacun doit faire."
+musee-formation-salaire,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,salaire,Salär,Argent que tu reçois pour ton travail
+musee-formation-temps-partiel,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,temps partiel,Teilzeit,Travailler moins d’heures qu’une personne qui travaille à plein temps
+musee-formation-responsabilite,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,responsabilité,Verantwortung,Travail dont tu dois t’occuper et dont tu dois expliquer le résultat
+musee-formation-effectuer,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,effectuer,Ausführen,Faire quelque chose qu’on te demande
+musee-formation-respecter-un-delai,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,respecter un délai,Frist einhalten,Finir un travail au plus tard le jour prévu
+musee-formation-ponctualite,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,ponctualité,Pünktlichkeit,Habitude d’arriver à l’heure
+musee-formation-initiative,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,initiative,Initiative,"Commencer à faire quelque chose de toi-même, sans que quelqu’un te le demande"
+musee-formation-autonomie,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,autonomie,Aktionsradius,Pouvoir travailler et faire des choix par toi-même
+musee-formation-encadrement,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,encadrement,Führungskräfte,Aide et suivi d’une personne qui te guide pendant ton travail
+musee-formation-orientation,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,orientation,orientation,Choix des études ou du métier que tu veux faire ensuite
+musee-formation-se-renseigner,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,se renseigner,verständigen‚ sich,Chercher des réponses à tes questions
+musee-formation-faire-un-bilan,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,faire un bilan,eine Bilanz ziehen,"Regarder ce qui a été fait, ce qui a bien marché et ce qu’on peut améliorer"
+musee-formation-place-apprentissage,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,place d’apprentissage,Lehrstelle,Place proposée par une entreprise pour apprendre un métier
+musee-formation-entreprise-formatrice,formation,"Formation, stage et emploi",Musée des mots,12–16 ans,entreprise formatrice,Entreprise Formatrice,Entreprise qui forme une apprentie ou un apprenti
+musee-demarches-formulaire,demarches,Démarches et services publics,Musée des mots,12–16 ans,formulaire,Formular,Papier ou page avec des cases à remplir
+musee-demarches-signature,demarches,Démarches et services publics,Musée des mots,12–16 ans,signature,gez.,Ton nom ou ton signe écrit à la main pour dire que c’est bien toi ou que tu es d’accord
+musee-demarches-piece-d-identite,demarches,Démarches et services publics,Musée des mots,12–16 ans,pièce d’identité,Personalausweis,"Papier officiel qui montre qui tu es, par exemple un passeport"
+musee-demarches-permis-de-sejour,demarches,Démarches et services publics,Musée des mots,12–16 ans,permis de séjour,Aufenthaltsbewilligung,Papier officiel qui te donne le droit de rester dans un pays si tu viens d’un autre pays
+musee-demarches-attestation,demarches,Démarches et services publics,Musée des mots,12–16 ans,attestation,Bestätigung,"Papier qui confirme quelque chose, par exemple que tu es inscrit à l’école"
+musee-demarches-justificatif,demarches,Démarches et services publics,Musée des mots,12–16 ans,justificatif,Belegexemplar,"Papier qui sert à prouver ce que tu dis, par exemple où tu habites"
+musee-demarches-commune,demarches,Démarches et services publics,Musée des mots,12–16 ans,commune,GEMEINDE,"Lieu où tu habites et services qui s’occupent des besoins de ce lieu, comme l’administration communale"
+musee-demarches-administration,demarches,Démarches et services publics,Musée des mots,12–16 ans,administration,Administration Poolwagen,Bureaux et personnes qui s’occupent des papiers et des demandes du public
+musee-demarches-guichet,demarches,Démarches et services publics,Musée des mots,12–16 ans,guichet,Kundendienstabteilung,Endroit où tu parles à une personne derrière une table ou une vitre pour avoir de l’aide ou donner un papier
+musee-demarches-inscription,demarches,Démarches et services publics,Musée des mots,12–16 ans,inscription,Registrierung,Moment où tu donnes ton nom pour pouvoir suivre un cours ou faire une activité
+musee-demarches-dossier,demarches,Démarches et services publics,Musée des mots,12–16 ans,dossier,Ordner,Tous les papiers que tu réunis pour la même demande
+musee-demarches-demande-officielle,demarches,Démarches et services publics,Musée des mots,12–16 ans,demande officielle,Offizielles Ersuchen,Demande faite à un service en suivant les règles qu’il donne
+musee-demarches-renseignement,demarches,Démarches et services publics,Musée des mots,12–16 ans,renseignement,nachrichtendienstliche Erkenntnisse,Réponse qui te donne l’information que tu cherches
+musee-demarches-coordonnees,demarches,Démarches et services publics,Musée des mots,12–16 ans,coordonnées,Kontaktdaten,"Ce qui permet de te contacter, comme ton numéro de téléphone et ton adresse e-mail"
+musee-demarches-adresse-postale,demarches,Démarches et services publics,Musée des mots,12–16 ans,adresse postale,Anschrift,"Rue, numéro et localité où la poste peut t’envoyer une lettre"
+musee-demarches-courrier,demarches,Démarches et services publics,Musée des mots,12–16 ans,courrier,Post,Lettres que tu envoies ou reçois
+musee-demarches-enveloppe,demarches,Démarches et services publics,Musée des mots,12–16 ans,enveloppe,(Brief)umschlag,Pochette en papier dans laquelle tu mets une lettre pour l’envoyer
+musee-demarches-timbre,demarches,Démarches et services publics,Musée des mots,12–16 ans,timbre,Stempelsteuer,Petit papier qu’on colle sur une enveloppe pour montrer que l’envoi a été payé
+musee-demarches-copie,demarches,Démarches et services publics,Musée des mots,12–16 ans,copie,4.ahen,"Autre version du même papier, avec le même texte"
+musee-demarches-original,demarches,Démarches et services publics,Musée des mots,12–16 ans,original,Bedienerhandbuch,"Premier papier, celui qu’on utilise pour faire les copies"
+musee-demarches-joindre,demarches,Démarches et services publics,Musée des mots,12–16 ans,joindre,verbinden,Ajouter un papier à ta demande ou un fichier à ton message
+musee-demarches-deposer,demarches,Démarches et services publics,Musée des mots,12–16 ans,déposer,hinterlegen,Donner ton papier à un bureau pour qu’il s’en occupe
+musee-demarches-renouveler,demarches,Démarches et services publics,Musée des mots,12–16 ans,renouveler,verlängern,Faire durer plus longtemps un document ou un abonnement
+musee-demarches-valable,demarches,Démarches et services publics,Musée des mots,12–16 ans,valable,darstellt.,"Que tu peux encore utiliser, par exemple parce que la date de fin n’est pas passée"
+musee-demarches-expirer,demarches,Démarches et services publics,Musée des mots,12–16 ans,expirer,ablaufen,Arriver à sa date de fin et ne plus pouvoir être utilisé
+musee-demarches-confirmer,demarches,Démarches et services publics,Musée des mots,12–16 ans,confirmer,quittieren,Dire que tu es d’accord pour garder le rendez-vous ou que tu viendras bien
+musee-demarches-annuler,demarches,Démarches et services publics,Musée des mots,12–16 ans,annuler,absagen,Décider que ce qui était prévu ne se fera pas
+musee-demarches-reporter,demarches,Démarches et services publics,Musée des mots,12–16 ans,reporter,Reporter,"Déplacer à un autre jour ou à une autre heure, plus tard"
+musee-demarches-autorisation,demarches,Démarches et services publics,Musée des mots,12–16 ans,autorisation,Genehmigung,Ce que quelqu’un te donne quand il dit que tu as le droit de faire quelque chose
+musee-demarches-obligatoire,demarches,Démarches et services publics,Musée des mots,12–16 ans,obligatoire,angewendet,Que tu dois faire ou donner
+musee-budget-budget,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,budget,Budget,Plan de l’argent que tu vas recevoir et de ce que tu vas payer
+musee-budget-depense,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,dépense,Ausgaben,Argent que tu donnes pour payer quelque chose
+musee-budget-revenu,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,revenu,Einkommen,"Argent que tu reçois, par exemple ton salaire"
+musee-budget-economie,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,économie,Wirtschaft,Argent que tu gardes parce que tu n’as pas eu besoin de le dépenser
+musee-budget-epargner,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,épargner,sparen,Mettre de l’argent de côté pour plus tard
+musee-budget-facture,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,facture,invoice,Papier qui dit ce que tu as acheté et combien tu dois payer
+musee-budget-recu,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,reçu,Quittung,Papier qui montre que tu as déjà payé
+musee-budget-monnaie,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,monnaie,Currency,Pièces qu’on utilise pour payer ou qu’on te rend quand tu donnes trop d’argent
+musee-budget-especes,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,espèces,bar,Argent en billets ou en pièces
+musee-budget-carte-bancaire,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,carte bancaire,Ticket zu behalten,Carte que tu peux utiliser pour payer ou retirer de l’argent à la banque
+musee-budget-compte-bancaire,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,compte bancaire,vom,Endroit à la banque où tu gardes ton argent et où la banque note ce que tu paies
+musee-budget-virement,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,virement,Überweisung,Envoi d’argent d’un compte à un autre
+musee-budget-montant,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,montant,Betrag,Combien d’argent il y a ou combien tu dois payer
+musee-budget-total,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,total,insgesamt,Ce que tu obtiens quand tu ajoutes tous les nombres
+musee-budget-reduction,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,réduction,Ermäßigung,Baisse du prix. Tu paies moins cher.
+musee-budget-promotion,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,promotion,Promotion,Offre d’un magasin pour payer moins cher pendant un certain temps
+musee-budget-garantie,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,garantie,Gewährleistung,Promesse de réparer ou de changer un objet si un problème prévu arrive
+musee-budget-defaut,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,défaut,Schaden,Problème sur un objet qui fait qu’il n’est pas comme prévu
+musee-budget-echanger,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,échanger,tauschen,Rendre un objet et en prendre un autre à sa place
+musee-budget-rembourser,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,rembourser,Überzahlung,Rendre l’argent qui avait été payé
+musee-budget-comparer-les-prix,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,comparer les prix,Preise vergleichen,Regarder combien coûte la même chose à plusieurs endroits avant de choisir
+musee-budget-prix-au-kilo,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,prix au kilo,Preis pro Kilo,Argent à payer pour un kilo de quelque chose
+musee-budget-etiquette,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,étiquette,Peel-Off,Petit papier sur un objet qui donne son prix ou d’autres informations
+musee-budget-date-limite,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,date limite,der Frist,Dernier jour pour faire ou utiliser quelque chose
+musee-budget-occasion,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,occasion,Chance,Objet qui a déjà été utilisé et que l’on vend ou achète
+musee-budget-commande,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,commande,Bestellung,Demande que tu fais à un magasin pour acheter quelque chose
+musee-budget-livraison,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,livraison,zeitraum,Quand le magasin apporte ton achat à l’endroit que tu as choisi
+musee-budget-acompte,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,acompte,Vorauszahlung,Partie du prix que tu paies avant de recevoir ce que tu achètes
+musee-budget-dette,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,dette,Schuld,Argent que tu dois rendre ou payer à quelqu’un
+musee-budget-a-credit,budget,"Budget, achats et consommation",Musée des mots,12–16 ans,à crédit,auf Kredit,"Recevoir quelque chose maintenant et le payer plus tard, parfois en plusieurs fois"
+musee-securite-symptome,securite,Santé et sécurité,Musée des mots,12–16 ans,symptôme,Symptom,"Ce que tu ressens ou vois quand tu es malade, comme la toux ou la fièvre"
+musee-securite-allergie,securite,Santé et sécurité,Musée des mots,12–16 ans,allergie,Allergie,"Quand ton corps réagit mal à quelque chose, comme certains aliments ou la poussière"
+musee-securite-ordonnance,securite,Santé et sécurité,Musée des mots,12–16 ans,ordonnance,satzung,Papier sur lequel un médecin écrit quels médicaments ou quels soins il te faut
+musee-securite-traitement,securite,Santé et sécurité,Musée des mots,12–16 ans,traitement,behandlung,Ce qu’on fait ou ce qu’on te donne pour te soigner
+musee-securite-dose,securite,Santé et sécurité,Musée des mots,12–16 ans,dose,Dosieren,Combien de médicament ou de produit on prend à la fois
+musee-securite-notice,securite,Santé et sécurité,Musée des mots,12–16 ans,notice,notice,Papier qui explique comment utiliser un objet ou un médicament
+musee-securite-effet-secondaire,securite,Santé et sécurité,Musée des mots,12–16 ans,effet secondaire,Nebenwirkung,Réaction à un médicament en plus de ce qu’il est censé faire
+musee-securite-consultation,securite,Santé et sécurité,Musée des mots,12–16 ans,consultation,zum Praxisbesuch,Rendez-vous avec un médecin ou une autre personne qui te soigne
+musee-securite-examen-medical,securite,Santé et sécurité,Musée des mots,12–16 ans,examen médical,ärztliche Untersuchung,"Contrôle pour voir comment va ton corps, par exemple avec une prise de sang"
+musee-securite-vaccin,securite,Santé et sécurité,Musée des mots,12–16 ans,vaccin,Impfstoff,Ce qu’on donne pour aider ton corps à se protéger contre une maladie
+musee-securite-infection,securite,Santé et sécurité,Musée des mots,12–16 ans,infection,Infektion:,Quand de petits êtres comme des bactéries entrent dans ton corps et s’y multiplient
+musee-securite-contagieux,securite,Santé et sécurité,Musée des mots,12–16 ans,contagieux,kontagiös,Qui peut passer d’une personne malade à une autre
+musee-securite-entorse,securite,Santé et sécurité,Musée des mots,12–16 ans,entorse,Verstauchung,Blessure qui peut arriver quand tu tords ta cheville ou une autre partie qui se plie
+musee-securite-fracture,securite,Santé et sécurité,Musée des mots,12–16 ans,fracture,"frac&arc	<g id=""1876"">Le</g>etelarce",Os cassé
+musee-securite-brulure,securite,Santé et sécurité,Musée des mots,12–16 ans,brûlure,Brandwunde,Blessure causée par quelque chose de très chaud ou par un produit qui attaque la peau
+musee-securite-saignement,securite,Santé et sécurité,Musée des mots,12–16 ans,saignement,Haemorrhagie,Quand du sang sort d’une blessure ou d’une partie du corps
+musee-securite-vertige,securite,Santé et sécurité,Musée des mots,12–16 ans,vertige,Taumel,Impression que tout tourne autour de toi
+musee-securite-nausee,securite,Santé et sécurité,Musée des mots,12–16 ans,nausée,Übelkeit,Envie de vomir
+musee-securite-urgence,securite,Santé et sécurité,Musée des mots,12–16 ans,urgence,Notfall,Problème grave qu’il faut régler très vite
+musee-securite-ambulance,securite,Santé et sécurité,Musée des mots,12–16 ans,ambulance,ambulance car,Véhicule qui emmène les personnes malades ou blessées pour qu’on les soigne
+musee-securite-secours,securite,Santé et sécurité,Musée des mots,12–16 ans,secours,unterstützung,Aide rapide quand une personne est en danger
+musee-securite-evacuer,securite,Santé et sécurité,Musée des mots,12–16 ans,évacuer,evakuieren,Faire sortir les gens d’un endroit où ils risquent d’être blessés
+musee-securite-issue-de-secours,securite,Santé et sécurité,Musée des mots,12–16 ans,issue de secours,Fluchtweg,"Porte pour sortir vite d’un bâtiment s’il y a un problème, par exemple un feu"
+musee-securite-danger,securite,Santé et sécurité,Musée des mots,12–16 ans,danger,gefahr,Ce qui peut faire du mal ou causer un accident
+musee-securite-risque,securite,Santé et sécurité,Musée des mots,12–16 ans,risque,Risiko,Possibilité que quelque chose de mauvais arrive
+musee-securite-prevenir,securite,Santé et sécurité,Musée des mots,12–16 ans,prévenir,verhindern,Dire à quelqu’un à l’avance qu’il y a un problème ou un changement
+musee-securite-proteger,securite,Santé et sécurité,Musée des mots,12–16 ans,protéger,beschützen,Faire quelque chose pour que quelqu’un ou quelque chose soit en sécurité
+musee-securite-assurance-maladie,securite,Santé et sécurité,Musée des mots,12–16 ans,assurance maladie,Krankenversicherung,Assurance qui paie une partie de ce que coûtent les soins
+musee-securite-carte-d-assurance,securite,Santé et sécurité,Musée des mots,12–16 ans,carte d’assurance,Versicherungskarte,Carte qui montre quelle assurance paie une partie de tes soins
+musee-securite-avoir-un-malaise,securite,Santé et sécurité,Musée des mots,12–16 ans,avoir un malaise,Unwohlsein haben,"Se sentir soudain très mal, parfois comme si on allait tomber"
+musee-numerique-telephone-portable,numerique,Numérique et vie privée,Musée des mots,12–16 ans,téléphone mobile,mobiles Telefon,"Petit appareil que tu peux emporter pour appeler, écrire des messages ou aller sur Internet"
+musee-numerique-ecran,numerique,Numérique et vie privée,Musée des mots,12–16 ans,écran,leicht,Partie où tu vois les images et les mots sur un téléphone ou un ordinateur
+musee-numerique-clavier,numerique,Numérique et vie privée,Musée des mots,12–16 ans,clavier,Tastatur,Touches sur lesquelles tu appuies pour écrire sur un ordinateur
+musee-numerique-chargeur,numerique,Numérique et vie privée,Musée des mots,12–16 ans,chargeur,Ladegerät,Objet qu’on branche pour redonner de l’énergie à un téléphone ou à un autre appareil
+musee-numerique-batterie,numerique,Numérique et vie privée,Musée des mots,12–16 ans,batterie,Schlagzeug,Partie d’un appareil qui garde de l’énergie pour le faire marcher
+musee-numerique-connexion,numerique,Numérique et vie privée,Musée des mots,12–16 ans,connexion,Verbindung,"Lien qui permet, par exemple, à ton téléphone d’utiliser Internet"
+musee-numerique-reseau,numerique,Numérique et vie privée,Musée des mots,12–16 ans,réseau,Netzwerk,Groupe d’appareils reliés pour s’envoyer des messages ou d’autres informations
+musee-numerique-application,numerique,Numérique et vie privée,Musée des mots,12–16 ans,application,auftrags,"Programme pour faire quelque chose sur un téléphone ou un ordinateur, comme envoyer un message"
+musee-numerique-fichier,numerique,Numérique et vie privée,Musée des mots,12–16 ans,fichier,Kartei,"Photo, texte ou autre chose que tu gardes sous un nom sur ton appareil"
+musee-numerique-dossier-numerique,numerique,Numérique et vie privée,Musée des mots,12–16 ans,dossier numérique,digitale Akte,Endroit sur un ordinateur ou un téléphone où tu ranges plusieurs fichiers
+musee-numerique-telecharger,numerique,Numérique et vie privée,Musée des mots,12–16 ans,télécharger,hochladen,Prendre un fichier sur Internet et le mettre sur ton appareil
+musee-numerique-enregistrer,numerique,Numérique et vie privée,Musée des mots,12–16 ans,enregistrer,Eintragen,Garder ton travail sur ton appareil pour le retrouver
+musee-numerique-supprimer,numerique,Numérique et vie privée,Musée des mots,12–16 ans,supprimer,entfernen,Effacer un fichier ou un message
+musee-numerique-mettre-a-jour,numerique,Numérique et vie privée,Musée des mots,12–16 ans,mettre à jour,aktualisieren,Mettre une version plus récente d’un programme ou changer de vieilles informations
+musee-numerique-mot-de-passe,numerique,Numérique et vie privée,Musée des mots,12–16 ans,mot de passe,PW,"Lettres, chiffres ou signes que tu gardes secrets pour entrer dans ton compte"
+musee-numerique-identifiant,numerique,Numérique et vie privée,Musée des mots,12–16 ans,identifiant,Benutzername,Nom ou code que tu écris pour dire qui tu es sur un site
+musee-numerique-se-connecter,numerique,Numérique et vie privée,Musée des mots,12–16 ans,se connecter,einloggen,Entrer dans ton compte ou relier ton appareil à Internet
+musee-numerique-se-deconnecter,numerique,Numérique et vie privée,Musée des mots,12–16 ans,se déconnecter,abmelden,Sortir de ton compte sur un site ou une application
+musee-numerique-compte-utilisateur,numerique,Numérique et vie privée,Musée des mots,12–16 ans,compte utilisateur,Benutzerkonto,"Ton espace sur un site ou une application, où tu retrouves tes informations"
+musee-numerique-parametre,numerique,Numérique et vie privée,Musée des mots,12–16 ans,paramètre,Parameter.,Choix que tu peux changer sur un appareil ou dans une application
+musee-numerique-confidentialite,numerique,Numérique et vie privée,Musée des mots,12–16 ans,confidentialité,Vertraulichkeit,Le fait de garder des informations privées et de les montrer seulement aux personnes qui ont le droit de les voir
+musee-numerique-donnee-personnelle,numerique,Numérique et vie privée,Musée des mots,12–16 ans,donnée personnelle,Personenbezogene Daten,"Information qui permet de savoir qui tu es, comme ton nom ou ton numéro de téléphone"
+musee-numerique-consentement,numerique,Numérique et vie privée,Musée des mots,12–16 ans,consentement,klärung,Dire oui librement après avoir compris ce qu’on te demande
+musee-numerique-geolocalisation,numerique,Numérique et vie privée,Musée des mots,12–16 ans,géolocalisation,GEOTRACKING,Façon de trouver où est une personne ou un appareil sur une carte
+musee-numerique-capture-d-ecran,numerique,Numérique et vie privée,Musée des mots,12–16 ans,capture d’écran,Bildschirmaufnahme,Photo de ce que tu vois à l’écran
+musee-numerique-lien,numerique,Numérique et vie privée,Musée des mots,12–16 ans,lien,Verbindung,"Mot, image ou adresse sur lesquels tu peux cliquer pour ouvrir une page"
+musee-numerique-courriel,numerique,Numérique et vie privée,Musée des mots,12–16 ans,e-mail,E-Mail-Adresse,Message que tu envoies par Internet
+musee-numerique-piece-jointe,numerique,Numérique et vie privée,Musée des mots,12–16 ans,pièce jointe,Anlage,Photo ou fichier que tu ajoutes à ton e-mail
+musee-numerique-bloquer-un-contact,numerique,Numérique et vie privée,Musée des mots,12–16 ans,bloquer un contact,Einen Kontakt blockieren,Empêcher une personne de t’écrire ou de t’appeler sur une application
+musee-numerique-sauvegarde,numerique,Numérique et vie privée,Musée des mots,12–16 ans,sauvegarde,Backup,Copie que tu gardes pour retrouver tes fichiers si tu les perds
+musee-medias-actualite,medias,Médias et information,Musée des mots,12–16 ans,actualité,Actualité,Ce qui s’est passé récemment et dont les gens parlent
+musee-medias-article,medias,Médias et information,Musée des mots,12–16 ans,article,nummer,"Texte sur un sujet, par exemple dans un journal ou sur un site"
+musee-medias-journal,medias,Médias et information,Musée des mots,12–16 ans,journal,Zeitung,Ensemble de nouvelles qu’on peut lire sur papier ou en ligne
+musee-medias-titre,medias,Médias et information,Musée des mots,12–16 ans,titre,Titel,Mots au-dessus d’un texte qui disent de quoi il parle
+musee-medias-reportage,medias,Médias et information,Musée des mots,12–16 ans,reportage,Reportage,"Texte, vidéo ou enregistrement où une personne raconte ce qu’elle a vu ou appris sur place"
+musee-medias-interview,medias,Médias et information,Musée des mots,12–16 ans,interview,Interview,"Rencontre où une personne pose des questions et l’autre répond pour un journal, une vidéo ou la radio"
+musee-medias-temoignage,medias,Médias et information,Musée des mots,12–16 ans,témoignage,Anwesenheit eines Zeugen,Ce qu’une personne raconte sur quelque chose qu’elle a vu ou vécu
+musee-medias-source,medias,Médias et information,Musée des mots,12–16 ans,source,Quelle,"Personne, livre ou site d’où vient ce que tu as appris"
+musee-medias-auteur,medias,Médias et information,Musée des mots,12–16 ans,auteur,AUTOR,"Personne qui a écrit un texte ou créé quelque chose, comme un livre"
+musee-medias-publication,medias,Médias et information,Musée des mots,12–16 ans,publication,Publikation,"Texte, photo ou vidéo qu’on a mis à la disposition des autres"
+musee-medias-legende,medias,Médias et information,Musée des mots,12–16 ans,légende,"Legende, Sage",Court texte qui explique une image
+musee-medias-fait,medias,Médias et information,Musée des mots,12–16 ans,fait,wäscht,Ce qui s’est vraiment passé et qu’on peut contrôler
+musee-medias-opinion,medias,Médias et information,Musée des mots,12–16 ans,opinion,Meinung,Ce que tu penses de quelque chose
+musee-medias-preuve,medias,Médias et information,Musée des mots,12–16 ans,preuve,Beleg,Ce qui montre que quelque chose est vrai
+musee-medias-rumeur,medias,Médias et information,Musée des mots,12–16 ans,rumeur,Gerücht,Nouvelle que les gens se racontent alors qu’on ne sait pas si elle est vraie
+musee-medias-desinformation,medias,Médias et information,Musée des mots,12–16 ans,désinformation,Desinformation,Partager exprès des informations fausses pour tromper les gens
+musee-medias-fiable,medias,Médias et information,Musée des mots,12–16 ans,fiable,verlässlich,À qui ou à quoi tu peux faire confiance
+musee-medias-verifier,medias,Médias et information,Musée des mots,12–16 ans,vérifier,prüfen,Regarder si ce qu’on te dit est vrai
+musee-medias-recouper,medias,Médias et information,Musée des mots,12–16 ans,recouper,überkreuzen,"Regarder ce que disent plusieurs personnes, livres ou sites pour voir si leurs informations vont ensemble"
+musee-medias-citer,medias,Médias et information,Musée des mots,12–16 ans,citer,zitieren,Redire les mots de quelqu’un ou dire d’où vient ce que tu as appris
+musee-medias-publicite,medias,Médias et information,Musée des mots,12–16 ans,publicité,Werbung,Message qui cherche à te donner envie d’acheter quelque chose ou de t’y intéresser
+musee-medias-media,medias,Médias et information,Musée des mots,12–16 ans,média,Medien,"Moyen de donner des nouvelles à beaucoup de gens, comme la radio, la télé ou un journal"
+musee-medias-reseau-social,medias,Médias et information,Musée des mots,12–16 ans,réseau social,soziale Netzwerk,Site ou application où tu peux mettre des photos et des messages et parler avec d’autres
+musee-medias-commentaire,medias,Médias et information,Musée des mots,12–16 ans,commentaire,Kommentar,Ce que tu écris ou dis après avoir lu ou vu quelque chose
+musee-medias-partager-un-contenu,medias,Médias et information,Musée des mots,12–16 ans,partager un contenu,Inhalte teilen,"Envoyer une photo, une vidéo ou un texte pour que d’autres puissent le voir"
+musee-medias-diffuser,medias,Médias et information,Musée des mots,12–16 ans,diffuser,Aussenden,"Faire arriver un message, un son ou une vidéo à beaucoup de personnes"
+musee-medias-nuancer,medias,Médias et information,Musée des mots,12–16 ans,nuancer,schattieren,Dire une idée avec plus de détails pour montrer que les choses ne sont pas toujours pareilles
+musee-medias-contexte,medias,Médias et information,Musée des mots,12–16 ans,contexte,Hintergrund,Ce qui se passe autour d’un fait ou d’une parole et qui aide à comprendre
+musee-medias-point-de-vue,medias,Médias et information,Musée des mots,12–16 ans,point de vue,Sichtweise,La façon dont une personne voit les choses
+musee-medias-fait-divers,medias,Médias et information,Musée des mots,12–16 ans,fait divers,Verschiedenes,Courte nouvelle sur un accident ou un autre événement de la vie de tous les jours
+musee-logement-loyer,logement,Logement et vie en commun,Musée des mots,12–16 ans,loyer,Zins,Argent que tu paies chaque mois pour vivre dans un logement
+musee-logement-bail,logement,Logement et vie en commun,Musée des mots,12–16 ans,bail,Mietvertrag,Accord écrit qui dit à quel prix et selon quelles règles tu peux vivre dans un logement
+musee-logement-locataire,logement,Logement et vie en commun,Musée des mots,12–16 ans,locataire,Leasingnehmer,Personne qui paie pour vivre dans un logement qui est à quelqu’un d’autre
+musee-logement-proprietaire,logement,Logement et vie en commun,Musée des mots,12–16 ans,propriétaire,Besitzer,"Personne à qui appartient quelque chose, comme une maison"
+musee-logement-regie,logement,Logement et vie en commun,Musée des mots,12–16 ans,régie,Staatliche Kontrolle,Entreprise qui s’occupe des logements pour les personnes à qui ils appartiennent
+musee-logement-garantie-de-loyer,logement,Logement et vie en commun,Musée des mots,12–16 ans,garantie de loyer,Mietkaution,Argent ou promesse de paiement prévu pour certains problèmes pendant la location d’un logement
+musee-logement-charges,logement,Logement et vie en commun,Musée des mots,12–16 ans,charges,NEBENKOSTEN,"Argent payé en plus du prix de base du logement, par exemple pour le chauffage"
+musee-logement-etat-des-lieux,logement,Logement et vie en commun,Musée des mots,12–16 ans,état des lieux,Inventar,Papier qui décrit l’état du logement au début ou à la fin de la location
+musee-logement-emmenager,logement,Logement et vie en commun,Musée des mots,12–16 ans,emménager,einziehen,Aller vivre dans un nouveau logement et y mettre ses affaires
+musee-logement-demenager,logement,Logement et vie en commun,Musée des mots,12–16 ans,déménager,umziehen,Quitter un logement pour aller vivre ailleurs
+musee-logement-colocation,logement,Logement et vie en commun,Musée des mots,12–16 ans,colocation,wohngemeinschaft,Partager un logement avec d’autres personnes qui y vivent aussi
+musee-logement-menage,logement,Logement et vie en commun,Musée des mots,12–16 ans,ménage,versicherung,Une personne seule ou plusieurs personnes qui habitent ensemble
+musee-logement-entretien-du-logement,logement,Logement et vie en commun,Musée des mots,12–16 ans,entretien du logement,Instandhaltung der Wohnung,Travail régulier pour garder le logement propre et en bon état
+musee-logement-reparation,logement,Logement et vie en commun,Musée des mots,12–16 ans,réparation,Reparaturmechanismus,Travail pour refaire marcher quelque chose qui ne marche plus
+musee-logement-panne,logement,Logement et vie en commun,Musée des mots,12–16 ans,panne,Pfette,Quand un appareil arrête de marcher tout à coup
+musee-logement-fuite-d-eau,logement,Logement et vie en commun,Musée des mots,12–16 ans,fuite d’eau,Wasser-Leck,Eau qui sort à un endroit où elle devrait rester dans un tuyau ou un appareil
+musee-logement-chauffage,logement,Logement et vie en commun,Musée des mots,12–16 ans,chauffage,Heizung,Ce qui sert à garder une pièce chaude
+musee-logement-electricite,logement,Logement et vie en commun,Musée des mots,12–16 ans,électricité,Elektrizität,Énergie qui permet aux lampes et aux appareils de marcher quand on les branche
+musee-logement-compteur,logement,Logement et vie en commun,Musée des mots,12–16 ans,compteur,Zähler,Appareil qui montre combien d’eau ou d’électricité tu as utilisée
+musee-logement-concierge,logement,Logement et vie en commun,Musée des mots,12–16 ans,concierge,Portier,Personne qui aide à s’occuper d’un immeuble et de ses espaces partagés
+musee-logement-reglement-interieur,logement,Logement et vie en commun,Musée des mots,12–16 ans,règlement intérieur,Betriebsordnung,"Règles à suivre à l’intérieur d’une école, d’un lieu de travail ou d’un immeuble"
+musee-logement-voisinage,logement,Logement et vie en commun,Musée des mots,12–16 ans,voisinage,Nachbarschaft,Les gens qui vivent près de chez toi ou les lieux qui t’entourent
+musee-logement-bruit,logement,Logement et vie en commun,Musée des mots,12–16 ans,bruit,Geräusch,"Son qu’on entend, parfois assez fort pour gêner"
+musee-logement-signaler,logement,Logement et vie en commun,Musée des mots,12–16 ans,signaler,melden,Dire à la bonne personne qu’il y a un problème
+musee-logement-dechet,logement,Logement et vie en commun,Musée des mots,12–16 ans,déchet,schlüssel,Objet ou matière que l’on jette
+musee-logement-tri-des-dechets,logement,Logement et vie en commun,Musée des mots,12–16 ans,tri des déchets,Abfallsortierung,"Mettre chaque chose que tu jettes dans le bon groupe, comme le papier ou le verre"
+musee-logement-dechetterie,logement,Logement et vie en commun,Musée des mots,12–16 ans,déchetterie,Abfallsortierungsanlage,"Endroit où tu apportes des choses à jeter, comme un vieux meuble ou des piles"
+musee-logement-communs,logement,Logement et vie en commun,Musée des mots,12–16 ans,communs,UNTERRICHTSFÄCHER,"Parties d’un bâtiment que plusieurs personnes utilisent, comme l’entrée ou l’escalier"
+musee-logement-preavis,logement,Logement et vie en commun,Musée des mots,12–16 ans,préavis,Kündigung,Temps entre le moment où tu annonces ton départ et le moment où tu peux partir
+musee-logement-logement-meuble,logement,Logement et vie en commun,Musée des mots,12–16 ans,logement meublé,MÖBLIERTE WOHNUNG,Logement qui a déjà des meubles quand tu le loues
+musee-argumentation-argument,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,argument,Diskussion,Raison que tu donnes pour expliquer pourquoi tu penses quelque chose
+musee-argumentation-exemple,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,exemple,Beispiel,Cas concret qui aide à comprendre une idée
+musee-argumentation-justifier,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,justifier,begründen,Dire pourquoi tu as donné cette réponse ou fait ce choix
+musee-argumentation-resumer,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,résumer,Kurz zusammenfassen,Redire un texte plus court en gardant les idées les plus importantes
+musee-argumentation-reformuler,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,reformuler,Formulierung ändern,Redire la même idée avec d’autres mots
+musee-argumentation-deduire,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,déduire,abziehen,Trouver une réponse grâce à ce que tu sais déjà
+musee-argumentation-analyser,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,analyser,analysieren,Regarder les différentes parties d’une chose pour mieux la comprendre
+musee-argumentation-interpreter,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,interpréter,interpretieren,Dire ce que tu comprends de ce que tu vois ou lis
+musee-argumentation-comparer,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,comparer,vergleichen,Chercher ce qui est pareil et ce qui est différent
+musee-argumentation-classer,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,classer,klassifizieren,Mettre des choses dans un ordre ou dans des groupes
+musee-argumentation-definir,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,définir,festzulegen,Dire ce qu’un mot ou une idée veut dire
+musee-argumentation-illustrer,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,illustrer,veranschaulichen,Donner un exemple ou montrer une image pour aider à comprendre une idée
+musee-argumentation-decrire,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,décrire,beschreiben,"Dire comment est une personne, un objet ou un lieu"
+musee-argumentation-demontrer,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,démontrer,hinweisen,Montrer étape par étape pourquoi une idée est vraie
+musee-argumentation-conclure,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,conclure,abschliessen,Dire pour finir ce que tu as compris ou retenu
+musee-argumentation-hypothese,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,hypothèse,Hypothese,Réponse possible que tu veux vérifier
+musee-argumentation-cause,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,cause,Grund,Ce qui fait arriver quelque chose
+musee-argumentation-consequence,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,conséquence,Effekt,Ce qui arrive à cause d’une chose qui s’est passée avant
+musee-argumentation-condition,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,condition,Bedingung:,Ce qui doit être vrai ou fait pour que quelque chose puisse arriver
+musee-argumentation-objectif,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,objectif,Ziel,Ce que tu veux réussir
+musee-argumentation-demarche,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,démarche,Gang,Les étapes que tu suis pour arriver à un résultat
+musee-argumentation-critere,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,critère,Kriterium,"Point que tu regardes pour faire un choix, comme le prix ou la taille"
+musee-argumentation-cependant,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,cependant,dennoch,"Mot proche de « mais », pour ajouter une idée qui va dans un autre sens"
+musee-argumentation-puisque,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,puisque,Da,"Mot proche de « parce que », quand la raison est déjà connue ou facile à voir"
+musee-argumentation-donc,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,donc,also,Mot qui montre ce qui arrive à cause de ce que tu viens de dire
+musee-argumentation-en-revanche,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,en revanche,Stattdessen:,Expression qui montre une différence avec ce qu’on vient de dire
+musee-argumentation-par-consequent,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,par conséquent,"und folglich,","Expression proche de « donc », qui présente le résultat de ce qui vient d’être dit"
+musee-argumentation-par-exemple,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,par exemple,z.B.,Expression qu’on met avant de donner un cas concret
+musee-argumentation-en-resume,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,en résumé,zusammenfassend,Expression qu’on dit avant de répéter seulement les idées importantes
+musee-argumentation-d-apres,argumentation,Argumenter et apprendre,Musée des mots,12–16 ans,d’après,gemäß,Expression qui veut dire « selon ce que dit cette personne ou ce document »
+musee-citoyennete-droit,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,droit,rechte,Ce qu’une règle ou une loi te permet de faire ou d’avoir
+musee-citoyennete-devoir-civique,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,devoir civique,Bürgerpflicht,"Ce que tu dois faire pour la vie en commun, comme respecter les lois"
+musee-citoyennete-loi,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,loi,Gesetz,Règle que le pays ou le canton décide et que les personnes doivent suivre
+musee-citoyennete-regle-commune,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,règle commune,Gemeinsame Regelung,Règle que toutes les personnes d’un groupe doivent suivre
+musee-citoyennete-egalite,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,égalité,Gleichheit,Le fait d’avoir les mêmes droits que les autres
+musee-citoyennete-respect,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,respect,Respekt,Écouter les autres et tenir compte de ce qu’ils ressentent ou refusent
+musee-citoyennete-discrimination,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,discrimination,Diskriminierung,"Traiter une personne moins bien à cause, par exemple, de son origine ou de son handicap"
+musee-citoyennete-harcelement,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,harcèlement,Belästigungen,"Faire du mal à la même personne plusieurs fois, par exemple en se moquant d’elle ou en la mettant à l’écart"
+musee-citoyennete-solidarite,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,solidarité,zuschlag,S’aider quand quelqu’un a un problème
+musee-citoyennete-association,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,association,Verein,Groupe de personnes qui se réunissent pour faire quelque chose ensemble
+musee-citoyennete-benevolat,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,bénévolat,Freiwilligenarbeit,Donner de son temps pour aider sans recevoir d’argent
+musee-citoyennete-participer,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,participer,teilnehmen,Faire quelque chose avec les autres ou donner son avis dans une décision
+musee-citoyennete-s-engager,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,s’engager,sich engagieren,Décider d’agir ou de donner de son temps pour une idée ou un projet
+musee-citoyennete-citoyen,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,citoyen,Bürger,Personne qui fait partie d’un pays et qui y a des droits et des devoirs
+musee-citoyennete-election,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,élection,Wahl,Moment où l’on choisit une ou plusieurs personnes en votant
+musee-citoyennete-vote,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,vote,Stimme,"Quand tu fais connaître ton choix pour décider avec les autres, par exemple avec un bulletin"
+musee-citoyennete-majorite,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,majorité,Mehrheit,Plus de la moitié des personnes ou des voix comptées
+musee-citoyennete-minorite,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,minorité,Minderheit,Partie d’un groupe qui compte moins de personnes ou de voix que l’autre
+musee-citoyennete-debat,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,débat,Debatte,Discussion organisée où des personnes expliquent leurs avis différents
+musee-citoyennete-compromis,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,compromis,Kompromiss,Accord où chacun accepte de changer un peu ce qu’il voulait
+musee-citoyennete-conflit,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,conflit,Streit,Désaccord important entre des personnes ou des groupes
+musee-citoyennete-mediation,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,médiation,Mittlerdienste,Aide d’une personne qui ne prend pas parti pour que deux personnes trouvent un accord
+musee-citoyennete-plainte,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,plainte,Strafanzeige,Quand une personne dit à la police ou à la justice que quelqu’un a fait quelque chose d’interdit
+musee-citoyennete-service-public,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,service public,Öffentliche Dienste,"Service organisé pour les habitants, comme une école publique"
+musee-citoyennete-canton,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,canton,Kantons,"Une des parties de la Suisse qui a ses propres autorités, comme Vaud ou Genève"
+musee-citoyennete-confederation,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,Confédération,Staatenbund,L’État qui s’occupe des questions qui concernent toute la Suisse
+musee-citoyennete-accessibilite,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,accessibilité,Zugänglichkeit,"Le fait de pouvoir entrer dans un lieu ou utiliser un service, même si l’on a un handicap"
+musee-citoyennete-inclusion,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,inclusion,einbezug,Faire en sorte que chacun ait sa place et puisse participer avec les autres
+musee-citoyennete-responsable,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,responsable,"selbstverantwortlich, verantwortungsbewusst",Personne qui doit s’occuper d’un travail ou d’un groupe
+musee-citoyennete-regles-de-vie,citoyennete,Citoyenneté et vie collective,Musée des mots,12–16 ans,règles de vie,Lebensregeln,Règles que les gens suivent pour vivre ensemble
+musee-environnement-environnement,environnement,Environnement et choix de société,Musée des mots,12–16 ans,environnement,Umwelt,"Tout ce qui nous entoure, comme l’air, l’eau, les plantes et les lieux où l’on vit"
+musee-environnement-climat,environnement,Environnement et choix de société,Musée des mots,12–16 ans,climat,Klima,Le temps qu’il fait d’habitude dans une région sur beaucoup d’années
+musee-environnement-rechauffement-climatique,environnement,Environnement et choix de société,Musée des mots,12–16 ans,réchauffement climatique,Klimaerwärmung,Le fait que la Terre devient plus chaude en moyenne pendant de nombreuses années
+musee-environnement-pollution,environnement,Environnement et choix de société,Musée des mots,12–16 ans,pollution,Verschmutzung,"Ce qui salit ou abîme l’air, l’eau ou le sol, comme certaines fumées"
+musee-environnement-emission,environnement,Environnement et choix de société,Musée des mots,12–16 ans,émission,Emission,"Ce qui est envoyé dans l’air, par exemple un gaz qui sort d’une voiture"
+musee-environnement-energie-renouvelable,environnement,Environnement et choix de société,Musée des mots,12–16 ans,énergie renouvelable,erneuerbare ernergie,"Énergie qui vient d’une source que la nature renouvelle, comme le soleil ou le vent"
+musee-environnement-consommation,environnement,Environnement et choix de société,Musée des mots,12–16 ans,consommation,Mindesthaltbarkeitsdatum,"Ce qu’on utilise, par exemple l’eau ou l’électricité"
+musee-environnement-ressource-naturelle,environnement,Environnement et choix de société,Musée des mots,12–16 ans,ressource naturelle,natürliche Ressource,"Ce que la nature nous donne et que nous pouvons utiliser, comme l’eau ou le bois"
+musee-environnement-gaspillage,environnement,Environnement et choix de société,Musée des mots,12–16 ans,gaspillage,Überreste,Utiliser trop de choses ou en jeter alors qu’on pourrait encore s’en servir
+musee-environnement-recycler,environnement,Environnement et choix de société,Musée des mots,12–16 ans,recycler,recyclen,"Faire de nouvelles choses avec des matières qu’on a jetées, comme du verre ou du papier"
+musee-environnement-reutiliser,environnement,Environnement et choix de société,Musée des mots,12–16 ans,réutiliser,Wiederverwenden,Utiliser quelque chose une deuxième fois ou plus
+musee-environnement-reduire,environnement,Environnement et choix de société,Musée des mots,12–16 ans,réduire,reduzieren.,Faire devenir plus petit ou moins nombreux
+musee-environnement-compost,environnement,Environnement et choix de société,Musée des mots,12–16 ans,compost,Kompost,Matière qu’on obtient quand des restes de plantes ou de cuisine se défont. Elle sert à nourrir la terre.
+musee-environnement-emballage,environnement,Environnement et choix de société,Musée des mots,12–16 ans,emballage,Verpackung,"Ce qui couvre et protège ce que tu achètes, comme un sac ou une boîte"
+musee-environnement-plastique,environnement,Environnement et choix de société,Musée des mots,12–16 ans,plastique,Kunsstoff,Matière qu’on peut former pour faire des objets comme des bouteilles ou des boîtes
+musee-environnement-biodiversite,environnement,Environnement et choix de société,Musée des mots,12–16 ans,biodiversité,wir,"Le fait qu’il y ait beaucoup de sortes différentes d’animaux, de plantes et d’autres êtres vivants"
+musee-environnement-espece,environnement,Environnement et choix de société,Musée des mots,12–16 ans,espèce,Spezies,"Groupe d’êtres vivants de la même sorte, par exemple les chats"
+musee-environnement-habitat-naturel,environnement,Environnement et choix de société,Musée des mots,12–16 ans,habitat naturel,natürlicher Lebensraum,Endroit où un animal ou une plante vit d’habitude dans la nature
+musee-environnement-zone-protegee,environnement,Environnement et choix de société,Musée des mots,12–16 ans,zone protégée,Schutzgebiet,Endroit où des règles aident à protéger les animaux et les plantes
+musee-environnement-secheresse,environnement,Environnement et choix de société,Musée des mots,12–16 ans,sécheresse,Trockenheit,Long moment où il pleut trop peu et où l’eau vient à manquer
+musee-environnement-inondation,environnement,Environnement et choix de société,Musée des mots,12–16 ans,inondation,berschwemmung,"Quand l’eau couvre un endroit normalement sec, comme une rue ou un champ"
+musee-environnement-canicule,environnement,Environnement et choix de société,Musée des mots,12–16 ans,canicule,Hitzewelle,Plusieurs jours de suite avec une chaleur très forte
+musee-environnement-economiser-l-eau,environnement,Environnement et choix de société,Musée des mots,12–16 ans,économiser l’eau,Wasser sparen,Utiliser juste l’eau dont on a besoin
+musee-environnement-mobilite-douce,environnement,Environnement et choix de société,Musée des mots,12–16 ans,mobilité douce,Sanfte Mobilität,"Se déplacer, par exemple à pied ou à vélo, avec peu d’énergie"
+musee-environnement-covoiturage,environnement,Environnement et choix de société,Musée des mots,12–16 ans,covoiturage,Fahrgemeinschaft,Faire un même trajet dans la même voiture avec d’autres personnes
+musee-environnement-transport-public,environnement,Environnement et choix de société,Musée des mots,12–16 ans,transport public,ÖV,Moyens de déplacement comme le bus et le train que tout le monde peut prendre
+musee-environnement-produit-local,environnement,Environnement et choix de société,Musée des mots,12–16 ans,produit local,Das von hier.,Chose fabriquée ou cultivée près de l’endroit où on l’achète
+musee-environnement-saison-de-recolte,environnement,Environnement et choix de société,Musée des mots,12–16 ans,saison de récolte,Erntezeit,"Moment de l’année où on ramasse un fruit, un légume ou du grain"
+musee-environnement-empreinte-carbone,environnement,Environnement et choix de société,Musée des mots,12–16 ans,empreinte carbone,Kohlenstoff-Fussabdruck,Quantité estimée de gaz qui réchauffent la Terre et qu’un objet ou une activité a fait rejeter
+musee-environnement-developpement-durable,environnement,Environnement et choix de société,Musée des mots,12–16 ans,développement durable,nachhaltige Entwicklung,Répondre à nos besoins aujourd’hui en prenant soin de la nature et des ressources pour les personnes qui vivront plus tard
+musee-coiffeuse-salon,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,salon,Stube,Endroit où la coiffeuse travaille
+musee-coiffeuse-cliente,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,cliente,Kunde),Personne qui vient se faire coiffer
+musee-coiffeuse-rendez-vous,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,rendez-vous,Terminvereinbarung,Temps prévu pour rencontrer quelqu’un
+musee-coiffeuse-fauteuil,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,fauteuil,Sessel,Siège dans lequel la cliente s’assoit
+musee-coiffeuse-miroir,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,miroir,Spiegel,Objet dans lequel on voit son reflet
+musee-coiffeuse-ciseaux,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,ciseaux,Schere,Outil qui sert à couper les cheveux
+musee-coiffeuse-peigne,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,peigne,Kamm,Outil avec des dents qui sert à démêler les cheveux
+musee-coiffeuse-brosse,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,brosse,Bürste,Outil qui sert à coiffer ou à démêler les cheveux
+musee-coiffeuse-shampoing,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,shampoing,Shampoo,Produit qui sert à laver les cheveux
+musee-coiffeuse-serviette,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,serviette,Handtuch,Tissu qui sert à sécher
+musee-coiffeuse-cape,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,cape,Umhang,Tissu posé sur la cliente pour protéger ses vêtements
+musee-coiffeuse-couleur,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,couleur,Farbe,Produit ou résultat qui change la couleur des cheveux
+musee-coiffeuse-meches,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,mèches,Bohreinsätze,Petites parties de cheveux colorées
+musee-coiffeuse-coupe,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,coupe,Pokal,Forme donnée aux cheveux
+musee-coiffeuse-frange,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,frange,franse,Cheveux coupés au-dessus du front
+musee-coiffeuse-laver,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,laver,waschen,Nettoyer avec de l’eau et du shampoing
+musee-coiffeuse-rincer,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,rincer,spülen,Enlever le produit avec de l’eau
+musee-coiffeuse-couper,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,couper,schneiden,Enlever une partie avec des ciseaux
+musee-coiffeuse-secher,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,sécher,trocknen,Enlever l’eau
+musee-coiffeuse-coiffer,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,coiffer,frisieren,Donner une forme aux cheveux
+musee-coiffeuse-bac,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,bac,Schubladenkasten,Évier spécial pour laver les cheveux
+musee-coiffeuse-tondeuse,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,tondeuse,Schermaschine,Outil électrique qui coupe les cheveux
+musee-coiffeuse-seche-cheveux,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,sèche-cheveux,Haartrockner,Appareil qui souffle de l’air chaud
+musee-coiffeuse-cuir-chevelu,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,cuir chevelu,kopfhaut,Peau qui se trouve sur la tête
+musee-coiffeuse-effiler,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,effiler,ausdünnen,Enlever un peu d’épaisseur aux cheveux
+musee-coiffeuse-decoloration,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,décoloration,Entfärbung,Action qui rend les cheveux plus clairs
+musee-coiffeuse-retouche,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,retouche,Retouchieren,Petite correction après la coupe
+musee-coiffeuse-allergie,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,allergie,Allergie,Réaction du corps à un produit
+musee-coiffeuse-reclamation,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,réclamation,Beschwerde,Message d’un client qui n’est pas content
+musee-coiffeuse-inventaire,coiffeuse,Coiffeuse,Musée des mots,12–16 ans,inventaire,Inventarisierung,Liste des produits disponibles
+musee-fleuriste-boutique,fleuriste,Fleuriste,Musée des mots,12–16 ans,boutique,shop,Magasin où l’on vend des fleurs
+musee-fleuriste-atelier,fleuriste,Fleuriste,Musée des mots,12–16 ans,atelier,Werkstatt,Endroit où l’on prépare les bouquets
+musee-fleuriste-bouquet,fleuriste,Fleuriste,Musée des mots,12–16 ans,bouquet,Blumenstrauß,Ensemble de fleurs attachées
+musee-fleuriste-composition,fleuriste,Fleuriste,Musée des mots,12–16 ans,composition,Zusammensetzung,Ensemble de fleurs et de plantes arrangées
+musee-fleuriste-vase,fleuriste,Fleuriste,Musée des mots,12–16 ans,vase,Vase,Récipient qui contient des fleurs
+musee-fleuriste-tige,fleuriste,Fleuriste,Musée des mots,12–16 ans,tige,Stängel,Partie longue qui porte une fleur
+musee-fleuriste-feuille,fleuriste,Fleuriste,Musée des mots,12–16 ans,feuille,Blatt,Partie verte d’une plante
+musee-fleuriste-petale,fleuriste,Fleuriste,Musée des mots,12–16 ans,pétale,Bluetenblatt,Partie colorée d’une fleur
+musee-fleuriste-plante,fleuriste,Fleuriste,Musée des mots,12–16 ans,plante,Gewächs,Être vivant qui pousse dans la terre
+musee-fleuriste-pot,fleuriste,Fleuriste,Musée des mots,12–16 ans,pot,Töpfchen,Récipient dans lequel pousse une plante
+musee-fleuriste-terreau,fleuriste,Fleuriste,Musée des mots,12–16 ans,terreau,Humus,Terre préparée pour faire pousser une plante
+musee-fleuriste-secateur,fleuriste,Fleuriste,Musée des mots,12–16 ans,sécateur,Gartenschere,Outil qui sert à couper des tiges
+musee-fleuriste-ruban,fleuriste,Fleuriste,Musée des mots,12–16 ans,ruban,Band,Bande étroite qui sert à décorer
+musee-fleuriste-emballage,fleuriste,Fleuriste,Musée des mots,12–16 ans,emballage,Verpackung,Ce qui protège et présente un bouquet
+musee-fleuriste-arroser,fleuriste,Fleuriste,Musée des mots,12–16 ans,arroser,wässern,Donner de l’eau à une plante
+musee-fleuriste-couper,fleuriste,Fleuriste,Musée des mots,12–16 ans,couper,schneiden,Enlever une partie avec un outil
+musee-fleuriste-arranger,fleuriste,Fleuriste,Musée des mots,12–16 ans,arranger,Permutation,Mettre les éléments dans un ordre joli
+musee-fleuriste-emballer,fleuriste,Fleuriste,Musée des mots,12–16 ans,emballer,einpacken,Mettre dans un papier ou un sac
+musee-fleuriste-livrer,fleuriste,Fleuriste,Musée des mots,12–16 ans,livrer,zustellen,Apporter une commande à quelqu’un
+musee-fleuriste-commande,fleuriste,Fleuriste,Musée des mots,12–16 ans,commande,Bestellung,Demande faite par un client
+musee-fleuriste-fleur,fleuriste,Fleuriste,Musée des mots,12–16 ans,fleur,Blume,Partie colorée d’une plante
+musee-fleuriste-eau,fleuriste,Fleuriste,Musée des mots,12–16 ans,eau,Wasser,Liquide nécessaire aux plantes
+musee-fleuriste-branchage,fleuriste,Fleuriste,Musée des mots,12–16 ans,branchage,Reisigbündel,Petite branche utilisée dans une composition
+musee-fleuriste-fil-de-fer,fleuriste,Fleuriste,Musée des mots,12–16 ans,fil de fer,Drahtbrücke,Fil solide qui aide à tenir une composition
+musee-fleuriste-mousse,fleuriste,Fleuriste,Musée des mots,12–16 ans,mousse florale,Blumenschaum,Matière qui tient les fleurs dans une composition
+musee-fleuriste-fane,fleuriste,Fleuriste,Musée des mots,12–16 ans,fané,verwaschen,Qui n’est plus frais
+musee-fleuriste-saison,fleuriste,Fleuriste,Musée des mots,12–16 ans,saison,Jahreszeit,Moment de l’année
+musee-fleuriste-devis,fleuriste,Fleuriste,Musée des mots,12–16 ans,devis,Kostenvoranschlag,Document qui indique un prix prévu
+musee-fleuriste-encaisser,fleuriste,Fleuriste,Musée des mots,12–16 ans,encaisser,einsacken,Recevoir l’argent d’un client
+musee-fleuriste-dechet,fleuriste,Fleuriste,Musée des mots,12–16 ans,déchet,schlüssel,Chose que l’on jette
+musee-tatoueuse-studio,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,studio,Schlafzimmer mit Schreibtisch,Endroit où la tatoueuse travaille
+musee-tatoueuse-cabine,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,cabine,Kabine,Petite pièce de travail
+musee-tatoueuse-cliente,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,cliente,Kunde),Personne qui vient se faire tatouer
+musee-tatoueuse-motif,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,motif,Grund,Dessin ou forme choisi pour un tatouage
+musee-tatoueuse-dessin,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,dessin,Skizze,Image faite avec des lignes
+musee-tatoueuse-pochoir,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,pochoir,Schablone,Modèle qui aide à placer un dessin
+musee-tatoueuse-peau,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,peau,Haut,Surface qui couvre le corps
+musee-tatoueuse-aiguille,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,aiguille,eingeschweißte,Petit objet pointu qui sert à faire entrer l’encre
+musee-tatoueuse-machine,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,machine,Maschine,Appareil qui fait bouger l’aiguille
+musee-tatoueuse-encre,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,encre,tinte,Liquide coloré utilisé pour dessiner
+musee-tatoueuse-pigment,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,pigment,Pigment,Matière qui donne une couleur
+musee-tatoueuse-gants,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,gants,Handschuhe,Protection que l’on met sur les mains
+musee-tatoueuse-desinfection,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,désinfection,Desinfektion,Nettoyage qui enlève beaucoup de microbes
+musee-tatoueuse-hygiene,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,hygiène,Hygiene,Ensemble des gestes pour rester propre
+musee-tatoueuse-douleur,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,douleur,Schmerz,Ce qui fait mal
+musee-tatoueuse-cicatrisation,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,cicatrisation,Wundheilung,Temps pendant lequel la peau se répare
+musee-tatoueuse-soin,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,soin,Sorgfalt,Ce que l’on fait pour protéger et aider à guérir
+musee-tatoueuse-retouche,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,retouche,Retouchieren,Petite correction faite après le travail
+musee-tatoueuse-acompte,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,acompte,Vorauszahlung,Somme payée avant le travail
+musee-tatoueuse-consentement,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,consentement,klärung,Accord donné après avoir compris ce qui va se passer
+musee-tatoueuse-allergie,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,allergie,Allergie,Réaction du corps à une substance
+musee-tatoueuse-encre-noire,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,encre noire,Schreibfarbe schwarz,Encre de couleur noire
+musee-tatoueuse-zone,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,zone,Reichweite,Partie choisie du corps
+musee-tatoueuse-ligne,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,ligne,line,Trace longue et fine
+musee-tatoueuse-couleur,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,couleur,Farbe,Aspect produit par un pigment
+musee-tatoueuse-nettoyer,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,nettoyer,reinigen,Rendre propre
+musee-tatoueuse-proteger,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,protéger,beschützen,Mettre à l’abri d’un problème
+musee-tatoueuse-reparer,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,réparer,instand setzen,Remettre en bon état
+musee-tatoueuse-rendez-vous,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,rendez-vous,Terminvereinbarung,Temps prévu avec la tatoueuse
+musee-tatoueuse-prix,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,prix,preis,Somme à payer
+musee-tatoueuse-confidentialite,tatoueuse,Tatoueuse,Musée des mots,12–16 ans,confidentialité,Vertraulichkeit,Respect du secret sur une personne
+musee-carrossiere-atelier,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,atelier,Werkstatt,Endroit où l’on répare les véhicules
+musee-carrossiere-vehicule,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,véhicule,Fatiae,Moyen de transport comme une voiture
+musee-carrossiere-carrosserie,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,carrosserie,Karosserie,Partie extérieure d’un véhicule
+musee-carrossiere-capot,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,capot,Motorhaube,Couvercle devant une voiture
+musee-carrossiere-portiere,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,portière,Tuervorhang,Porte d’une voiture
+musee-carrossiere-aile,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,aile,Flügel,Partie de carrosserie autour d’une roue
+musee-carrossiere-pare-chocs,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,pare-chocs,Stoßstange,Pièce qui protège l’avant ou l’arrière
+musee-carrossiere-rayure,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,rayure,Kratzer,Trace faite sur une surface
+musee-carrossiere-bosse,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,bosse,Buckel,Partie qui ressort après un choc
+musee-carrossiere-peinture,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,peinture,Farbe,Produit coloré posé sur une surface
+musee-carrossiere-apret,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,apprêt,Grundierung,Couche posée avant la peinture
+musee-carrossiere-vernis,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,vernis,Lack,Produit qui protège et fait briller
+musee-carrossiere-mastic,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,mastic,dichtstoff,Pâte qui sert à remplir un défaut
+musee-carrossiere-ponceuse,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,ponceuse,Bimsmaschine,Machine qui rend une surface lisse
+musee-carrossiere-pistolet,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,pistolet,Pistole,Outil qui projette la peinture
+musee-carrossiere-cabine,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,cabine,Kabine,Pièce où l’on peint à l’abri de la poussière
+musee-carrossiere-masque,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,masque,Maske,Protection du visage et de la respiration
+musee-carrossiere-gants,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,gants,Handschuhe,Protection pour les mains
+musee-carrossiere-couleur,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,couleur,Farbe,Aspect produit par la peinture
+musee-carrossiere-teinte,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,teinte,Farbe,Nuance précise d’une couleur
+musee-carrossiere-melanger,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,mélanger,vermischen,Mettre plusieurs produits ensemble
+musee-carrossiere-poncer,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,poncer,mattschleifen,Frotter pour rendre une surface lisse
+musee-carrossiere-nettoyer,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,nettoyer,reinigen,Enlever la saleté
+musee-carrossiere-masquer,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,masquer,ausblenden,Couvrir une partie pour la protéger
+musee-carrossiere-secher,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,sécher,trocknen,Laisser perdre son liquide
+musee-carrossiere-polir,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,polir,reinigen,Rendre une surface lisse et brillante
+musee-carrossiere-lustrer,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,lustrer,polieren,Faire briller une surface
+musee-carrossiere-sechage,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,séchage,in Abtrocknung,Temps pendant lequel la peinture devient sèche
+musee-carrossiere-rouille,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,rouille,Braunfaerbung,Matière orange qui abîme le métal
+musee-carrossiere-aluminium,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,aluminium,Aluminium,Métal léger
+musee-carrossiere-plastique,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,plastique,Kunsstoff,Matière utilisée pour certaines pièces
+musee-carrossiere-solvant,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,solvant,Lösungs-,Liquide qui dissout ou nettoie un produit
+musee-carrossiere-degraisser,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,dégraisser,dégraisser,Enlever la graisse
+musee-carrossiere-repeindre,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,repeindre,überstreichen.,Peindre une nouvelle fois
+musee-carrossiere-controle,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,contrôle,Kontrolle,Vérification du travail
+musee-carrossiere-assurance,carrossiere-peintre,Carrossière-peintre,Musée des mots,12–16 ans,assurance,Vers.,Contrat qui aide à payer certains dégâts
+musee-pharmacie-pharmacie,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,pharmacie,Apotheke,Endroit où l’on achète des médicaments
+musee-pharmacie-medecin,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,médecin,Arzt,Personne qui soigne les malades
+musee-pharmacie-infirmiere,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,infirmière,Krankenpfleger,Personne qui aide à soigner les malades
+musee-pharmacie-hopital,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,hôpital,Krankenhaus,Endroit où l’on soigne des personnes
+musee-pharmacie-urgence,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,urgence,Notfall,Problème qui demande une aide rapide
+musee-pharmacie-ambulance,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,ambulance,ambulance car,Véhicule qui transporte une personne malade ou blessée
+musee-pharmacie-ordonnance,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,ordonnance,satzung,Papier du médecin pour acheter un traitement
+musee-pharmacie-medicament,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,médicament,Medikament,Produit qui aide à soigner
+musee-pharmacie-douleur,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,douleur,Schmerz,Sensation qui fait mal
+musee-pharmacie-fievre,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,fièvre,Fieber,Température du corps trop élevée
+musee-pharmacie-toux,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,toux,Husten,Bruit et mouvement pour rejeter quelque chose de la gorge
+musee-pharmacie-blessure,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,blessure,Wunde,Dégât sur le corps
+musee-pharmacie-saigner,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,saigner,bluten,Perdre du sang
+musee-pharmacie-respirer,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,respirer,atmen,Faire entrer et sortir l’air
+musee-pharmacie-consulter,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,consulter,konsultieren,Demander l’avis d’un professionnel de santé
+musee-pharmacie-soigner,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,soigner,pflegen,Aider une personne malade à aller mieux
+musee-pharmacie-guerir,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,guérir,heilen,Retrouver la santé
+musee-pharmacie-secourir,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,secourir,retten,Aider une personne en danger
+musee-pharmacie-allergie,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,allergie,Allergie,Réaction du corps à une substance
+musee-pharmacie-desinfecter,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,désinfecter,beizen,Nettoyer pour enlever les microbes
+musee-pharmacie-pansement,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,pansement,Pflaster,Protection collée sur une petite blessure
+musee-pharmacie-thermometre,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,thermomètre,Thermometer,Objet qui mesure la température
+musee-pharmacie-symptome,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,symptôme,Symptom,Changement qui montre qu’on est peut-être malade
+musee-pharmacie-traitement,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,traitement,behandlung,Ensemble des soins pour aller mieux
+musee-pharmacie-dose,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,dose,Dosieren,Quantité de médicament à prendre
+musee-pharmacie-notice,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,notice,notice,Texte qui explique comment utiliser un produit
+musee-pharmacie-rendez-vous,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,rendez-vous,Terminvereinbarung,Temps prévu avec un professionnel
+musee-pharmacie-numero-urgence,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,numéro d’urgence,Notrufnummer,Numéro à appeler quand une personne est en danger
+musee-pharmacie-securite,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,sécurité,Sicherheit,Ce qui protège contre un danger
+musee-pharmacie-repos,pharmacie-urgences,Pharmacie et urgences,Musée des mots,12–16 ans,repos,rastend,Temps sans activité pour récupérer
+musee-travail-emploi,travail-stage,Travail et stage,Musée des mots,12–16 ans,emploi,Tätigkeit,Travail payé
+musee-travail-metier,travail-stage,Travail et stage,Musée des mots,12–16 ans,métier,Handwerk,Travail que l’on apprend et que l’on exerce
+musee-travail-stage,travail-stage,Travail et stage,Musée des mots,12–16 ans,stage,Probezeit,Période pour découvrir un travail
+musee-travail-apprentissage,travail-stage,Travail et stage,Musée des mots,12–16 ans,apprentissage,Lehre,Formation pratique et scolaire pour apprendre un métier
+musee-travail-entreprise,travail-stage,Travail et stage,Musée des mots,12–16 ans,entreprise,zu,Organisation qui produit ou vend quelque chose
+musee-travail-atelier,travail-stage,Travail et stage,Musée des mots,12–16 ans,atelier,Werkstatt,Endroit où l’on travaille avec ses mains
+musee-travail-collegue,travail-stage,Travail et stage,Musée des mots,12–16 ans,collègue,Kollegen/Kollegin,Personne qui travaille avec soi
+musee-travail-chef,travail-stage,Travail et stage,Musée des mots,12–16 ans,chef,Boss,Personne qui dirige une équipe
+musee-travail-client,travail-stage,Travail et stage,Musée des mots,12–16 ans,client,Kundenfahrzeug,Personne qui achète un service
+musee-travail-equipe,travail-stage,Travail et stage,Musée des mots,12–16 ans,équipe,Team,Groupe de personnes qui travaillent ensemble
+musee-travail-horaire,travail-stage,Travail et stage,Musée des mots,12–16 ans,horaire,Stundenplan,Heures prévues pour travailler
+musee-travail-pause,travail-stage,Travail et stage,Musée des mots,12–16 ans,pause,pause,Petit moment sans travail
+musee-travail-salaire,travail-stage,Travail et stage,Musée des mots,12–16 ans,salaire,Salär,Argent reçu pour son travail
+musee-travail-contrat,travail-stage,Travail et stage,Musée des mots,12–16 ans,contrat,Vertrages,Document qui fixe un accord
+musee-travail-cv,travail-stage,Travail et stage,Musée des mots,12–16 ans,CV,Lebenslauf,Document qui présente ses études et ses expériences
+musee-travail-candidature,travail-stage,Travail et stage,Musée des mots,12–16 ans,candidature,Kandidatur,Demande pour obtenir une place
+musee-travail-entretien,travail-stage,Travail et stage,Musée des mots,12–16 ans,entretien,Unterhalt,Rencontre pour parler d’un travail
+musee-travail-competence,travail-stage,Travail et stage,Musée des mots,12–16 ans,compétence,nachweis,Ce que l’on sait faire
+musee-travail-consigne,travail-stage,Travail et stage,Musée des mots,12–16 ans,consigne,Sollwert,Indication sur ce qu’il faut faire
+musee-travail-ponctuel,travail-stage,Travail et stage,Musée des mots,12–16 ans,ponctuel,pünktlich,Qui arrive à l’heure prévue
+musee-travail-serieux,travail-stage,Travail et stage,Musée des mots,12–16 ans,sérieux,zuverlÃ¤ssig,Qui travaille avec attention
+musee-travail-demander,travail-stage,Travail et stage,Musée des mots,12–16 ans,demander,verlangen,Poser une question ou faire une demande
+musee-travail-repondre,travail-stage,Travail et stage,Musée des mots,12–16 ans,répondre,antworten,Donner une réponse
+musee-travail-apprendre,travail-stage,Travail et stage,Musée des mots,12–16 ans,apprendre,lernen,Acquérir une connaissance
+musee-travail-aider,travail-stage,Travail et stage,Musée des mots,12–16 ans,aider,helfen.,Donner un coup de main
+musee-travail-reussir,travail-stage,Travail et stage,Musée des mots,12–16 ans,réussir,erfolgreich sein,Atteindre son but
+musee-travail-chercher,travail-stage,Travail et stage,Musée des mots,12–16 ans,chercher,suchen,Essayer de trouver
+musee-travail-postuler,travail-stage,Travail et stage,Musée des mots,12–16 ans,postuler,bewerben,Envoyer une candidature
+musee-travail-terminer,travail-stage,Travail et stage,Musée des mots,12–16 ans,terminer,beenden,Finir une tâche
+musee-travail-securite,travail-stage,Travail et stage,Musée des mots,12–16 ans,sécurité,Sicherheit,Protection contre les dangers
+musee-hygiene-savon,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,savon,Seife,Produit qui nettoie
+musee-hygiene-douche,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,douche,Dusche,Action de se laver sous l’eau
+musee-hygiene-serviette,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,serviette,Handtuch,Tissu qui sert à se sécher
+musee-hygiene-brosse-a-dents,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,brosse à dents,Zahnbürste,Objet qui nettoie les dents
+musee-hygiene-dentifrice,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,dentifrice,Zahnpasta,Produit utilisé pour brosser les dents
+musee-hygiene-shampoing,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,shampoing,Shampoo,Produit qui lave les cheveux
+musee-hygiene-peigne,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,peigne,Kamm,Outil qui démêle les cheveux
+musee-hygiene-brosse,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,brosse,Bürste,Outil qui sert à nettoyer ou coiffer
+musee-hygiene-deodorant,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,déodorant,Deodorant,Produit qui limite l’odeur de transpiration
+musee-hygiene-parfum,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,parfum,Duft,Produit qui sent bon
+musee-hygiene-propre,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,propre,eigen,Qui n’est pas sale
+musee-hygiene-sale,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,sale,schmutzig,Qui a besoin d’être nettoyé
+musee-hygiene-laver,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,laver,waschen,Nettoyer avec de l’eau
+musee-hygiene-secher,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,sécher,trocknen,Enlever l’eau
+musee-hygiene-brosser,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,brosser,bürsten,Frotter avec une brosse
+musee-hygiene-ranger,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,ranger,aufräumen,Mettre chaque chose à sa place
+musee-hygiene-vetement,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,vêtement,kleidung,Pièce de tissu que l’on porte
+musee-hygiene-sous-vetement,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,sous-vêtement,Unterkleidung,Vêtement porté sous les autres
+musee-hygiene-pyjama,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,pyjama,Schlafanzug,Vêtement porté pour dormir
+musee-hygiene-serviette-periodique,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,serviette hygiénique,hygienische Binde,Protection utilisée pendant les règles
+musee-hygiene-rasoir,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,rasoir,schermesser,Outil qui coupe les poils
+musee-hygiene-ongle,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,ongle,Nagel,Partie dure au bout des doigts
+musee-hygiene-creme,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,crème,Sahne,Produit que l’on met sur la peau
+musee-hygiene-peau,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,peau,Haut,Surface qui couvre le corps
+musee-hygiene-cheveux,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,cheveux,Haare,Poils qui poussent sur la tête
+musee-hygiene-transpirer,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,transpirer,schwitzen,Produire de la sueur
+musee-hygiene-sueur,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,sueur,schweiß,Liquide produit par le corps
+musee-hygiene-odeur,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,odeur,Geruch,Ce que l’on sent avec le nez
+musee-hygiene-intime,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,intime,intim,Qui concerne la vie privée et le corps
+musee-hygiene-respect,hygiene-soins,Hygiène et soins,Musée des mots,12–16 ans,respect,Respekt,Attention portée à soi et aux autres
+musee-services-poste,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,poste,poste,Service qui envoie des lettres et des colis
+musee-services-lettre,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,lettre,Brief,Message écrit envoyé dans une enveloppe
+musee-services-colis,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,colis,Packet,Paquet envoyé à quelqu’un
+musee-services-enveloppe,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,enveloppe,(Brief)umschlag,Pochette pour envoyer une lettre
+musee-services-timbre,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,timbre,Stempelsteuer,Petit papier payé collé sur une lettre
+musee-services-adresse,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,adresse,Adresse,Indication du lieu où habite une personne
+musee-services-guichet,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,guichet,Kundendienstabteilung,Place où l’on parle à un employé
+musee-services-banque,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,banque,Genbank,Endroit où l’on garde et gère son argent
+musee-services-compte,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,compte,zähle,Enregistrement de l’argent à la banque
+musee-services-carte,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,carte,Karte,Objet qui permet de payer ou de retirer de l’argent
+musee-services-especes,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,espèces,bar,Argent en pièces et en billets
+musee-services-billet,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,billet,Banknote,Morceau de papier qui représente une somme d’argent
+musee-services-piece,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,pièce,Raum,Argent en métal
+musee-services-retrait,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,retrait,Abhebung,Argent pris sur son compte
+musee-services-virement,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,virement,Überweisung,Envoi d’argent d’un compte à un autre
+musee-services-payer,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,payer,Zu zahlen,Donner de l’argent pour acheter
+musee-services-recevoir,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,recevoir,erhalten,Obtenir quelque chose
+musee-services-facture,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,facture,invoice,Document qui indique ce qu’il faut payer
+musee-services-recu,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,reçu,Quittung,Papier qui prouve un paiement
+musee-services-prix,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,prix,preis,Somme à payer
+musee-services-assurance,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,assurance,Vers.,Contrat qui protège contre certains problèmes
+musee-services-accident,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,accident,Unfall,Événement qui cause un dégât ou une blessure
+musee-services-dommage,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,dommage,Beschädigung,Dégât causé à une personne ou à un objet
+musee-services-contrat,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,contrat,Vertrages,Document qui fixe un accord
+musee-services-signature,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,signature,gez.,Nom écrit de sa main
+musee-services-document,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,document,Dokument,Papier qui donne une information
+musee-services-identite,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,identité,Kennung,Ce qui permet de reconnaître une personne
+musee-services-code,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,code,Code,Suite de chiffres ou de lettres secrète
+musee-services-attendre,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,attendre,erwarten,Rester jusqu’à un moment prévu
+musee-services-demande,poste-banque-assurances,Poste banque et assurances,Musée des mots,12–16 ans,demande,fragt,Question ou souhait adressé à quelqu’un
+musee-reparation-panne,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,panne,Pfette,Problème qui empêche un appareil de fonctionner
+musee-reparation-outil,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,outil,Werkzeug,Objet utilisé pour travailler
+musee-reparation-tournevis,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,tournevis,Schraubendreher,Outil qui sert à tourner une vis
+musee-reparation-marteau,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,marteau,Hammer,Outil qui sert à enfoncer ou retirer un clou
+musee-reparation-clou,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,clou,nagel,Petite tige de métal que l’on enfonce
+musee-reparation-vis,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,vis,Schrauben,Pièce qui se fixe en tournant
+musee-reparation-perceuse,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,perceuse,Drillbohrer,Machine qui fait des trous
+musee-reparation-colle,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,colle,klebstoff,Produit qui assemble deux objets
+musee-reparation-ruban,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,ruban,Band,Bande qui sert à attacher ou réparer
+musee-reparation-casser,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,casser,zerbrechen,Abîmer en faisant une cassure
+musee-reparation-reparer,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,réparer,instand setzen,Remettre en bon état
+musee-reparation-remplacer,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,remplacer,Ersetzen,Mettre une chose à la place d’une autre
+musee-reparation-visser,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,visser,spannen,Fixer avec une vis
+musee-reparation-devisser,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,dévisser,Abschrauben,Enlever une vis
+musee-reparation-mesurer,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,mesurer,messen,Connaître une longueur ou une quantité
+musee-reparation-couper,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,couper,schneiden,Diviser avec un outil
+musee-reparation-coller,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,coller,kleben,Fixer avec de la colle
+musee-reparation-nettoyer,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,nettoyer,reinigen,Enlever la saleté
+musee-reparation-entretenir,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,entretenir,entretenir,Garder en bon état
+musee-reparation-verifier,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,vérifier,prüfen,Regarder si quelque chose est correct
+musee-reparation-securite,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,sécurité,Sicherheit,Protection contre les dangers
+musee-reparation-gants,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,gants,Handschuhe,Protection pour les mains
+musee-reparation-lunettes,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,lunettes,Brillen,Protection des yeux
+musee-reparation-cable,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,câble,Kabel,Fil qui transporte de l’électricité
+musee-reparation-prise,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,prise,Belegen,Endroit où l’on branche un appareil
+musee-loisirs-sortie,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,sortie,Ausgang,Activité faite hors de chez soi
+musee-loisirs-cinema,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,cinéma,Kino,Endroit où l’on regarde des films
+musee-loisirs-film,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,film,Film,Histoire racontée avec des images
+musee-loisirs-musique,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,musique,musik,Suite de sons que l’on écoute
+musee-loisirs-concert,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,concert,Konzert,Musique jouée devant un public
+musee-loisirs-theatre,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,théâtre,Schauspielhaus,Spectacle joué par des comédiens
+musee-loisirs-musee,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,musée,Museum,Endroit où l’on découvre des objets et des œuvres
+musee-loisirs-bibliotheque,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,bibliothèque,Bücherschrank,Endroit où l’on emprunte des livres
+musee-loisirs-livre,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,livre,Buch,Objet avec des pages à lire
+musee-loisirs-jeu,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,jeu,Thu,Activité faite pour s’amuser
+musee-loisirs-vacances,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,vacances,Zulagen,Temps sans école ou sans travail
+musee-loisirs-voyage,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,voyage,Reise,Déplacement vers un autre lieu
+musee-loisirs-parc,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,parc,Park,Grand espace avec des arbres ou des jeux
+musee-loisirs-plage,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,plage,Strand,Endroit au bord de la mer ou d’un lac
+musee-loisirs-pique-nique,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,pique-nique,Picknick,Repas pris dehors
+musee-loisirs-inviter,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,inviter,Laden,Proposer à quelqu’un de venir
+musee-loisirs-reserver,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,réserver,reservieren,Garder une place pour plus tard
+musee-loisirs-billet,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,billet,Banknote,Ticket qui permet d’entrer
+musee-loisirs-horaire,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,horaire,Stundenplan,Heure prévue
+musee-loisirs-public,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,public,public,Personnes qui regardent un spectacle
+musee-loisirs-artiste,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,artiste,Artist,Personne qui crée ou joue une œuvre
+musee-loisirs-photo,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,photo,Foto,Image prise avec un appareil
+musee-loisirs-dessin,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,dessin,Skizze,Image faite avec des lignes
+musee-loisirs-peinture,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,peinture,Farbe,Image faite avec des couleurs
+musee-loisirs-danser,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,danser,tanzen,Bouger sur une musique
+musee-loisirs-chanter,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,chanter,singen,Produire une mélodie avec sa voix
+musee-loisirs-lire,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,lire,lesen,Comprendre un texte
+musee-loisirs-ecouter,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,écouter,Auditive Wahrnehmung,Faire attention à un son
+musee-loisirs-samuser,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,s’amuser,sich amüsieren,Passer un bon moment
+musee-loisirs-sport,loisirs-sorties,Loisirs sorties culture et sport,Musée des mots,12–16 ans,sport,Sport,Activité physique avec des règles
+musee-sports-football,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,football,Fußball,Sport où l’on joue avec un ballon au pied
+musee-sports-basket,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,basket,Bobsport,Sport où l’on lance un ballon dans un panier
+musee-sports-rugby,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,rugby,Rugby,Sport collectif avec un ballon ovale
+musee-sports-tennis,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,tennis,Tennis,Sport où l’on frappe une balle avec une raquette
+musee-sports-badminton,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,badminton,Bergwandern,Sport joué avec une raquette et un volant
+musee-sports-boxe,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,boxe,Boxen,Sport de combat avec les poings
+musee-sports-gymnastique,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,gymnastique,Gymnastik,Sport avec des mouvements et des exercices
+musee-sports-athletisme,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,athlétisme,Leichtathletik,Ensemble de sports comme courir et sauter
+musee-sports-natation,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,natation,Schwimmen,Sport qui consiste à nager
+musee-sports-cyclisme,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,cyclisme,Fahrradfahren,Sport pratiqué à vélo
+musee-sports-escalade,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,escalade,Bergsteigen,Sport où l’on grimpe
+musee-sports-danse,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,danse,tanzt,Sport qui utilise des mouvements du corps
+musee-sports-agrès,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,agrès,Lademittel,Appareil utilisé en gymnastique
+musee-sports-ballon,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,ballon,Ball,Objet rond utilisé dans plusieurs sports
+musee-sports-raquette,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,raquette,Schläger,Outil qui frappe une balle ou un volant
+musee-sports-filet,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,filet,Windschutznetz,Objet qui sépare deux côtés d’un terrain
+musee-sports-panier,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,panier,Warenkorb,Cercle où l’on lance le ballon au basket
+musee-sports-but,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,but,Tor,Endroit où il faut envoyer le ballon
+musee-sports-gants,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,gants,Handschuhe,Protection portée sur les mains
+musee-sports-casque,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,casque,Helm,Protection de la tête
+musee-sports-chaussons,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,chaussons,Hausschuhe,Chaussures souples pour certains sports
+musee-sports-maillot,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,maillot,Maillot,Vêtement porté pour faire du sport
+musee-sports-short,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,short,Shorts,Vêtement court porté pour le sport
+musee-sports-baskets,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,baskets,Sportschuhe,Chaussures utilisées pour le sport
+musee-sports-sifflet,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,sifflet,keilförmige Flügelmauer,Petit objet qui produit un son
+musee-sports-terrain,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,terrain,Land,Endroit où l’on pratique un sport
+musee-sports-equipe,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,équipe,Team,Groupe de joueurs
+musee-sports-entraineur,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,entraîneur,Trainer,Personne qui apprend et guide les joueurs
+musee-sports-match,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,match,Wettbewerb,Rencontre entre deux équipes ou joueurs
+musee-sports-sentrainer,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,s’entraîner,trainieren,Faire des exercices pour progresser
+musee-sports-gagner,sports-equipements,Sports et équipements,Musée des mots,12–16 ans,gagner,gewinnen,Obtenir le meilleur résultat
+musee-reparation-lumiere,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,lumière,Licht,Ce qui permet de voir
+musee-reparation-eau,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,eau,Wasser,Liquide qui coule dans un tuyau
+musee-reparation-fuite,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,fuite,Leck,Eau ou gaz qui sort par un mauvais endroit
+musee-reparation-bruit,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,bruit,Geräusch,Son souvent gênant
+musee-reparation-piece,reparation-entretien,Réparation et entretien,Musée des mots,12–16 ans,pièce,Raum,Élément qui fait partie d’un objet

@@ -1,0 +1,19 @@
+{
+  "voice": "de_DE-thorsten-medium",
+  "lengthScale": 1.3,
+  "sampleRate": 22050,
+  "words": [
+    "computer",
+    "keyboard",
+    "screen",
+    "file",
+    "to-download",
+    "to-save",
+    "train",
+    "workshop",
+    "machine",
+    "safety",
+    "number",
+    "to-open"
+  ]
+}

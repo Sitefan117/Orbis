@@ -14,7 +14,8 @@ export type WorldId =
   | 'grammaire_lab'
   | 'musee_vocabulaire'
   | 'bazar'
-  | 'english_lab';
+  | 'english_lab'
+  | 'deutsch_werkstatt';
 
 export type WorldSubject =
   | 'MATHS'
@@ -178,6 +179,16 @@ export const worlds: World[] = [
     status: 'prototype'
   },
   {
+    id: 'deutsch_werkstatt',
+    title: 'Deutsch Werkstatt',
+    subtitle: 'Vokabeln üben, wiederholen und sicher anwenden.',
+    route: '/deutsch-werkstatt',
+    emoji: '🏭',
+    color: 'amber',
+    subject: 'ALLEMAND',
+    status: 'available'
+  },
+  {
     id: 'shift',
     title: 'Shift',
     subtitle: 'Arriveras-tu maîtriser petits et grands nombres ?',
@@ -226,5 +237,6 @@ export const worldLabels: Record<WorldId, string> = {
   grammaire_lab: 'L’Atelier des phrases',
   musee_vocabulaire: 'Le musée des mots',
   bazar: 'Le Bazar',
-  english_lab: 'English Lab'
+  english_lab: 'English Lab',
+  deutsch_werkstatt: 'Deutsch Werkstatt'
 };

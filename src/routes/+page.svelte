@@ -57,7 +57,8 @@
     grammaire_lab: { notion: 'Grammaire', goal: 'Construis des phrases correctes.' },
     musee_vocabulaire: { notion: 'Vocabulaire', goal: 'Observe, associe et reconstruis les mots.' },
     bazar: { notion: 'Français', goal: 'Explore neuf façons de lire, écrire et raisonner.' },
-    english_lab: { notion: 'English vocabulary', goal: 'Test words, phrases and computer vocabulary.' }
+    english_lab: { notion: 'English vocabulary', goal: 'Test words, phrases and computer vocabulary.' },
+    deutsch_werkstatt: { notion: 'Vocabulaire allemand', goal: 'Apprends, réutilise et révise les mots allemands.' }
   };
   $: selectedGameNotion = catalogParams.get('notion');
   $: visibleArcadeCategories = arcadeCategories;
